@@ -63,6 +63,13 @@ class AppState extends ChangeNotifier {
   bool _sawAuthEvent = false;
   bool _syncFailed = false;
 
+  /// Lessons finished while a merge is running; a merge that replaces the
+  /// device copy with the cloud's keeps them.
+  final Set<String> _finishedDuringMerge = {};
+
+  /// How long account deletion waits for each server step.
+  static const serverTimeout = Duration(seconds: 20);
+
   /// Bumped on every account change; a merge that started under an older
   /// generation drops its result instead of writing stale progress.
   int _generation = 0;
@@ -86,7 +93,12 @@ class AppState extends ChangeNotifier {
   Future<void> chooseTrack(Track track) async {
     _track = track;
     await prefs.setString(_trackKey, track.name);
-    await prefs.setBool(_trackDirtyKey, true);
+    // A device that never synced (first launch forces a pick before anyone
+    // can sign in) must not override an account's track, so only a change
+    // made while signed in, or on a device that has synced, counts.
+    if (_user != null || prefs.getString(_syncedUidKey) != null) {
+      await prefs.setBool(_trackDirtyKey, true);
+    }
     notifyListeners();
     _push((s, uid) async {
       await s.setTrack(uid, track);
@@ -100,6 +112,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> markCompleted(String lessonId) async {
     if (_completed.add(lessonId)) {
+      if (_user != null) _finishedDuringMerge.add(lessonId);
       await prefs.setStringList(_completedKey, _completed.toList());
       notifyListeners();
       _push((s, uid) => s.addCompleted(uid, [lessonId]));
@@ -110,6 +123,31 @@ class AppState extends ChangeNotifier {
   void retrySync() {
     final u = _user;
     if (u != null) syncing = _mergeWithCloud(u);
+  }
+
+  /// Signs out, first making sure this device's progress reached the
+  /// account. Returns false, without signing out, when it may not have: the
+  /// first sync never finished, a background write failed, or changes are
+  /// still waiting to be sent. Signing out clears the device, so the UI
+  /// then asks before calling again with [force].
+  Future<bool> signOut({bool force = false}) async {
+    final u = _user;
+    final s = sync;
+    if (!force && u != null && s != null) {
+      if (prefs.getString(_syncedUidKey) != u.uid || _syncFailed) {
+        try {
+          await (syncing = _mergeWithCloud(u)).timeout(const Duration(seconds: 10));
+        } on TimeoutException {
+          // Treated as not saved below.
+        }
+      }
+      final saved = prefs.getString(_syncedUidKey) == u.uid &&
+          !_syncFailed &&
+          await s.flush(const Duration(seconds: 5));
+      if (!saved) return false;
+    }
+    await accounts.signOut();
+    return true;
   }
 
   void _onUserChanged(AccountUser? user) {
@@ -161,40 +199,46 @@ class AppState extends ChangeNotifier {
     if (s == null) return;
     final generation = ++_generation;
     bool stale() => generation != _generation || _user?.uid != user.uid;
+    _finishedDuringMerge.clear();
 
     try {
       final remote = await s.load(user.uid);
       if (stale()) return;
 
       final owner = prefs.getString(_syncedUidKey);
+      final Track? finalTrack;
       if (owner != null && owner != user.uid) {
         // Left over from another account: never upload it, take the cloud's.
-        _completed = {...remote.completed};
-        _track = remote.track;
+        // Lessons finished since this sign-in are this account's (they were
+        // already sent to it), so they stay.
+        _completed = {...remote.completed, ..._finishedDuringMerge};
+        _track = finalTrack = remote.track;
         await _saveLocal();
-        await prefs.setBool(_trackDirtyKey, false);
+        if (remote.needsRepair) {
+          await s.replace(user.uid, track: finalTrack, completed: {..._completed});
+        }
       } else {
         final localOnly = _completed.difference(remote.completed);
-        final remoteOnly = remote.completed.difference(_completed);
-        if (remoteOnly.isNotEmpty) {
-          _completed.addAll(remoteOnly);
-          await prefs.setStringList(_completedKey, _completed.toList());
-        }
-        if (localOnly.isNotEmpty) await s.addCompleted(user.uid, localOnly);
-        if (stale()) return;
-
         final local = _track;
         final dirty = prefs.getBool(_trackDirtyKey) ?? false;
-        if (local != null && (dirty || remote.track == null)) {
-          if (local != remote.track) await s.setTrack(user.uid, local);
+        final pushTrack = local != null && (dirty || remote.track == null);
+        finalTrack = pushTrack ? local : (remote.track ?? local);
+
+        _completed.addAll(remote.completed);
+        _track = finalTrack;
+        await _saveLocal();
+
+        if (remote.needsRepair) {
+          // One write with everything, so the rules accept it.
+          await s.replace(user.uid, track: finalTrack, completed: {..._completed});
+        } else {
+          if (localOnly.isNotEmpty) await s.addCompleted(user.uid, localOnly);
           if (stale()) return;
-          if (_track == local) await prefs.setBool(_trackDirtyKey, false);
-        } else if (remote.track != null) {
-          _track = remote.track;
-          await prefs.setString(_trackKey, remote.track!.name);
-          await prefs.setBool(_trackDirtyKey, false);
+          if (pushTrack && local != remote.track) await s.setTrack(user.uid, local);
         }
       }
+      if (stale()) return;
+      if (_track == finalTrack) await prefs.setBool(_trackDirtyKey, false);
       await prefs.setString(_syncedUidKey, user.uid);
       _syncFailed = false;
       notifyListeners();
@@ -219,31 +263,70 @@ class AppState extends ChangeNotifier {
   }
 
   /// Deletes the signed-in account, its cloud progress and the progress on
-  /// this device. Throws if the account could not be deleted; the cloud
-  /// progress is then put back from the device copy.
+  /// this device. Throws [AccountException] if the account wasn't deleted;
+  /// the cloud progress is then put back.
+  ///
+  /// Call it straight from the button press: the first thing it does is
+  /// the confirming sign-in, which opens a pop-up on the web.
   Future<void> deleteAccount() async {
     final u = _user;
-    if (u == null) return;
-    final s = sync;
+    if (u == null) throw const AccountException(AccountErrorKind.notSignedIn);
+    final proof = await accounts.reauthenticate();
     _generation++; // Drop any merge still running for this account.
+    final s = sync;
 
-    // The cloud document goes first: once the account is gone, the
-    // security rules no longer let this app delete it.
-    if (s != null) await s.deleteAll(u.uid);
+    var remote = const RemoteProgress();
+    if (s != null) {
+      // Read from the server: offline, this fails before anything is
+      // deleted. The copy is kept to put back if deleting the account fails.
+      remote = await _server(s.load(u.uid, fromServer: true));
+      try {
+        // The document goes before the account: once the account is gone,
+        // the security rules no longer let this app delete it.
+        await _server(s.deleteAll(u.uid));
+      } catch (_) {
+        // A timed-out delete may still be queued; the restore is queued
+        // after it, so the document ends up back either way.
+        await _restoreCloud(s, u.uid, remote);
+        rethrow;
+      }
+    }
+
     try {
-      await accounts.deleteAccount();
+      await _server(accounts.deleteUser(proof));
     } catch (_) {
-      if (s != null) await _restoreCloud(s, u.uid);
+      if (!await accounts.accountStillExists()) {
+        // The error came after the account was in fact removed.
+        await _clearLocal();
+        return;
+      }
+      if (s != null) await _restoreCloud(s, u.uid, remote);
       rethrow;
     }
     await _clearLocal();
   }
 
-  Future<void> _restoreCloud(ProgressSync s, String uid) async {
+  static Future<T> _server<T>(Future<T> step) async {
     try {
-      if (_completed.isNotEmpty) await s.addCompleted(uid, _completed);
-      final t = _track;
-      if (t != null) await s.setTrack(uid, t);
+      return await step.timeout(serverTimeout);
+    } on AccountException {
+      rethrow;
+    } on TimeoutException catch (e) {
+      throw AccountException(AccountErrorKind.network, e);
+    } catch (e) {
+      // Firestore reports being offline as an error from the server read.
+      throw AccountException(AccountErrorKind.network, e);
+    }
+  }
+
+  /// Puts back everything the cloud and this device knew.
+  Future<void> _restoreCloud(ProgressSync s, String uid, RemoteProgress remote) async {
+    try {
+      await s
+          .replace(uid,
+              track: _track ?? remote.track,
+              completed: {...remote.completed, ..._completed})
+          .timeout(serverTimeout);
     } catch (e) {
       debugPrint('Restoring cloud progress failed: $e');
     }
@@ -256,7 +339,13 @@ class AppState extends ChangeNotifier {
     final u = _user;
     if (s == null || u == null) return;
     unawaited(write(s, u.uid).catchError((Object e) {
+      // Shown on the Progress screen, which offers a retry (a full merge,
+      // which also repairs a document the rules refuse).
       debugPrint('Progress sync failed: $e');
+      if (_user?.uid == u.uid) {
+        _syncFailed = true;
+        notifyListeners();
+      }
     }));
   }
 

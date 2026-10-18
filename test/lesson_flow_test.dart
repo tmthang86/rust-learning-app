@@ -3,7 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rust_learn/app/router.dart';
 import 'package:rust_learn/data/app_state.dart';
+import 'dart:async';
+
 import 'package:rust_learn/data/course_repository.dart';
+import 'package:rust_learn/features/editor/code_editor.dart';
 import 'package:rust_learn/main.dart';
 import 'package:rust_learn/runner/code_runner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -267,4 +270,194 @@ void main() {
       handle.dispose();
     },
   );
+
+  TextEditingValue v(String text, int start, [int? end]) => TextEditingValue(
+        text: text,
+        selection: TextSelection(baseOffset: start, extentOffset: end ?? start),
+      );
+
+  test('Tab indents selected lines, Shift+Tab outdents them (F9)', () {
+    const code = 'fn main() {\nlet a = 1;\nlet b = 2;\n}';
+    // Select from inside line 2 to inside line 3.
+    final indented = indentLines(v(code, 14, 25));
+    expect(indented.text, 'fn main() {\n    let a = 1;\n    let b = 2;\n}');
+    expect(indented.selection.start, 18);
+    expect(indented.selection.end, 33);
+
+    final back = outdentLines(indented);
+    expect(back.text, code);
+    expect(back.selection.start, 14);
+    expect(back.selection.end, 25);
+
+    // A selection ending at the start of a line leaves that line alone.
+    final twoLines = indentLines(v('a\nb\nc', 0, 4));
+    expect(twoLines.text, '    a\n    b\nc');
+
+    // Outdent removes at most four spaces, and only spaces.
+    expect(outdentLines(v('      x\n  y\nz', 0, 13)).text, '  x\ny\nz');
+    // No selection: Tab inserts spaces at the cursor.
+    expect(indentLines(v('ab', 1)).text, 'a    b');
+  });
+
+  testWidgets('Shift+Tab without a selection leaves the editor (F9)', (tester) async {
+    await open(tester, '/playground');
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
+    final controller = tester.widget<TextField>(find.byType(TextField)).controller!;
+    final before = controller.text;
+    controller.selection = const TextSelection.collapsed(offset: 0);
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.pump();
+
+    expect(controller.text, before);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus,
+      isFalse,
+    );
+  });
+
+  testWidgets('Ctrl+Enter runs the code (F9)', (tester) async {
+    await open(
+      tester,
+      '/playground',
+      runResult: const RunResult(success: true, stage: RunStage.run, stdout: 'ran'),
+    );
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+    expect(find.text('ran'), findsOneWidget);
+  });
+
+  testWidgets('every run is announced with its output, verdict on its own (F5)',
+      (tester) async {
+    await open(
+      tester,
+      '/lesson/exercise',
+      runResult: const RunResult(success: true, stage: RunStage.run, stdout: 'hi\n'),
+    );
+    final handle = tester.ensureSemantics();
+    tester.takeAnnouncements();
+
+    await tester.tap(find.text('Run'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Run'));
+    await tester.pumpAndSettle();
+
+    final said = tester.takeAnnouncements().map((a) => a.message).toList();
+    expect(said, ['Output: hi Correct! Nice work.', 'Output: hi Correct! Nice work.']);
+
+    final verdict = tester.getSemantics(find.text('Correct! Nice work.'));
+    expect(verdict.label, 'Correct! Nice work.');
+    handle.dispose();
+  });
+
+  test('compile errors and failures are announced too (F5)', () {
+    expect(
+      runAnnouncement(const RunResult(
+          success: false, stage: RunStage.compile, stderr: 'error[E0308]: mismatched types')),
+      "Your code didn't compile. error[E0308]: mismatched types",
+    );
+    expect(
+      runAnnouncement(const RunResult(success: true, stage: RunStage.run, warnings: 'w')),
+      'Your program ran with no output. There are compiler warnings.',
+    );
+  });
+
+  CourseRepository longLesson() => fakeCourse(extraFiles: {
+        'assets/content/lessons/long.json': '''
+{"id": "long", "title": "Long",
+ "sections": [${List.generate(40, (i) => '{"type": "text", "text": "Paragraph $i"}').join(',')}],
+ "exercise": {"prompt": "Print hi", "starter": "fn main() {}", "expectedOutput": "hi"}}
+''',
+      });
+
+  testWidgets('the exercise code survives scrolling away and back (F7)', (tester) async {
+    await open(tester, '/lesson/long', repository: longLesson());
+    tester.view.physicalSize = const Size(390, 600);
+    await tester.pumpAndSettle();
+
+    final list = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(find.byType(TextField), 300, scrollable: list);
+    await tester.enterText(find.byType(TextField), 'fn main() { println!("mine"); }');
+    await tester.pump();
+    // A focused field keeps itself alive; the learner has moved on.
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+
+    await tester.scrollUntilVisible(find.text('Paragraph 0'), -300, scrollable: list);
+    expect(find.byType(TextField, skipOffstage: false), findsOneWidget); // kept alive
+    await tester.scrollUntilVisible(find.byType(TextField), 300, scrollable: list);
+    expect(find.text('fn main() { println!("mine"); }'), findsOneWidget);
+  });
+
+  testWidgets('a result that arrives after leaving the lesson still counts (F7)',
+      (tester) async {
+    final runner = _GatedRunner();
+    SharedPreferences.setMockInitialValues({'track': 'fast'});
+    tester.view.physicalSize = const Size(390, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final s = (await tester.runAsync(() async {
+      final st = AppState(
+        repository: fakeCourse(),
+        runner: runner,
+        prefs: await SharedPreferences.getInstance(),
+      );
+      await st.load();
+      return st;
+    }))!;
+    await tester.pumpWidget(RustLearnApp(state: s, initialLocation: '/lesson/exercise'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Run'));
+    await tester.pump();
+    await tester.tap(find.byTooltip('Back to lessons'));
+    await tester.pumpAndSettle();
+    expect(find.text('Learn Rust'), findsOneWidget);
+
+    runner.gate.complete(const RunResult(success: true, stage: RunStage.run, stdout: 'hi'));
+    await tester.pumpAndSettle();
+    expect(s.isCompleted('exercise'), isTrue);
+  });
+
+  testWidgets('a deep-linked lesson has a way back, also with system back (F8)',
+      (tester) async {
+    await open(tester, '/lesson/plain');
+    final handled = await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(handled, isTrue); // the app didn't close
+    expect(find.text('Learn Rust'), findsOneWidget);
+  });
+
+  testWidgets('a deep-linked lesson shows a button to the course map (F8)',
+      (tester) async {
+    await open(tester, '/lesson/plain');
+    await tester.tap(find.byTooltip('Back to lessons'));
+    await tester.pumpAndSettle();
+    expect(find.text('Learn Rust'), findsOneWidget);
+  });
+
+  testWidgets('a lesson opened from the course map keeps the normal back button',
+      (tester) async {
+    await open(tester, '/learn');
+    await tester.tap(find.text('Basics'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lesson plain'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Back to lessons'), findsNothing);
+    expect(find.byType(BackButton), findsOneWidget);
+  });
+}
+
+class _GatedRunner implements CodeRunner {
+  final gate = Completer<RunResult>();
+  @override
+  Future<RunResult> run(String source) => gate.future;
 }

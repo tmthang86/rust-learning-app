@@ -14,8 +14,50 @@ class AccountUser {
 
 enum SignInMethod { google, apple }
 
+/// Why an account action didn't finish, in terms the UI can explain.
+enum AccountErrorKind {
+  /// The person closed the sign-in window.
+  cancelled,
+
+  /// The browser blocked the sign-in pop-up.
+  popupBlocked,
+
+  /// The email already has an account that uses the other sign-in method.
+  otherProvider,
+
+  /// Confirmed with a different account than the one signed in.
+  wrongAccount,
+
+  /// No connection, or the server took too long.
+  network,
+
+  notSignedIn,
+  other,
+}
+
+class AccountException implements Exception {
+  const AccountException(this.kind, [this.detail]);
+
+  final AccountErrorKind kind;
+  final Object? detail;
+
+  @override
+  String toString() => 'AccountException($kind, $detail)';
+}
+
+/// What a fresh sign-in returned, needed to finish deleting the account.
+class ReauthProof {
+  const ReauthProof({this.appleAuthorizationCode});
+
+  /// Lets Firebase revoke the person's Apple tokens. Only Apple hands it
+  /// out, and only on a fresh sign-in (not on the web).
+  final String? appleAuthorizationCode;
+}
+
 /// Signing in and out. Lets the rest of the app ignore whether Firebase is
 /// configured in this build.
+///
+/// Methods throw [AccountException] when they fail.
 abstract class AccountService {
   /// False when accounts aren't set up in this build; the UI hides sign-in.
   bool get available;
@@ -29,31 +71,25 @@ abstract class AccountService {
   Future<void> signIn(SignInMethod method);
   Future<void> signOut();
 
-  /// Permanently deletes the signed-in account (App Store guideline
-  /// 5.1.1(v)). Asks the person to sign in again when the provider requires
-  /// a recent sign-in. Throws if the account wasn't deleted, for example
-  /// when that sign-in is cancelled.
-  Future<void> deleteAccount();
-}
+  /// Asks the signed-in person to sign in again with the same provider, to
+  /// confirm account deletion. Call it straight from the button press, so
+  /// a browser lets the sign-in pop-up open.
+  Future<ReauthProof> reauthenticate();
 
-/// Runs [delete]; if Firebase says the last sign-in is too old, runs
-/// [reauthenticate] and tries once more.
-Future<void> deleteWithRecentLogin({
-  required Future<void> Function() delete,
-  required Future<void> Function() reauthenticate,
-}) async {
-  try {
-    await delete();
-  } on FirebaseAuthException catch (e) {
-    if (e.code != 'requires-recent-login') rethrow;
-    await reauthenticate();
-    await delete();
-  }
+  /// Permanently deletes the signed-in account (App Store guideline
+  /// 5.1.1(v), Google Play account deletion). Call [reauthenticate] first.
+  /// Revoking Apple tokens is best-effort.
+  Future<void> deleteUser(ReauthProof proof);
+
+  /// After [deleteUser] failed: whether the account is in fact still there.
+  Future<bool> accountStillExists();
 }
 
 /// Used when Firebase isn't configured: progress stays on the device.
 class DisabledAccountService implements AccountService {
   const DisabledAccountService();
+
+  static const _off = AccountException(AccountErrorKind.notSignedIn);
 
   @override
   bool get available => false;
@@ -68,13 +104,43 @@ class DisabledAccountService implements AccountService {
   @override
   Future<void> signOut() async {}
   @override
-  Future<void> deleteAccount() async {}
+  Future<ReauthProof> reauthenticate() async => throw _off;
+  @override
+  Future<void> deleteUser(ReauthProof proof) async => throw _off;
+  @override
+  Future<bool> accountStillExists() async => false;
+}
+
+/// Maps Firebase Auth error codes to what the UI explains.
+AccountException accountExceptionFrom(Object e) {
+  if (e is AccountException) return e;
+  if (e is FirebaseAuthException) {
+    final kind = switch (e.code) {
+      'popup-closed-by-user' ||
+      'cancelled-popup-request' ||
+      'web-context-cancelled' ||
+      'web-context-canceled' ||
+      'canceled' =>
+        AccountErrorKind.cancelled,
+      'popup-blocked' => AccountErrorKind.popupBlocked,
+      'account-exists-with-different-credential' ||
+      'credential-already-in-use' =>
+        AccountErrorKind.otherProvider,
+      'user-mismatch' => AccountErrorKind.wrongAccount,
+      'network-request-failed' => AccountErrorKind.network,
+      _ => AccountErrorKind.other,
+    };
+    return AccountException(kind, e);
+  }
+  return AccountException(AccountErrorKind.other, e);
 }
 
 class FirebaseAccountService implements AccountService {
   FirebaseAccountService([FirebaseAuth? auth]) : _auth = auth ?? FirebaseAuth.instance;
 
   final FirebaseAuth _auth;
+
+  static const _appleId = 'apple.com';
 
   static AccountUser? _toUser(User? u) => u == null
       ? null
@@ -105,59 +171,79 @@ class FirebaseAccountService implements AccountService {
         SignInMethod.apple => AppleAuthProvider()..addScope('email')..addScope('name'),
       };
 
-  static const _appleId = 'apple.com';
-
   @override
   Future<void> signIn(SignInMethod method) async {
     final provider = _provider(method);
-    if (kIsWeb) {
-      await _auth.signInWithPopup(provider);
-    } else {
-      await _auth.signInWithProvider(provider);
+    try {
+      if (kIsWeb) {
+        await _auth.signInWithPopup(provider);
+      } else {
+        await _auth.signInWithProvider(provider);
+      }
+    } catch (e) {
+      throw accountExceptionFrom(e);
     }
   }
 
   @override
   Future<void> signOut() => _auth.signOut();
 
-  Future<UserCredential> _reauthenticate(User user, SignInMethod method) {
-    final provider = _provider(method);
-    return kIsWeb
-        ? user.reauthenticateWithPopup(provider)
-        : user.reauthenticateWithProvider(provider);
+  @override
+  Future<ReauthProof> reauthenticate() async {
+    final user = _auth.currentUser;
+    if (user == null) throw const AccountException(AccountErrorKind.notSignedIn);
+    final apple = user.providerData.any((p) => p.providerId == _appleId);
+    // Google is the only other provider the app offers.
+    final provider = _provider(apple ? SignInMethod.apple : SignInMethod.google);
+    try {
+      // No await before this call: on the web the pop-up must open while
+      // the browser still counts it as a response to the click.
+      final credential = kIsWeb
+          ? await user.reauthenticateWithPopup(provider)
+          : await user.reauthenticateWithProvider(provider);
+      return ReauthProof(
+        appleAuthorizationCode:
+            apple ? credential.additionalUserInfo?.authorizationCode : null,
+      );
+    } catch (e) {
+      throw accountExceptionFrom(e);
+    }
   }
 
   @override
-  Future<void> deleteAccount() async {
+  Future<void> deleteUser(ReauthProof proof) async {
     final user = _auth.currentUser;
-    if (user == null) return;
-    final providers = user.providerData.map((p) => p.providerId).toSet();
-
-    if (providers.contains(_appleId)) {
-      // Apple asks apps that offer Sign in with Apple to revoke the user's
-      // tokens when the account is deleted. Revoking needs a fresh
-      // authorization code, which only a new Apple sign-in hands out, so
-      // Apple users always confirm with Apple first. That sign-in is also
-      // recent enough for delete().
-      final credential = await _reauthenticate(user, SignInMethod.apple);
-      final code = credential.additionalUserInfo?.authorizationCode;
-      if (code != null) {
-        try {
-          await _auth.revokeTokenWithAuthorizationCode(code);
-        } catch (e) {
-          // Needs the Apple key set up in Firebase (docs/firebase-setup.md).
-          // Deleting the account matters more than the revocation.
-          debugPrint('Apple token revocation failed: $e');
-        }
+    if (user == null) throw const AccountException(AccountErrorKind.notSignedIn);
+    final code = proof.appleAuthorizationCode;
+    if (code != null) {
+      try {
+        // Apple asks apps with Sign in with Apple to revoke the user's
+        // tokens on deletion. Needs the Apple key set up in Firebase
+        // (docs/firebase-setup.md).
+        await _auth.revokeTokenWithAuthorizationCode(code);
+      } catch (e) {
+        debugPrint('Apple token revocation failed: $e');
       }
-      await user.delete();
-      return;
     }
+    try {
+      await user.delete();
+    } catch (e) {
+      throw accountExceptionFrom(e);
+    }
+  }
 
-    // Google is the only other provider the app offers.
-    await deleteWithRecentLogin(
-      delete: user.delete,
-      reauthenticate: () => _reauthenticate(user, SignInMethod.google),
-    );
+  @override
+  Future<bool> accountStillExists() async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+    try {
+      await user.reload();
+      return true;
+    } on FirebaseAuthException catch (e) {
+      return !(e.code == 'user-not-found' || e.code == 'user-token-expired');
+    } catch (_) {
+      // Can't tell (offline): assume it exists so progress gets restored.
+      return true;
+    }
   }
 }

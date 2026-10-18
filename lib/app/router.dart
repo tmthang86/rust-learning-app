@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../data/app_state.dart';
+import '../features/account/delete_account_screen.dart';
 import '../features/editor/playground_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/lesson/lesson_screen.dart';
@@ -14,6 +15,8 @@ GoRouter buildRouter(AppState state, {String initialLocation = '/learn'}) =>
       initialLocation: initialLocation,
       refreshListenable: state,
       redirect: (context, route) {
+        // Reachable without picking a track: linked from the store listing.
+        if (route.matchedLocation == '/delete-account') return null;
         final onWelcome = route.matchedLocation == '/welcome';
         if (state.track == null && !onWelcome) {
           // Remember a deep link so it opens once a track is picked.
@@ -28,6 +31,10 @@ GoRouter buildRouter(AppState state, {String initialLocation = '/learn'}) =>
         return null;
       },
       routes: [
+        GoRoute(
+          path: '/delete-account',
+          builder: (context, route) => const DeleteAccountScreen(),
+        ),
         GoRoute(
           path: '/welcome',
           builder: (context, route) => const TrackPickerScreen(),

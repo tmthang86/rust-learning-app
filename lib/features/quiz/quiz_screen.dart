@@ -74,7 +74,7 @@ class _QuizScreenState extends State<QuizScreen> {
           return const LessonMessage("This lesson doesn't have a quiz.");
         }
         return Scaffold(
-          appBar: AppBar(title: Text('Quiz: ${lesson.title}')),
+          appBar: lessonAppBar(context, title: Text('Quiz: ${lesson.title}')),
           body: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 640),

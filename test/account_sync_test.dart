@@ -15,8 +15,10 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('signing in merges device and cloud progress both ways', () async {
+    // First launch forces a track pick before anyone can sign in.
     SharedPreferences.setMockInitialValues({
       'completedLessons': ['u1-l1', 'u1-l2'],
+      'track': 'starter',
     });
     final accounts = FakeAccounts();
     final sync = FakeSync(track: Track.fast, completed: {'u1-l2', 'u1-l3'});
@@ -28,8 +30,10 @@ void main() {
 
     expect(state.completedLessons, {'u1-l1', 'u1-l2', 'u1-l3'});
     expect(sync.completed, {'u1-l1', 'u1-l2', 'u1-l3'});
-    // The device had no track yet, so the cloud's choice is used.
+    // The device never synced, so its first-launch pick doesn't override
+    // the account's track (F2).
     expect(state.track, Track.fast);
+    expect(sync.track, Track.fast);
   });
 
   test('a track chosen on this device is uploaded when the cloud has none', () async {
@@ -316,33 +320,81 @@ void main() {
       expect(prefs.getString('syncedUid'), isNull);
     });
 
-    test('asks for a fresh sign-in when required, then deletes', () async {
+    test('confirms first, then reads, deletes the document, then the user (F3)',
+        () async {
       final (accounts, sync, state) = await signedIn();
-      accounts.requiresRecentLogin = true;
+      final steps = <String>[];
+      final logged = FakeSync(steps: steps)..docs.addAll(sync.docs);
+      final s2 = await makeState(accounts, logged);
+      await s2.syncing; // the start-up merge
+      steps.clear();
+      accounts.steps.clear();
 
-      await state.deleteAccount();
+      await s2.deleteAccount();
 
+      expect(steps, ['load', 'deleteAll']);
+      expect(accounts.steps, ['reauth', 'deleteUser']);
       expect(accounts.reauthCount, 1);
-      expect(accounts.deleteAttempts, 2);
-      expect(accounts.deleted, isTrue);
-      expect(sync.docs.containsKey('u1'), isFalse);
-      expect(state.completedLessons, isEmpty);
+      expect(logged.docs.containsKey('u1'), isFalse);
     });
 
-    test('cancelling the fresh sign-in keeps the account and its progress', () async {
+    test('cancelling the confirming sign-in changes nothing', () async {
       final (accounts, sync, state) = await signedIn();
-      accounts
-        ..requiresRecentLogin = true
-        ..cancelReauth = true;
+      accounts.cancelReauth = true;
 
-      await expectLater(state.deleteAccount(), throwsA(anything));
+      await expectLater(
+        state.deleteAccount(),
+        throwsA(isA<AccountException>()
+            .having((e) => e.kind, 'kind', AccountErrorKind.cancelled)),
+      );
 
       expect(accounts.deleted, isFalse);
       expect(state.user?.uid, 'u1');
       expect(state.completedLessons, {'u1-l1'});
-      // The cloud copy is put back from the device.
       expect(sync.doc('u1').completed, {'u1-l1'});
+      expect(sync.loads, ['u1']); // only the sign-in merge; nothing read or deleted
+    });
+
+    test('offline: fails before deleting anything', () async {
+      final (accounts, sync, state) = await signedIn();
+      sync.failLoads = true;
+
+      await expectLater(
+        state.deleteAccount(),
+        throwsA(isA<AccountException>()
+            .having((e) => e.kind, 'kind', AccountErrorKind.network)),
+      );
+      expect(sync.doc('u1').completed, {'u1-l1'});
+      expect(accounts.deleted, isFalse);
+      expect(state.completedLessons, {'u1-l1'});
+    });
+
+    test('if deleting the user fails, cloud and device progress are put back',
+        () async {
+      final (accounts, sync, state) = await signedIn();
+      // Another device added a lesson the device doesn't know about.
+      sync.doc('u1').completed.add('other-device');
+      accounts.deleteError = const AccountException(AccountErrorKind.network);
+
+      await expectLater(state.deleteAccount(), throwsA(isA<AccountException>()));
+
+      expect(sync.doc('u1').completed, {'u1-l1', 'other-device'});
       expect(sync.doc('u1').track, Track.fast);
+      expect(state.completedLessons, {'u1-l1'});
+      expect(state.user?.uid, 'u1');
+    });
+
+    test('an error after the account is in fact gone does not recreate the document',
+        () async {
+      final (accounts, sync, state) = await signedIn();
+      accounts
+        ..deleteError = const AccountException(AccountErrorKind.network)
+        ..goneDespiteError = true;
+
+      await state.deleteAccount();
+
+      expect(sync.docs.containsKey('u1'), isFalse);
+      expect(state.completedLessons, isEmpty);
     });
 
     testWidgets('Progress screen deletes the account after confirmation',
@@ -384,5 +436,251 @@ void main() {
       // The device is fresh again, so the track question comes back.
       expect(find.text('Where would you like to start?'), findsOneWidget);
     });
+  });
+
+  group('signing out before progress is saved (F1)', () {
+    test('a failed first sync: asks instead of clearing', () async {
+      SharedPreferences.setMockInitialValues({
+        'completedLessons': ['anon-1'],
+        'track': 'starter',
+      });
+      final accounts = FakeAccounts();
+      final sync = FakeSync()..failLoads = true;
+      final state = await makeState(accounts, sync);
+      await signInAndSync(accounts, state, 'u1');
+      expect(state.syncFailed, isTrue);
+
+      expect(await state.signOut(), isFalse);
+      expect(state.user?.uid, 'u1');
+      expect(state.completedLessons, {'anon-1'});
+
+      expect(await state.signOut(force: true), isTrue);
+      await settle();
+      await state.syncing;
+      expect(state.completedLessons, isEmpty);
+    });
+
+    test('retries the sync first and signs out when it works', () async {
+      SharedPreferences.setMockInitialValues({
+        'completedLessons': ['anon-1'],
+        'track': 'starter',
+      });
+      final accounts = FakeAccounts();
+      final sync = FakeSync()..failLoads = true;
+      final state = await makeState(accounts, sync);
+      await signInAndSync(accounts, state, 'u1');
+      sync.failLoads = false; // back online
+
+      expect(await state.signOut(), isTrue);
+      expect(sync.doc('u1').completed, {'anon-1'});
+      expect(accounts.currentUser, isNull);
+    });
+
+    test('changes still waiting to be sent: asks', () async {
+      SharedPreferences.setMockInitialValues({});
+      final accounts = FakeAccounts();
+      final sync = FakeSync();
+      final state = await makeState(accounts, sync);
+      await signInAndSync(accounts, state, 'u1');
+      sync.flushResult = false;
+
+      expect(await state.signOut(), isFalse);
+      expect(state.user?.uid, 'u1');
+    });
+
+    testWidgets('the Progress screen asks before signing out', (tester) async {
+      SharedPreferences.setMockInitialValues({'track': 'fast'});
+      tester.view.physicalSize = const Size(390, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final accounts = FakeAccounts();
+      final sync = FakeSync()..flushResult = false;
+      final state = (await tester.runAsync(() async {
+        final s = await makeState(accounts, sync);
+        await s.load();
+        return s;
+      }))!;
+      await tester.pumpWidget(RustLearnApp(state: state, initialLocation: '/progress'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue with Google'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Sign out'));
+      await tester.pumpAndSettle();
+      expect(find.text('Sign out anyway?'), findsOneWidget);
+      await tester.tap(find.text('Stay signed in'));
+      await tester.pumpAndSettle();
+      expect(state.user, isNotNull);
+
+      await tester.tap(find.text('Sign out'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sign out anyway'));
+      await tester.pumpAndSettle();
+      expect(state.user, isNull);
+    });
+  });
+
+  group('first-launch track (F2)', () {
+    test('a pick on a never-synced device does not override the account', () async {
+      SharedPreferences.setMockInitialValues({});
+      final accounts = FakeAccounts();
+      final sync = FakeSync(track: Track.starter);
+      final state = await makeState(accounts, sync);
+      await state.chooseTrack(Track.fast); // the welcome screen
+
+      await signInAndSync(accounts, state, 'u1');
+
+      expect(state.track, Track.starter);
+      expect(sync.track, Track.starter);
+    });
+
+    test('a change made while signed in is kept on the next sync', () async {
+      SharedPreferences.setMockInitialValues({'track': 'starter'});
+      final accounts = FakeAccounts();
+      final sync = FakeSync(track: Track.starter);
+      final state = await makeState(accounts, sync);
+      await signInAndSync(accounts, state, 'u1');
+      sync.failWrites = true; // the push fails, so the change stays pending
+      await state.chooseTrack(Track.fast);
+      await settle();
+      sync.failWrites = false;
+
+      state.retrySync();
+      await state.syncing;
+      expect(sync.track, Track.fast);
+      expect(state.track, Track.fast);
+    });
+  });
+
+  group('broken cloud documents (F4)', () {
+    test('a document the rules refuse is repaired with one full write', () async {
+      SharedPreferences.setMockInitialValues({
+        'completedLessons': ['local-1'],
+        'track': 'starter',
+      });
+      final accounts = FakeAccounts();
+      final sync = FakeSync(completed: {'cloud-1'});
+      sync.doc('u1').broken = true; // e.g. track: 42, or an extra field
+      final state = await makeState(accounts, sync);
+
+      await signInAndSync(accounts, state, 'u1');
+
+      expect(state.syncFailed, isFalse);
+      expect(sync.replaces, 1);
+      expect(sync.doc('u1').broken, isFalse);
+      expect(sync.doc('u1').completed, {'local-1', 'cloud-1'});
+      expect(sync.doc('u1').track, Track.starter);
+
+      // Later small writes work again.
+      await state.markCompleted('later');
+      await settle();
+      expect(sync.doc('u1').completed, contains('later'));
+    });
+
+    test('a failed background write shows as a sync problem', () async {
+      SharedPreferences.setMockInitialValues({});
+      final accounts = FakeAccounts();
+      final sync = FakeSync();
+      final state = await makeState(accounts, sync);
+      await signInAndSync(accounts, state, 'u1');
+      expect(state.syncFailed, isFalse);
+
+      sync.failWrites = true;
+      await state.markCompleted('x');
+      await settle();
+      expect(state.syncFailed, isTrue);
+
+      sync.failWrites = false;
+      state.retrySync();
+      await state.syncing;
+      expect(state.syncFailed, isFalse);
+      expect(sync.doc('u1').completed, contains('x'));
+    });
+
+    test('the parser flags documents that need a repair', () {
+      expect(RemoteProgress.fromMap({'track': 42}).needsRepair, isTrue);
+      expect(RemoteProgress.fromMap({'extra': true}).needsRepair, isTrue);
+      expect(RemoteProgress.fromMap({'completedLessons': ['a', 1]}).needsRepair, isTrue);
+      expect(RemoteProgress.fromMap({'updatedAt': 'yesterday'}).needsRepair, isTrue);
+      expect(
+        RemoteProgress.fromMap({'track': 'fast', 'completedLessons': ['a']}).needsRepair,
+        isFalse,
+      );
+      expect(RemoteProgress.fromMap(null).needsRepair, isFalse);
+    });
+  });
+
+  test('a lesson finished while another account\'s progress is dropped is kept (F10)',
+      () async {
+    SharedPreferences.setMockInitialValues({
+      'completedLessons': ['u1-secret'],
+      'track': 'fast',
+      'syncedUid': 'u1',
+    });
+    final accounts = FakeAccounts();
+    final sync = FakeSync();
+    sync.doc('u2').completed.add('u2-l1');
+    final state = await makeState(accounts, sync);
+
+    sync.gate = Completer<void>();
+    accounts.signInAs('u2');
+    await settle();
+    await state.markCompleted('done-meanwhile');
+    sync.gate!.complete();
+    await state.syncing;
+
+    expect(state.completedLessons, {'u2-l1', 'done-meanwhile'});
+    expect(sync.doc('u2').completed, {'u2-l1', 'done-meanwhile'});
+  });
+
+  testWidgets('/delete-account works without a track and deletes the account',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(390, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final accounts = FakeAccounts();
+    final sync = FakeSync();
+    final state = (await tester.runAsync(() async {
+      final s = await makeState(accounts, sync);
+      await s.load();
+      return s;
+    }))!;
+    await tester.pumpWidget(RustLearnApp(state: state, initialLocation: '/delete-account'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Learn Rust: account deletion'), findsOneWidget);
+    expect(find.text('Sign in with the account you want to delete.'), findsOneWidget);
+    await tester.tap(find.text('Continue with Google'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Delete account'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete account').last);
+    await tester.pumpAndSettle();
+
+    expect(accounts.deleted, isTrue);
+    expect(find.text('Your account has been deleted.'), findsOneWidget);
+  });
+
+  testWidgets('Apple sign-in for a Google email explains what to do (F10)',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({'track': 'fast'});
+    tester.view.physicalSize = const Size(390, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final accounts = FakeAccounts()
+      ..signInError = const AccountException(AccountErrorKind.otherProvider);
+    final state = (await tester.runAsync(() async {
+      final s = await makeState(accounts, FakeSync());
+      await s.load();
+      return s;
+    }))!;
+    await tester.pumpWidget(RustLearnApp(state: state, initialLocation: '/progress'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Continue with Apple'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Continue with Google" instead'), findsOneWidget);
   });
 }

@@ -76,8 +76,9 @@ class HttpCodeRunner implements CodeRunner {
   final Uri baseUrl;
   final http.Client _client;
 
-  /// Longer than the server's own job limit so its timeout message wins.
-  static const requestTimeout = Duration(seconds: 30);
+  /// Longer than the server's worst case (up to about 10 s waiting for a
+  /// free slot plus 20 s for the job), so its own messages win.
+  static const requestTimeout = Duration(seconds: 45);
 
   @override
   Future<RunResult> run(String source) async {
@@ -128,6 +129,9 @@ class HttpCodeRunner implements CodeRunner {
     }
 
     final fromServer = _serverError(response.body);
+    if (fromServer == 'code is empty') {
+      return 'There is no code to run yet. Write some code, then press Run.';
+    }
     if (fromServer != null) return fromServer;
     if (status == 408) return 'The code runner took too long to answer.';
     return 'The code runner had a problem (error $status). Please try again.';

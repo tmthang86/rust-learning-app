@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 
 import '../../app/theme.dart';
@@ -27,11 +28,17 @@ class CodeEditor extends StatefulWidget {
   State<CodeEditor> createState() => _CodeEditorState();
 }
 
-class _CodeEditorState extends State<CodeEditor> {
+class _CodeEditorState extends State<CodeEditor>
+    with AutomaticKeepAliveClientMixin {
   late final TextEditingController _controller =
       TextEditingController(text: widget.initialCode);
   RunResult? _result;
   bool _running = false;
+
+  /// Keeps the code and the last result when the lesson list scrolls the
+  /// editor out of view (ListView disposes off-screen children otherwise).
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void dispose() {
@@ -39,36 +46,37 @@ class _CodeEditorState extends State<CodeEditor> {
     super.dispose();
   }
 
-  bool get _solved =>
-      widget.expectedOutput != null &&
-      _result != null &&
-      _result!.success &&
-      _result!.stdout.trim() == widget.expectedOutput!.trim();
+  static bool _matches(RunResult? r, String? expected) =>
+      expected != null && r != null && r.success && r.stdout.trim() == expected.trim();
+
+  bool get _solved => _matches(_result, widget.expectedOutput);
 
   Future<void> _run() async {
+    if (_running) return;
+    final state = AppScope.read(context);
+    // Captured now: the result may arrive after the learner left the lesson,
+    // and solving still counts then.
+    final expected = widget.expectedOutput;
+    final onSolved = widget.onSolved;
     setState(() => _running = true);
-    final result = await AppScope.read(context).runner.run(_controller.text);
+    final result = await state.runner.run(_controller.text);
+    final solved = _matches(result, expected);
+    if (solved) onSolved?.call();
     if (!mounted) return;
     setState(() {
       _result = result;
       _running = false;
     });
-    if (_solved) widget.onSolved?.call();
-  }
-
-  /// Tab indents with four spaces, as in a code editor, instead of moving
-  /// focus. Shift+Tab still moves focus out of the editor.
-  void _indent() {
-    final value = _controller.value;
-    final sel = value.selection;
-    if (!sel.isValid) return;
-    const spaces = '    ';
-    _controller.value = value.copyWith(
-      text: value.text.replaceRange(sel.start, sel.end, spaces),
-      selection: TextSelection.collapsed(offset: sel.start + spaces.length),
-      composing: TextRange.empty,
+    // Screen readers hear every run, including repeats with the same text.
+    SemanticsService.sendAnnouncement(
+      View.of(context),
+      runAnnouncement(result, solved: expected == null ? null : solved),
+      Directionality.of(context),
     );
   }
+
+  void _indent() => _controller.value = indentLines(_controller.value);
+  void _outdent() => _controller.value = outdentLines(_controller.value);
 
   void _reset() => setState(() {
         _controller.text = widget.initialCode;
@@ -77,6 +85,7 @@ class _CodeEditorState extends State<CodeEditor> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final scheme = Theme.of(context).colorScheme;
     final result = _result;
 
@@ -91,6 +100,9 @@ class _CodeEditorState extends State<CodeEditor> {
           child: Shortcuts(
             shortcuts: const {
               SingleActivator(LogicalKeyboardKey.tab): _IndentIntent(),
+              SingleActivator(LogicalKeyboardKey.tab, shift: true): _OutdentIntent(),
+              SingleActivator(LogicalKeyboardKey.enter, control: true): _RunIntent(),
+              SingleActivator(LogicalKeyboardKey.enter, meta: true): _RunIntent(),
             },
             child: Actions(
               actions: {
@@ -100,10 +112,25 @@ class _CodeEditorState extends State<CodeEditor> {
                     return null;
                   },
                 ),
+                // Shift+Tab outdents selected lines; with no selection it is
+                // left to the app, which moves focus out of the editor, so
+                // keyboard users are never trapped here.
+                _OutdentIntent: _OutdentAction(
+                  enabled: () => !_controller.selection.isCollapsed,
+                  outdent: _outdent,
+                ),
+                _RunIntent: CallbackAction<_RunIntent>(
+                  onInvoke: (_) {
+                    _run();
+                    return null;
+                  },
+                ),
               },
               child: Semantics(
                 label: 'Rust code',
-                hint: 'Tab inserts spaces. Shift+Tab leaves the editor.',
+                hint: 'Tab indents. Shift+Tab outdents selected lines, or '
+                    'leaves the editor when nothing is selected. '
+                    'Control+Enter runs the code.',
                 child: TextField(
                   controller: _controller,
                   style: codeTextStyle,
@@ -148,8 +175,10 @@ class _CodeEditorState extends State<CodeEditor> {
           if (widget.expectedOutput != null &&
               result.stage != RunStage.unavailable) ...[
             const SizedBox(height: 8),
+            // Its own node, so it isn't read as part of the code field. The
+            // verdict is also part of the run announcement.
             Semantics(
-              liveRegion: true,
+              container: true,
               child: Row(
                 children: [
                   Icon(
@@ -178,6 +207,126 @@ class _CodeEditorState extends State<CodeEditor> {
 
 class _IndentIntent extends Intent {
   const _IndentIntent();
+}
+
+class _OutdentIntent extends Intent {
+  const _OutdentIntent();
+}
+
+class _RunIntent extends Intent {
+  const _RunIntent();
+}
+
+class _OutdentAction extends Action<_OutdentIntent> {
+  _OutdentAction({required this.enabled, required this.outdent});
+
+  final bool Function() enabled;
+  final VoidCallback outdent;
+
+  // When disabled the key event goes on to the app's Shift+Tab handling.
+  @override
+  bool isEnabled(_OutdentIntent intent) => enabled();
+
+  @override
+  Object? invoke(_OutdentIntent intent) {
+    outdent();
+    return null;
+  }
+}
+
+const _indentUnit = '    ';
+
+/// The lines touched by [sel]: from the start of the first line to the end
+/// of the last. A selection ending right at a line start leaves that line
+/// out, as code editors do.
+(int, int) _lineRange(String text, TextSelection sel) {
+  final start = sel.start == 0 ? 0 : text.lastIndexOf('\n', sel.start - 1) + 1;
+  var endPos = sel.end;
+  if (endPos > sel.start && text[endPos - 1] == '\n') endPos--;
+  final nl = text.indexOf('\n', endPos);
+  return (start, nl == -1 ? text.length : nl);
+}
+
+/// Tab: four spaces at the cursor, or every selected line indented.
+@visibleForTesting
+TextEditingValue indentLines(TextEditingValue value) {
+  final sel = value.selection;
+  if (!sel.isValid) return value;
+  final text = value.text;
+  if (sel.isCollapsed) {
+    return value.copyWith(
+      text: text.replaceRange(sel.start, sel.end, _indentUnit),
+      selection: TextSelection.collapsed(offset: sel.start + _indentUnit.length),
+      composing: TextRange.empty,
+    );
+  }
+  final (start, end) = _lineRange(text, sel);
+  final lines = text.substring(start, end).split('\n');
+  final indented = lines.map((l) => '$_indentUnit$l').join('\n');
+  return value.copyWith(
+    text: text.replaceRange(start, end, indented),
+    selection: TextSelection(
+      baseOffset: sel.start + _indentUnit.length,
+      extentOffset: sel.end + _indentUnit.length * lines.length,
+    ),
+    composing: TextRange.empty,
+  );
+}
+
+/// Shift+Tab with a selection: up to four leading spaces removed from every
+/// selected line.
+@visibleForTesting
+TextEditingValue outdentLines(TextEditingValue value) {
+  final sel = value.selection;
+  if (!sel.isValid || sel.isCollapsed) return value;
+  final text = value.text;
+  final (start, end) = _lineRange(text, sel);
+  final lines = text.substring(start, end).split('\n');
+  var removedFirst = 0;
+  var removedTotal = 0;
+  final out = <String>[];
+  for (var i = 0; i < lines.length; i++) {
+    final line = lines[i];
+    var n = 0;
+    while (n < _indentUnit.length && n < line.length && line[n] == ' ') {
+      n++;
+    }
+    if (i == 0) removedFirst = n;
+    removedTotal += n;
+    out.add(line.substring(n));
+  }
+  final newStart = (sel.start - removedFirst).clamp(start, sel.start);
+  final newEnd = (sel.end - removedTotal).clamp(newStart, text.length - removedTotal);
+  return value.copyWith(
+    text: text.replaceRange(start, end, out.join('\n')),
+    selection: TextSelection(baseOffset: newStart, extentOffset: newEnd),
+    composing: TextRange.empty,
+  );
+}
+
+/// What a screen reader says when a run finishes.
+@visibleForTesting
+String runAnnouncement(RunResult r, {bool? solved}) {
+  String clip(String s) {
+    final t = s.trim();
+    return t.length > 200 ? '${t.substring(0, 200)}…' : t;
+  }
+
+  final output = [r.stdout, r.stderr].where((s) => s.trim().isNotEmpty).join('\n');
+  final base = switch (r.stage) {
+    RunStage.compile => "Your code didn't compile. ${clip(r.stderr)}",
+    RunStage.unavailable => "Couldn't run your code. ${clip(r.stderr)}",
+    RunStage.timeout => 'Your program took too long.',
+    RunStage.run =>
+      output.isEmpty ? 'Your program ran with no output.' : 'Output: ${clip(output)}',
+  };
+  final verdict = switch (solved) {
+    true => ' Correct! Nice work.',
+    false => ' Not quite yet. Keep trying.',
+    null => '',
+  };
+  final warn = r.warnings.trim().isEmpty ? '' : ' There are compiler warnings.';
+  return '$base$verdict$warn';
 }
 
 /// What a run produced: program output (or compiler errors, or why the
@@ -212,8 +361,9 @@ class _RunOutput extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Announced when a run finishes, so screen reader users hear it.
+        // Announced through SemanticsService when a run finishes; a live
+        // region here would only read the heading.
         Semantics(
-          liveRegion: true,
           container: true,
           child: Container(
             padding: const EdgeInsets.all(16),

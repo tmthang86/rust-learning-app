@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../account/account_service.dart';
 import '../../data/app_state.dart';
 import '../../data/models.dart';
+import '../account/account_widgets.dart';
 
 /// Sign in to sync progress, or shows who is signed in.
 class _AccountCard extends StatefulWidget {
@@ -15,68 +15,21 @@ class _AccountCard extends StatefulWidget {
 class _AccountCardState extends State<_AccountCard> {
   bool _busy = false;
 
-  Future<void> _signIn(SignInMethod method) async {
+  Future<void> _signOut() async {
     setState(() => _busy = true);
     try {
-      await AppScope.read(context).accounts.signIn(method);
-    } catch (e) {
-      // Closing the sign-in window also lands here; a short note is enough.
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Sign-in didn't finish. Please try again.")),
-        );
-      }
+      await signOutWithCheck(context);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
   Future<void> _deleteAccount() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete your account?'),
-        content: const Text(
-          'This permanently deletes your account and the progress saved '
-          'with it on all your devices. Progress on this device is cleared '
-          "too. This can't be undone.\n\n"
-          'You may be asked to sign in again to confirm.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete account'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-
-    final state = AppScope.read(context);
     final messenger = ScaffoldMessenger.of(context);
-    setState(() => _busy = true);
-    try {
-      await state.deleteAccount();
+    if (await confirmAndDeleteAccount(context)) {
       messenger.showSnackBar(
         const SnackBar(content: Text('Your account has been deleted.')),
       );
-    } catch (e) {
-      debugPrint('Account deletion failed: $e');
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text("Your account wasn't deleted. Please try again."),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -111,7 +64,7 @@ class _AccountCardState extends State<_AccountCard> {
                         ),
                       ),
                       TextButton(
-                        onPressed: _busy ? null : () => state.accounts.signOut(),
+                        onPressed: _busy ? null : _signOut,
                         child: const Text('Sign out'),
                       ),
                     ],
@@ -144,19 +97,7 @@ class _AccountCardState extends State<_AccountCard> {
                   const SizedBox(height: 4),
                   const Text('Sign in to keep your progress on all your devices.'),
                   const SizedBox(height: 12),
-                  for (final method in state.accounts.methods)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: OutlinedButton.icon(
-                        onPressed: _busy ? null : () => _signIn(method),
-                        icon: Icon(method == SignInMethod.apple
-                            ? Icons.apple
-                            : Icons.account_circle_outlined),
-                        label: Text(method == SignInMethod.apple
-                            ? 'Continue with Apple'
-                            : 'Continue with Google'),
-                      ),
-                    ),
+                  const SignInButtons(),
                 ],
               ),
       ),

@@ -56,8 +56,9 @@ class LessonMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(),
+    return DeepLinkScope(
+      child: Scaffold(
+      appBar: lessonAppBar(context),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -74,6 +75,39 @@ class LessonMessage extends StatelessWidget {
           ),
         ),
       ),
+      ),
+    );
+  }
+}
+
+/// App bar for lesson pages. Opened from a deep link there is nothing to go
+/// back to, so it shows a way to the course map instead.
+PreferredSizeWidget lessonAppBar(BuildContext context, {Widget? title}) => AppBar(
+      title: title,
+      leading: context.canPop()
+          ? null
+          : IconButton(
+              icon: const Icon(Icons.arrow_back),
+              tooltip: 'Back to lessons',
+              onPressed: () => context.go('/learn'),
+            ),
+    );
+
+/// Makes the system back button (Android, browser) open the course map
+/// instead of leaving the app when a lesson was opened from a deep link.
+class DeepLinkScope extends StatelessWidget {
+  const DeepLinkScope({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: context.canPop(),
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) context.go('/learn');
+      },
+      child: child,
     );
   }
 }
@@ -100,8 +134,9 @@ class _LessonBody extends StatelessWidget {
     final theme = Theme.of(context);
     final exercise = lesson.exercise;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(lesson.title)),
+    return DeepLinkScope(
+      child: Scaffold(
+      appBar: lessonAppBar(context, title: Text(lesson.title)),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 760),
@@ -153,6 +188,7 @@ class _LessonBody extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

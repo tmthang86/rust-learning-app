@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:firebase_auth/firebase_auth.dart' show FirebaseAuthException;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:rust_learn/account/account_service.dart';
@@ -18,13 +17,18 @@ class FakeAccounts implements AccountService {
   final _controller = StreamController<AccountUser?>.broadcast();
   AccountUser? _user;
 
-  /// When true, deleting needs a recent sign-in first.
-  bool requiresRecentLogin = false;
-
-  /// When true, the re-authentication prompt is cancelled.
+  /// When true, the confirming sign-in is cancelled.
   bool cancelReauth = false;
+
+  /// When set, deleting the user fails with this error.
+  Object? deleteError;
+
+  /// With [deleteError]: the account was removed anyway.
+  bool goneDespiteError = false;
+
+  /// Order of the deletion steps, for checking the sequence.
+  final List<String> steps = [];
   int reauthCount = 0;
-  int deleteAttempts = 0;
   bool deleted = false;
 
   void emit(AccountUser? user) {
@@ -42,53 +46,87 @@ class FakeAccounts implements AccountService {
   Stream<AccountUser?> get userChanges => _controller.stream;
   @override
   List<SignInMethod> get methods => SignInMethod.values;
+  /// When set, signing in fails with this error.
+  Object? signInError;
+
   @override
-  Future<void> signIn(SignInMethod method) async =>
-      emit(const AccountUser(uid: 'u1', displayName: 'Ferris'));
+  Future<void> signIn(SignInMethod method) async {
+    final e = signInError;
+    if (e != null) throw e;
+    emit(const AccountUser(uid: 'u1', displayName: 'Ferris'));
+  }
   @override
   Future<void> signOut() async => emit(null);
 
   @override
-  Future<void> deleteAccount() async {
-    var recent = !requiresRecentLogin;
-    await deleteWithRecentLogin(
-      delete: () async {
-        deleteAttempts++;
-        if (!recent) throw FirebaseAuthException(code: 'requires-recent-login');
-        deleted = true;
-      },
-      reauthenticate: () async {
-        reauthCount++;
-        if (cancelReauth) {
-          throw FirebaseAuthException(code: 'web-context-cancelled');
-        }
-        recent = true;
-      },
-    );
+  Future<ReauthProof> reauthenticate() async {
+    steps.add('reauth');
+    reauthCount++;
+    if (cancelReauth) throw const AccountException(AccountErrorKind.cancelled);
+    return const ReauthProof(appleAuthorizationCode: 'code');
+  }
+
+  @override
+  Future<void> deleteUser(ReauthProof proof) async {
+    steps.add('deleteUser');
+    final e = deleteError;
+    if (e != null) {
+      if (goneDespiteError) deleted = true;
+      throw e;
+    }
+    deleted = true;
     // Firebase signs the user out after deleting them.
     emit(null);
   }
+
+  @override
+  Future<bool> accountStillExists() async => !deleted;
 }
 
 class CloudDoc {
-  CloudDoc({this.track, Set<String>? completed}) : completed = completed ?? {};
+  CloudDoc({this.track, Set<String>? completed, this.broken = false})
+      : completed = completed ?? {};
   Track? track;
   final Set<String> completed;
+
+  /// Holds a field firestore.rules refuses, so merge writes fail until the
+  /// whole document is replaced.
+  bool broken;
+}
+
+class FakeWriteError implements Exception {
+  const FakeWriteError(this.what);
+  final String what;
+  @override
+  String toString() => 'FakeWriteError($what)';
 }
 
 /// In-memory cloud with one document per uid.
 class FakeSync implements ProgressSync {
   /// Seeds the document of `u1`, the account [FakeAccounts.signIn] uses.
-  FakeSync({Track? track, Set<String>? completed}) {
+  FakeSync({Track? track, Set<String>? completed, this.steps}) {
     docs['u1'] = CloudDoc(track: track, completed: completed);
   }
 
   final Map<String, CloudDoc> docs = {};
   final List<String> loads = [];
   final List<Track> trackWrites = [];
+  int replaces = 0;
+
+  /// When given, each call is logged here (shared with [FakeAccounts.steps]).
+  final List<String>? steps;
 
   /// When set, `load` waits for it, to test slow networks.
   Completer<void>? gate;
+
+  /// Simulates being offline for reads.
+  bool failLoads = false;
+
+  /// Simulates every write being refused.
+  bool failWrites = false;
+
+  /// What [flush] answers.
+  bool flushResult = true;
 
   CloudDoc doc(String uid) => docs.putIfAbsent(uid, CloudDoc.new);
 
@@ -96,29 +134,58 @@ class FakeSync implements ProgressSync {
   Track? get track => docs['u1']?.track;
   Set<String> get completed => doc('u1').completed;
 
+  void _write(String uid, {bool replacing = false}) {
+    if (failWrites) throw const FakeWriteError('offline');
+    if (!replacing && (docs[uid]?.broken ?? false)) {
+      throw const FakeWriteError('permission-denied');
+    }
+  }
+
   @override
-  Future<RemoteProgress> load(String uid) async {
+  Future<RemoteProgress> load(String uid, {bool fromServer = false}) async {
+    steps?.add('load');
     loads.add(uid);
     final snapshot = docs[uid];
     final g = gate;
     if (g != null) await g.future;
+    if (failLoads) throw const FakeWriteError('unavailable');
     return RemoteProgress(
       track: snapshot?.track,
       completed: {...?snapshot?.completed},
+      needsRepair: snapshot?.broken ?? false,
     );
   }
 
   @override
-  Future<void> addCompleted(String uid, Iterable<String> ids) async =>
-      doc(uid).completed.addAll(ids);
+  Future<void> addCompleted(String uid, Iterable<String> ids) async {
+    _write(uid);
+    doc(uid).completed.addAll(ids);
+  }
+
   @override
   Future<void> setTrack(String uid, Track t) async {
+    _write(uid);
     trackWrites.add(t);
     doc(uid).track = t;
   }
 
   @override
-  Future<void> deleteAll(String uid) async => docs.remove(uid);
+  Future<void> replace(String uid, {Track? track, required Set<String> completed}) async {
+    steps?.add('replace');
+    _write(uid, replacing: true);
+    replaces++;
+    docs[uid] = CloudDoc(track: track, completed: {...completed});
+  }
+
+  @override
+  Future<void> deleteAll(String uid) async {
+    steps?.add('deleteAll');
+    _write(uid, replacing: true);
+    docs.remove(uid);
+  }
+
+  @override
+  Future<bool> flush(Duration timeout) async => flushResult;
 }
 
 /// Returns fixed output, e.g. the exercise's expected answer.

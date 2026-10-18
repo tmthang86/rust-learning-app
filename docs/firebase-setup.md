@@ -20,11 +20,17 @@ Google account and an Apple developer account.
      fingerprints in Project settings.
    - **Apple**: enable it, and in your Apple developer account turn on
      "Sign in with Apple" for the app's bundle ID. For the web, also create
-     a Services ID and add it in Firebase. So that deleting an account also
-     revokes the person's Apple tokens (Apple asks for this), fill in the
-     provider's OAuth code flow settings in Firebase: Services ID, Apple
-     team ID, key ID and the private key of a "Sign in with Apple" key.
-     Without them deletion still works, but the revocation is skipped.
+     a Services ID and add it in Firebase.
+   - **Apple token revocation (required before release).** Apple asks
+     apps that offer Sign in with Apple to revoke the person's tokens when
+     they delete their account. In the Apple provider settings in Firebase,
+     fill in the OAuth code flow fields: Services ID, Apple team ID, key ID
+     and the private key of a "Sign in with Apple" key from your Apple
+     developer account. Without them account deletion still works, but the
+     revocation silently fails. Revocation only happens in the iOS and
+     macOS apps: the web sign-in pop-up doesn't give the app the code it
+     needs, so someone who deletes their account on the web can remove the
+     app from Settings → Apple ID → Sign in with Apple on their device.
 4. **Create the database**: Firestore Database → Create database
    (production mode), then deploy the rules from this repo:
    ```sh
@@ -34,6 +40,12 @@ Google account and an Apple developer account.
    ```
 5. **Add your web domain** to Authentication → Settings → Authorized domains
    once the web app has a real address.
+6. **Google Play account deletion URL.** Play Console → App content → Data
+   safety asks for a web page where people can ask for their account to be
+   deleted. Use the web app's deletion page:
+   `https://<your web domain>/#/delete-account` (the app uses hash URLs on
+   the web). It explains what is deleted and lets a signed-in person delete
+   their account with the same steps as the app.
 
 ## How sync works
 
@@ -51,29 +63,48 @@ Google account and an Apple developer account.
   device shows the cloud copy instead.
 - Signing out clears progress from the device, so the next person on a
   shared phone or tablet starts fresh. Their progress comes back when they
-  sign in again.
+  sign in again. Before signing out, the app makes sure the progress
+  reached the account: it retries a first sync that didn't finish, and
+  waits up to 5 seconds for queued changes. If that fails (offline, or a
+  write was refused), it asks "Sign out anyway?" before clearing.
+- A device that has never synced doesn't change the account's track: the
+  pick made on first launch counts only when the account has no track yet.
+  After that, the track is uploaded only when it was changed on this
+  device; otherwise the cloud's choice wins.
 - Completed lessons are only ever added, so two devices can't undo each
-  other. The track is uploaded only when it was changed on this device;
-  otherwise the cloud's choice wins.
-- Firestore keeps working offline and sends changes when back online. If
-  the first sync after signing in fails, the Progress screen says so and
-  offers to try again.
+  other.
+- Firestore keeps working offline and sends changes when back online. If a
+  sync or a change can't be saved, the Progress screen says so and offers
+  to try again.
+- The rules check the whole document on every write, so one bad field
+  (written by hand, or by an old build) would block all later writes. When
+  the app finds such a document it rewrites it in one write with only the
+  allowed fields.
+- `test/firestore_rules/run.sh` checks the rules against the Firestore
+  emulator (needs Node and Java).
 
 ## Deleting an account
 
 Apps that let people create an account must let them delete it from inside
-the app (App Store Review Guideline 5.1.1(v)). The Progress screen has
-**Delete account**. After confirming, the app:
+the app (App Store Review Guideline 5.1.1(v)), and Google Play also wants a
+web page for it (step 6 above). **Delete account** is on the Progress screen
+and on `/delete-account`. After the person confirms, the app:
 
-1. deletes `users/{uid}` (this has to happen while still signed in, since
-   the rules then no longer allow it);
-2. deletes the Firebase Auth user. If Firebase answers
-   `requires-recent-login`, the person signs in again with the same
-   provider and the app retries. Apple users always confirm with Apple
-   first, which also gives the authorization code used to revoke their
-   Apple tokens;
-3. clears progress on the device.
+1. asks them to sign in again with the same provider. This starts straight
+   from the button press, so the browser lets the pop-up open. For Apple it
+   also gives the code used to revoke their Apple tokens;
+2. reads `users/{uid}` from the server (offline, it stops here with a
+   message and nothing is deleted) and keeps the copy;
+3. deletes `users/{uid}` while still signed in (the rules don't allow it
+   afterwards);
+4. revokes the Apple tokens (best-effort, Apple accounts on iOS/macOS only);
+5. deletes the Firebase Auth user;
+6. clears progress on the device.
 
-If the account can't be deleted (for example the confirmation sign-in is
-cancelled), the cloud progress is written back from the device copy and
-nothing is lost.
+Each server step gives up after 20 seconds with an offline message. If the
+account is not deleted, the app writes the cloud document back, combining
+the saved copy with what this device has. That write can itself fail (for
+example when the connection drops at that moment); then whatever this
+device holds is synced again at the next sign-in, but lessons that were
+only in the cloud may be lost. If deleting reports an error but the account
+is in fact gone, nothing is written back.

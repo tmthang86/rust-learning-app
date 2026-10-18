@@ -57,7 +57,12 @@ void main() {
     }));
     final r1 = await badRequest.run(' ');
     expect(r1.stage, RunStage.unavailable);
-    expect(r1.stderr, 'code is empty');
+    expect(r1.stderr, contains('no code to run'));
+
+    final other = await HttpCodeRunner(base, client: MockClient((_) async {
+      return http.Response(jsonEncode({'error': 'invalid JSON body'}), 400);
+    })).run('x');
+    expect(other.stderr, 'invalid JSON body');
 
     final offline = HttpCodeRunner(base, client: MockClient((_) async {
       throw http.ClientException('no network');
@@ -134,5 +139,9 @@ void main() {
 
     final wrongShape = await answering(http.Response('[1, 2]', 200)).run('x');
     expect(wrongShape.stage, RunStage.unavailable);
+  });
+
+  test('waits long enough for a queued job (F10)', () {
+    expect(HttpCodeRunner.requestTimeout, greaterThanOrEqualTo(const Duration(seconds: 45)));
   });
 }
