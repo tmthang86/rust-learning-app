@@ -22,7 +22,7 @@ class _LessonScreenState extends State<LessonScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _lesson ??= AppScope.of(context).repository.loadLesson(widget.lessonId);
+    _lesson ??= AppScope.read(context).repository.loadLesson(widget.lessonId);
   }
 
   @override
@@ -33,16 +33,58 @@ class _LessonScreenState extends State<LessonScreen> {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
+        if (snapshot.hasError) {
+          debugPrint('Lesson ${widget.lessonId} failed to load: ${snapshot.error}');
+          return const LessonMessage(
+              "This lesson couldn't be opened. Please update the app or try again later.");
+        }
         final lesson = snapshot.data;
         if (lesson == null) {
-          return Scaffold(
-            appBar: AppBar(),
-            body: const Center(child: Text('This lesson is still being written.')),
-          );
+          return const LessonMessage('This lesson is still being written.');
         }
         return _LessonBody(lesson: lesson);
       },
     );
+  }
+}
+
+/// A full-screen note shown instead of a lesson or quiz, with a way back.
+class LessonMessage extends StatelessWidget {
+  const LessonMessage(this.message, {super.key});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(message, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => context.go('/learn'),
+                child: const Text('Back to lessons'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Goes back, or to the course map when the screen was opened directly
+/// (a deep link or a web address) and there is nothing to go back to.
+void leaveLesson(BuildContext context) {
+  if (context.canPop()) {
+    context.pop();
+  } else {
+    context.go('/learn');
   }
 }
 
@@ -79,19 +121,32 @@ class _LessonBody extends StatelessWidget {
                 CodeEditor(
                   initialCode: exercise.starter,
                   expectedOutput: exercise.expectedOutput,
+                  // Solving the exercise completes the lesson, as does
+                  // passing the quiz.
+                  onSolved: () => state.markCompleted(lesson.id),
                 ),
                 const SizedBox(height: 24),
+              ],
+              if (state.isCompleted(lesson.id)) ...[
+                Row(
+                  children: [
+                    Icon(Icons.check_circle, color: theme.colorScheme.primary),
+                    const SizedBox(width: 8),
+                    const Text('Lesson complete'),
+                  ],
+                ),
+                const SizedBox(height: 12),
               ],
               if (lesson.quiz.isNotEmpty)
                 FilledButton(
                   onPressed: () => context.push('/lesson/${lesson.id}/quiz'),
                   child: const Text('Take the quiz'),
                 )
-              else
+              else if (exercise == null)
                 FilledButton(
                   onPressed: () {
                     state.markCompleted(lesson.id);
-                    context.pop();
+                    leaveLesson(context);
                   },
                   child: const Text('Mark as done'),
                 ),

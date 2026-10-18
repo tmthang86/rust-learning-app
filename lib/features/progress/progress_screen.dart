@@ -18,7 +18,7 @@ class _AccountCardState extends State<_AccountCard> {
   Future<void> _signIn(SignInMethod method) async {
     setState(() => _busy = true);
     try {
-      await AppScope.of(context).accounts.signIn(method);
+      await AppScope.read(context).accounts.signIn(method);
     } catch (e) {
       // Closing the sign-in window also lands here; a short note is enough.
       if (mounted) {
@@ -26,6 +26,55 @@ class _AccountCardState extends State<_AccountCard> {
           const SnackBar(content: Text("Sign-in didn't finish. Please try again.")),
         );
       }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _deleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete your account?'),
+        content: const Text(
+          'This permanently deletes your account and the progress saved '
+          'with it on all your devices. Progress on this device is cleared '
+          "too. This can't be undone.\n\n"
+          'You may be asked to sign in again to confirm.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete account'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final state = AppScope.read(context);
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    try {
+      await state.deleteAccount();
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Your account has been deleted.')),
+      );
+    } catch (e) {
+      debugPrint('Account deletion failed: $e');
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text("Your account wasn't deleted. Please try again."),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -41,22 +90,50 @@ class _AccountCardState extends State<_AccountCard> {
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: user != null
-            ? Row(
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(Icons.cloud_done_outlined),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(user.label, style: theme.textTheme.titleMedium),
-                        const Text('Progress is synced across your devices.'),
-                      ],
-                    ),
+                  Row(
+                    children: [
+                      Icon(state.syncFailed
+                          ? Icons.cloud_off_outlined
+                          : Icons.cloud_done_outlined),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(user.label, style: theme.textTheme.titleMedium),
+                            Text(state.syncFailed
+                                ? "Couldn't sync your progress right now."
+                                : 'Progress is synced across your devices.'),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _busy ? null : () => state.accounts.signOut(),
+                        child: const Text('Sign out'),
+                      ),
+                    ],
                   ),
-                  TextButton(
-                    onPressed: () => state.accounts.signOut(),
-                    child: const Text('Sign out'),
+                  if (state.syncFailed)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed: _busy ? null : state.retrySync,
+                        child: const Text('Try syncing again'),
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      style: TextButton.styleFrom(
+                          foregroundColor: theme.colorScheme.error),
+                      onPressed: _busy ? null : _deleteAccount,
+                      icon: const Icon(Icons.delete_forever_outlined),
+                      label: const Text('Delete account'),
+                    ),
                   ),
                 ],
               )

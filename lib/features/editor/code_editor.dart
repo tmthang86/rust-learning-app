@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../app/theme.dart';
 import '../../data/app_state.dart';
@@ -46,13 +47,27 @@ class _CodeEditorState extends State<CodeEditor> {
 
   Future<void> _run() async {
     setState(() => _running = true);
-    final result = await AppScope.of(context).runner.run(_controller.text);
+    final result = await AppScope.read(context).runner.run(_controller.text);
     if (!mounted) return;
     setState(() {
       _result = result;
       _running = false;
     });
     if (_solved) widget.onSolved?.call();
+  }
+
+  /// Tab indents with four spaces, as in a code editor, instead of moving
+  /// focus. Shift+Tab still moves focus out of the editor.
+  void _indent() {
+    final value = _controller.value;
+    final sel = value.selection;
+    if (!sel.isValid) return;
+    const spaces = '    ';
+    _controller.value = value.copyWith(
+      text: value.text.replaceRange(sel.start, sel.end, spaces),
+      selection: TextSelection.collapsed(offset: sel.start + spaces.length),
+      composing: TextRange.empty,
+    );
   }
 
   void _reset() => setState(() {
@@ -73,17 +88,36 @@ class _CodeEditorState extends State<CodeEditor> {
             color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: TextField(
-            controller: _controller,
-            style: codeTextStyle,
-            minLines: widget.minLines,
-            maxLines: null,
-            keyboardType: TextInputType.multiline,
-            autocorrect: false,
-            enableSuggestions: false,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.all(16),
+          child: Shortcuts(
+            shortcuts: const {
+              SingleActivator(LogicalKeyboardKey.tab): _IndentIntent(),
+            },
+            child: Actions(
+              actions: {
+                _IndentIntent: CallbackAction<_IndentIntent>(
+                  onInvoke: (_) {
+                    _indent();
+                    return null;
+                  },
+                ),
+              },
+              child: Semantics(
+                label: 'Rust code',
+                hint: 'Tab inserts spaces. Shift+Tab leaves the editor.',
+                child: TextField(
+                  controller: _controller,
+                  style: codeTextStyle,
+                  minLines: widget.minLines,
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.all(16),
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -110,29 +144,130 @@ class _CodeEditorState extends State<CodeEditor> {
         ),
         if (result != null) ...[
           const SizedBox(height: 8),
-          Container(
+          _RunOutput(result: result),
+          if (widget.expectedOutput != null &&
+              result.stage != RunStage.unavailable) ...[
+            const SizedBox(height: 8),
+            Semantics(
+              liveRegion: true,
+              child: Row(
+                children: [
+                  Icon(
+                    _solved ? Icons.check_circle : Icons.info_outline,
+                    color: _solved ? scheme.primary : scheme.error,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _solved ? 'Correct! Nice work.' : 'Not quite yet. Keep trying.',
+                      style: TextStyle(
+                        color: _solved ? scheme.primary : scheme.error,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ],
+    );
+  }
+}
+
+class _IndentIntent extends Intent {
+  const _IndentIntent();
+}
+
+/// What a run produced: program output (or compiler errors, or why the
+/// runner couldn't be used), then any compiler warnings, kept apart and
+/// folded away because the program ran anyway.
+class _RunOutput extends StatelessWidget {
+  const _RunOutput({required this.result});
+
+  final RunResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    final (String heading, String body) = switch (result.stage) {
+      RunStage.compile => ("Your code didn't compile", result.stderr),
+      RunStage.unavailable => ("Couldn't run your code", result.stderr),
+      RunStage.timeout => (
+          'Your program took too long',
+          [result.stdout, result.stderr].where((s) => s.isNotEmpty).join('\n'),
+        ),
+      RunStage.run => (
+          'Output',
+          [result.stdout, result.stderr].where((s) => s.isNotEmpty).join('\n'),
+        ),
+    };
+    final isError = result.stage != RunStage.run;
+    final warnings = result.warnings.trim();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Announced when a run finishes, so screen reader users hear it.
+        Semantics(
+          liveRegion: true,
+          container: true,
+          child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: scheme.inverseSurface,
               borderRadius: BorderRadius.circular(12),
+              border: isError ? Border.all(color: scheme.error, width: 2) : null,
             ),
-            child: SelectableText(
-              [result.stdout, result.stderr]
-                  .where((s) => s.isNotEmpty)
-                  .join('\n'),
-              style: codeTextStyle.copyWith(color: scheme.onInverseSurface),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  heading,
+                  style: textTheme.labelLarge?.copyWith(
+                    color: scheme.onInverseSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SelectableText(
+                  body.isEmpty ? '(no output)' : body,
+                  style: codeTextStyle.copyWith(color: scheme.onInverseSurface),
+                ),
+              ],
             ),
           ),
-          if (widget.expectedOutput != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              _solved ? 'Correct! Nice work.' : 'Not quite yet. Keep trying.',
-              style: TextStyle(
-                color: _solved ? scheme.primary : scheme.error,
-                fontWeight: FontWeight.w600,
+        ),
+        if (warnings.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Theme(
+            // No divider lines around the folded section.
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              tilePadding: const EdgeInsets.symmetric(horizontal: 4),
+              childrenPadding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+              leading: Icon(Icons.warning_amber_outlined, color: scheme.onSurfaceVariant),
+              title: Text(
+                'Compiler warnings (your program still ran)',
+                style: textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
               ),
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: SelectableText(
+                    warnings,
+                    style: codeTextStyle.copyWith(
+                      fontSize: (codeTextStyle.fontSize ?? 14) - 1,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ],
       ],
     );

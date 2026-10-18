@@ -39,16 +39,19 @@ Future<bool> _initFirebase() async {
 }
 
 class RustLearnApp extends StatefulWidget {
-  const RustLearnApp({super.key, required this.state});
+  const RustLearnApp({super.key, required this.state, this.initialLocation = '/learn'});
 
   final AppState state;
+
+  /// Where the app opens; tests use it to simulate a deep link.
+  final String initialLocation;
 
   @override
   State<RustLearnApp> createState() => _RustLearnAppState();
 }
 
 class _RustLearnAppState extends State<RustLearnApp> {
-  late final GoRouter _router = buildRouter(widget.state);
+  late final GoRouter _router = buildRouter(widget.state, initialLocation: widget.initialLocation);
 
   @override
   void dispose() {

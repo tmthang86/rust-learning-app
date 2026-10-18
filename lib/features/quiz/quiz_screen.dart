@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/app_state.dart';
 import '../../data/models.dart';
+import '../lesson/lesson_screen.dart';
 
 /// Multiple-choice quiz at the end of a lesson. Passing marks it done.
 class QuizScreen extends StatefulWidget {
@@ -27,13 +28,13 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _lesson ??= AppScope.of(context).repository.loadLesson(widget.lessonId);
+    _lesson ??= AppScope.read(context).repository.loadLesson(widget.lessonId);
   }
 
   void _check(QuizQuestion q) => setState(() {
-        _checked = true;
-        if (_picked == q.answer) _correct++;
-      });
+    _checked = true;
+    if (_picked == q.answer) _correct++;
+  });
 
   void _next(Lesson lesson) {
     setState(() {
@@ -43,7 +44,7 @@ class _QuizScreenState extends State<QuizScreen> {
     });
     if (_index == lesson.quiz.length &&
         _correct / lesson.quiz.length >= QuizScreen.passMark) {
-      AppScope.of(context).markCompleted(lesson.id);
+      AppScope.read(context).markCompleted(lesson.id);
     }
   }
 
@@ -52,9 +53,25 @@ class _QuizScreenState extends State<QuizScreen> {
     return FutureBuilder<Lesson?>(
       future: _lesson,
       builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          debugPrint(
+            'Quiz ${widget.lessonId} failed to load: ${snapshot.error}',
+          );
+          return const LessonMessage(
+            "This quiz couldn't be opened. Please update the app or try again later.",
+          );
+        }
         final lesson = snapshot.data;
-        if (lesson == null || lesson.quiz.isEmpty) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        if (lesson == null) {
+          return const LessonMessage('This lesson is still being written.');
+        }
+        if (lesson.quiz.isEmpty) {
+          return const LessonMessage("This lesson doesn't have a quiz.");
         }
         return Scaffold(
           appBar: AppBar(title: Text('Quiz: ${lesson.title}')),
@@ -77,36 +94,56 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget _question(Lesson lesson) {
     final q = lesson.quiz[_index];
     final scheme = Theme.of(context).colorScheme;
+    final rightAnswer = _checked && _picked == q.answer;
 
     return ListView(
       children: [
-        LinearProgressIndicator(value: _index / lesson.quiz.length),
+        LinearProgressIndicator(
+          value: _index / lesson.quiz.length,
+          semanticsLabel: 'Question ${_index + 1} of ${lesson.quiz.length}',
+        ),
         const SizedBox(height: 24),
         Text(q.question, style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 16),
         for (var i = 0; i < q.options.length; i++)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: Card(
-              color: !_checked
-                  ? (_picked == i ? scheme.primaryContainer : null)
+            child: _OptionTile(
+              text: q.options[i],
+              picked: _picked == i,
+              // Right/wrong is only revealed after Check.
+              verdict: !_checked
+                  ? null
                   : i == q.answer
-                      ? scheme.primaryContainer
-                      : (_picked == i ? scheme.errorContainer : null),
-              clipBehavior: Clip.antiAlias,
-              child: ListTile(
-                title: Text(q.options[i]),
-                onTap: _checked ? null : () => setState(() => _picked = i),
+                  ? _Verdict.correct
+                  : (_picked == i ? _Verdict.wrong : null),
+              scheme: scheme,
+              onTap: _checked ? null : () => setState(() => _picked = i),
+            ),
+          ),
+        if (_checked) ...[
+          const SizedBox(height: 8),
+          // Read out by screen readers as soon as it appears.
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              rightAnswer
+                  ? 'Correct!'
+                  : 'Not quite. The answer is: ${q.options[q.answer]}',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: rightAnswer ? scheme.primary : scheme.error,
               ),
             ),
           ),
+        ],
         const SizedBox(height: 16),
         FilledButton(
           onPressed: _picked == null
               ? null
               : _checked
-                  ? () => _next(lesson)
-                  : () => _check(q),
+              ? () => _next(lesson)
+              : () => _check(q),
           child: Text(_checked ? 'Next' : 'Check'),
         ),
       ],
@@ -121,9 +158,12 @@ class _QuizScreenState extends State<QuizScreen> {
       children: [
         Icon(passed ? Icons.celebration : Icons.refresh, size: 64),
         const SizedBox(height: 16),
-        Text(
-          '$_correct of $total correct',
-          style: Theme.of(context).textTheme.headlineSmall,
+        Semantics(
+          liveRegion: true,
+          child: Text(
+            '$_correct of $total correct',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
         ),
         const SizedBox(height: 8),
         Text(passed ? 'Lesson complete!' : 'Review the lesson and try again.'),
@@ -133,6 +173,66 @@ class _QuizScreenState extends State<QuizScreen> {
           child: const Text('Back to lessons'),
         ),
       ],
+    );
+  }
+}
+
+enum _Verdict { correct, wrong }
+
+/// One answer. Selection and right/wrong are shown with an icon and words,
+/// not only with colour, and are announced by screen readers.
+class _OptionTile extends StatelessWidget {
+  const _OptionTile({
+    required this.text,
+    required this.picked,
+    required this.verdict,
+    required this.scheme,
+    required this.onTap,
+  });
+
+  final String text;
+  final bool picked;
+  final _Verdict? verdict;
+  final ColorScheme scheme;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final (Color? color, String? status, IconData icon) = switch (verdict) {
+      _Verdict.correct => (
+        scheme.primaryContainer,
+        picked ? 'Correct, your answer' : 'Correct answer',
+        Icons.check_circle,
+      ),
+      _Verdict.wrong => (
+        scheme.errorContainer,
+        'Wrong, your answer',
+        Icons.cancel,
+      ),
+      null => (
+        picked ? scheme.primaryContainer : null,
+        null,
+        picked ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+      ),
+    };
+
+    // One node per answer: "A, checked, in group of 2, selected".
+    return MergeSemantics(
+      child: Semantics(
+        inMutuallyExclusiveGroup: true,
+        checked: picked,
+        child: Card(
+          color: color,
+          clipBehavior: Clip.antiAlias,
+          child: ListTile(
+            selected: picked,
+            leading: Icon(icon),
+            title: Text(text),
+            subtitle: status == null ? null : Text(status),
+            onTap: onTap,
+          ),
+        ),
+      ),
     );
   }
 }

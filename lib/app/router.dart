@@ -9,13 +9,22 @@ import '../features/progress/progress_screen.dart';
 import '../features/quiz/quiz_screen.dart';
 import 'shell.dart';
 
-GoRouter buildRouter(AppState state) => GoRouter(
-      initialLocation: '/learn',
+GoRouter buildRouter(AppState state, {String initialLocation = '/learn'}) =>
+    GoRouter(
+      initialLocation: initialLocation,
       refreshListenable: state,
       redirect: (context, route) {
         final onWelcome = route.matchedLocation == '/welcome';
-        if (state.track == null && !onWelcome) return '/welcome';
-        if (state.track != null && onWelcome) return '/learn';
+        if (state.track == null && !onWelcome) {
+          // Remember a deep link so it opens once a track is picked.
+          final from = route.uri.toString();
+          return from == '/learn'
+              ? '/welcome'
+              : Uri(path: '/welcome', queryParameters: {'from': from}).toString();
+        }
+        if (state.track != null && onWelcome) {
+          return safeReturnLocation(route.uri.queryParameters['from']);
+        }
         return null;
       },
       routes: [
@@ -61,3 +70,15 @@ GoRouter buildRouter(AppState state) => GoRouter(
         ),
       ],
     );
+
+/// Where to go after the welcome screen: the remembered in-app location,
+/// or the course map. Only plain in-app paths are accepted.
+String safeReturnLocation(String? from) {
+  if (from == null ||
+      !from.startsWith('/') ||
+      from.startsWith('//') ||
+      from.startsWith('/welcome')) {
+    return '/learn';
+  }
+  return from;
+}

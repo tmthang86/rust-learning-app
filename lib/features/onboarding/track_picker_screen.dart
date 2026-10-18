@@ -79,7 +79,7 @@ class _TrackCard extends StatelessWidget {
         title: Text(title),
         subtitle: Text(subtitle),
         trailing: const Icon(Icons.chevron_right),
-        onTap: () => AppScope.of(context).chooseTrack(track),
+        onTap: () => AppScope.read(context).chooseTrack(track),
       ),
     );
   }

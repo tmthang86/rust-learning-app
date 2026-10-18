@@ -66,4 +66,73 @@ void main() {
     expect(r2.stage, RunStage.unavailable);
     expect(r2.stderr, contains("Couldn't reach"));
   });
+
+  HttpCodeRunner answering(http.Response response) =>
+      HttpCodeRunner(base, client: MockClient((_) async => response));
+
+  test('parses compiler warnings apart from the program output', () async {
+    final result = await answering(http.Response(
+      jsonEncode({
+        'success': true,
+        'stage': 'run',
+        'stdout': 'hi\n',
+        'stderr': 'debug line\n',
+        'warnings': 'warning: unused variable: `x`',
+      }),
+      200,
+    )).run('fn main() {}');
+    expect(result.stdout, 'hi\n');
+    expect(result.stderr, 'debug line\n');
+    expect(result.warnings, contains('unused variable'));
+
+    // Older runners send no warnings field.
+    final old = await answering(http.Response(
+      jsonEncode({'success': true, 'stage': 'run', 'stdout': 'hi'}),
+      200,
+    )).run('fn main() {}');
+    expect(old.warnings, isEmpty);
+  });
+
+  test('a non-JSON 502 from a proxy is not reported as a network failure', () async {
+    final html = await answering(
+      http.Response('<html><body>502 Bad Gateway</body></html>', 502),
+    ).run('fn main() {}');
+    expect(html.stage, RunStage.unavailable);
+    expect(html.stderr, contains('error 502'));
+    expect(html.stderr, isNot(contains("Couldn't reach")));
+
+    final text = await answering(http.Response('upstream connect error', 502))
+        .run('fn main() {}');
+    expect(text.stderr, 'upstream connect error');
+  });
+
+  test('413 says the code is too long', () async {
+    final r = await answering(http.Response('Payload Too Large', 413)).run('x');
+    expect(r.stage, RunStage.unavailable);
+    expect(r.stderr, contains('too long'));
+  });
+
+  test('503 and 429 say the runner is busy, using Retry-After', () async {
+    final busy = await answering(http.Response(
+      jsonEncode({'error': 'server busy'}),
+      503,
+      headers: {'retry-after': '5'},
+    )).run('x');
+    expect(busy.stage, RunStage.unavailable);
+    expect(busy.stderr, 'The code runner is busy. Try again in 5 seconds.');
+
+    final limited = await answering(
+      http.Response(jsonEncode({'error': 'rate limited'}), 429),
+    ).run('x');
+    expect(limited.stderr, 'The code runner is busy. Try again shortly.');
+  });
+
+  test('a 200 that is not a run result is reported, not thrown', () async {
+    final r = await answering(http.Response('<html>login</html>', 200)).run('x');
+    expect(r.stage, RunStage.unavailable);
+    expect(r.stderr, contains('could not read'));
+
+    final wrongShape = await answering(http.Response('[1, 2]', 200)).run('x');
+    expect(wrongShape.stage, RunStage.unavailable);
+  });
 }

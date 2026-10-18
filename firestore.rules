@@ -2,10 +2,38 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // The progress document may hold exactly these fields, with these
+    // types. Anything else (entitlements, flags, extra data) is refused;
+    // purchases will live in a document only the server writes.
+    // `data` is the document as it would be after the write, so this also
+    // covers merge writes that touch only some of the fields.
+    function isValidProgress(data) {
+      return data.keys().hasOnly(['track', 'completedLessons', 'updatedAt'])
+          && (!('track' in data) || data.track in ['starter', 'fast'])
+          && (!('completedLessons' in data)
+              || (data.completedLessons is list
+                  // Far above the course size, low enough to stop abuse.
+                  // Rules can't loop over a list, so element types are
+                  // checked by the app when it reads the document.
+                  && data.completedLessons.size() <= 1000))
+          // Every write the app makes sets updatedAt to the server time.
+          && data.updatedAt is timestamp
+          && data.updatedAt == request.time;
+    }
+
     // Each learner can read and write only their own progress document.
     match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && isValidProgress(request.resource.data);
+      // In-app account deletion removes the document.
+      allow delete: if isOwner(uid);
     }
+
     // Everything else is closed.
     match /{document=**} {
       allow read, write: if false;
