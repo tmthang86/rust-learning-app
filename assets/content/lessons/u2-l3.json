@@ -4,7 +4,17 @@
   "sections": [
     {
       "type": "text",
-      "text": "You met if in earlier lessons. In Rust, if isn't only a statement: it produces a value. That means you can use it on the right of a let."
+      "text": "You met if and else in Unit 0, where they chose which lines to run.",
+      "track": "starter"
+    },
+    {
+      "type": "text",
+      "text": "In Rust, if isn't only a way to choose which code runs: it also produces a value. That means you can use it on the right of a let."
+    },
+    {
+      "type": "note",
+      "text": "Coming from another language: the condition needs no parentheses (the compiler warns about extra ones), but the curly braces are always required, even around a single line.",
+      "track": "fast"
     },
     {
       "type": "code",

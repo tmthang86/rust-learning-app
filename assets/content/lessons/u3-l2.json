@@ -4,7 +4,7 @@
   "sections": [
     {
       "type": "text",
-      "text": "Not every assignment moves. Simple values that live entirely on the stack, like integers, floats, bool and char, are copied instead. Both variables stay usable."
+      "text": "Not every assignment moves. Simple values like integers, floats, bool and char are copied instead. Both variables stay usable."
     },
     {
       "type": "code",
@@ -12,7 +12,7 @@
     },
     {
       "type": "text",
-      "text": "These types implement the Copy trait. Tuples and arrays made only of Copy types are Copy too."
+      "text": "These types implement Copy, which marks a type as cheap to copy byte for byte. Rust copies them automatically instead of moving them. (Copy is a trait: a named ability that a type can have. Unit 7 covers traits.) Tuples and arrays made only of Copy types are Copy too. String isn't Copy, because it owns text on the heap."
     },
     {
       "type": "text",

@@ -8,23 +8,23 @@
     },
     {
       "type": "code",
-      "code": "#[derive(Debug)]\nenum Direction {\n    North,\n    East,\n    South,\n    West,\n}\n\nfn main() {\n    let heading = Direction::East;\n    println!(\"{:?}\", heading);\n}"
+      "code": "#[derive(Debug)]\nenum Direction {\n    North,\n    East,\n    South,\n    West,\n}\n\nfn main() {\n    let heading = Direction::East;\n    println!(\"Heading: {:?}\", heading);\n\n    let all = [Direction::North, Direction::East, Direction::South, Direction::West];\n    for d in all {\n        println!(\"{:?}\", d);\n    }\n}"
     },
     {
       "type": "text",
-      "text": "Variants can carry data, and each variant can carry different data:"
+      "text": "Variants can carry data, and each variant can carry different data. To do something different for each variant, use match. You'll learn match properly in the last lesson of this unit. For now, read each arm as \"if it's this variant, run this code\", and notice how the arm pulls the data out of the variant:"
     },
     {
       "type": "code",
-      "code": "#[derive(Debug)]\nenum Shape {\n    Circle(f64),\n    Rectangle { width: f64, height: f64 },\n    Dot,\n}\n\nfn main() {\n    let shapes = [\n        Shape::Circle(1.5),\n        Shape::Rectangle { width: 2.0, height: 3.0 },\n        Shape::Dot,\n    ];\n    for s in shapes {\n        println!(\"{:?}\", s);\n    }\n}"
+      "code": "enum Shape {\n    Circle(f64),\n    Rectangle { width: f64, height: f64 },\n    Dot,\n}\n\nfn main() {\n    let shapes = [\n        Shape::Circle(1.5),\n        Shape::Rectangle { width: 2.0, height: 3.0 },\n        Shape::Dot,\n    ];\n    for s in shapes {\n        match s {\n            Shape::Circle(radius) => println!(\"circle, radius {radius}\"),\n            Shape::Rectangle { width, height } => println!(\"rectangle, {width} by {height}\"),\n            Shape::Dot => println!(\"a dot\"),\n        }\n    }\n}"
     },
     {
       "type": "text",
-      "text": "Enums can have methods too. To do something different for each variant, use match, which you'll learn properly in the last lesson of this unit:"
+      "text": "Enums can have methods too, in an impl block just like structs:"
     },
     {
       "type": "code",
-      "code": "enum Light {\n    Red,\n    Yellow,\n    Green,\n}\n\nimpl Light {\n    fn seconds(&self) -> u32 {\n        match self {\n            Light::Red => 30,\n            Light::Yellow => 3,\n            Light::Green => 25,\n        }\n    }\n}\n\nfn main() {\n    println!(\"Red lasts {} seconds\", Light::Red.seconds());\n}"
+      "code": "#[derive(Debug)]\nenum Light {\n    Red,\n    Yellow,\n    Green,\n}\n\nimpl Light {\n    fn seconds(&self) -> u32 {\n        match self {\n            Light::Red => 30,\n            Light::Yellow => 3,\n            Light::Green => 25,\n        }\n    }\n}\n\nfn main() {\n    for light in [Light::Red, Light::Yellow, Light::Green] {\n        println!(\"{:?} lasts {} seconds\", light, light.seconds());\n    }\n}"
     },
     {
       "type": "note",
@@ -38,10 +38,10 @@
     }
   ],
   "exercise": {
-    "prompt": "Add a fourth variant, Mythic, to Rarity and make the program print it. It should print: Mythic",
-    "starter": "#[derive(Debug)]\nenum Rarity {\n    Common,\n    Rare,\n    Epic,\n}\n\nfn main() {\n    let r = Rarity::Epic;\n    println!(\"{:?}\", r);\n}",
-    "expectedOutput": "Mythic",
-    "solution": "#[derive(Debug)]\nenum Rarity {\n    Common,\n    Rare,\n    Epic,\n    Mythic,\n}\n\nfn main() {\n    let r = Rarity::Mythic;\n    println!(\"{:?}\", r);\n}"
+    "prompt": "Add a fourth variant, Mythic, to Rarity, and add Rarity::Mythic to the end of the list so it gets printed too. It should print: Common\nRare\nEpic\nMythic",
+    "starter": "#[derive(Debug)]\nenum Rarity {\n    Common,\n    Rare,\n    Epic,\n}\n\nfn main() {\n    let all = [Rarity::Common, Rarity::Rare, Rarity::Epic];\n    for r in all {\n        println!(\"{:?}\", r);\n    }\n}",
+    "expectedOutput": "Common\nRare\nEpic\nMythic",
+    "solution": "#[derive(Debug)]\nenum Rarity {\n    Common,\n    Rare,\n    Epic,\n    Mythic,\n}\n\nfn main() {\n    let all = [Rarity::Common, Rarity::Rare, Rarity::Epic, Rarity::Mythic];\n    for r in all {\n        println!(\"{:?}\", r);\n    }\n}"
   },
   "quiz": [
     {

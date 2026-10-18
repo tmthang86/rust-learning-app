@@ -8,7 +8,7 @@
     },
     {
       "type": "code",
-      "code": "fn count_letters(text: &String) -> usize {\n    text.len()\n}\n\nfn main() {\n    let word = String::from(\"borrow\");\n    let n = count_letters(&word);\n    println!(\"{word} has {n} letters\");\n}"
+      "code": "fn count_letters(text: &String) -> usize {\n    text.len()   // len counts bytes: one per letter in plain English text\n}\n\nfn main() {\n    let word = String::from(\"borrow\");\n    let n = count_letters(&word);\n    println!(\"{word} has {n} letters\");\n}"
     },
     {
       "type": "text",
@@ -24,11 +24,11 @@
     },
     {
       "type": "text",
-      "text": "A reference must never outlive the value it points to. The compiler checks this, so Rust can't have dangling pointers:"
+      "text": "A reference must never outlive the value it points to. The compiler checks this, so Rust can't have dangling pointers. The commented-out dangle function below doesn't compile: it tries to return a reference, but there's no value that lives long enough for it to borrow from:"
     },
     {
       "type": "code",
-      "code": "// fn dangle() -> &String {\n//     let s = String::from(\"oops\");\n//     &s   // error: s is dropped when the function ends\n// }\nfn make() -> String {\n    String::from(\"fine\")   // return the owned value instead\n}\n\nfn main() {\n    println!(\"{}\", make());\n}"
+      "code": "// fn dangle() -> &String {   // error: missing lifetime specifier\n//     let s = String::from(\"oops\");\n//     &s   // s is dropped when the function ends\n// }\nfn make() -> String {\n    String::from(\"fine\")   // return the owned value instead\n}\n\nfn main() {\n    println!(\"{}\", make());\n}"
     },
     {
       "type": "note",

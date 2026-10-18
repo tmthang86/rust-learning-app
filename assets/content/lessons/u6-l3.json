@@ -8,7 +8,7 @@
     },
     {
       "type": "code",
-      "code": "use std::num::ParseIntError;\n\nfn add_strings(a: &str, b: &str) -> Result<i32, ParseIntError> {\n    let x: i32 = a.parse()?;\n    let y: i32 = b.parse()?;\n    Ok(x + y)\n}\n\nfn main() {\n    println!(\"{:?}\", add_strings(\"2\", \"3\"));\n    println!(\"{:?}\", add_strings(\"2\", \"three\").is_err());\n}"
+      "code": "use std::num::ParseIntError;\n\nfn add_strings(a: &str, b: &str) -> Result<i32, ParseIntError> {\n    let x: i32 = a.parse()?;\n    let y: i32 = b.parse()?;\n    Ok(x + y)\n}\n\nfn main() {\n    println!(\"{:?}\", add_strings(\"2\", \"3\"));\n    println!(\"{:?}\", add_strings(\"2\", \"three\"));\n}"
     },
     {
       "type": "text",
@@ -16,7 +16,7 @@
     },
     {
       "type": "text",
-      "text": "? only works inside a function that itself returns Result (or Option). main can return a Result too:"
+      "text": "? only works inside a function whose return type matches: use ? on a Result inside a function that returns Result, and on an Option inside a function that returns Option. main can return a Result too:"
     },
     {
       "type": "code",

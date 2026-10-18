@@ -86,7 +86,7 @@
       "id": "u6",
       "number": 6,
       "title": "Error handling",
-      "summary": "panic!, Result and the ? operator.",
+      "summary": "panic!, Result, the ? operator and custom error types.",
       "tracks": ["starter", "fast"],
       "lessons": [
         { "id": "u6-l1", "title": "panic!" },

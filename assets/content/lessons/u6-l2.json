@@ -8,7 +8,11 @@
     },
     {
       "type": "code",
-      "code": "// enum Result<T, E> {\n//     Ok(T),\n//     Err(E),\n// }\nfn main() {\n    let good: Result<i32, _> = \"12\".parse::<i32>();\n    let bad: Result<i32, _> = \"twelve\".parse::<i32>();\n    println!(\"{:?}\", good);\n    println!(\"{}\", bad.is_err());\n}"
+      "code": "// enum Result<T, E> {\n//     Ok(T),\n//     Err(E),\n// }\nfn main() {\n    let good: Result<i32, _> = \"12\".parse();\n    let bad: Result<i32, _> = \"twelve\".parse();\n    println!(\"{:?}\", good);\n    println!(\"{}\", bad.is_err());\n}"
+    },
+    {
+      "type": "text",
+      "text": "parse turns text into a number, and gives back a Result because the text might not be a number. The type Result<i32, _> tells parse to make an i32; the _ lets Rust fill in the error type itself. You'll also see the type written on the call instead: \"12\".parse::<i32>(). The ::<i32> part means the same thing, \"parse as an i32\"."
     },
     {
       "type": "text",
@@ -38,7 +42,7 @@
     }
   ],
   "exercise": {
-    "prompt": "Finish check_age so it returns Err(\"too young\") when age is under 18, and Ok(age) otherwise. With 15 it should print: error: too young",
+    "prompt": "Finish check_age so it returns Err(String::from(\"too young\")) when age is under 18, and Ok(age) otherwise. With 15 it should print: error: too young",
     "starter": "fn check_age(age: u32) -> Result<u32, String> {\n    Ok(age)\n}\n\nfn main() {\n    match check_age(15) {\n        Ok(a) => println!(\"welcome, age {a}\"),\n        Err(e) => println!(\"error: {e}\"),\n    }\n}",
     "expectedOutput": "error: too young",
     "solution": "fn check_age(age: u32) -> Result<u32, String> {\n    if age < 18 {\n        Err(String::from(\"too young\"))\n    } else {\n        Ok(age)\n    }\n}\n\nfn main() {\n    match check_age(15) {\n        Ok(a) => println!(\"welcome, age {a}\"),\n        Err(e) => println!(\"error: {e}\"),\n    }\n}"

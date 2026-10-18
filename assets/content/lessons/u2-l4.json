@@ -12,7 +12,7 @@
     },
     {
       "type": "text",
-      "text": "break can carry a value out of a loop, so loop can be used as an expression too."
+      "text": "break can carry a value out of a loop, so loop can be used as an expression too. This only works with loop: while and for can't give back a value with break."
     },
     {
       "type": "text",
@@ -34,7 +34,7 @@
   ],
   "exercise": {
     "prompt": "Use a for loop to add up the numbers 1 to 10 and print the total. It should print: 55",
-    "starter": "fn main() {\n    let mut total = 0;\n    // loop here\n    println!(\"{total}\");\n}",
+    "starter": "fn main() {\n    // keep mut: your loop will change total\n    let mut total = 0;\n    // loop here\n    println!(\"{total}\");\n}",
     "expectedOutput": "55",
     "solution": "fn main() {\n    let mut total = 0;\n    for n in 1..=10 {\n        total += n;\n    }\n    println!(\"{total}\");\n}"
   },
@@ -49,7 +49,7 @@
       "answer": 0
     },
     {
-      "question": "How do you stop a loop and give back the value 5?",
+      "question": "Inside a loop block (the loop keyword), how do you stop and give back the value 5?",
       "options": [
         "return 5 loop",
         "break 5;",
@@ -62,7 +62,7 @@
       "options": [
         "Ends the program",
         "Skips to the next round of the loop",
-        "Restarts the loop from the beginning"
+        "Exits the loop"
       ],
       "answer": 1
     }

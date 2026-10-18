@@ -24,8 +24,7 @@
     },
     {
       "type": "text",
-      "track": "starter",
-      "text": "\"42\" is text, not a number. parse() turns the text into a number, and unwrap() says \"I'm sure this worked\". You'll learn safer ways to handle failure in the error handling unit."
+      "text": "\"42\" is text, not a number. parse() turns the text into a number, and the : i32 tells it which kind of number to make. Parsing can fail (think of \"hello\"), so parse() hands back a result you have to unwrap. unwrap() says \"I'm sure this worked\" and stops the program if it didn't. You'll learn safer ways to handle failure in the error handling unit."
     },
     {
       "type": "note",

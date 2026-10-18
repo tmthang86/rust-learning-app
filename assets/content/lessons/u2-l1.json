@@ -16,11 +16,6 @@
     },
     {
       "type": "text",
-      "text": "Rust usually works out the type for you. Add `: Type` after the name when you want to be explicit, or when Rust can't guess.",
-      "track": "starter"
-    },
-    {
-      "type": "text",
       "text": "Floats are f64 (the default) and f32. bool is true or false. char is a single Unicode character in single quotes:"
     },
     {
@@ -32,8 +27,25 @@
       "text": "Dividing two integers drops the remainder, so 7 / 2 is 3. Use floats when you need the fraction."
     },
     {
+      "type": "text",
+      "text": "Rust never mixes number types on its own. You can't multiply an integer by a float, even when the answer seems obvious. Convert one of them first with as:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let items = 3;\n    let price = 2.5;\n    let total = items as f64 * price;\n    println!(\"{total}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "items as f64 turns the integer 3 into the float 3.0, so both sides of * are f64 and the program prints 7.5."
+    },
+    {
       "type": "note",
-      "text": "Rust never converts between number types on its own. To mix them, convert with `as`: `let total = items as f64 * price;`. If an integer overflows in a debug build, the program stops with an error instead of silently wrapping.",
+      "text": "Coming from another language: there are no automatic number conversions in Rust, not even from i32 to i64. If an integer overflows while the program runs, it stops with an error. That's what happens in this app and in cargo run (a debug build). Release builds skip that check and wrap around silently, unless you turn overflow checks on.",
+      "track": "fast"
+    },
+    {
+      "type": "note",
+      "text": "Coming from another language: number literals can carry a type suffix, like 5u8 or 2.5f32. usize is as wide as a pointer, so 64 bits on most machines today. A char is 4 bytes, because it holds any Unicode character, not a single byte.",
       "track": "fast"
     },
     {
@@ -43,7 +55,7 @@
     }
   ],
   "exercise": {
-    "prompt": "Convert count to f64 with as so the program can compute the average. It should print: 2.5",
+    "prompt": "This program doesn't compile because total is a float and count is an integer, and Rust won't divide one by the other. Convert count to f64 with as so it prints: 2.5",
     "starter": "fn main() {\n    let total = 10.0;\n    let count = 4;\n    let average = total / count;\n    println!(\"{average}\");\n}",
     "expectedOutput": "2.5",
     "solution": "fn main() {\n    let total = 10.0;\n    let count = 4;\n    let average = total / count as f64;\n    println!(\"{average}\");\n}"

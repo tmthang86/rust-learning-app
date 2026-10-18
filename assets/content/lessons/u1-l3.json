@@ -17,7 +17,7 @@
     {
       "type": "text",
       "track": "starter",
-      "text": "A variable is a name for a value. Here name holds the text \"Ferris\" and age holds the number 8. You'll learn more about variables in the next lesson."
+      "text": "A variable is a name for a value, as you saw in Unit 0. Here name holds the text \"Ferris\" and age holds the number 8. The next lesson shows how to let a variable change."
     },
     {
       "type": "note",
@@ -26,11 +26,16 @@
     },
     {
       "type": "text",
-      "text": "print! is the same but without the new line. eprintln! prints to the error stream. {:?} prints a value in a debug form, which is handy for lists:"
+      "text": "print! is the same but without the new line. eprintln! prints to the error stream. {:?} prints a value in a debug form, which is handy for a group of values like this one (an array; more in Unit 2):"
     },
     {
       "type": "code",
       "code": "fn main() {\n    let scores = [90, 72, 85];\n    println!(\"{:?}\", scores);\n}"
+    },
+    {
+      "type": "note",
+      "text": "Coming from another language: the app shows rustc warnings apart from your program's output, and they never stop the program. In exercises, an unused-variable warning usually just means you haven't finished yet. Ignore the advice to prefix the name with an underscore: that hides the warning instead of fixing your code.",
+      "track": "fast"
     }
   ],
   "exercise": {

@@ -24,7 +24,7 @@
     },
     {
       "type": "code",
-      "code": "#[derive(Debug)]\nstruct Point {\n    x: i32,\n    y: i32,\n}\n\nfn main() {\n    let x = 4;\n    let p = Point { x, y: -2 };   // x is shorthand for x: x\n    println!(\"{:?}\", p);\n}"
+      "code": "#[derive(Debug)]\nstruct Point {\n    x: i32,\n    y: i32,\n}\n\nfn main() {\n    let x = 4;\n    let p = Point { x, y: -2 };   // x is shorthand for x: x\n    println!(\"{:?}\", p);\n    println!(\"{:#?}\", p);\n    println!(\"x is {}, y is {}\", p.x, p.y);\n}"
     },
     {
       "type": "note",

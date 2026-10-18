@@ -14,7 +14,7 @@
     {
       "type": "note",
       "track": "fast",
-      "text": "Coming from another language: println! ends in ! because it's a macro, not a function. Macros can take a variable number of arguments and are checked at compile time."
+      "text": "Coming from another language: println! ends in ! because it's a macro, not a function. Macros are expanded into ordinary code at compile time. That lets println! take any number of arguments and check its format string against them before the program runs."
     },
     {
       "type": "code",

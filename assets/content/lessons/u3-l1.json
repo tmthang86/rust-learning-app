@@ -24,11 +24,15 @@
     },
     {
       "type": "text",
-      "text": "Passing a value to a function moves it too, unless the function hands it back:"
+      "text": "Passing a value to a function moves it too. The parameter becomes the new owner, and the caller can't use the value any more. A function can hand ownership to its caller by returning a value. Here shout returns a brand-new String, and loud owns it:"
     },
     {
       "type": "code",
-      "code": "fn shout(text: String) -> String {\n    text.to_uppercase()\n}\n\nfn main() {\n    let word = String::from(\"hi\");\n    let loud = shout(word);   // word moved into shout\n    println!(\"{loud}\");\n}"
+      "code": "fn shout(text: String) -> String {\n    text.to_uppercase()   // makes a new String and returns it\n}   // text goes out of scope here and is dropped\n\nfn main() {\n    let word = String::from(\"hi\");\n    let loud = shout(word);   // word moves into shout\n    // println!(\"{word}\");    // error: borrow of moved value: `word`\n    println!(\"{loud}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "What if you want to keep using a value after a function has used it? Instead of giving it away, you can lend it. That's called borrowing, and it's two lessons from now."
     },
     {
       "type": "note",
@@ -42,7 +46,7 @@
     }
   ],
   "exercise": {
-    "prompt": "The program uses name after it was moved into greet. Change greet so it doesn't need to own the String: make the parameter a reference (&String) and call it with &name. It should print: Hello, Ferris\nBye, Ferris",
+    "prompt": "The program uses name after it was moved into greet. Change greet so it doesn't need to own the String: make the parameter a reference (&String) and call it with &name. A reference lets greet borrow the String instead of owning it; you'll learn how references work in the Borrowing lesson of this unit. It should print: Hello, Ferris\nBye, Ferris",
     "starter": "fn greet(name: String) {\n    println!(\"Hello, {name}\");\n}\n\nfn main() {\n    let name = String::from(\"Ferris\");\n    greet(name);\n    println!(\"Bye, {name}\");\n}",
     "expectedOutput": "Hello, Ferris\nBye, Ferris",
     "solution": "fn greet(name: &String) {\n    println!(\"Hello, {name}\");\n}\n\nfn main() {\n    let name = String::from(\"Ferris\");\n    greet(&name);\n    println!(\"Bye, {name}\");\n}"

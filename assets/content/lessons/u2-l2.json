@@ -28,7 +28,7 @@
     },
     {
       "type": "note",
-      "text": "Indexing past the end, like days[10], stops the program with an \"index out of bounds\" error instead of reading random memory. When you need a list that can grow, use a Vec (Unit 5).",
+      "text": "Coming from another language: Rust never reads past the end of an array. If you write a fixed index that's too big, like days[10] on this 5-day array, the compiler spots it and refuses to build. If the index is only known while the program runs, it stops with an \"index out of bounds\" error. When you need a list that can grow, use a Vec (Unit 5).",
       "track": "fast"
     },
     {

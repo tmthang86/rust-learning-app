@@ -8,7 +8,19 @@
     },
     {
       "type": "code",
-      "code": "fn main() {\n    let literal: &str = \"hello\";\n    let mut owned: String = String::from(literal);\n    owned.push_str(\", world\");\n    owned.push('!');\n    println!(\"{owned}\");\n    let view: &str = &owned;   // borrow a String as &str\n    println!(\"{} characters\", view.len());\n}"
+      "code": "fn main() {\n    let literal: &str = \"hello\";\n    let mut owned: String = String::from(literal);\n    owned.push_str(\", world\");\n    owned.push('!');\n    println!(\"{owned}\");\n    let view: &str = &owned;   // borrow a String as &str\n    println!(\"{} bytes\", view.len());\n}"
+    },
+    {
+      "type": "text",
+      "text": "len() counts bytes, not characters. Rust stores text as UTF-8, where a plain English letter takes one byte but a letter like é, or an emoji, takes two to four. To count characters, use chars().count():"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let word = \"café\";\n    println!(\"{} bytes\", word.len());\n    println!(\"{} characters\", word.chars().count());\n}"
+    },
+    {
+      "type": "text",
+      "text": "Because a character can be more than one byte, Rust won't let you write s[0] to get the first character. Use s.chars() to walk through the characters instead."
     },
     {
       "type": "text",
@@ -17,6 +29,11 @@
     {
       "type": "code",
       "code": "fn main() {\n    let first = \"Ada\";\n    let last = \"Lovelace\";\n    let full = format!(\"{first} {last}\");\n    println!(\"{full}\");\n\n    let s = String::from(\"tic\") + \"-tac\" + \"-toe\";\n    println!(\"{s}\");\n}"
+    },
+    {
+      "type": "note",
+      "text": "The + operator takes the String on its left by value: it moves it, adds the &str on the right to the end, and hands back the same String. That's why the right side must be a &str (write a + &b when b is a String), and why a can't be used after a + b.",
+      "track": "fast"
     },
     {
       "type": "text",
@@ -28,7 +45,7 @@
     },
     {
       "type": "note",
-      "text": "Rust strings are always valid UTF-8. You can't index a single character with s[0], because a character can take more than one byte. Use s.chars() to walk characters, and s.chars().count() for the character count; len() is bytes.",
+      "text": "Rust strings are always valid UTF-8. len() is instant because it's stored, while chars().count() has to walk the whole string. Use bytes() for raw bytes and char_indices() when you need character positions that are safe to slice at.",
       "track": "fast"
     },
     {

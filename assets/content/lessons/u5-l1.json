@@ -28,7 +28,7 @@
     },
     {
       "type": "note",
-      "text": "Iterators make common jobs short: v.iter().sum(), v.iter().max(), v.iter().map(|x| x * 2).collect::<Vec<_>>(), v.iter().filter(|x| **x > 10).count().",
+      "text": "Iterators make common jobs short: v.iter().sum::<i32>(), v.iter().max(), v.iter().map(|x| x * 2).collect::<Vec<_>>(), v.iter().filter(|x| **x > 10).count().",
       "track": "fast"
     },
     {

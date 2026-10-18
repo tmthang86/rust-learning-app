@@ -12,8 +12,8 @@
     { "type": "note", "text": "Well-named functions make programs easier to read. area(4, 5) tells you what's happening without reading the maths inside." }
   ],
   "exercise": {
-    "prompt": "Write the body of add so it returns a + b. The program should print: 7",
-    "starter": "fn add(a: i32, b: i32) -> i32 {\n    0\n}\n\nfn main() {\n    println!(\"{}\", add(3, 4));\n}",
+    "prompt": "The add function should return a + b, but right now it subtracts. Fix it so the program prints: 7",
+    "starter": "fn add(a: i32, b: i32) -> i32 {\n    a - b\n}\n\nfn main() {\n    println!(\"{}\", add(3, 4));\n}",
     "expectedOutput": "7",
     "solution": "fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\nfn main() {\n    println!(\"{}\", add(3, 4));\n}"
   },

@@ -8,7 +8,7 @@
     },
     {
       "type": "code",
-      "code": "enum Coin {\n    Penny,\n    Nickel,\n    Dime,\n    Quarter,\n}\n\nfn cents(coin: Coin) -> u32 {\n    match coin {\n        Coin::Penny => 1,\n        Coin::Nickel => 5,\n        Coin::Dime => 10,\n        Coin::Quarter => 25,\n    }\n}\n\nfn main() {\n    println!(\"{}\", cents(Coin::Dime) + cents(Coin::Quarter));\n}"
+      "code": "enum Coin {\n    Penny,\n    Nickel,\n    Dime,\n    Quarter,\n}\n\nfn cents(coin: Coin) -> u32 {\n    match coin {\n        Coin::Penny => 1,\n        Coin::Nickel => 5,\n        Coin::Dime => 10,\n        Coin::Quarter => 25,\n    }\n}\n\nfn main() {\n    let mut total = 0;\n    for coin in [Coin::Penny, Coin::Nickel, Coin::Dime, Coin::Quarter] {\n        total += cents(coin);\n    }\n    println!(\"All four coins: {total} cents\");\n}"
     },
     {
       "type": "text",
@@ -21,6 +21,10 @@
     {
       "type": "code",
       "code": "fn describe(n: Option<i32>) -> String {\n    match n {\n        Some(0) => String::from(\"zero\"),\n        Some(x) if x < 0 => format!(\"negative {x}\"),\n        Some(1..=9) => String::from(\"a single digit\"),\n        Some(x) => format!(\"big number {x}\"),\n        None => String::from(\"nothing\"),\n    }\n}\n\nfn main() {\n    println!(\"{}\", describe(Some(0)));\n    println!(\"{}\", describe(Some(-4)));\n    println!(\"{}\", describe(Some(7)));\n    println!(\"{}\", describe(Some(250)));\n    println!(\"{}\", describe(None));\n}"
+    },
+    {
+      "type": "text",
+      "text": "Two new tricks there. Some(x) if x < 0 is a match guard: the arm only fits when the extra if condition is true as well. 1..=9 is a range pattern: it fits any number from 1 to 9, including both ends. Arms are tried from top to bottom, so 250 skips the first three and lands on Some(x)."
     },
     {
       "type": "text",
@@ -39,13 +43,17 @@
       "type": "note",
       "text": "Exhaustiveness checking is what makes enums safe to refactor. Rust also has let-else: let Some(x) = opt else { return; }; for early exits.",
       "track": "fast"
+    },
+    {
+      "type": "note",
+      "text": "In the exercise, advice returns &'static str. That's a string slice that stays valid for the whole program, which is true of every string literal like \"Wear sunscreen\". The 'static part is called a lifetime; Unit 7 explains lifetimes."
     }
   ],
   "exercise": {
-    "prompt": "Finish the match so each Weather gives the right advice. With Weather::Rain it should print: Take an umbrella",
-    "starter": "enum Weather {\n    Sun,\n    Rain,\n    Snow,\n}\n\nfn advice(w: Weather) -> &'static str {\n    match w {\n        Weather::Sun => \"Wear sunscreen\",\n        _ => \"Stay inside\",\n    }\n}\n\nfn main() {\n    println!(\"{}\", advice(Weather::Rain));\n}",
-    "expectedOutput": "Take an umbrella",
-    "solution": "enum Weather {\n    Sun,\n    Rain,\n    Snow,\n}\n\nfn advice(w: Weather) -> &'static str {\n    match w {\n        Weather::Sun => \"Wear sunscreen\",\n        Weather::Rain => \"Take an umbrella\",\n        Weather::Snow => \"Wear a warm coat\",\n    }\n}\n\nfn main() {\n    println!(\"{}\", advice(Weather::Rain));\n}"
+    "prompt": "Replace the _ arm with one arm for Weather::Rain that gives \"Take an umbrella\" and one for Weather::Snow that gives \"Wear a warm coat\". It should print: Wear sunscreen\nTake an umbrella\nWear a warm coat",
+    "starter": "enum Weather {\n    Sun,\n    Rain,\n    Snow,\n}\n\nfn advice(w: Weather) -> &'static str {\n    match w {\n        Weather::Sun => \"Wear sunscreen\",\n        _ => \"Stay inside\",\n    }\n}\n\nfn main() {\n    for w in [Weather::Sun, Weather::Rain, Weather::Snow] {\n        println!(\"{}\", advice(w));\n    }\n}",
+    "expectedOutput": "Wear sunscreen\nTake an umbrella\nWear a warm coat",
+    "solution": "enum Weather {\n    Sun,\n    Rain,\n    Snow,\n}\n\nfn advice(w: Weather) -> &'static str {\n    match w {\n        Weather::Sun => \"Wear sunscreen\",\n        Weather::Rain => \"Take an umbrella\",\n        Weather::Snow => \"Wear a warm coat\",\n    }\n}\n\nfn main() {\n    for w in [Weather::Sun, Weather::Rain, Weather::Snow] {\n        println!(\"{}\", advice(w));\n    }\n}"
   },
   "quiz": [
     {

@@ -38,11 +38,16 @@
     },
     {
       "type": "text",
-      "text": "Constants use const, need a type, and are written in capitals. They never change."
+      "text": "Constants use const and always need a written type. They never change. By convention their names are written in capitals, like MAX_SCORE."
     },
     {
       "type": "code",
       "code": "const MAX_SCORE: u32 = 100;\n\nfn main() {\n    println!(\"Max score: {MAX_SCORE}\");\n}"
+    },
+    {
+      "type": "note",
+      "text": "Coming from another language: an immutable let is still a normal variable, so its value can be worked out while the program runs. A const must be known at compile time, is copied into each place it's used, and can be declared outside any function.",
+      "track": "fast"
     }
   ],
   "exercise": {

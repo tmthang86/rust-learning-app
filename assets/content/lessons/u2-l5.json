@@ -37,16 +37,16 @@
     }
   ],
   "exercise": {
-    "prompt": "Write celsius_to_fahrenheit so it returns c * 9.0 / 5.0 + 32.0. It should print: 212",
-    "starter": "fn celsius_to_fahrenheit(c: f64) -> f64 {\n    0.0\n}\n\nfn main() {\n    println!(\"{}\", celsius_to_fahrenheit(100.0));\n}",
+    "prompt": "celsius_to_fahrenheit should return c * 9.0 / 5.0 + 32.0, but right now it only adds 32.0. Fix it so the program prints: 212",
+    "starter": "fn celsius_to_fahrenheit(c: f64) -> f64 {\n    c + 32.0\n}\n\nfn main() {\n    println!(\"{}\", celsius_to_fahrenheit(100.0));\n}",
     "expectedOutput": "212",
     "solution": "fn celsius_to_fahrenheit(c: f64) -> f64 {\n    c * 9.0 / 5.0 + 32.0\n}\n\nfn main() {\n    println!(\"{}\", celsius_to_fahrenheit(100.0));\n}"
   },
   "quiz": [
     {
-      "question": "What does a function return if its last line ends with a semicolon?",
+      "question": "If the last line inside a block ends with a semicolon, what value does the block give back?",
       "options": [
-        "The last value anyway",
+        "The value of that last line anyway",
         "Nothing: the unit type ()",
         "An error at runtime"
       ],

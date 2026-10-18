@@ -12,6 +12,10 @@
     },
     {
       "type": "text",
+      "text": "stock[\"pears\"] reads a value directly, but it panics (stops the program) if the key is missing. Use it only when you know the key is there; otherwise use get."
+    },
+    {
+      "type": "text",
       "text": "get returns an Option because the key might be missing. The entry API inserts a default the first time it sees a key, which is perfect for counting:"
     },
     {
@@ -20,7 +24,11 @@
     },
     {
       "type": "text",
-      "text": "You can loop over all pairs. The order isn't guaranteed, so sort the keys if you need a fixed order:"
+      "text": "entry(word).or_insert(0) inserts 0 if the word is new, then gives back a mutable reference (&mut) to the count stored in the map. The * in front follows that reference, so += 1 changes the count inside the map, just like *n in the Mutable references lesson. get works the other way round: it gives back an Option holding a reference to the value, so a fallback has to be a reference too, as in map.get(&key).unwrap_or(&0)."
+    },
+    {
+      "type": "text",
+      "text": "You can loop over all the keys. The order isn't guaranteed, so sort them if you need a fixed order. Below, ages.keys() hands out each key in turn and .collect() gathers them into a new Vec. Writing Vec<_> asks for a Vec and lets Rust work out the item type itself (here, references to the names). Unit 8 covers keys, collect and friends in depth."
     },
     {
       "type": "code",

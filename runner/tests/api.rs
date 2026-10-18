@@ -13,8 +13,13 @@ use tower::ServiceExt;
 fn state(sandbox: Sandbox) -> Arc<AppState> {
     Arc::new(AppState {
         sandbox,
-        limits: Limits { run_timeout: Duration::from_secs(2), ..Limits::default() },
+        limits: Limits {
+            run_timeout: Duration::from_secs(2),
+            ..Limits::default()
+        },
         slots: Semaphore::new(2),
+        queue_timeout: Duration::from_secs(10),
+        allowed_origins: Vec::new(),
     })
 }
 
@@ -72,6 +77,119 @@ async fn endless_output_is_capped() {
     let stdout = out["stdout"].as_str().unwrap();
     assert!(stdout.len() <= Limits::default().max_output + 100);
     assert!(stdout.ends_with("[output truncated]"));
+    assert!(out["stderr"].as_str().unwrap().contains("too much output"));
+}
+
+#[tokio::test]
+async fn warnings_are_separate_from_program_output() {
+    let out =
+        run_local(r#"fn main() { let unused = 1; eprintln!("to stderr"); println!("ok"); }"#).await;
+    assert_eq!(out["success"], true);
+    assert_eq!(out["stdout"], "ok\n");
+    assert_eq!(out["stderr"], "to stderr\n");
+    assert!(
+        out["warnings"]
+            .as_str()
+            .unwrap()
+            .contains("unused variable"),
+        "{out}"
+    );
+}
+
+#[tokio::test]
+async fn overflow_panics_like_a_debug_build() {
+    let out = run_local(
+        "fn main() { let mut x: u8 = 250; for _ in 0..10 { x += std::hint::black_box(1); } println!(\"{x}\"); }",
+    )
+    .await;
+    assert_eq!(out["success"], false, "{out}");
+    assert!(
+        out["stderr"].as_str().unwrap().contains("overflow"),
+        "{out}"
+    );
+}
+
+#[tokio::test]
+async fn faked_exit_codes_do_not_change_the_stage() {
+    let out = run_local("fn main() { std::process::exit(201); }").await;
+    assert_eq!(out["stage"], "run", "{out}");
+    assert_eq!(out["success"], false);
+}
+
+#[tokio::test]
+async fn endless_compile_is_stopped() {
+    let st = Arc::new(AppState {
+        sandbox: Sandbox::Local,
+        limits: Limits {
+            compile_timeout: Duration::from_secs(2),
+            run_timeout: Duration::from_secs(2),
+            job_timeout: Duration::from_secs(10),
+            ..Limits::default()
+        },
+        slots: Semaphore::new(1),
+        queue_timeout: Duration::from_secs(5),
+        allowed_origins: Vec::new(),
+    });
+    let code = "#![allow(long_running_const_eval)]\nconst X: u64 = { let mut i = 0u64; loop { i = i.wrapping_add(1); } };\nfn main() { println!(\"{}\", X); }";
+    let (status, out) = post_run(st, code).await;
+    assert_eq!(status, StatusCode::OK, "{out}");
+    assert_eq!(out["stage"], "timeout", "{out}");
+}
+
+#[tokio::test]
+async fn bad_requests_get_json_errors() {
+    let req = Request::post("/run")
+        .header("content-type", "application/json")
+        .body(Body::from("{not json"))
+        .unwrap();
+    let res = app(state(Sandbox::Local)).oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::BAD_REQUEST);
+    let body = res.into_body().collect().await.unwrap().to_bytes();
+    let v: Value = serde_json::from_slice(&body).unwrap();
+    assert!(v["error"].is_string());
+
+    let big = "a".repeat(rust_runner::MAX_CODE_BYTES + 4096);
+    let req = Request::post("/run")
+        .header("content-type", "application/json")
+        .body(Body::from(json!({ "code": big }).to_string()))
+        .unwrap();
+    let res = app(state(Sandbox::Local)).oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::PAYLOAD_TOO_LARGE);
+    let body = res.into_body().collect().await.unwrap().to_bytes();
+    assert!(serde_json::from_slice::<Value>(&body).unwrap()["error"].is_string());
+}
+
+#[tokio::test]
+async fn busy_runner_answers_503() {
+    let st = Arc::new(AppState {
+        sandbox: Sandbox::Local,
+        limits: Limits::default(),
+        slots: Semaphore::new(0),
+        queue_timeout: Duration::from_millis(200),
+        allowed_origins: Vec::new(),
+    });
+    let req = Request::post("/run")
+        .header("content-type", "application/json")
+        .body(Body::from(json!({ "code": "fn main() {}" }).to_string()))
+        .unwrap();
+    let res = app(st).oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(res.headers()["retry-after"], "5");
+}
+
+#[test]
+fn bad_limits_are_rejected() {
+    assert!(Limits::default().validate().is_ok());
+    let zero = Limits {
+        run_timeout: Duration::ZERO,
+        ..Limits::default()
+    };
+    assert!(zero.validate().is_err());
+    let short = Limits {
+        job_timeout: Duration::from_secs(5),
+        ..Limits::default()
+    };
+    assert!(short.validate().is_err());
 }
 
 #[tokio::test]
@@ -84,7 +202,12 @@ async fn empty_code_is_rejected() {
 #[tokio::test]
 #[ignore]
 async fn docker_sandbox_runs_and_blocks_network() {
-    let docker = || Sandbox::Docker { image: "rust-runner-sandbox".into() };
+    let docker = || {
+        Sandbox::docker(
+            "rust-runner-sandbox",
+            std::env::var("RUNNER_DOCKER_RUNTIME").ok(),
+        )
+    };
 
     let (_, out) = post_run(state(docker()), r#"fn main() { println!("hi"); }"#).await;
     assert_eq!(out["stdout"], "hi\n", "{out}");
@@ -109,7 +232,10 @@ async fn docker_sandbox_runs_and_blocks_network() {
     }"#;
     let (_, out) = post_run(state(docker()), hog).await;
     assert_eq!(out["success"], false, "{out}");
-    assert!(out["stderr"].as_str().unwrap().contains("too much memory"), "{out}");
+    assert!(
+        out["stderr"].as_str().unwrap().contains("too much memory"),
+        "{out}"
+    );
 
     let forks = r#"fn main() {
         let mut ok = 0;
@@ -121,4 +247,34 @@ async fn docker_sandbox_runs_and_blocks_network() {
     let (_, out) = post_run(state(docker()), forks).await;
     let spawned: u32 = out["stdout"].as_str().unwrap().trim().parse().unwrap();
     assert!(spawned < 100, "process limit not enforced: {out}");
+
+    // Writing past the in-container pipes to PID 1's stdout must still be capped on the host.
+    let bypass = r#"use std::io::Write;
+    fn main() {
+        let mut f = std::fs::OpenOptions::new().write(true).open("/proc/1/fd/1")
+            .or_else(|_| std::fs::OpenOptions::new().write(true).open("/dev/stdout")).unwrap();
+        let line = [b'x'; 1024];
+        loop { let _ = f.write_all(&line); }
+    }"#;
+    let (status, out) = post_run(state(docker()), bypass).await;
+    assert_eq!(status, StatusCode::OK, "{out}");
+    assert!(
+        out["stdout"].as_str().unwrap().len() <= Limits::default().max_output + 100,
+        "{out}"
+    );
+
+    // A client that disconnects mid-job must not leave a container running.
+    let sandbox = docker();
+    let limits = Limits::default();
+    let job = sandbox.run("fn main() { loop {} }", &limits);
+    let _ = tokio::time::timeout(Duration::from_secs(3), job).await; // dropped: client went away
+    tokio::time::sleep(Duration::from_secs(3)).await;
+    let ps = std::process::Command::new("docker")
+        .args(["ps", "-q", "--filter", "name=^rr-"])
+        .output()
+        .unwrap();
+    assert!(
+        String::from_utf8_lossy(&ps.stdout).trim().is_empty(),
+        "container leaked after cancel"
+    );
 }
