@@ -80,6 +80,10 @@ impl Limits {
         if secs(self.compile_timeout) == 0 || secs(self.run_timeout) == 0 {
             return Err("compile and run timeouts must be at least 1 second".into());
         }
+        let hour = Duration::from_secs(3600);
+        if self.compile_timeout > hour || self.run_timeout > hour || self.job_timeout > hour {
+            return Err("timeouts must be at most an hour".into());
+        }
         if self.job_timeout < self.compile_timeout + self.run_timeout + Duration::from_secs(2) {
             return Err(
                 "job timeout must exceed compile + run timeouts by at least 2 seconds".into(),
@@ -98,6 +102,11 @@ const COMPILE_KILLED: i32 = 202;
 const TIMED_OUT: i32 = 124;
 /// 128 + SIGKILL: out of memory, or the program ignored the polite stop.
 const KILLED: i32 = 137;
+/// 128 + SIGXCPU: the program used up its CPU-time limit.
+const CPU_LIMIT: i32 = 152;
+/// Most compiler output kept before the program starts (warnings are capped
+/// again when reported); past this the job counts as a compile failure.
+const MAX_COMPILER_OUTPUT: usize = 4 * 1024 * 1024;
 
 /// Written to stdout and stderr once compiling succeeds, right before the
 /// learner's program starts. The program can't take back what was written
@@ -121,6 +130,8 @@ if [ "$rc" -ne 0 ]; then
 fi
 printf '\001RR-RUN\n'
 printf '\001RR-RUN\n' >&2
+# A CPU-time limit the kernel enforces, in case the program stops `timeout`.
+ulimit -t "$((secs + 1))"
 exec timeout --signal=TERM --kill-after=1 "$secs" "$work/prog" </dev/null
 "#;
 
@@ -171,8 +182,19 @@ impl Sandbox {
             .stderr(Stdio::piped())
             .kill_on_drop(true)
             .spawn()?;
+        if matches!(self, Sandbox::Local) {
+            guard.group = child.id();
+        }
+        let handle = JobHandle {
+            container: guard.name.clone(),
+            group: guard.group,
+        };
 
-        let job = tokio::time::timeout(limits.job_timeout, collect(&mut child, code, limits)).await;
+        let job = tokio::time::timeout(
+            limits.job_timeout,
+            collect(&mut child, &handle, code, limits),
+        )
+        .await;
         let duration_ms = started.elapsed().as_millis() as u64;
 
         let collected = match job {
@@ -193,7 +215,7 @@ impl Sandbox {
                 });
             }
         };
-        if collected.overflow {
+        if collected.overflow || collected.timed_out {
             guard.remove_now().await;
         } else {
             // The container exited by itself, so `--rm` cleans it up.
@@ -206,41 +228,56 @@ impl Sandbox {
     /// in case a cleanup was missed.
     pub async fn reap_orphans(&self) {
         let Sandbox::Docker(d) = self else { return };
-        let Ok(out) = Command::new("docker")
-            .args(["ps", "-a", "--format", "{{.Names}}"])
-            .args(["--filter", &format!("name=^{}", d.prefix)])
-            .output()
-            .await
+        let filter = format!("name=^{}", d.prefix);
+        let Some(out) =
+            docker_quiet(&["ps", "-a", "--format", "{{.Names}}", "--filter", &filter]).await
         else {
             return;
         };
-        let names: Vec<String> = String::from_utf8_lossy(&out.stdout)
+        let names: Vec<String> = String::from_utf8_lossy(&out)
             .lines()
             .map(str::to_string)
             .filter(|n| !d.live.lock().unwrap().contains(n))
             .collect();
         if !names.is_empty() {
             tracing::warn!("removing {} orphaned job containers", names.len());
-            let _ = Command::new("docker")
-                .args(["rm", "-f"])
-                .args(&names)
-                .output()
-                .await;
+            let mut args = vec!["rm", "-f"];
+            args.extend(names.iter().map(String::as_str));
+            docker_quiet(&args).await;
+        }
+    }
+
+    /// The name prefix of this server's job containers (Docker mode only).
+    pub fn container_prefix(&self) -> Option<&str> {
+        match self {
+            Sandbox::Docker(d) => Some(&d.prefix),
+            Sandbox::Local => None,
         }
     }
 }
 
+/// Runs a Docker command for cleanup, giving up after 15 seconds so a hung
+/// daemon can't block the server. Returns stdout, or None on failure.
+async fn docker_quiet(args: &[&str]) -> Option<Vec<u8>> {
+    let run = Command::new("docker")
+        .args(args)
+        .stdin(Stdio::null())
+        .kill_on_drop(true)
+        .output();
+    match tokio::time::timeout(Duration::from_secs(15), run).await {
+        Ok(Ok(out)) if out.status.success() => Some(out.stdout),
+        _ => None,
+    }
+}
+
 /// Removes every job container left by any earlier run of the server.
-/// Call it at startup, before serving; assumes one runner per Docker daemon.
+/// Call it at startup, before serving. It assumes one runner per Docker
+/// daemon: it would also remove another runner's jobs.
 pub async fn reap_all_job_containers() {
-    let Ok(out) = Command::new("docker")
-        .args(["ps", "-aq", "--filter", "name=^rr-"])
-        .output()
-        .await
-    else {
+    let Some(out) = docker_quiet(&["ps", "-aq", "--filter", "name=^rr-"]).await else {
         return;
     };
-    let ids: Vec<String> = String::from_utf8_lossy(&out.stdout)
+    let ids: Vec<String> = String::from_utf8_lossy(&out)
         .lines()
         .map(str::to_string)
         .collect();
@@ -249,11 +286,43 @@ pub async fn reap_all_job_containers() {
             "removing {} job containers left from a previous run",
             ids.len()
         );
-        let _ = Command::new("docker")
-            .args(["rm", "-f"])
-            .args(&ids)
-            .output()
-            .await;
+        let mut args = vec!["rm", "-f"];
+        args.extend(ids.iter().map(String::as_str));
+        docker_quiet(&args).await;
+    }
+}
+
+/// Checks that Docker, the sandbox image and the runtime work, by running a
+/// trivial job. Call it at startup so a broken setup fails loudly instead of
+/// answering every request with an error.
+pub async fn check_docker(sandbox: &Sandbox) -> Result<(), String> {
+    let Sandbox::Docker(d) = sandbox else {
+        return Ok(());
+    };
+    let mut args = vec!["run", "--rm", "--pull", "never", "--network", "none"];
+    if let Some(runtime) = &d.runtime {
+        args.extend(["--runtime", runtime.as_str()]);
+    }
+    args.extend([d.image.as_str(), "rustc", "--version"]);
+    let run = Command::new("docker")
+        .args(&args)
+        .stdin(Stdio::null())
+        .kill_on_drop(true)
+        .output();
+    match tokio::time::timeout(Duration::from_secs(120), run).await {
+        Ok(Ok(out)) if out.status.success() => {
+            tracing::info!(
+                "sandbox ready: {}",
+                String::from_utf8_lossy(&out.stdout).trim()
+            );
+            Ok(())
+        }
+        Ok(Ok(out)) => Err(format!(
+            "sandbox check failed: {}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        )),
+        Ok(Err(e)) => Err(format!("could not run docker: {e}")),
+        Err(_) => Err("sandbox check timed out".into()),
     }
 }
 
@@ -268,6 +337,7 @@ impl DockerSandbox {
             .args(["--memory-swap", &format!("{}m", limits.memory_mb)])
             .args(["--cpus", &limits.cpus.to_string()])
             .args(["--pids-limit", &limits.max_pids.to_string()])
+            .args(["--ulimit", "core=0"])
             .args(["--read-only", "--tmpfs", "/tmp:rw,exec,size=128m,mode=1777"])
             .args(["--cap-drop", "ALL", "--security-opt", "no-new-privileges"])
             .args(["--user", "65534:65534"]);
@@ -285,6 +355,7 @@ impl DockerSandbox {
             ContainerGuard {
                 name: Some(name),
                 live: Some(self.live.clone()),
+                group: None,
             },
         )
     }
@@ -296,15 +367,22 @@ fn local_command(dir: &std::path::Path, limits: &Limits) -> Command {
         .arg(limits.compile_timeout.as_secs().to_string())
         .arg(limits.run_timeout.as_secs().to_string())
         .arg(dir);
+    // Own process group, so the whole job can be killed at once.
+    #[cfg(unix)]
+    cmd.process_group(0);
     cmd
 }
 
-/// Force-removes a job's container when the job ends any way other than the
-/// container exiting by itself: timeout, output overflow, an error, or the
-/// client disconnecting (which drops the request future).
+/// Cleans up after a job when it ends any way other than finishing by
+/// itself: timeout, output overflow, an error, or the client disconnecting
+/// (which drops the request future). In Docker mode it force-removes the
+/// container; in local mode it kills the job's process group.
 struct ContainerGuard {
     name: Option<String>,
     live: Option<Arc<Mutex<HashSet<String>>>>,
+    /// Local mode: the job's process group. Always killed on drop, since a
+    /// learner program may outlive the shell that started it.
+    group: Option<u32>,
 }
 
 impl ContainerGuard {
@@ -312,6 +390,7 @@ impl ContainerGuard {
         Self {
             name: None,
             live: None,
+            group: None,
         }
     }
 
@@ -322,11 +401,11 @@ impl ContainerGuard {
     }
 
     async fn remove_now(&mut self) {
-        if let Some(name) = self.name.take() {
-            let _ = Command::new("docker")
-                .args(["rm", "-f", &name])
-                .output()
-                .await;
+        // Keep the name until the rm finishes: if this future is dropped
+        // part-way, Drop still removes the container and forgets the name.
+        if let Some(name) = self.name.clone() {
+            docker_quiet(&["rm", "-f", &name]).await;
+            self.name = None;
             if let Some(live) = &self.live {
                 live.lock().unwrap().remove(&name);
             }
@@ -336,6 +415,14 @@ impl ContainerGuard {
 
 impl Drop for ContainerGuard {
     fn drop(&mut self) {
+        #[cfg(unix)]
+        if let Some(pid) = self.group.take() {
+            let _ = std::process::Command::new("kill")
+                .args(["-KILL", "--", &format!("-{pid}")])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status();
+        }
         let Some(name) = self.name.take() else { return };
         if let Some(live) = &self.live {
             live.lock().unwrap().remove(&name);
@@ -362,12 +449,41 @@ struct Collected {
     stdout: Vec<u8>,
     stderr: Vec<u8>,
     overflow: bool,
+    /// The host-side run timer fired.
+    timed_out: bool,
     code: Option<i32>,
 }
 
 /// Sends the code, then reads both output streams with a hard byte cap.
 /// If either stream goes over the cap, the job is killed.
-async fn collect(child: &mut Child, code: &str, limits: &Limits) -> std::io::Result<Collected> {
+/// How to stop every process of a job, not just the `docker` CLI or shell.
+struct JobHandle {
+    container: Option<String>,
+    group: Option<u32>,
+}
+
+impl JobHandle {
+    async fn kill(&self, child: &mut Child) {
+        if let Some(name) = &self.container {
+            docker_quiet(&["kill", name]).await;
+        }
+        #[cfg(unix)]
+        if let Some(pid) = self.group {
+            let _ = Command::new("kill")
+                .args(["-KILL", "--", &format!("-{pid}")])
+                .output()
+                .await;
+        }
+        let _ = child.start_kill();
+    }
+}
+
+async fn collect(
+    child: &mut Child,
+    job: &JobHandle,
+    code: &str,
+    limits: &Limits,
+) -> std::io::Result<Collected> {
     let mut stdin = child.stdin.take().expect("piped stdin");
     let source = code.as_bytes().to_vec();
     let writer = tokio::spawn(async move {
@@ -377,22 +493,37 @@ async fn collect(child: &mut Child, code: &str, limits: &Limits) -> std::io::Res
 
     // stderr carries compiler warnings and the program's stderr.
     let out_cap = limits.max_output + MARKER.len();
-    let err_cap = 2 * limits.max_output + MARKER.len();
+
+    // The run timer starts when the program does (the marker on stdout). It
+    // backs up the in-container `timeout`, which the program could freeze.
+    let (started_tx, started_rx) = tokio::sync::oneshot::channel();
+    let run_limit = limits.run_timeout + Duration::from_secs(2);
+    let run_deadline = async move {
+        if started_rx.await.is_ok() {
+            tokio::time::sleep(run_limit).await;
+        } else {
+            std::future::pending::<()>().await;
+        }
+    };
+    tokio::pin!(run_deadline);
     let mut out_task: ReadTask = Some(tokio::spawn(read_capped(
         child.stdout.take().expect("stdout"),
         out_cap,
+        Some(started_tx),
     )));
-    let mut err_task: ReadTask = Some(tokio::spawn(read_capped(
+    let mut err_task: ReadTask = Some(tokio::spawn(read_stderr(
         child.stderr.take().expect("stderr"),
-        err_cap,
+        limits.max_output,
     )));
     let mut stdout = None;
     let mut stderr = None;
     let mut overflow = false;
+    let mut timed_out = false;
 
     let result = async {
-        while !overflow && (stdout.is_none() || stderr.is_none()) {
+        while !overflow && !timed_out && (stdout.is_none() || stderr.is_none()) {
             tokio::select! {
+                _ = &mut run_deadline => timed_out = true,
                 r = join(&mut out_task), if stdout.is_none() => {
                     let (buf, over) = r?;
                     overflow |= over;
@@ -405,8 +536,8 @@ async fn collect(child: &mut Child, code: &str, limits: &Limits) -> std::io::Res
                 }
             }
         }
-        if overflow {
-            child.start_kill()?;
+        if overflow || timed_out {
+            job.kill(child).await;
         }
         let status = child.wait().await?;
         // After the process ends the other stream reaches EOF quickly.
@@ -429,6 +560,7 @@ async fn collect(child: &mut Child, code: &str, limits: &Limits) -> std::io::Res
         stdout: stdout.unwrap_or_default(),
         stderr: stderr.unwrap_or_default(),
         overflow,
+        timed_out,
         code,
     })
 }
@@ -453,6 +585,7 @@ async fn finish(task: &mut ReadTask) -> Vec<u8> {
 async fn read_capped<R: AsyncRead + Unpin>(
     mut reader: R,
     cap: usize,
+    mut started: Option<tokio::sync::oneshot::Sender<()>>,
 ) -> std::io::Result<(Vec<u8>, bool)> {
     let mut buf = Vec::new();
     let mut chunk = [0u8; 8192];
@@ -462,8 +595,52 @@ async fn read_capped<R: AsyncRead + Unpin>(
             return Ok((buf, false));
         }
         buf.extend_from_slice(&chunk[..n]);
+        if buf.len() >= MARKER.len()
+            && let Some(tx) = started.take()
+            && buf.starts_with(MARKER)
+        {
+            let _ = tx.send(());
+        }
         if buf.len() > cap {
             buf.truncate(cap);
+            return Ok((buf, true));
+        }
+    }
+}
+
+/// Reads stderr: compiler output first, then (after the marker) the
+/// program's own stderr. Only the program part is capped tightly; a long
+/// compiler output doesn't stop the job, it's trimmed when reported.
+async fn read_stderr<R: AsyncRead + Unpin>(
+    mut reader: R,
+    max: usize,
+) -> std::io::Result<(Vec<u8>, bool)> {
+    let mut buf = Vec::new();
+    let mut chunk = [0u8; 8192];
+    let mut searched: usize = 0;
+    let mut program_start: Option<usize> = None;
+    loop {
+        let n = reader.read(&mut chunk).await?;
+        if n == 0 {
+            return Ok((buf, false));
+        }
+        buf.extend_from_slice(&chunk[..n]);
+        if program_start.is_none() {
+            let from = searched.saturating_sub(MARKER.len() - 1);
+            if let Some(i) = find(&buf[from..], MARKER) {
+                program_start = Some(from + i + MARKER.len());
+            } else {
+                searched = buf.len();
+                if buf.len() > MAX_COMPILER_OUTPUT {
+                    buf.truncate(MAX_COMPILER_OUTPUT);
+                    return Ok((buf, true));
+                }
+            }
+        }
+        if let Some(start) = program_start
+            && buf.len() - start > max
+        {
+            buf.truncate(start + max);
             return Ok((buf, true));
         }
     }
@@ -512,13 +689,19 @@ fn interpret(c: Collected, limits: &Limits, duration_ms: u64) -> std::io::Result
     let stdout = text(stdout, max, c.overflow && stdout.len() >= max);
     let mut stderr = text(program_err, max, false);
 
-    let (success, stage) = if c.overflow {
+    let (success, stage) = if c.timed_out {
+        stderr.push_str(&format!(
+            "\nTime limit exceeded: the program ran longer than {} seconds.",
+            limits.run_timeout.as_secs()
+        ));
+        (false, Stage::Timeout)
+    } else if c.overflow {
         stderr.push_str("\nThe program was stopped because it printed too much output.");
         (false, Stage::Run)
     } else {
         match c.code {
             Some(0) => (true, Stage::Run),
-            Some(TIMED_OUT) => {
+            Some(TIMED_OUT) | Some(CPU_LIMIT) => {
                 stderr.push_str(&format!(
                     "\nTime limit exceeded: the program ran longer than {} seconds.",
                     limits.run_timeout.as_secs()

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use rust_runner::sandbox::{Limits, Sandbox, reap_all_job_containers};
+use rust_runner::sandbox::{Limits, Sandbox, check_docker, reap_all_job_containers};
 use rust_runner::{AppState, app};
 use tokio::sync::Semaphore;
 
@@ -56,6 +56,9 @@ async fn main() {
         fail("RUNNER_MAX_JOBS must be at least 1");
     }
     let queue_timeout = Duration::from_secs(env_or("RUNNER_QUEUE_TIMEOUT_SECS", 10));
+    if queue_timeout > Duration::from_secs(600) {
+        fail("RUNNER_QUEUE_TIMEOUT_SECS must be at most 600");
+    }
 
     let sandbox = match std::env::var("RUNNER_SANDBOX").as_deref() {
         Ok("local") => {
@@ -85,6 +88,10 @@ async fn main() {
             )
         }
     };
+
+    if let Err(e) = check_docker(&sandbox).await {
+        fail(&e);
+    }
 
     let allowed_origins: Vec<String> = std::env::var("RUNNER_ALLOWED_ORIGINS")
         .unwrap_or_default()

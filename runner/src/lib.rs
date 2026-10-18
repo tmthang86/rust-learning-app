@@ -41,15 +41,17 @@ pub struct RunRequest {
 }
 
 pub fn app(state: Arc<AppState>) -> Router {
-    let origins = if state.allowed_origins.is_empty() {
+    let any = state.allowed_origins.is_empty() || state.allowed_origins.iter().any(|o| o == "*");
+    let origins = if any {
         AllowOrigin::any()
     } else {
-        AllowOrigin::list(
-            state
-                .allowed_origins
-                .iter()
-                .filter_map(|o| HeaderValue::from_str(o).ok()),
-        )
+        AllowOrigin::list(state.allowed_origins.iter().filter_map(|o| {
+            let value = HeaderValue::from_str(o).ok();
+            if value.is_none() {
+                tracing::warn!("ignoring invalid CORS origin {o:?}");
+            }
+            value
+        }))
     };
     let cors = CorsLayer::new()
         .allow_origin(origins)
@@ -61,7 +63,9 @@ pub fn app(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/health", get(|| async { "ok" }))
         .route("/run", post(run))
-        .layer(DefaultBodyLimit::max(MAX_CODE_BYTES + 1024))
+        // JSON escaping can double the size of code; the real limit is
+        // checked on the decoded code below.
+        .layer(DefaultBodyLimit::max(2 * MAX_CODE_BYTES + 1024))
         .layer(TimeoutLayer::with_status_code(
             StatusCode::REQUEST_TIMEOUT,
             request_timeout,

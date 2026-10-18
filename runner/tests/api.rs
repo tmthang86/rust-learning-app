@@ -177,6 +177,42 @@ async fn busy_runner_answers_503() {
     assert_eq!(res.headers()["retry-after"], "5");
 }
 
+#[tokio::test]
+async fn many_warnings_still_run() {
+    let mut code = String::from("fn main() {\n");
+    for i in 0..2500 {
+        code.push_str(&format!("    let v{i} = {i};\n"));
+    }
+    code.push_str("    println!(\"ran\");\n}\n");
+    let out = run_local(&code).await;
+    assert_eq!(out["success"], true, "{}", out["stderr"]);
+    assert_eq!(out["stdout"], "ran\n");
+    assert!(
+        out["warnings"]
+            .as_str()
+            .unwrap()
+            .ends_with("[output truncated]")
+    );
+}
+
+#[tokio::test]
+async fn stopping_the_timer_does_not_extend_the_run() {
+    // The program freezes its own `timeout` supervisor, then spins.
+    let code = r#"fn main() {
+        let ppid = std::os::unix::process::parent_id();
+        let _ = std::process::Command::new("kill").args(["-STOP", &ppid.to_string()]).status();
+        loop {}
+    }"#;
+    let started = std::time::Instant::now();
+    let out = run_local(code).await;
+    assert_eq!(out["success"], false, "{out}");
+    assert_eq!(out["stage"], "timeout", "{out}");
+    assert!(
+        started.elapsed() < Duration::from_secs(12),
+        "ran until the job timeout: {out}"
+    );
+}
+
 #[test]
 fn bad_limits_are_rejected() {
     assert!(Limits::default().validate().is_ok());
@@ -263,14 +299,26 @@ async fn docker_sandbox_runs_and_blocks_network() {
         "{out}"
     );
 
+    // Freezing the in-container timer must not extend the run past the host timer.
+    let freeze = r#"fn main() {
+        let ppid = std::os::unix::process::parent_id();
+        let _ = std::process::Command::new("kill").args(["-STOP", &ppid.to_string()]).status();
+        loop {}
+    }"#;
+    let started = std::time::Instant::now();
+    let (_, out) = post_run(state(docker()), freeze).await;
+    assert_eq!(out["stage"], "timeout", "{out}");
+    assert!(started.elapsed() < Duration::from_secs(15), "{out}");
+
     // A client that disconnects mid-job must not leave a container running.
     let sandbox = docker();
     let limits = Limits::default();
     let job = sandbox.run("fn main() { loop {} }", &limits);
     let _ = tokio::time::timeout(Duration::from_secs(3), job).await; // dropped: client went away
     tokio::time::sleep(Duration::from_secs(3)).await;
+    let filter = format!("name=^{}", sandbox.container_prefix().unwrap());
     let ps = std::process::Command::new("docker")
-        .args(["ps", "-q", "--filter", "name=^rr-"])
+        .args(["ps", "-aq", "--filter", &filter])
         .output()
         .unwrap();
     assert!(

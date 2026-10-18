@@ -14,8 +14,9 @@ A small HTTP service that compiles and runs learners' Rust code for the app.
 `success` is false if it panicked or was stopped) or `timeout`. When
 compiling succeeds, `warnings` holds the compiler's warnings and `stderr`
 only the program's own error output.
-Errors are JSON too: `{"error": "..."}` with status 400, 408, 413, 422, 500
-or 503 (busy; comes with `Retry-After`).
+Errors from `/run` are JSON too: `{"error": "..."}` with status 400, 413,
+422, 500 or 503 (busy; comes with `Retry-After`). A request that runs past
+the overall request timeout gets an empty 408.
 `GET /health` returns `ok`.
 
 ## Sandbox
@@ -31,7 +32,7 @@ The code goes in over stdin, so nothing is mounted from the host.
 | CPU | 1 core |
 | Processes | 64 max (stops fork bombs) |
 | Kernel isolation | gVisor (`--runtime runsc`), required unless `RUNNER_ALLOW_RUNC=1` |
-| Time | 10 s to compile, 5 s to run, 20 s per job |
+| Time | 10 s to compile, 5 s to run (enforced in the container, by a CPU-time limit, and by a timer on the server), 20 s per job |
 | Output | 64 KB per stream, enforced by the server; the job is killed past it |
 | Leftovers | containers are removed on timeout, overflow or client disconnect; a watchdog and a startup sweep remove any missed ones |
 | Code size | 64 KB |
@@ -58,6 +59,13 @@ Settings (environment variables): `RUNNER_ADDR`, `RUNNER_IMAGE`,
 `RUNNER_ALLOWED_ORIGINS` (comma-separated web origins for CORS). Invalid
 values stop the server at startup. `RUNNER_SANDBOX=local` skips Docker and
 runs code directly on the machine; use it only for local development.
+
+At startup the server checks that Docker, the image and the runtime work
+(it runs `rustc --version` in the sandbox) and refuses to start otherwise.
+Run one runner per Docker daemon: the startup sweep removes every `rr-*`
+container. On shutdown it finishes jobs in progress, which can take up to
+the queue timeout plus the job timeout, so give it a stop timeout of at
+least 40 s (`docker stop -t 40`, or `stop_grace_period` in Compose).
 
 The first compile after the image is pulled can be slow while the
 toolchain loads from disk; run one warm-up job after deploying.
