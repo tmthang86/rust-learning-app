@@ -28,17 +28,26 @@
   "exercise": {
     "prompt": "Change the program so it prints: Hello, Rust!",
     "starter": "fn main() {\n    println!(\"Hello, world!\");\n}",
-    "expectedOutput": "Hello, Rust!"
+    "expectedOutput": "Hello, Rust!",
+    "solution": "fn main() {\n    println!(\"Hello, Rust!\");\n}"
   },
   "quiz": [
     {
       "question": "Where does a Rust program start running?",
-      "options": ["The first line of the file", "The main function", "Any function named start"],
+      "options": [
+        "The first line of the file",
+        "The main function",
+        "Any function named start"
+      ],
       "answer": 1
     },
     {
       "question": "Why does println! end with an exclamation mark?",
-      "options": ["It prints loudly", "It is a macro", "It returns an error"],
+      "options": [
+        "It prints loudly",
+        "It is a macro",
+        "It returns an error"
+      ],
       "answer": 1
     }
   ]

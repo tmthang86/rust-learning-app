@@ -1,0 +1,71 @@
+{
+  "id": "u1-l3",
+  "title": "Printing with println!",
+  "sections": [
+    {
+      "type": "text",
+      "text": "println! prints text followed by a new line. Curly braces {} inside the text are placeholders that get filled in with values."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let name = \"Ferris\";\n    let age = 8;\n    println!(\"{} is {} years old\", name, age);\n    println!(\"{name} is {age} years old\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Both lines print the same thing. You can list values after the text, or put a variable's name straight inside the braces."
+    },
+    {
+      "type": "text",
+      "track": "starter",
+      "text": "A variable is a name for a value. Here name holds the text \"Ferris\" and age holds the number 8. You'll learn more about variables in the next lesson."
+    },
+    {
+      "type": "note",
+      "track": "fast",
+      "text": "Coming from another language: {name} works like f-strings in Python or template literals in JavaScript, but the format string is checked at compile time. A typo in a placeholder is a compile error, not a runtime surprise."
+    },
+    {
+      "type": "text",
+      "text": "print! is the same but without the new line. eprintln! prints to the error stream. {:?} prints a value in a debug form, which is handy for lists:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let scores = [90, 72, 85];\n    println!(\"{:?}\", scores);\n}"
+    }
+  ],
+  "exercise": {
+    "prompt": "Use the variables to print exactly: Ferris has 3 friends",
+    "starter": "fn main() {\n    let name = \"Ferris\";\n    let friends = 3;\n    println!(\"\");\n}",
+    "expectedOutput": "Ferris has 3 friends",
+    "solution": "fn main() {\n    let name = \"Ferris\";\n    let friends = 3;\n    println!(\"{name} has {friends} friends\");\n}"
+  },
+  "quiz": [
+    {
+      "question": "What does {} do inside println!?",
+      "options": [
+        "Starts a new block of code",
+        "Marks where a value is inserted",
+        "Prints curly braces"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What does println!(\"{:?}\", [1, 2]) print?",
+      "options": [
+        "[1, 2]",
+        "1 2",
+        "{:?}"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "How is print! different from println!?",
+      "options": [
+        "It's slower",
+        "It doesn't add a new line",
+        "It only prints numbers"
+      ],
+      "answer": 1
+    }
+  ]
+}

@@ -39,6 +39,19 @@ void main() {
     expect(await CourseRepository().loadLesson('does-not-exist'), isNull);
   });
 
+  test('every Unit 1 lesson is written and parses', () async {
+    final repo = CourseRepository();
+    final course = await repo.loadCourse();
+    final unit1 = course.units.firstWhere((u) => u.id == 'u1');
+    for (final ref in unit1.lessons) {
+      final lesson = await repo.loadLesson(ref.id);
+      expect(lesson, isNotNull, reason: '${ref.id} is missing');
+      expect(lesson!.title, ref.title);
+      expect(lesson.exercise, isNotNull, reason: '${ref.id} has no exercise');
+      expect(lesson.quiz, isNotEmpty, reason: '${ref.id} has no quiz');
+    }
+  });
+
   testWidgets('first launch asks for a track, then shows the course',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);

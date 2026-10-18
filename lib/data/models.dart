@@ -101,16 +101,21 @@ class Exercise {
     required this.prompt,
     required this.starter,
     required this.expectedOutput,
+    this.solution,
   });
 
   final String prompt;
   final String starter;
   final String expectedOutput;
 
+  /// A reference answer, checked by tool/check_lessons.py.
+  final String? solution;
+
   factory Exercise.fromJson(Map<String, dynamic> json) => Exercise(
         prompt: json['prompt'] as String,
         starter: json['starter'] as String,
         expectedOutput: json['expectedOutput'] as String,
+        solution: json['solution'] as String?,
       );
 }
 

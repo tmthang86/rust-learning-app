@@ -25,6 +25,7 @@ lib/
 assets/content/
   course.json         units and lesson list
   lessons/<id>.json   lesson content
+tool/check_lessons.py compiles every lesson example and checks exercise solutions
 ```
 
 ## Running
