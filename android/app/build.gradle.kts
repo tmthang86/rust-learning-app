@@ -66,8 +66,8 @@ flutter {
     source = "../.."
 }
 
-// A release build must not ship Google's test app id, or the placeholder ad
-// report address (App Store guideline 2.5.18 needs a real way to report
+// A release build must not ship Google's test app id, a missing or test ad
+// unit id, or the placeholder ad report address (App Store guideline 2.5.18 needs a real way to report
 // ads; the same build feeds both stores). It fails early (AGP's
 // preReleaseBuild runs before compiling) unless the build says on purpose
 // that it is a test build, with --dart-define=ALLOW_TEST_ADS_IN_RELEASE=true.
@@ -78,10 +78,22 @@ val releaseAdsProblem: String? = run {
     val appId = dartDefines["ADMOB_APP_ID_ANDROID"] ?: admobTestAppId
     val reportEmail = dartDefines["AD_REPORT_EMAIL"].orEmpty()
     val reportUrl = dartDefines["AD_REPORT_URL"].orEmpty()
+    val googleTestUnitPrefix = "ca-app-pub-3940256099942544/"
     val problems = buildList {
         if (appId == admobTestAppId) add("the AdMob TEST app id")
+        for (key in listOf("ADMOB_BANNER_ANDROID", "ADMOB_INTERSTITIAL_ANDROID")) {
+            val unit = dartDefines[key].orEmpty().trim()
+            if (unit.isEmpty()) {
+                add("no $key")
+            } else if (unit.startsWith(googleTestUnitPrefix)) {
+                add("a Google TEST id for $key")
+            }
+        }
+        val email = reportEmail.trim().lowercase()
         if (reportUrl.isEmpty() &&
-            (reportEmail.isEmpty() || reportEmail == "ads-report@example.com")
+            (email.isEmpty() ||
+                email == "ads-report@example.com" ||
+                email.endsWith(".example"))
         ) {
             add("no real AD_REPORT_EMAIL or AD_REPORT_URL")
         }

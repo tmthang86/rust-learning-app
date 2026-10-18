@@ -1396,6 +1396,11 @@ void main() {
     expect(problem(real, placeholderAdReportEmail), contains('placeholder'));
     expect(problem(real, placeholderAdReportEmail, 'https://x.y/r'), isNull);
     expect(problem(real, 'a@b.c'), isNull);
+    // The documentation's example address is not a real one either.
+    expect(problem(real, 'ads@your-domain.example'), contains('example'));
+    expect(problem(real, 'Ads@Your-Domain.EXAMPLE'), contains('example'));
+    expect(problem(real, 'ads@your-domain.example', 'https://x.y/r'), isNull);
+    expect(problem(real, 'ads@example.org'), isNull);
   });
 
   test('default ids are Google test ids', () {

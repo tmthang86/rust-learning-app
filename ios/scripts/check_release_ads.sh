@@ -1,6 +1,6 @@
 #!/bin/sh
 # Xcode build phase: fails a Release build that would ship Google's TEST
-# AdMob app id or the placeholder ad report address (App Store guideline
+# AdMob app id, a missing or test iOS ad unit id, or the placeholder ad report address (App Store guideline
 # 2.5.18 needs a real way to report ads). Pass the real values (see
 # docs/ads-and-purchases.md), or --dart-define=ALLOW_TEST_ADS_IN_RELEASE=true
 # for a deliberate test build.
@@ -24,9 +24,26 @@ if [ "$ADMOB_APP_ID_IOS" = "ca-app-pub-3940256099942544~1458002511" ]; then
   echo "error: Release build with the AdMob TEST app id. Put the real id in ios/Flutter/AdMob.xcconfig (see docs/ads-and-purchases.md)."
   failed=1
 fi
-email=$(value AD_REPORT_EMAIL)
+for key in ADMOB_BANNER_IOS ADMOB_INTERSTITIAL_IOS; do
+  unit=$(value "$key")
+  case "$unit" in
+    "")
+      echo "error: Release build without $key. Pass the real ad unit id (see docs/ads-and-purchases.md)."
+      failed=1
+      ;;
+    ca-app-pub-3940256099942544/*)
+      echo "error: Release build with a Google TEST id for $key. Pass the real ad unit id (see docs/ads-and-purchases.md)."
+      failed=1
+      ;;
+  esac
+done
+email=$(value AD_REPORT_EMAIL | tr 'A-Z' 'a-z')
+case "$email" in
+  *.example) example_email=1 ;;
+  *) example_email=0 ;;
+esac
 if [ -z "$(value AD_REPORT_URL)" ] &&
-  { [ -z "$email" ] || [ "$email" = "ads-report@example.com" ]; }; then
+  { [ -z "$email" ] || [ "$email" = "ads-report@example.com" ] || [ "$example_email" = 1 ]; }; then
   echo "error: Release build without a real ad report address. Pass AD_REPORT_EMAIL or AD_REPORT_URL (see docs/ads-and-purchases.md)."
   failed=1
 fi

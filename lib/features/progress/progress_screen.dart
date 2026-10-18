@@ -151,6 +151,10 @@ class _DeviceOnlyCard extends StatelessWidget {
                 icon: const Icon(Icons.delete_forever_outlined),
                 label: const Text('Delete your account'),
               ),
+              TextButton(
+                onPressed: state.dismissChildAccountOffer,
+                child: const Text('Already deleted? Hide this'),
+              ),
             ],
           ],
         ),

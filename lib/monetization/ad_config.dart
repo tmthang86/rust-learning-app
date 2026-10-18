@@ -78,15 +78,24 @@ const removeAdsProductId = 'remove_ads';
 
 /// Why a release build must not show ads with these settings, or null when
 /// it may: any Google test unit id, or the placeholder ad report address
-/// with no report URL.
+/// (or any address ending in `.example`, reserved for documentation) with
+/// no report URL.
 String? releaseAdsProblem({
   required AdUnitIds ids,
   required String reportEmail,
   required String reportUrl,
 }) {
   if (ids.areTestIds) return "it uses Google's TEST ad unit ids";
-  if (reportUrl.isEmpty && reportEmail == placeholderAdReportEmail) {
-    return 'AD_REPORT_EMAIL is still the placeholder $placeholderAdReportEmail';
+  if (reportUrl.isEmpty) {
+    final email = reportEmail.trim().toLowerCase();
+    if (email == placeholderAdReportEmail) {
+      return 'AD_REPORT_EMAIL is still the placeholder '
+          '$placeholderAdReportEmail';
+    }
+    if (email.endsWith('.example')) {
+      return 'AD_REPORT_EMAIL ($reportEmail) is an example address, not a '
+          'real one';
+    }
   }
   return null;
 }

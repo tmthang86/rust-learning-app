@@ -135,6 +135,13 @@ class AppState extends ChangeNotifier {
   /// Progress screen then offers to delete that account.
   bool get childAccountToDelete => prefs.getString(_childAccountKey) != null;
 
+  /// Hides the Progress offer to delete an account, for one that no longer
+  /// exists (deleted elsewhere), which nothing else would clear.
+  Future<void> dismissChildAccountOffer() async {
+    await prefs.remove(_childAccountKey);
+    notifyListeners();
+  }
+
   /// Signs in. Refused when [accountsAllowed] is false, unless [toDelete]:
   /// signing in only to delete an existing account, which syncs nothing.
   ///
@@ -162,7 +169,10 @@ class AppState extends ChangeNotifier {
   /// account is left for a child. (Fresh from signing in, it needs no
   /// second confirmation.)
   Future<void> _afterChildSignIn(SignInResult result) async {
-    if (!result.isNewUser || _user == null) return;
+    // Ask the account service, not [_user]: the auth event can arrive
+    // after sign-in returns, while the service already has the user.
+    final created = accounts.currentUser;
+    if (!result.isNewUser || created == null) return;
     _deleting = true;
     _keepLocalOnSignOut = true;
     try {
@@ -172,13 +182,17 @@ class AppState extends ChangeNotifier {
         ),
       );
       _signInCreatedNoAccount = true;
+      // A flag naming this account can never be cleared otherwise.
+      if (prefs.getString(_childAccountKey) == created.uid) {
+        await prefs.remove(_childAccountKey);
+      }
     } catch (e) {
       // Still there: sign out on this device, and Progress offers to
       // delete it.
       debugPrint('Deleting the new account failed: $e');
       _keepLocalOnSignOut = false;
       _deleting = false;
-      await leaveAccountKeepingProgress();
+      await leaveAccountKeepingProgress(created);
     } finally {
       _deleting = false;
     }
@@ -196,9 +210,14 @@ class AppState extends ChangeNotifier {
   /// before the age screen, or after signing in only to delete): stops all
   /// syncing and signs out on this device, keeping the progress here. The
   /// account itself stays until they delete it; Progress offers that.
-  Future<void> leaveAccountKeepingProgress() async {
-    final u = _user;
-    if (u == null) return;
+  ///
+  /// Does nothing while a deletion runs: the account is going away, and a
+  /// flag naming it could never be cleared. If that deletion fails, it
+  /// calls this itself. [known] is the user when the auth event for them
+  /// has not arrived yet.
+  Future<void> leaveAccountKeepingProgress([AccountUser? known]) async {
+    final u = _user ?? known;
+    if (u == null || _deleting) return;
     _generation++; // drops any running merge
     _accountEpoch++;
     _merging = false;

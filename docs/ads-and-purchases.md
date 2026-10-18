@@ -418,6 +418,9 @@ Keep the ids in one file outside git, for example `admob.json`:
 }
 ```
 
+Replace every value, including the example address: it is refused in
+release builds.
+
 and build with it:
 
 ```sh
@@ -433,10 +436,17 @@ flutter build ipa --release --dart-define-from-file=admob.json
 **Guards against shipping test ids or the placeholder report address.**
 - An Android release build (`preReleaseBuild` in
   `android/app/build.gradle.kts`) fails if the app id is still the test id,
-  or if there is no real `AD_REPORT_EMAIL` or `AD_REPORT_URL`.
+  if `ADMOB_BANNER_ANDROID` or `ADMOB_INTERSTITIAL_ANDROID` is missing or
+  one of Google's test ids, or if there is no real `AD_REPORT_EMAIL` or
+  `AD_REPORT_URL`.
 - An iOS release build fails in the "Check Release Ads Config" build phase
-  (`ios/scripts/check_release_ads.sh`) for the same two reasons, reading the
-  app id from `AdMob.xcconfig`.
+  (`ios/scripts/check_release_ads.sh`) for the same reasons, with
+  `ADMOB_BANNER_IOS` and `ADMOB_INTERSTITIAL_IOS` as the unit ids, reading
+  the app id from `AdMob.xcconfig`. Each platform checks only its own ids.
+- A report address ending in `.example` (such as the placeholder
+  `ads@your-domain.example` in the file above) counts as a placeholder too,
+  in all three guards, unless `AD_REPORT_URL` is set. Replace it with your
+  real address.
 - A release build of the app that still has **any** test unit id, or the
   placeholder report address, shows no ads at all and logs a loud warning
   (`releaseAdsProblem` in `ad_config.dart`). "Remove ads" still works.

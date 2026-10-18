@@ -65,11 +65,21 @@ class FakeAccounts implements AccountService {
   /// When true, the next sign-in creates a new account.
   bool nextSignInIsNew = false;
 
+  /// When true, sign-in sets [currentUser] but the auth-state event comes
+  /// after the result, as FlutterFire may do. Later events stay in order.
+  bool lateSignInEvent = false;
+
   @override
   Future<SignInResult> signIn(SignInMethod method) async {
     final e = signInError;
     if (e != null) throw e;
-    emit(const AccountUser(uid: 'u1', displayName: 'Ferris'));
+    const user = AccountUser(uid: 'u1', displayName: 'Ferris');
+    if (lateSignInEvent) {
+      _user = user;
+      Timer.run(() => _controller.add(user));
+    } else {
+      emit(user);
+    }
     final isNew = nextSignInIsNew;
     nextSignInIsNew = false;
     return SignInResult(isNewUser: isNew);
@@ -97,6 +107,8 @@ class FakeAccounts implements AccountService {
   @override
   Future<void> deleteUser(ReauthProof proof) async {
     steps.add('deleteUser');
+    // Let a late sign-in event arrive first.
+    if (lateSignInEvent) await Future<void>.delayed(Duration.zero);
     final g = deleteUserGate;
     if (g != null) await g.future;
     final e = deleteError;

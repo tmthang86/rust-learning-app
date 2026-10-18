@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rust_learn/account/account_service.dart';
@@ -78,6 +80,92 @@ void main() {
     expect(state.completedLessons, {'u1-l1'});
     expect(state.childAccountToDelete, isFalse);
     expect(sync.loads, isEmpty);
+  });
+
+  test('the auth event arriving after the sign-in result: the new account '
+      'is still deleted', () async {
+    mockPrefs({'track': 'fast', 'birthYear': childYear});
+    final accounts = FakeAccounts()
+      ..nextSignInIsNew = true
+      ..lateSignInEvent = true;
+    final state = await makeState(accounts, FakeSync());
+
+    await state.signIn(SignInMethod.google, toDelete: true);
+    await settle();
+
+    expect(accounts.deleted, isTrue);
+    expect(state.user, isNull);
+    expect(state.signInCreatedNoAccount, isTrue);
+    expect(state.childAccountToDelete, isFalse);
+  });
+
+  test('late auth event and the delete fails: signed out, flagged', () async {
+    mockPrefs({'track': 'fast', 'birthYear': childYear});
+    final accounts = FakeAccounts()
+      ..nextSignInIsNew = true
+      ..lateSignInEvent = true
+      ..deleteError = Exception('offline');
+    final state = await makeState(accounts, FakeSync());
+
+    await state.signIn(SignInMethod.google, toDelete: true);
+    await settle();
+
+    expect(accounts.deleted, isFalse);
+    expect(accounts.currentUser, isNull);
+    expect(state.childAccountToDelete, isTrue);
+  });
+
+  test('leaving while the new account is being deleted sets no flag', () async {
+    mockPrefs({'track': 'fast', 'birthYear': childYear});
+    final gate = Completer<void>();
+    final accounts = FakeAccounts()
+      ..nextSignInIsNew = true
+      ..deleteUserGate = gate;
+    final state = await makeState(accounts, FakeSync());
+    final signingIn = state.signIn(SignInMethod.google, toDelete: true);
+    await settle();
+    expect(accounts.steps, contains('deleteUser'));
+
+    // What DeleteAccountScreen.dispose does when the child leaves now.
+    await state.leaveAccountKeepingProgress();
+    gate.complete();
+    await signingIn;
+    await settle();
+
+    expect(accounts.deleted, isTrue);
+    expect(state.childAccountToDelete, isFalse);
+    expect(state.signInCreatedNoAccount, isTrue);
+  });
+
+  test('a flag naming the account just auto-deleted is cleared', () async {
+    mockPrefs({
+      'track': 'fast',
+      'birthYear': childYear,
+      'childAccountToDelete': 'u1',
+    });
+    final accounts = FakeAccounts()..nextSignInIsNew = true;
+    final state = await makeState(accounts, FakeSync());
+    await state.signIn(SignInMethod.google, toDelete: true);
+    await settle();
+    expect(accounts.deleted, isTrue);
+    expect(state.childAccountToDelete, isFalse);
+  });
+
+  test('a flag for an account deleted elsewhere can be dismissed', () async {
+    mockPrefs({
+      'track': 'fast',
+      'birthYear': childYear,
+      'childAccountToDelete': 'u0',
+    });
+    final accounts = FakeAccounts()..nextSignInIsNew = true;
+    final state = await makeState(accounts, FakeSync());
+    await state.signIn(SignInMethod.google, toDelete: true);
+    await settle();
+    // Another account was deleted, not u0: the flag stays...
+    expect(state.childAccountToDelete, isTrue);
+    // ...until the person dismisses the offer.
+    await state.dismissChildAccountOffer();
+    expect(state.childAccountToDelete, isFalse);
   });
 
   test('if deleting that new account fails, the child is signed out here '
@@ -261,6 +349,45 @@ void main() {
         find.textContaining('There was no Learn Rust account'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('Progress: the offer for an account that is gone can be '
+        'dismissed', (tester) async {
+      final state = await open(
+        tester,
+        '/progress',
+        FakeAccounts(),
+        prefs: const {'childAccountToDelete': 'u0'},
+      );
+      expect(find.text('Delete your account'), findsOneWidget);
+      await tester.tap(find.text('Already deleted? Hide this'));
+      await tester.runAsync(settle);
+      await tester.pumpAndSettle();
+      expect(find.text('Delete your account'), findsNothing);
+      expect(state.childAccountToDelete, isFalse);
+    });
+
+    testWidgets('/delete-account: leaving during the automatic deletion '
+        'sets no flag', (tester) async {
+      final gate = Completer<void>();
+      final accounts = FakeAccounts()
+        ..nextSignInIsNew = true
+        ..deleteUserGate = gate;
+      final state = await open(tester, '/delete-account', accounts);
+      await tester.tap(find.text('Continue with Google'));
+      await tester.runAsync(settle);
+      await tester.pump();
+      expect(accounts.steps, contains('deleteUser'));
+
+      await tester.tap(find.text('Go to the app'));
+      await tester.pumpAndSettle();
+      gate.complete();
+      await tester.runAsync(settle);
+      await tester.pumpAndSettle();
+
+      expect(accounts.deleted, isTrue);
+      expect(state.childAccountToDelete, isFalse);
+      expect(state.user, isNull);
     });
 
     testWidgets('/delete-account: a child who signs in and leaves without '
