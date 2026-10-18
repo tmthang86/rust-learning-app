@@ -145,12 +145,13 @@ it breaks the promise that deletion removes everything.
 
 Before launch, add a server-side cleanup (not built yet):
 
-- A Cloud Function triggered when an Auth user is deleted. This trigger
-  exists only in the first generation API: import it with
+- A Cloud Function triggered when an Auth user is deleted. Use the stable
+  first generation trigger: import it with
   `const functions = require('firebase-functions/v1')` and use
   `functions.auth.user().onDelete(...)`. From firebase-functions v6 on, the
   plain `require('firebase-functions')` gives the second generation API,
-  which has no such trigger.
+  whose `onUserDeleted` (in `firebase-functions/identity`) is still a beta
+  preview, not meant for production.
 - The function deletes `users/{uid}` with the Admin SDK, then re-checks
   after a delay longer than the token lifetime (for example a Cloud Tasks
   job about 65 minutes later) and deletes the document again if it has
