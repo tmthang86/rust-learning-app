@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../data/app_state.dart';
 import '../../data/models.dart';
+import '../../monetization/ad_banner.dart';
+import '../../monetization/ads_service.dart';
+import '../../monetization/monetization.dart';
 import '../editor/code_editor.dart';
 
 /// One lesson: explanation, examples, an exercise and a link to the quiz.
@@ -133,6 +136,11 @@ class _LessonBody extends StatelessWidget {
     final track = state.track ?? Track.starter;
     final theme = Theme.of(context);
     final exercise = lesson.exercise;
+    final sections = lesson.sections.where((s) => s.visibleTo(track)).toList();
+    // The banner goes after the first section, and only when at least one
+    // more section follows, so reading text always separates it from the
+    // exercise's editor and Run output further down.
+    final bannerAfter = sections.length >= 2 ? 0 : -1;
 
     return DeepLinkScope(
       child: Scaffold(
@@ -143,11 +151,14 @@ class _LessonBody extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              for (final section in lesson.sections.where((s) => s.visibleTo(track)))
+              for (final (i, section) in sections.indexed) ...[
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: _Section(section: section),
                 ),
+                if (i == bannerAfter)
+                  const AdBannerSlot(placement: AdPlacement.lessonReading),
+              ],
               if (exercise != null) ...[
                 Text('Try it', style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
@@ -181,7 +192,10 @@ class _LessonBody extends StatelessWidget {
                 FilledButton(
                   onPressed: () {
                     state.markCompleted(lesson.id);
+                    final monetization = MonetizationScope.read(context);
                     leaveLesson(context);
+                    // A natural break: the lesson is done and closed.
+                    monetization.onLessonFinished();
                   },
                   child: const Text('Mark as done'),
                 ),

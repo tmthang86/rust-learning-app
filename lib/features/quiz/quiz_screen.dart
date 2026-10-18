@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/app_state.dart';
 import '../../data/models.dart';
+import '../../monetization/monetization.dart';
 import '../lesson/lesson_screen.dart';
 
 /// Multiple-choice quiz at the end of a lesson. Passing marks it done.
@@ -169,7 +170,12 @@ class _QuizScreenState extends State<QuizScreen> {
         Text(passed ? 'Lesson complete!' : 'Review the lesson and try again.'),
         const SizedBox(height: 24),
         FilledButton(
-          onPressed: () => context.go('/learn'),
+          onPressed: () {
+            final monetization = MonetizationScope.read(context);
+            context.go('/learn');
+            // A natural break: the lesson is done and closed.
+            if (passed) monetization.onLessonFinished();
+          },
           child: const Text('Back to lessons'),
         ),
       ],

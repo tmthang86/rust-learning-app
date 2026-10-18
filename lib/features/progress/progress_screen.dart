@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/app_state.dart';
 import '../../data/models.dart';
 import '../account/account_widgets.dart';
+import 'monetization_widgets.dart';
 
 /// Sign in to sync progress, or shows who is signed in.
 class _AccountCard extends StatefulWidget {
@@ -170,6 +171,9 @@ class ProgressScreen extends StatelessWidget {
                   if (s.isNotEmpty) state.chooseTrack(s.first);
                 },
               ),
+              const SizedBox(height: 24),
+              const RemoveAdsCard(),
+              const PrivacyOptionsTile(),
             ],
           ),
         ),

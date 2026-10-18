@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +12,10 @@ import 'firebase_options.dart';
 import 'app/theme.dart';
 import 'data/app_state.dart';
 import 'data/course_repository.dart';
+import 'monetization/monetization.dart';
+import 'monetization/platform_services.dart';
+import 'monetization/purchase_controller.dart';
+import 'monetization/purchase_service.dart';
 import 'runner/code_runner.dart';
 
 Future<void> main() async {
@@ -23,7 +29,22 @@ Future<void> main() async {
     sync: firebase ? FirestoreProgressSync() : null,
   );
   await state.load();
-  runApp(RustLearnApp(state: state));
+  final services = createPlatformServices();
+  final monetization = Monetization(
+    prefs: state.prefs,
+    purchases: PurchaseController(
+      store: services.purchases,
+      prefs: state.prefs,
+      // To add server-side receipt checks later, pass a PurchaseVerifier
+      // here (see lib/monetization/purchase_service.dart).
+    ),
+    ads: services.ads,
+    consent: services.consent,
+  );
+  runApp(RustLearnApp(state: state, monetization: monetization));
+  // Not awaited: the consent form and store run alongside the UI and
+  // never block lessons.
+  unawaited(monetization.start());
 }
 
 /// Starts Firebase if this build is configured for it (see
@@ -39,9 +60,18 @@ Future<bool> _initFirebase() async {
 }
 
 class RustLearnApp extends StatefulWidget {
-  const RustLearnApp({super.key, required this.state, this.initialLocation = '/learn'});
+  const RustLearnApp({
+    super.key,
+    required this.state,
+    this.monetization,
+    this.initialLocation = '/learn',
+  });
 
   final AppState state;
+
+  /// Ads, consent, age and purchases. Defaults to one with no ads and no
+  /// store (what the web gets), so tests don't need plugins.
+  final Monetization? monetization;
 
   /// Where the app opens; tests use it to simulate a deep link.
   final String initialLocation;
@@ -51,11 +81,28 @@ class RustLearnApp extends StatefulWidget {
 }
 
 class _RustLearnAppState extends State<RustLearnApp> {
-  late final GoRouter _router = buildRouter(widget.state, initialLocation: widget.initialLocation);
+  late final Monetization _monetization =
+      widget.monetization ??
+      Monetization(
+        prefs: widget.state.prefs,
+        purchases: PurchaseController(
+          store: const NoPurchaseService(),
+          prefs: widget.state.prefs,
+        ),
+      );
+  late final GoRouter _router = buildRouter(
+    widget.state,
+    _monetization,
+    initialLocation: widget.initialLocation,
+  );
 
   @override
   void dispose() {
     _router.dispose();
+    if (widget.monetization == null) {
+      _monetization.purchases.dispose();
+      _monetization.dispose();
+    }
     super.dispose();
   }
 
@@ -63,12 +110,15 @@ class _RustLearnAppState extends State<RustLearnApp> {
   Widget build(BuildContext context) {
     return AppScope(
       state: widget.state,
-      child: MaterialApp.router(
-        title: 'Learn Rust',
-        debugShowCheckedModeBanner: false,
-        theme: buildTheme(Brightness.light),
-        darkTheme: buildTheme(Brightness.dark),
-        routerConfig: _router,
+      child: MonetizationScope(
+        monetization: _monetization,
+        child: MaterialApp.router(
+          title: 'Learn Rust',
+          debugShowCheckedModeBanner: false,
+          theme: buildTheme(Brightness.light),
+          darkTheme: buildTheme(Brightness.dark),
+          routerConfig: _router,
+        ),
       ),
     );
   }

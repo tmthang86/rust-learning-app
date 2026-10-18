@@ -16,7 +16,7 @@ void main() {
 
   test('signing in merges device and cloud progress both ways', () async {
     // First launch forces a track pick before anyone can sign in.
-    SharedPreferences.setMockInitialValues({
+    mockPrefs({
       'completedLessons': ['u1-l1', 'u1-l2'],
       'track': 'starter',
     });
@@ -39,7 +39,7 @@ void main() {
   test(
     'a track chosen on this device is uploaded when the cloud has none',
     () async {
-      SharedPreferences.setMockInitialValues({'track': 'starter'});
+      mockPrefs({'track': 'starter'});
       final accounts = FakeAccounts();
       final sync = FakeSync();
       final state = await makeState(accounts, sync);
@@ -54,7 +54,7 @@ void main() {
   );
 
   test('progress made while signed in is saved to the cloud', () async {
-    SharedPreferences.setMockInitialValues({});
+    mockPrefs({});
     final accounts = FakeAccounts();
     final sync = FakeSync();
     final state = await makeState(accounts, sync);
@@ -72,7 +72,7 @@ void main() {
   testWidgets('Progress screen offers sign-in, then shows the account', (
     tester,
   ) async {
-    SharedPreferences.setMockInitialValues({'track': 'fast'});
+    mockPrefs({'track': 'fast'});
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -99,7 +99,7 @@ void main() {
   });
 
   test('progress made while signed out stays on the device', () async {
-    SharedPreferences.setMockInitialValues({});
+    mockPrefs({});
     final accounts = FakeAccounts();
     final sync = FakeSync();
     final state = await makeState(accounts, sync);
@@ -124,7 +124,7 @@ void main() {
     test(
       "signing out clears the device and the next account gets none of it",
       () async {
-        SharedPreferences.setMockInitialValues({});
+        mockPrefs({});
         final accounts = FakeAccounts();
         final sync = FakeSync();
         sync.doc('u2').completed.add('u2-only');
@@ -153,7 +153,7 @@ void main() {
     );
 
     test('progress never synced to any account is merged on sign-in', () async {
-      SharedPreferences.setMockInitialValues({
+      mockPrefs({
         'completedLessons': ['anon-1'],
       });
       final accounts = FakeAccounts();
@@ -171,7 +171,7 @@ void main() {
     test(
       "another account's progress left on the device is dropped, not uploaded",
       () async {
-        SharedPreferences.setMockInitialValues({
+        mockPrefs({
           'completedLessons': ['u1-secret'],
           'track': 'starter',
           'syncedUid': 'u1',
@@ -198,7 +198,7 @@ void main() {
     test(
       'found signed out at start with an account\'s progress: cleared',
       () async {
-        SharedPreferences.setMockInitialValues({
+        mockPrefs({
           'completedLessons': ['u1-l1'],
           'track': 'fast',
           'syncedUid': 'u1',
@@ -220,7 +220,7 @@ void main() {
     test(
       'an unchanged device takes the track chosen on another device',
       () async {
-        SharedPreferences.setMockInitialValues({
+        mockPrefs({
           'track': 'starter',
           'syncedUid': 'u1',
         });
@@ -239,7 +239,7 @@ void main() {
     test(
       'a track changed on this device since the last sync is uploaded',
       () async {
-        SharedPreferences.setMockInitialValues({
+        mockPrefs({
           'track': 'starter',
           'syncedUid': 'u1',
           'trackDirty': true,
@@ -260,7 +260,7 @@ void main() {
 
   group('merge races (m13)', () {
     test('the same user reported again does not merge twice', () async {
-      SharedPreferences.setMockInitialValues({});
+      mockPrefs({});
       const user = AccountUser(uid: 'u1');
       final accounts = FakeAccounts(initialUser: user);
       final sync = FakeSync();
@@ -274,7 +274,7 @@ void main() {
     });
 
     test('a slow merge for a previous account is dropped', () async {
-      SharedPreferences.setMockInitialValues({});
+      mockPrefs({});
       final accounts = FakeAccounts();
       final sync = FakeSync(track: Track.fast, completed: {'u1-l1'});
       sync.doc('u2').completed.add('u2-l1');
@@ -319,7 +319,7 @@ void main() {
 
   group('account deletion', () {
     Future<(FakeAccounts, FakeSync, AppState)> signedIn() async {
-      SharedPreferences.setMockInitialValues({});
+      mockPrefs({});
       final accounts = FakeAccounts();
       final sync = FakeSync();
       final state = await makeState(accounts, sync);
@@ -351,7 +351,7 @@ void main() {
     test(
       'confirms first, then reads, deletes the document, then the user (F3)',
       () async {
-        SharedPreferences.setMockInitialValues({});
+        mockPrefs({});
         final steps = <String>[];
         final accounts = FakeAccounts(steps: steps);
         final logged = FakeSync(steps: steps, completed: {'u1-l1'});
@@ -446,7 +446,7 @@ void main() {
     testWidgets('Progress screen deletes the account after confirmation', (
       tester,
     ) async {
-      SharedPreferences.setMockInitialValues({'track': 'fast'});
+      mockPrefs({'track': 'fast'});
       tester.view.physicalSize = const Size(390, 1400);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -489,7 +489,7 @@ void main() {
 
   group('signing out before progress is saved (F1)', () {
     test('a failed first sync: asks instead of clearing', () async {
-      SharedPreferences.setMockInitialValues({
+      mockPrefs({
         'completedLessons': ['anon-1'],
         'track': 'starter',
       });
@@ -510,7 +510,7 @@ void main() {
     });
 
     test('retries the sync first and signs out when it works', () async {
-      SharedPreferences.setMockInitialValues({
+      mockPrefs({
         'completedLessons': ['anon-1'],
         'track': 'starter',
       });
@@ -526,7 +526,7 @@ void main() {
     });
 
     test('changes still waiting to be sent: asks', () async {
-      SharedPreferences.setMockInitialValues({});
+      mockPrefs({});
       final accounts = FakeAccounts();
       final sync = FakeSync();
       final state = await makeState(accounts, sync);
@@ -538,7 +538,7 @@ void main() {
     });
 
     testWidgets('the Progress screen asks before signing out', (tester) async {
-      SharedPreferences.setMockInitialValues({'track': 'fast'});
+      mockPrefs({'track': 'fast'});
       tester.view.physicalSize = const Size(390, 1400);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -575,7 +575,7 @@ void main() {
     test(
       'a pick on a never-synced device does not override the account',
       () async {
-        SharedPreferences.setMockInitialValues({});
+        mockPrefs({});
         final accounts = FakeAccounts();
         final sync = FakeSync(track: Track.starter);
         final state = await makeState(accounts, sync);
@@ -589,7 +589,7 @@ void main() {
     );
 
     test('a change made while signed in is kept on the next sync', () async {
-      SharedPreferences.setMockInitialValues({'track': 'starter'});
+      mockPrefs({'track': 'starter'});
       final accounts = FakeAccounts();
       final sync = FakeSync(track: Track.starter);
       final state = await makeState(accounts, sync);
@@ -610,7 +610,7 @@ void main() {
     test(
       'a document the rules refuse is repaired with one full write',
       () async {
-        SharedPreferences.setMockInitialValues({
+        mockPrefs({
           'completedLessons': ['local-1'],
           'track': 'starter',
         });
@@ -635,7 +635,7 @@ void main() {
     );
 
     test('a failed background write shows as a sync problem', () async {
-      SharedPreferences.setMockInitialValues({});
+      mockPrefs({});
       final accounts = FakeAccounts();
       final sync = FakeSync();
       final state = await makeState(accounts, sync);
@@ -686,7 +686,7 @@ void main() {
   });
 
   test('a lesson finished while another account\'s progress is dropped is kept (F10)', () async {
-    SharedPreferences.setMockInitialValues({
+    mockPrefs({
       'completedLessons': ['u1-secret'],
       'track': 'fast',
       'syncedUid': 'u1',
@@ -710,7 +710,7 @@ void main() {
   testWidgets('/delete-account works without a track and deletes the account', (
     tester,
   ) async {
-    SharedPreferences.setMockInitialValues({});
+    mockPrefs({});
     tester.view.physicalSize = const Size(390, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -746,7 +746,7 @@ void main() {
   testWidgets('Apple sign-in for a Google email explains what to do (F10)', (
     tester,
   ) async {
-    SharedPreferences.setMockInitialValues({'track': 'fast'});
+    mockPrefs({'track': 'fast'});
     tester.view.physicalSize = const Size(390, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -774,7 +774,7 @@ void main() {
     test(
       'an unconfirmed snapshot is merged, never used to rewrite the document',
       () async {
-        SharedPreferences.setMockInitialValues({
+        mockPrefs({
           'completedLessons': ['phone-l1'],
           'track': 'fast',
           'syncedUid': 'u1',
@@ -792,7 +792,7 @@ void main() {
     );
 
     test('a broken document seen only in the cache is not rewritten', () async {
-      SharedPreferences.setMockInitialValues({
+      mockPrefs({
         'track': 'fast',
         'syncedUid': 'u1',
       });
@@ -821,7 +821,7 @@ void main() {
 
   group('late results and deletion (N2)', () {
     test('no background writes while the account is being deleted', () async {
-      SharedPreferences.setMockInitialValues({});
+      mockPrefs({});
       final accounts = FakeAccounts();
       final sync = FakeSync();
       final state = await makeState(accounts, sync);
@@ -848,7 +848,7 @@ void main() {
 
   test('a lesson the new account finishes during the sync is kept even if the '
       'previous account had it (N4)', () async {
-    SharedPreferences.setMockInitialValues({
+    mockPrefs({
       'completedLessons': ['shared-l1', 'u1-only'],
       'track': 'fast',
       'syncedUid': 'u1',
@@ -872,7 +872,7 @@ void main() {
 
   group('deletion edge cases (N5)', () {
     Future<(FakeAccounts, FakeSync, AppState)> signedIn() async {
-      SharedPreferences.setMockInitialValues({});
+      mockPrefs({});
       final accounts = FakeAccounts();
       final sync = FakeSync(completed: {'u1-l1'});
       final state = await makeState(accounts, sync);
@@ -935,7 +935,7 @@ void main() {
     testWidgets('system back does not close the dialog while deleting', (
       tester,
     ) async {
-      SharedPreferences.setMockInitialValues({'track': 'fast'});
+      mockPrefs({'track': 'fast'});
       tester.view.physicalSize = const Size(390, 1400);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -973,7 +973,7 @@ void main() {
 
   group('sign-out after a deletion that went wrong (round 3, item 1)', () {
     Future<(FakeAccounts, FakeSync, AppState)> signedIn() async {
-      SharedPreferences.setMockInitialValues({});
+      mockPrefs({});
       final accounts = FakeAccounts();
       final sync = FakeSync(track: Track.fast, completed: {'u1-l1'});
       final state = await makeState(accounts, sync);
@@ -1107,7 +1107,7 @@ void main() {
 
   group('unconfirmed deletion never resurrects the account (round 4)', () {
     Future<(FakeAccounts, FakeSync, AppState)> unconfirmed() async {
-      SharedPreferences.setMockInitialValues({});
+      mockPrefs({});
       final accounts = FakeAccounts();
       final sync = FakeSync(track: Track.fast, completed: {'u1-l1'});
       final state = await makeState(accounts, sync);
@@ -1195,7 +1195,7 @@ void main() {
     testWidgets('opening the delete page shows a gone account as deleted', (
       tester,
     ) async {
-      SharedPreferences.setMockInitialValues({'track': 'fast'});
+      mockPrefs({'track': 'fast'});
       tester.view.physicalSize = const Size(390, 1400);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -1219,7 +1219,7 @@ void main() {
     testWidgets('the Delete button checks first and reports a gone account', (
       tester,
     ) async {
-      SharedPreferences.setMockInitialValues({'track': 'fast'});
+      mockPrefs({'track': 'fast'});
       tester.view.physicalSize = const Size(390, 1400);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -1247,7 +1247,7 @@ void main() {
   test(
     'restore failed: the device keeps cloud-only lessons for the retry',
     () async {
-      SharedPreferences.setMockInitialValues({});
+      mockPrefs({});
       final accounts = FakeAccounts();
       final sync = FakeSync(completed: {'u1-l1'});
       final state = await makeState(accounts, sync);
@@ -1274,7 +1274,7 @@ void main() {
 
   test('a merge waiting on the deletion check drops out if a new deletion '
       'starts meanwhile (round 5)', () async {
-    SharedPreferences.setMockInitialValues({});
+    mockPrefs({});
     final accounts = FakeAccounts();
     final sync = FakeSync(completed: {'u1-l1'});
     final state = await makeState(accounts, sync);
@@ -1315,7 +1315,7 @@ void main() {
 
   test('a cancelled deletion leaves progress marked unsaved, so sign-out '
       'asks (round 6)', () async {
-    SharedPreferences.setMockInitialValues({});
+    mockPrefs({});
     final accounts = FakeAccounts();
     final sync = FakeSync(completed: {'cloud-l1'});
     final state = await makeState(accounts, sync);

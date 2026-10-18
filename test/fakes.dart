@@ -3,11 +3,17 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:rust_learn/account/account_service.dart';
 import 'package:rust_learn/account/progress_sync.dart';
 import 'package:rust_learn/data/app_state.dart';
 import 'package:rust_learn/data/course_repository.dart';
 import 'package:rust_learn/data/models.dart';
+import 'package:rust_learn/monetization/ad_banner.dart';
+import 'package:rust_learn/monetization/ad_config.dart';
+import 'package:rust_learn/monetization/ads_service.dart';
+import 'package:rust_learn/monetization/consent_service.dart';
+import 'package:rust_learn/monetization/purchase_service.dart';
 import 'package:rust_learn/runner/code_runner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -322,3 +328,164 @@ Future<AppState> makeState(
 );
 
 Future<void> settle() => Future<void>.delayed(Duration.zero);
+
+/// Like [SharedPreferences.setMockInitialValues], but with a birth year
+/// already given (an adult), so the first-launch age question doesn't get
+/// in the way of tests about other screens.
+void mockPrefs(Map<String, Object> values, {bool ageKnown = true}) =>
+    SharedPreferences.setMockInitialValues({
+      if (ageKnown) 'birthYear': 1990,
+      ...values,
+    });
+
+/// Ad SDK stand-in. Banners render as a labelled box keyed by placement.
+class FakeAds implements AdsService {
+  FakeAds({this.supported = true});
+
+  @override
+  final bool supported;
+
+  final List<AdAudience> initializedWith = [];
+  int preloads = 0;
+  int shown = 0;
+  int discards = 0;
+
+  /// Whether an interstitial is loaded and ready to show.
+  bool interstitialReady = true;
+
+  static Key bannerKey(AdPlacement p) => ValueKey('fake-banner-${p.name}');
+
+  @override
+  Future<void> initialize(AdAudience audience) async =>
+      initializedWith.add(audience);
+
+  @override
+  Widget banner(AdPlacement placement) => AdFrame(
+    height: 50,
+    child: SizedBox(key: bannerKey(placement), height: 50),
+  );
+
+  @override
+  Future<void> preloadInterstitial() async => preloads++;
+
+  @override
+  Future<bool> showInterstitial() async {
+    if (!interstitialReady) return false;
+    shown++;
+    return true;
+  }
+
+  @override
+  void discardInterstitial() => discards++;
+}
+
+/// UMP stand-in.
+class FakeConsent implements ConsentService {
+  FakeConsent({this.allowAds = true, this.privacyRequired = false});
+
+  /// What canRequestAds answers.
+  bool allowAds;
+  bool privacyRequired;
+
+  /// What canRequestAds answers after the privacy options form closes.
+  bool? allowAdsAfterPrivacyForm;
+
+  final List<bool> gatheredWithUnderAge = [];
+  int privacyFormsShown = 0;
+
+  @override
+  Future<void> gather({required bool underAgeOfConsent}) async =>
+      gatheredWithUnderAge.add(underAgeOfConsent);
+
+  @override
+  Future<bool> canRequestAds() async => allowAds;
+
+  @override
+  Future<bool> privacyOptionsRequired() async => privacyRequired;
+
+  @override
+  Future<void> showPrivacyOptions() async {
+    privacyFormsShown++;
+    final after = allowAdsAfterPrivacyForm;
+    if (after != null) allowAds = after;
+  }
+}
+
+/// Store stand-in for in_app_purchase.
+class FakeStore implements PurchaseService {
+  FakeStore({this.supported = true, this.restoresSilently = false});
+
+  @override
+  final bool supported;
+  @override
+  final bool restoresSilently;
+
+  final _updates = StreamController<List<StorePurchase>>.broadcast();
+
+  bool available = true;
+  StoreProduct? product = const StoreProduct(
+    id: removeAdsProductId,
+    title: 'Remove ads',
+    price: r'$2.99',
+  );
+
+  /// What the store sends after a tap on Buy; nothing when null.
+  List<StorePurchase>? onBuy;
+
+  /// What the store sends after restore(); Google Play sends an empty list
+  /// when nothing is owned.
+  List<StorePurchase> onRestore = const [];
+
+  bool buyAccepted = true;
+  int buys = 0;
+  int restores = 0;
+  final List<StorePurchase> completed = [];
+
+  void emit(List<StorePurchase> purchases) => _updates.add(purchases);
+
+  @override
+  Stream<List<StorePurchase>> get purchaseUpdates => _updates.stream;
+
+  @override
+  Future<bool> isAvailable() async => available;
+
+  @override
+  Future<StoreProduct?> queryProduct(String id) async =>
+      product?.id == id ? product : null;
+
+  @override
+  Future<bool> buyNonConsumable(StoreProduct product) async {
+    buys++;
+    final updates = onBuy;
+    if (updates != null) emit(updates);
+    return buyAccepted;
+  }
+
+  @override
+  Future<void> restore() async {
+    restores++;
+    emit(onRestore);
+  }
+
+  @override
+  Future<void> complete(StorePurchase purchase) async =>
+      completed.add(purchase);
+}
+
+StorePurchase removeAds(
+  StorePurchaseStatus status, {
+  bool needsCompletion = true,
+  String? error,
+}) => StorePurchase(
+  productId: removeAdsProductId,
+  status: status,
+  needsCompletion: needsCompletion,
+  errorMessage: error,
+);
+
+/// Lets queued stream events and their async handlers run.
+Future<void> flushAsync() async {
+  for (var i = 0; i < 10; i++) {
+    await Future<void>.delayed(Duration.zero);
+  }
+}

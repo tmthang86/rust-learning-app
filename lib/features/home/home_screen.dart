@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/app_state.dart';
 import '../../data/models.dart';
+import '../../monetization/ad_banner.dart';
+import '../../monetization/ads_service.dart';
 
 /// The course map: units for the learner's track, each with its lessons.
 class HomeScreen extends StatelessWidget {
@@ -20,11 +22,19 @@ class HomeScreen extends StatelessWidget {
           : Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 760),
-                child: ListView.separated(
+                child: ListView(
                   padding: const EdgeInsets.all(16),
-                  itemCount: units.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 12),
-                  itemBuilder: (context, i) => _UnitCard(unit: units[i]),
+                  children: [
+                    for (final (i, unit) in units.indexed) ...[
+                      if (i > 0) const SizedBox(height: 12),
+                      _UnitCard(unit: unit),
+                      // One small banner after the first unit, inside the
+                      // list (not over the navigation bar). It brings its
+                      // own space when shown.
+                      if (i == 0)
+                        const AdBannerSlot(placement: AdPlacement.courseMap),
+                    ],
+                  ],
                 ),
               ),
             ),

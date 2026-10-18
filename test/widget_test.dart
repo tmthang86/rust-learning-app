@@ -51,14 +51,19 @@ void main() {
     }
   });
 
-  testWidgets('first launch asks for a track, then shows the course',
-      (tester) async {
+  testWidgets('first launch asks for a birth year and a track, then shows '
+      'the course', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
 
     final state = await tester.runAsync(_state);
     await tester.pumpWidget(RustLearnApp(state: state!));
+    await tester.pumpAndSettle();
+
+    expect(find.text('What year were you born?'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), '1990');
+    await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
 
     expect(find.text('Where would you like to start?'), findsOneWidget);

@@ -24,7 +24,7 @@ void main() {
     CourseRepository? repository,
     RunResult? runResult,
   }) async {
-    SharedPreferences.setMockInitialValues(prefs);
+    mockPrefs(prefs);
     tester.view.physicalSize = const Size(390, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -455,7 +455,7 @@ void main() {
     'a result that arrives after leaving the lesson still counts (F7)',
     (tester) async {
       final runner = _GatedRunner();
-      SharedPreferences.setMockInitialValues({'track': 'fast'});
+      mockPrefs({'track': 'fast'});
       tester.view.physicalSize = const Size(390, 1400);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -575,7 +575,7 @@ void main() {
     'a result arriving after sign-out does not mark the lesson (N2)',
     (tester) async {
       final runner = _GatedRunner();
-      SharedPreferences.setMockInitialValues({'track': 'fast'});
+      mockPrefs({'track': 'fast'});
       tester.view.physicalSize = const Size(390, 1400);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
