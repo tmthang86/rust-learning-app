@@ -1,0 +1,37 @@
+{
+  "id": "u0-l5",
+  "title": "Functions",
+  "sections": [
+    { "type": "text", "text": "A function is a named block of code you can run whenever you need it. You've already used one: main is the function every Rust program starts in." },
+    { "type": "text", "text": "Make your own with fn, then call it by writing its name followed by ():" },
+    { "type": "code", "code": "fn greet() {\n    println!(\"Hello there!\");\n}\n\nfn main() {\n    greet();\n    greet();\n}" },
+    { "type": "text", "text": "Functions can take inputs, called parameters. Each one needs a name and a type. i32 is Rust's everyday whole-number type:" },
+    { "type": "code", "code": "fn show_double(n: i32) {\n    println!(\"Double of {n} is {}\", n * 2);\n}\n\nfn main() {\n    show_double(4);\n    show_double(10);\n}" },
+    { "type": "text", "text": "Functions can also give back a result. Write -> and the result's type after the parameters. The last line, written without a semicolon, is the value given back:" },
+    { "type": "code", "code": "fn area(width: i32, height: i32) -> i32 {\n    width * height\n}\n\nfn main() {\n    let room = area(4, 5);\n    println!(\"The room is {room} square metres\");\n}" },
+    { "type": "note", "text": "Well-named functions make programs easier to read. area(4, 5) tells you what's happening without reading the maths inside." }
+  ],
+  "exercise": {
+    "prompt": "Write the body of add so it returns a + b. The program should print: 7",
+    "starter": "fn add(a: i32, b: i32) -> i32 {\n    0\n}\n\nfn main() {\n    println!(\"{}\", add(3, 4));\n}",
+    "expectedOutput": "7",
+    "solution": "fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\nfn main() {\n    println!(\"{}\", add(3, 4));\n}"
+  },
+  "quiz": [
+    {
+      "question": "How do you run (call) a function named greet?",
+      "options": ["fn greet", "greet();", "call greet"],
+      "answer": 1
+    },
+    {
+      "question": "In fn square(n: i32) -> i32, what does -> i32 mean?",
+      "options": ["The function gives back a whole number", "n must be 32", "The function runs 32 times"],
+      "answer": 0
+    },
+    {
+      "question": "What is the value given back by a function?",
+      "options": ["Its first line", "Its last line without a semicolon", "Whatever println! shows"],
+      "answer": 1
+    }
+  ]
+}
