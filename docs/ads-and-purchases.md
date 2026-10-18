@@ -11,11 +11,12 @@ sections 5 to 7.
 
 | | Android / iOS | Web |
 |---|---|---|
-| Banner ads | Small inline adaptive banner on the course map (after the first unit) and in the reading part of a lesson | None |
+| Banner ads | Small inline adaptive banner on the course map (after the last unit) and in the reading part of a lesson | None |
 | Interstitial | Only after finishing a lesson (passing its quiz, or "Mark as done") | None |
 | Rewarded ads | None | None |
-| Consent | Google UMP (GDPR, US states, IDFA explainer on iOS) | Not needed (no ads) |
-| Age screen | Birth year on first launch | Same (the age is also kept for later features) |
+| Consent | Google UMP (GDPR, US states, IDFA explainer on iOS); the form is shown to adults only | Not needed (no ads) |
+| Age screen | Birth year on first launch | Same: it also decides whether accounts are allowed (no accounts under 13) |
+| Report an ad | "Report ad" next to every banner, and "Report an ad" on Progress while ads are on | None |
 | "Remove ads" | One non-consumable product, `remove_ads`, with Buy and Restore buttons on the Progress screen | No purchase UI |
 
 Lessons, quizzes and code runs never depend on ads. Nothing in the app links to
@@ -29,10 +30,22 @@ an outside payment page.
 1. the platform has an ad service (Android or iOS);
 2. "Remove ads" is not owned on this device;
 3. a birth year was given and the person can't be under 13;
-4. UMP's `canRequestAds()` is true.
+4. UMP's `canRequestAds()` is true;
+5. `MobileAds.initialize()` has finished (eligibility is checked again
+   afterwards, in case "Remove ads" was bought meanwhile).
 
 If "Remove ads" is owned, or the person may be under 13, the app never starts
 UMP or the ad SDK at all. No consent form appears and no ad request is made.
+
+At start the app first waits, for at most 3 seconds
+(`PurchaseController.quietRestoreWait`), for a silent restore of "Remove
+ads" (see below). Someone who already paid on a new phone then never sees
+the consent form or an ad. If the store is slow, ads start after the wait and
+stop as soon as the restore arrives.
+
+The Progress screen shows the "Remove ads" card only when the person would
+see ads (Android or iOS, and old enough for ads), or as "Ads removed" when
+they already own it. Under-13s and web users never see the offer.
 
 ### Where banners go, and where they never go
 
@@ -45,24 +58,34 @@ one more reading section follows. Reading text therefore always separates the
 ad from the exercise editor further down. A lesson with a single section gets
 no banner.
 
-Each banner has 24 px of space above and below and an "Advertisement" label.
-It is inline in the scrolling content, not anchored above the navigation bar.
-Google warns against placing ads next to navigation or other tappable controls
-(https://support.google.com/admob/answer/6275345).
+On the course map the banner goes after the last unit, so it never sits
+between units the learner is scrolling through.
 
-The banner uses `AdSize.getInlineAdaptiveBannerAdSize(width, 100)`, so it is at
-most 100 px tall.
+Each banner has 24 px of space above and below and an "Advertisement" label
+with a "Report ad" link. It is inline in the scrolling content, not anchored
+above the navigation bar. Google warns against placing ads next to navigation
+or other tappable controls (https://support.google.com/admob/answer/6275345).
+
+The slot always reserves a fixed 60 px (`AdBannerSlot.adHeight`) before the ad
+loads, and keeps it if the ad fails, so the text never jumps. The banner uses
+`AdSize.getInlineAdaptiveBannerAdSize(width, 60)` and is clamped to that
+height. The slot is kept alive while scrolled off screen, so scrolling a
+lesson doesn't request a new banner.
 
 ### Interstitial rules
 
 - It is shown only at a natural break: just after the learner finishes a lesson
-  and leaves it.
+  for the first time and leaves it. Finishing a lesson again doesn't count.
 - It is never shown for the first lesson of the first session.
 - It is shown at most once every `Monetization.interstitialMinInterval` (5
-  minutes). The time of the last one is saved, so restarting the app doesn't
-  reset the cap.
+  minutes). The time is recorded only when an interstitial was actually
+  shown (on `onAdShowedFullScreenContent` or the impression) and is saved,
+  so restarting the app doesn't reset the cap.
 - It is preloaded after consent, so it never delays navigation. If none is
-  ready, nothing is shown and nothing is recorded.
+  ready, nothing is shown and nothing is recorded. The app stops waiting for
+  it after 10 seconds (`Monetization.interstitialShowTimeout`).
+- If "Remove ads" is bought while one is loading, it is dropped when it
+  arrives.
 - **Also set an AdMob frequency cap** on the interstitial unit as a second
   limit. See the setup steps below.
 
@@ -77,8 +100,9 @@ born?". It is a neutral age screen:
 These follow the FTC COPPA FAQ and the Google Play Families policy on neutral
 age screens.
 
-The year is stored only on the device (key `birthYear`). It is kept on
-sign-out.
+The year is stored only on the device (key `birthYear`, in `AgeStore`,
+lib/data/age.dart). It is kept on sign-out. The age screen is also shown on
+the web, because it decides whether accounts are allowed.
 
 A birth year can't tell us whether this year's birthday has passed, so the app
 uses the youngest age the year allows. Someone born in 2013 counts as under 13
@@ -86,9 +110,43 @@ for all of 2026.
 
 | Age band | What happens |
 |---|---|
-| Possibly under 13 | **No ads at all.** UMP and the ad SDK are never started. |
-| 13 to 17 | Ads with the `teen` age treatment and a maximum content rating of PG. UMP gets `tagForUnderAgeOfConsent: true` below 16, since EU countries set the digital age of consent between 13 and 16. |
-| 18 and over | Ads with no age treatment and a maximum content rating of PG. |
+| Possibly under 13 | **No ads at all**: UMP and the ad SDK are never started. **No account**: no sign-in and no cloud sync (see below). |
+| 13 to 17 | Limited ads: the `child` age treatment (non-personalised) and a maximum content rating of G. UMP gets `tagForUnderAgeOfConsent: true` and no consent form is shown. |
+| 18 and over | Ads with no age treatment and a maximum content rating of PG. The UMP consent form is shown where required. |
+
+`AdAudience.forAge` (lib/monetization/ads_service.dart) holds this mapping,
+and `requestConfigurationFor` (lib/monetization/google_ads.dart) turns it into
+the SDK's `RequestConfiguration`. Both are pure functions with tests.
+
+**Why the child treatment for all under-18s.** Several rules treat 13 to 17
+as minors whose data needs extra care:
+- **New York Child Data Protection Act** (N.Y. Gen. Bus. Law art. 45-A, in
+  force 20 Jun 2025) limits processing the personal data of users under 18
+  without informed consent. Non-personalised child-treated ads avoid that
+  processing.
+- **EU digital age of consent** is 13 to 16 depending on the country, and the
+  app can't tell which applies.
+- **UMP.** The under-age-of-consent tag maps to the child treatment under
+  the new age setting, so this keeps the two consistent.
+
+13 to 17-year-olds still see ads, just limited ones. Whether UMP then lets
+ads load without a form in the EEA (`canRequestAds`) wasn't checked on a
+device; if it doesn't, those users simply get no ads there.
+
+**No accounts under 13.** Signing in would send the child's progress to a
+cloud account, so `AppState.accountsAllowed` is false for the under-13 band:
+- Progress shows "Your progress is saved on this device" instead of the
+  account card, with no sign-in buttons.
+- `AppState.signIn` refuses (`AccountErrorKind.ageRestricted`), and the
+  cloud merge and background writes refuse too, all in AppState.
+- The only exception is `/delete-account`: a child may sign in there only to
+  delete an account. Nothing is synced or merged, and leaving the page
+  without deleting signs them out again. Deleting keeps the progress on
+  the device.
+- Someone already signed in who answers under 13 (for example an install
+  from before the age screen) is signed out on this device at once, keeping
+  their progress on the device. Syncing stops. The account stays until they
+  delete it, and Progress offers "Delete your account" prominently.
 
 **Why no ads for under-13s, rather than child-directed ads.** This is the
 safer of the two options in the brief:
@@ -101,13 +159,14 @@ safer of the two options in the brief:
 - **Apple.** Its Kids rules effectively ban third-party ads (guidelines 1.3
   and 5.1.4).
 
-Not starting the SDK means no ad request and no device ID ever leave the device
-for these users. The `child` treatment and a G rating are still defined in
-`AdAudience.forAge` as a second line of defence. They are not used today.
+Not starting the SDK means no ad request and no device ID ever leave the
+device for under-13s. `AdAudience.forAge` still maps under-13 to the child
+treatment and G, as a second line of defence.
 
 The age settings use google_mobile_ads 9.1.0's `ageRestrictedTreatment`. It
 replaces the deprecated child-directed (TFCD) and under-age-of-consent (TFUA)
-tags and adds a teen tier. Sources:
+tags and adds a teen tier (not used: teens get the child treatment, see
+above). Sources:
 - `RequestConfiguration` in the package source;
 - https://support.google.com/admob/answer/6219315;
 - https://ppc.land/googles-new-tfat-signal-kills-tfcd-and-tfua-and-finally-adds-a-teen-tier/.
@@ -118,20 +177,45 @@ On each launch where ads are allowed (see the conditions above), the app does
 the following, without blocking the UI:
 
 1. `ConsentInformation.requestConsentInfoUpdate(...)`;
-2. `ConsentForm.loadAndShowConsentFormIfRequired(...)`;
+2. `ConsentForm.loadAndShowConsentFormIfRequired(...)`, for adults only;
 3. `canRequestAds()`. Only when this is true does the app set the age settings
    with `MobileAds.updateRequestConfiguration`, call `MobileAds.initialize()`,
    and load ads.
 
+Consent counts as gathered only when this succeeded. If it failed (for
+example offline), it is tried again when the app comes back to the
+foreground.
+
 Progress → **Privacy options** appears when
 `getPrivacyOptionsRequirementStatus()` is `required`. It opens
 `ConsentForm.showPrivacyOptionsForm`. If the person withdraws consent there,
-ads stop.
+they get limited ads (non-personalised, served without the consented
+identifiers), not none: in UMP, withdrawing GDPR consent still lets
+`canRequestAds()` be true, and Google then serves limited ads
+(https://support.google.com/admob/answer/10105530). Ads stop only if
+`canRequestAds()` turns false.
 
 **iOS ATT.** The app never calls the ATT prompt itself. UMP shows Google's
 IDFA explainer message and then Apple's ATT prompt, once the IDFA message is
-set up in AdMob (step 3 below). `NSUserTrackingUsageDescription` is in
-Info.plist. Ads still work if the person declines tracking.
+set up in AdMob (step 3 below), as part of its consent form.
+`NSUserTrackingUsageDescription` is in Info.plist. Ads still work if the
+person declines tracking.
+
+Under-18s never get the UMP form (`showForm: false`), so the app never
+leads them to the IDFA message or the ATT prompt. Whether UMP would also
+suppress it on its own for `tagForUnderAgeOfConsent` users wasn't checked.
+
+**App measurement waits.** The Google Mobile Ads SDK bundles Google Analytics
+for Firebase measurement. It is told to wait until the app initializes the
+SDK, which happens only after consent and only for people old enough for ads:
+- Android: `<meta-data android:name="com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT" android:value="true"/>`
+  in AndroidManifest.xml;
+- iOS: `GADDelayAppMeasurementInit` = YES in Info.plist.
+
+The key names were checked against Google's own Unity plugin source
+(googleads-mobile-unity on GitHub: `ManifestProcessor.cs` writes the Android
+key and `PListProcessor.cs` writes the iOS key), because Google's developer
+pages couldn't be opened from here.
 
 To test the consent messages on a device in a debug build, run with
 `--dart-define=UMP_DEBUG_GEOGRAPHY=eea` (or `us_state`). Add
@@ -146,7 +230,8 @@ on iOS and Play Billing Library 8 on Android. The logic is in
 
 - **Granted on purchased or restored.** When the store reports `remove_ads` as
   `purchased` or `restored`, the entitlement is saved on the device (key
-  `removeAdsEntitled`) and ads stop at once.
+  `removeAdsEntitled`) and ads stop at once. A purchase the verifier rejects
+  is neither granted nor completed, so the store can refund it.
 - **Pending purchases are never granted or completed.** Examples are cash
   payments on Play and Ask to Buy on iOS. The card says the purchase is
   pending.
@@ -155,12 +240,29 @@ on iOS and Play Billing Library 8 on Android. The logic is in
   cancellations and unknown products. Without it, Google Play refunds the
   purchase after 3 days and the App Store keeps re-delivering it
   (in_app_purchase README).
-- **Errors and cancellations are shown on the card.**
+- **Android cancellations and billing errors arrive without a product id.**
+  in_app_purchase_android 0.5.4 reports a cancelled purchase, and a billing
+  error that came with no purchase, as an update with product id `''`
+  (`_getPurchaseDetailsFromResult`). The app applies these to the purchase in
+  progress. "Item already owned" runs a restore instead of showing an error.
+- **Errors and cancellations are shown on the card in plain words**, such as
+  "Purchase cancelled." or "Couldn't reach the store. Check your connection
+  and try again." Billing codes are logged, not shown.
 - **Restore purchases is a visible button**, as App Store guideline 3.1.1
-  requires. On Android the app also restores quietly at start, because Play's
-  purchase query is silent. On iOS restore only runs from the button, because
-  it may ask for an Apple ID password. Unfinished App Store transactions are
-  re-delivered automatically at launch anyway.
+  requires.
+- **A silent restore runs at every start and every return to the
+  foreground**, on Android and on iOS with StoreKit 2. Neither prompts:
+  Play's purchase query is silent, and in_app_purchase_storekit 0.4.14's
+  StoreKit 2 restore reads `Transaction.currentEntitlements` without a
+  sign-in prompt. On Android this also runs when "Remove ads" is already
+  owned, so a purchase that wasn't acknowledged yet (Play refunds those after
+  3 days) is completed on the next start.
+- **The Restore button** restores, and if nothing is found it calls
+  `AppStore.sync()` (`InAppPurchaseStoreKitPlatformAddition().sync()`, which
+  may ask for the Apple ID password) and restores once more.
+- **Store availability is checked again** when Progress opens and when the app
+  returns to the foreground, so a store that was unreachable at start
+  doesn't leave the card empty.
 - **A pending Play purchase from restore stays pending.**
   in_app_purchase_android 0.5.4 marks every purchase that
   `restorePurchases()` returns as `restored`, even one still waiting for
@@ -189,6 +291,23 @@ Then pass it as `PurchaseController(verifier: ...)` in `lib/main.dart`. That
 function can also write `entitlements.removeAds` to the user's Firestore
 document, so the purchase follows the account.
 
+### Reporting an ad (App Store guideline 2.5.18)
+
+Apple requires apps with ads to let people report inappropriate ones. While
+ads are on, every banner has a "Report ad" link next to its "Advertisement"
+label, and Progress has a **Report an ad** entry. Both open an e-mail (or a
+web form) with the time, the screen and the ad unit ids filled in:
+
+- `--dart-define=AD_REPORT_EMAIL=you@example.com` sets the address. The
+  default, `ads-report@example.com`, is a placeholder: **replace it before
+  release.**
+- `--dart-define=AD_REPORT_URL=https://…` sends people to a web form instead;
+  the details are added as query parameters.
+
+If no mail app can open the link, the app shows the address so it can be
+copied. When a report comes in, block the ad in AdMob (Blocking controls →
+Ad review center).
+
 ### Code map
 
 ```
@@ -198,15 +317,17 @@ lib/monetization/
   ads_service.dart           AdsService interface, AdPlacement, AdAudience, NoAdsService
   consent_service.dart       ConsentService interface, NoConsentService
   purchase_service.dart      PurchaseService interface, StorePurchase, PurchaseVerifier
-  ad_banner.dart             AdBannerSlot (placed in screens), AdFrame
+  ad_banner.dart             AdBannerSlot (placed in screens), "Report ad"
+  ad_report.dart             the ad report e-mail or URL (AD_REPORT_EMAIL / AD_REPORT_URL)
   ad_config.dart             ad unit ids (test ids by default, --dart-define for real ones)
-  age.dart                   AgeGroup, ageGroupFor
   platform_services.dart     conditional import: _io (Android/iOS) or _stub (web)
   google_ads.dart            google_mobile_ads + UMP implementation (mobile only)
   store_purchases.dart       in_app_purchase implementation (mobile only)
+lib/data/age.dart                                  AgeGroup, ageGroupFor, AgeStore (shared by AppState and Monetization)
 lib/features/onboarding/age_screen.dart
-lib/features/progress/monetization_widgets.dart   RemoveAdsCard, PrivacyOptionsTile
-test/monetization_test.dart, fakes in test/fakes.dart (FakeAds, FakeConsent, FakeStore)
+lib/features/progress/monetization_widgets.dart   RemoveAdsCard, PrivacyOptionsTile, ReportAdTile
+test/monetization_test.dart, test/child_accounts_test.dart,
+fakes in test/fakes.dart (FakeAds, FakeConsent, FakeStore)
 ```
 
 `google_mobile_ads` and `in_app_purchase` both import `dart:io`. They are
@@ -230,20 +351,43 @@ you replace them.
 | iOS interstitial unit | `--dart-define=ADMOB_INTERSTITIAL_IOS=…` | `ca-app-pub-3940256099942544/4411468910` |
 | Product id | both stores: `remove_ads` | — |
 
+| Ad report address | `--dart-define=AD_REPORT_EMAIL=…` (or `AD_REPORT_URL`) | `ads-report@example.com` (placeholder) |
+
 The test ids come from the google_mobile_ads 9.1.0 example app in the pub
-cache, which matches Google's test-ads page. Release build example:
+cache, which matches Google's test-ads page.
+
+Keep the ids in one file outside git, for example `admob.json`:
+
+```json
+{
+  "ADMOB_APP_ID_ANDROID": "ca-app-pub-1111111111111111~2222222222",
+  "ADMOB_BANNER_ANDROID": "ca-app-pub-1111111111111111/3333333333",
+  "ADMOB_INTERSTITIAL_ANDROID": "ca-app-pub-1111111111111111/4444444444",
+  "ADMOB_BANNER_IOS": "ca-app-pub-1111111111111111/5555555555",
+  "ADMOB_INTERSTITIAL_IOS": "ca-app-pub-1111111111111111/6666666666",
+  "AD_REPORT_EMAIL": "ads@your-domain.example"
+}
+```
+
+and build with it:
 
 ```sh
-flutter build appbundle --release \
-  --dart-define=ADMOB_APP_ID_ANDROID=ca-app-pub-1111111111111111~2222222222 \
-  --dart-define=ADMOB_BANNER_ANDROID=ca-app-pub-1111111111111111/3333333333 \
-  --dart-define=ADMOB_INTERSTITIAL_ANDROID=ca-app-pub-1111111111111111/4444444444
+flutter build appbundle --release --dart-define-from-file=admob.json
 
 # iOS: first put the real app id in ios/Flutter/AdMob.xcconfig
-flutter build ipa --release \
-  --dart-define=ADMOB_BANNER_IOS=ca-app-pub-1111111111111111/5555555555 \
-  --dart-define=ADMOB_INTERSTITIAL_IOS=ca-app-pub-1111111111111111/6666666666
+flutter build ipa --release --dart-define-from-file=admob.json
 ```
+
+`--dart-define-from-file` values reach Gradle the same way as
+`--dart-define` ones, so the Android app id is read from the file too.
+
+**Guards against shipping test ids.**
+- An Android release build (`preReleaseBuild`) fails if the app id is still
+  the test id.
+- A release build of the app that still has a test unit id shows no ads at
+  all and logs a loud warning. "Remove ads" still works.
+- For a deliberate release-mode test build, add
+  `--dart-define=ALLOW_TEST_ADS_IN_RELEASE=true` to switch both guards off.
 
 Keep the app id and the unit ids from the same AdMob app. If the app id is
 still the test id but the unit ids are real (or the other way round), ads fail
@@ -262,7 +406,8 @@ devices in AdMob instead.
      ad types if you want to avoid video.
 3. Copy the app ids and unit ids into the places in the table above.
 4. **Blocking controls** → content rating: set the maximum ad content rating
-   to PG as well, to match the code. Block sensitive categories you don't
+   to PG as well, to match the code for adults (the code asks for G for
+   under-18s on each request). Block sensitive categories you don't
    want, such as dating and gambling.
 
 ### 2. Frequency cap (interstitial)
@@ -345,10 +490,19 @@ summary from the research notes; check the pages themselves before you submit:
   content): choose **13 and over** only. Don't tick any under-13 age group.
   That would put the app under the Families policy, which needs certified ad
   SDKs and changes the ad rules. In App Store Connect, don't choose the Kids
-  category. An age rating around 12+ fits.
+  category. Apple's age ratings are now 4+, 9+, 13+, 16+ and 18+; answer the
+  questionnaire honestly, and with ads aimed at a 13+ audience **13+** is the
+  expected result.
 - **Ads declaration** (Play Console → App content → Ads): **Yes, my app
   contains ads**.
-- **Texas SB 2420**: check its status before launch (see research section 6).
+- **Texas SB 2420** (App Store Accountability Act, due 1 Jan 2026) would make
+  app stores verify ages and pass age signals to apps. It was challenged in
+  court; its current status (in force or blocked) **wasn't confirmed** here.
+  Check it before launch (see research section 6).
+- **Store age signals.** Before launch, read Apple's **Declared Age Range**
+  API and Google Play's **Age Signals** API. Where available they give an
+  age range from the store, which could replace or back up the birth-year
+  screen.
 
 ## What was not verified here
 
@@ -357,10 +511,11 @@ devices and no store accounts. So:
 
 - **No Android or iOS build was run.** `flutter analyze`, `flutter test` and
   `flutter build web` pass. These are untested:
-  - the Gradle change that reads dart-defines into the manifest (its
-    decoding code was run on its own with Gradle and gave the right value,
-    but not inside a real Android build);
-  - the iOS xcconfig and Info.plist entries;
+  - the Gradle change that reads dart-defines into the manifest, and the
+    release check that refuses the test app id (both were run on their own
+    with Gradle and behaved correctly, but not inside a real Android build);
+  - the iOS xcconfig and Info.plist entries, including the delayed app
+    measurement keys;
   - plugin registration on device.
 - **No real ad was loaded and no consent form was seen.** The google_mobile_ads
   and UMP code (`google_ads.dart`) follows the 9.1.0 package source and its
@@ -368,13 +523,18 @@ devices and no store accounts. So:
   on a device:
   - inline adaptive sizing and reloading on rotation;
   - interstitial callbacks;
-  - UMP's behaviour with `tagForUnderAgeOfConsent` (whether `canRequestAds`
-    becomes true without a form).
+  - UMP's behaviour with `tagForUnderAgeOfConsent` and no form (whether
+    `canRequestAds` becomes true for under-18s in the EEA), and whether UMP
+    would skip the IDFA message for them on its own;
+  - "Report ad" opening a mail app.
 - **No real purchase was made.** `store_purchases.dart` follows the
   in_app_purchase 3.3.1 source and README. Not tried against Play or App
   Store sandboxes:
   - buying, pending, refund and restore;
-  - the Android pending-on-restore mapping.
+  - the Android pending-on-restore mapping, and cancellations and errors with
+    an empty product id (the tests feed the plugin's own
+    `GooglePlayPurchaseDetails.fromPurchase` objects, but no real store);
+  - `AppStore.sync()` from the Restore button.
 - **Google's developer sites were blocked from this container**
   (developers.google.com, developers.google.cn), so their pages could not be
   opened. API details come from the package source in `~/.pub-cache` instead.

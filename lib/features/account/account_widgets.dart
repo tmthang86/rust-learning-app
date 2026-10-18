@@ -32,12 +32,18 @@ String accountErrorMessage(AccountErrorKind kind, {SignInMethod? attempted}) =>
             'server and either shows the account as deleted or lets you '
             'delete it again.',
       AccountErrorKind.notSignedIn => 'Please sign in first.',
+      AccountErrorKind.ageRestricted =>
+        "Accounts aren't available. Your progress is saved on this device.",
       AccountErrorKind.other => 'Something went wrong. Please try again.',
     };
 
 /// "Continue with Google / Apple" buttons.
 class SignInButtons extends StatefulWidget {
-  const SignInButtons({super.key});
+  const SignInButtons({super.key, this.toDelete = false});
+
+  /// Signing in only to delete an existing account (allowed even when
+  /// accounts are otherwise off, see [AppState.signIn]).
+  final bool toDelete;
 
   @override
   State<SignInButtons> createState() => _SignInButtonsState();
@@ -50,7 +56,9 @@ class _SignInButtonsState extends State<SignInButtons> {
     final messenger = ScaffoldMessenger.of(context);
     // Start the sign-in before any await, so a browser treats the pop-up
     // as a response to the click.
-    final signIn = AppScope.read(context).accounts.signIn(method);
+    final signIn = AppScope.read(
+      context,
+    ).signIn(method, toDelete: widget.toDelete);
     setState(() => _busy = true);
     try {
       await signIn;

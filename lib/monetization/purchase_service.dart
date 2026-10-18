@@ -5,6 +5,55 @@ library;
 
 enum StorePurchaseStatus { pending, purchased, restored, error, canceled }
 
+/// Why a store action failed, in terms the UI can explain in plain words.
+enum StoreError {
+  /// Google Play: the account already owns the product (restore it).
+  alreadyOwned,
+
+  /// No connection, or the store service didn't answer.
+  network,
+
+  /// The store app or billing isn't available on this device/account.
+  storeUnavailable,
+
+  /// The product isn't on sale (not set up, or not in this country).
+  itemUnavailable,
+
+  /// An earlier purchase of the same product is still being processed.
+  pendingTransaction,
+
+  other,
+}
+
+/// Maps a store error code or message to a [StoreError].
+///
+/// in_app_purchase_android 0.5.4 puts the BillingResponse name in the
+/// error message ("BillingResponse.itemAlreadyOwned", see
+/// _getPurchaseDetailsFromResult in its source); StoreKit 2 errors arrive
+/// as PlatformException codes such as "storekit_duplicate_product_object".
+StoreError storeErrorFrom(Object? codeOrMessage) {
+  final s = '$codeOrMessage';
+  bool has(String part) => s.contains(part);
+  if (has('itemAlreadyOwned')) return StoreError.alreadyOwned;
+  if (has('serviceUnavailable') ||
+      has('serviceDisconnected') ||
+      has('serviceTimeout') ||
+      has('networkError') ||
+      has('SocketException')) {
+    return StoreError.network;
+  }
+  if (has('billingUnavailable') || has('featureNotSupported')) {
+    return StoreError.storeUnavailable;
+  }
+  if (has('itemUnavailable') || has('storekit2_failed_to_fetch_product')) {
+    return StoreError.itemUnavailable;
+  }
+  if (has('storekit_duplicate_product_object')) {
+    return StoreError.pendingTransaction;
+  }
+  return StoreError.other;
+}
+
 /// One update from the store's purchase stream.
 class StorePurchase {
   const StorePurchase({
@@ -12,6 +61,7 @@ class StorePurchase {
     required this.status,
     this.needsCompletion = false,
     this.errorMessage,
+    this.error,
     this.purchaseId,
     this.serverVerificationData,
     this.raw,
@@ -25,7 +75,11 @@ class StorePurchase {
   /// App Store keeps re-delivering it (in_app_purchase 3.3.1 README).
   final bool needsCompletion;
 
+  /// The store's own error text, for logs only (not shown to people).
   final String? errorMessage;
+
+  /// The error in plain terms; set for error updates.
+  final StoreError? error;
   final String? purchaseId;
 
   /// Purchase token (Play) or signed transaction (App Store), for a future
@@ -55,11 +109,11 @@ abstract class PurchaseService {
   /// False where the app sells nothing (web, desktop): no purchase UI.
   bool get supported;
 
-  /// True when [restore] runs silently, without asking the person to sign
-  /// in to the store. Google Play's purchase query is silent, so the app
-  /// restores at start there; the App Store re-delivers unfinished
-  /// transactions by itself and its restore may ask for an Apple ID, so
-  /// on iOS it only runs from the button.
+  /// True when [restore] runs without asking the person anything, so the
+  /// app can run it at every start and resume. Google Play's purchase
+  /// query is silent, and so is StoreKit 2's restore, which reads
+  /// Transaction.currentEntitlements (see restorePurchases in
+  /// in_app_purchase_storekit 0.4.14, InAppPurchasePlugin+StoreKit2.swift).
   bool get restoresSilently;
 
   /// Purchase updates; listen from app start so none are missed.
@@ -80,6 +134,11 @@ abstract class PurchaseService {
 
   /// Tells the store the purchase was delivered.
   Future<void> complete(StorePurchase purchase);
+
+  /// Asks the store to refresh this account's purchases from its servers,
+  /// for when a restore found nothing. StoreKit 2's AppStore.sync(), which
+  /// may ask for the Apple ID password; nothing on Google Play.
+  Future<void> syncWithStore();
 }
 
 /// No store (web, desktop).
@@ -102,6 +161,8 @@ class NoPurchaseService implements PurchaseService {
   Future<void> restore() async {}
   @override
   Future<void> complete(StorePurchase purchase) async {}
+  @override
+  Future<void> syncWithStore() async {}
 }
 
 /// Decides whether a purchased or restored update is genuine before the

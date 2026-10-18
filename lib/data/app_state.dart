@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../account/account_service.dart';
 import '../account/progress_sync.dart';
 import '../runner/code_runner.dart';
+import 'age.dart';
 import 'course_repository.dart';
 import 'models.dart';
 
@@ -21,6 +22,9 @@ import 'models.dart';
 ///   is loaded instead;
 /// - signing out (or deleting the account) clears the device, so the next
 ///   person on a shared device starts fresh.
+///
+/// Accounts are off for anyone whose birth year says they may be under 13
+/// ([accountsAllowed]); see [AgeGroup.allowsAccounts].
 class AppState extends ChangeNotifier {
   AppState({
     required this.repository,
@@ -28,12 +32,18 @@ class AppState extends ChangeNotifier {
     required this.prefs,
     this.accounts = const DisabledAccountService(),
     this.sync,
-  }) {
+    AgeStore? age,
+  }) : age = age ?? AgeStore(prefs) {
     _track = Track.fromName(prefs.getString(_trackKey));
     _completed = (prefs.getStringList(_completedKey) ?? const []).toSet();
     _user = accounts.currentUser;
     _userSub = accounts.userChanges.listen(_onUserChanged);
-    if (_user != null) syncing = _mergeWithCloud(_user!);
+    this.age.addListener(_onAgeChanged);
+    if (_user != null) {
+      syncing = accountsAllowed
+          ? _mergeWithCloud(_user!)
+          : leaveAccountKeepingProgress();
+    }
   }
 
   static const _trackKey = 'track';
@@ -55,11 +65,18 @@ class AppState extends ChangeNotifier {
   /// the rules then won't let anyone delete.
   static const _unconfirmedKey = 'deletionUnconfirmedUid';
 
+  /// Set to the uid when the app signed a child out of their account (see
+  /// [leaveAccountKeepingProgress]), so Progress can offer to delete it.
+  static const _childAccountKey = 'childAccountToDelete';
+
   final CourseRepository repository;
   final CodeRunner runner;
   final SharedPreferences prefs;
   final AccountService accounts;
   final ProgressSync? sync;
+
+  /// The birth year from the age screen.
+  final AgeStore age;
 
   late final StreamSubscription<AccountUser?> _userSub;
 
@@ -78,6 +95,10 @@ class AppState extends ChangeNotifier {
   /// True while the account is being deleted: no background writes, so
   /// nothing recreates the deleted cloud document.
   bool _deleting = false;
+
+  /// The next sign-out keeps the device's progress (a child leaving their
+  /// account, see [leaveAccountKeepingProgress]).
+  bool _keepLocalOnSignOut = false;
 
   /// Changes whenever the person whose progress this is may have changed
   /// (sign-in, sign-out, account deletion, clearing the device). Work that
@@ -103,6 +124,62 @@ class AppState extends ChangeNotifier {
 
   /// True when the last attempt to sync with the cloud failed.
   bool get syncFailed => _syncFailed;
+
+  /// False when the birth year says the person may be under 13: no sign-in
+  /// and no cloud sync, enforced here ([signIn], [_mergeWithCloud],
+  /// [_push]). The only exception is signing in to delete an existing
+  /// account. True while the age is still unknown.
+  bool get accountsAllowed => age.group?.allowsAccounts ?? true;
+
+  /// True after the app signed a child out of an existing account; the
+  /// Progress screen then offers to delete that account.
+  bool get childAccountToDelete => prefs.getString(_childAccountKey) != null;
+
+  /// Signs in. Refused when [accountsAllowed] is false, unless [toDelete]:
+  /// signing in only to delete an existing account, which syncs nothing.
+  ///
+  /// Not async on purpose: the provider's sign-in starts before any await,
+  /// so a browser treats its pop-up as a response to the click.
+  Future<void> signIn(SignInMethod method, {bool toDelete = false}) {
+    if (!accountsAllowed && !toDelete) {
+      return Future.error(
+        const AccountException(AccountErrorKind.ageRestricted),
+      );
+    }
+    return accounts.signIn(method);
+  }
+
+  void _onAgeChanged() {
+    if (!accountsAllowed && _user != null && !_deleting) {
+      syncing = leaveAccountKeepingProgress();
+    }
+    notifyListeners();
+  }
+
+  /// For someone who may be under 13 and is signed in (an install from
+  /// before the age screen, or after signing in only to delete): stops all
+  /// syncing and signs out on this device, keeping the progress here. The
+  /// account itself stays until they delete it; Progress offers that.
+  Future<void> leaveAccountKeepingProgress() async {
+    final u = _user;
+    if (u == null) return;
+    _generation++; // drops any running merge
+    _accountEpoch++;
+    _merging = false;
+    await prefs.setString(_childAccountKey, u.uid);
+    // The device copy now belongs to nobody.
+    await prefs.remove(_syncedUidKey);
+    await prefs.remove(_trackDirtyKey);
+    _syncFailed = false;
+    _keepLocalOnSignOut = true;
+    try {
+      await accounts.signOut();
+    } catch (e) {
+      _keepLocalOnSignOut = false;
+      debugPrint('Signing out failed: $e');
+    }
+    notifyListeners();
+  }
 
   Future<void> load() async {
     _course = await repository.loadCourse();
@@ -189,6 +266,14 @@ class AppState extends ChangeNotifier {
     final previous = _user;
     _user = user;
 
+    if (user == null && _keepLocalOnSignOut) {
+      _keepLocalOnSignOut = false;
+      _generation++;
+      _accountEpoch++;
+      notifyListeners();
+      return;
+    }
+
     if (user != null && user.uid == previous?.uid) {
       // Same account (a token refresh, or the first event repeating the
       // user we started with): nothing to merge again.
@@ -211,7 +296,8 @@ class AppState extends ChangeNotifier {
       return;
     }
     notifyListeners();
-    syncing = _mergeWithCloud(user);
+    // A child signed in only to delete their account: nothing is synced.
+    if (accountsAllowed) syncing = _mergeWithCloud(user);
   }
 
   /// Puts the device back to a fresh state.
@@ -226,6 +312,7 @@ class AppState extends ChangeNotifier {
     await prefs.remove(_syncedUidKey);
     await prefs.remove(_trackDirtyKey);
     await prefs.remove(_unconfirmedKey);
+    await prefs.remove(_childAccountKey);
   }
 
   /// True while deleting the signed-in account is unconfirmed; see
@@ -244,7 +331,8 @@ class AppState extends ChangeNotifier {
     if (!deletionUnconfirmed) return true;
     final exists = await accounts.accountStillExists();
     if (exists == false) {
-      await _clearLocal();
+      await _afterDeletion();
+      _keepLocalOnSignOut = !accountsAllowed;
       await accounts.signOut();
       return false;
     }
@@ -259,7 +347,7 @@ class AppState extends ChangeNotifier {
   /// long as the device progress is this account's or nobody's.
   Future<void> _mergeWithCloud(AccountUser user) async {
     final s = sync;
-    if (s == null || _deleting) return;
+    if (s == null || _deleting || !accountsAllowed) return;
     // Taken before any wait, so a deletion (or account change) that starts
     // meanwhile makes this merge drop out instead of writing.
     final generation = ++_generation;
@@ -403,15 +491,20 @@ class AppState extends ChangeNotifier {
     }
 
     try {
+      // A child keeps the progress on this device (see [_afterDeletion]),
+      // so the sign-out that follows the deletion must not clear it.
+      _keepLocalOnSignOut = !accountsAllowed;
       await _server(accounts.deleteUser(proof));
     } catch (e) {
+      _keepLocalOnSignOut = false;
       // After a timeout the deletion may still have gone through, so the
       // document is only put back when a fresh check is sure the account
       // is still there.
       final exists = await accounts.accountStillExists();
       if (exists == false) {
         // The error came after the account was in fact removed.
-        await _clearLocal();
+        await _afterDeletion();
+        _keepLocalOnSignOut = !accountsAllowed;
         await accounts.signOut();
         return;
       }
@@ -436,7 +529,20 @@ class AppState extends ChangeNotifier {
       }
       rethrow;
     }
-    await _clearLocal();
+    await _afterDeletion();
+  }
+
+  /// After the account is gone: the device is cleared, except for a child
+  /// ([accountsAllowed] false), who keeps their progress on the device.
+  Future<void> _afterDeletion() async {
+    if (accountsAllowed) return _clearLocal();
+    _accountEpoch++;
+    _syncFailed = false;
+    await prefs.remove(_syncedUidKey);
+    await prefs.remove(_trackDirtyKey);
+    await prefs.remove(_unconfirmedKey);
+    await prefs.remove(_childAccountKey);
+    notifyListeners();
   }
 
   static Future<T> _server<T>(Future<T> step) async {
@@ -461,11 +567,15 @@ class AppState extends ChangeNotifier {
     RemoteProgress remote,
   ) async {
     try {
+      // For a child only what the cloud already had goes back: nothing
+      // new is uploaded for them.
       await s
           .replace(
             uid,
-            track: _track ?? remote.track,
-            completed: {...remote.completed, ..._completed},
+            track: accountsAllowed ? (_track ?? remote.track) : remote.track,
+            completed: accountsAllowed
+                ? {...remote.completed, ..._completed}
+                : {...remote.completed},
           )
           .timeout(serverTimeout);
       return true;
@@ -496,7 +606,7 @@ class AppState extends ChangeNotifier {
   void _push(Future<void> Function(ProgressSync s, String uid) write) {
     final s = sync;
     final u = _user;
-    if (s == null || u == null || _deleting) return;
+    if (s == null || u == null || _deleting || !accountsAllowed) return;
     if (deletionUnconfirmed) {
       // Kept on the device; the next sync uploads it if the account exists.
       _markUnsaved();
@@ -534,6 +644,7 @@ class AppState extends ChangeNotifier {
   @override
   void dispose() {
     _userSub.cancel();
+    age.removeListener(_onAgeChanged);
     super.dispose();
   }
 }

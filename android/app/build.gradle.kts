@@ -65,3 +65,21 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+// A release build must not ship Google's test app id: fail early (AGP's
+// preReleaseBuild runs before compiling) unless the build says on purpose
+// that it is a test build, with --dart-define=ALLOW_TEST_ADS_IN_RELEASE=true.
+val releaseAppId = dartDefines["ADMOB_APP_ID_ANDROID"] ?: admobTestAppId
+val allowTestAdsInRelease = dartDefines["ALLOW_TEST_ADS_IN_RELEASE"] == "true"
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    doFirst {
+        if (releaseAppId == admobTestAppId && !allowTestAdsInRelease) {
+            throw GradleException(
+                "Release build with the AdMob TEST app id. Pass the real ids, " +
+                    "e.g. flutter build appbundle --dart-define-from-file=" +
+                    "admob.json (see docs/ads-and-purchases.md), or add " +
+                    "--dart-define=ALLOW_TEST_ADS_IN_RELEASE=true for a test build.",
+            )
+        }
+    }
+}

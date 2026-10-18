@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 
-import 'age.dart';
+import 'ad_banner.dart' show AdBannerSlot;
+
+import '../data/age.dart';
 
 /// Where a banner may appear. Only reading and list screens are listed, so
 /// a banner can't be put on the editor, run output or quiz screens by
@@ -19,7 +21,9 @@ enum AdPlacement {
 /// Uses the `ageRestrictedTreatment` setting that replaced the deprecated
 /// child-directed (TFCD) and under-age-of-consent (TFUA) tags in
 /// google_mobile_ads 9.1.0 (see RequestConfiguration in the package source
-/// and https://developers.google.com/admob/flutter/targeting).
+/// and https://developers.google.com/admob/flutter/targeting). The mapping
+/// to the plugin's RequestConfiguration is `requestConfigurationFor` in
+/// google_ads.dart.
 class AdAudience {
   const AdAudience({
     required this.treatment,
@@ -32,34 +36,34 @@ class AdAudience {
   /// 'G', 'PG', 'T' or 'MA' (AdMob's MaxAdContentRating values).
   final String maxAdContentRating;
 
-  /// Sent to UMP as `tagForUnderAgeOfConsent`: the person may be below the
-  /// GDPR digital age of consent, which EU countries set between 13 and 16
-  /// (GDPR Art. 8). UMP then doesn't ask them for consent.
+  /// Sent to UMP as `tagForUnderAgeOfConsent` (set for everyone under 18,
+  /// which covers every EU digital age of consent, 13 to 16, GDPR Art. 8).
+  /// UMP doesn't pass it on to ad requests; [treatment] does that.
   final bool underAgeOfConsent;
 
-  /// Settings for an age band, as of [youngestAge] years old.
+  /// True for anyone under 18.
+  bool get minor => treatment == AdAgeTreatment.child;
+
+  /// Settings for an age band.
   ///
-  /// - Under 13: no ads are loaded at all ([AgeGroup.allowsAds]). The
-  ///   child treatment and G rating are kept here as a second line of
-  ///   defence, should that ever change.
-  /// - 13 to 17: the teen treatment, which restricts ad categories such as
-  ///   alcohol, gambling and dating
-  ///   (https://ppc.land/googles-new-tfat-signal-kills-tfcd-and-tfua-and-finally-adds-a-teen-tier/,
-  ///   https://support.google.com/admob/answer/6219315), and PG.
-  /// - 18+: PG as well, since the app is rated for teens.
-  factory AdAudience.forAge(AgeGroup group, int youngestAge) {
+  /// - Under 18 (both under 13 and 13 to 17): the child treatment and a G
+  ///   rating. Under-13s get no ads at all ([AgeGroup.allowsAds]); the
+  ///   setting is kept as a second line of defence. For 13 to 17 the child
+  ///   treatment keeps every ad non-personalised. That is the safer course
+  ///   under New York's Child Data Protection Act, which limits processing
+  ///   the data of users under 18 (N.Y. Gen. Bus. Law art. 45-A, in force
+  ///   20 Jun 2025), and it matches what UMP's under-age-of-consent tag
+  ///   means under the new age setting (TFUA maps to the child treatment:
+  ///   https://developers.google.com/admob/flutter/targeting).
+  /// - 18+: no age treatment, PG.
+  factory AdAudience.forAge(AgeGroup group) {
     switch (group) {
       case AgeGroup.under13:
+      case AgeGroup.teen:
         return const AdAudience(
           treatment: AdAgeTreatment.child,
           maxAdContentRating: 'G',
           underAgeOfConsent: true,
-        );
-      case AgeGroup.teen:
-        return AdAudience(
-          treatment: AdAgeTreatment.teen,
-          maxAdContentRating: 'PG',
-          underAgeOfConsent: youngestAge < 16,
         );
       case AgeGroup.adult:
         return const AdAudience(
@@ -97,20 +101,26 @@ abstract class AdsService {
   /// False where this build can't show ads (web, desktop).
   bool get supported;
 
+  /// The ad unit ids in use, for "Report an ad". Empty without ads.
+  List<String> get unitIds;
+
   /// Starts the ad SDK with the age settings. Called once, after consent
   /// allows ad requests.
   Future<void> initialize(AdAudience audience);
 
-  /// A banner for [placement]. It takes no space until an ad has loaded.
+  /// The ad for [placement], sized to fit [AdBannerSlot]'s reserved space
+  /// (at most [AdBannerSlot.adHeight] tall). Shows nothing until loaded.
   Widget banner(AdPlacement placement);
 
   /// Loads an interstitial so it is ready at the next natural break.
   Future<void> preloadInterstitial();
 
-  /// Shows the preloaded interstitial. Returns false if none was ready.
+  /// Shows the preloaded interstitial. Completes with true as soon as it
+  /// is on screen, false if none was ready or it failed to show.
   Future<bool> showInterstitial();
 
-  /// Drops a preloaded interstitial (e.g. after "Remove ads").
+  /// Drops a preloaded interstitial, and one still loading (e.g. after
+  /// "Remove ads").
   void discardInterstitial();
 }
 
@@ -120,6 +130,8 @@ class NoAdsService implements AdsService {
 
   @override
   bool get supported => false;
+  @override
+  List<String> get unitIds => const [];
   @override
   Future<void> initialize(AdAudience audience) async {}
   @override

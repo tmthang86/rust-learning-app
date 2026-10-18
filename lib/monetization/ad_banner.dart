@@ -1,57 +1,106 @@
 import 'package:flutter/material.dart';
 
+import 'ad_report.dart';
 import 'ads_service.dart';
 import 'monetization.dart';
+
+/// Opens the ad report; if nothing can open it, says where to write.
+Future<void> reportAdFrom(BuildContext context, String screen) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final opened = await MonetizationScope.read(context).reportAd(screen);
+  if (!opened) {
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          adReportUrl.isNotEmpty
+              ? 'Please report the ad at $adReportUrl'
+              : 'Please email $adReportEmail to report the ad.',
+        ),
+      ),
+    );
+  }
+}
+
 
 /// A spot for a small banner on a reading or list screen. Takes no space
 /// when ads are off (web, "Remove ads", under 13, no consent).
 ///
-/// It has space around it and an "Advertisement" label, so it isn't
-/// mistaken for content or tapped by accident
-/// (https://support.google.com/admob/answer/6275345).
-class AdBannerSlot extends StatelessWidget {
-  const AdBannerSlot({super.key, required this.placement, this.minHeight = 0});
+/// While ads are on it reserves the banner's full height before the ad
+/// loads, and keeps it if loading fails, so content never jumps under a
+/// tap. It has space around it and an "Advertisement" label with a
+/// "Report" link, so it isn't mistaken for content or tapped by accident
+/// (https://support.google.com/admob/answer/6275345), and inappropriate
+/// ads can be reported (App Store guideline 2.5.18).
+///
+/// It stays alive while scrolled out of view, so scrolling doesn't throw
+/// away and re-request the ad.
+class AdBannerSlot extends StatefulWidget {
+  const AdBannerSlot({super.key, required this.placement});
 
   final AdPlacement placement;
 
-  /// Space it takes when there is no ad (ads off, or still loading), e.g.
-  /// the list's usual gap.
-  final double minHeight;
-
-  @override
-  Widget build(BuildContext context) {
-    final m = MonetizationScope.of(context);
-    if (!m.adsEnabled) return const SizedBox.shrink();
-    return m.ads.banner(placement);
-  }
-}
-
-/// How a loaded banner is framed. The ad services wrap a loaded ad in it.
-class AdFrame extends StatelessWidget {
-  const AdFrame({super.key, required this.height, required this.child});
-
-  final double height;
-  final Widget child;
+  /// Height reserved for the ad itself. The real banner asks AdMob for an
+  /// inline adaptive ad no taller than this.
+  static const adHeight = 60.0;
 
   /// Space between the ad and anything tappable.
   static const gap = 24.0;
 
   @override
+  State<AdBannerSlot> createState() => _AdBannerSlotState();
+}
+
+class _AdBannerSlotState extends State<AdBannerSlot>
+    with AutomaticKeepAliveClientMixin {
+  bool _adsEnabled = false;
+
+  @override
+  bool get wantKeepAlive => _adsEnabled;
+
+  @override
   Widget build(BuildContext context) {
+    final m = MonetizationScope.of(context);
+    if (m.adsEnabled != _adsEnabled) {
+      _adsEnabled = m.adsEnabled;
+      updateKeepAlive();
+    }
+    super.build(context);
+    if (!_adsEnabled) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final label = theme.textTheme.labelSmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: gap),
+      padding: const EdgeInsets.symmetric(vertical: AdBannerSlot.gap),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            'Advertisement',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+          Row(
+            children: [
+              Text('Advertisement', style: label),
+              const Spacer(),
+              InkWell(
+                onTap: () => reportAdFrom(context, widget.placement.name),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 2,
+                  ),
+                  child: Text(
+                    'Report ad',
+                    style: label?.copyWith(
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
-          SizedBox(height: height, child: child),
+          SizedBox(
+            height: AdBannerSlot.adHeight,
+            child: Center(child: m.ads.banner(widget.placement)),
+          ),
         ],
       ),
     );

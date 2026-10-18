@@ -12,6 +12,18 @@ import 'ad_config.dart';
 import 'ads_service.dart';
 import 'consent_service.dart';
 
+/// The plugin's request settings for [audience]: the age treatment and
+/// maximum content rating sent with every ad request.
+RequestConfiguration requestConfigurationFor(AdAudience audience) =>
+    RequestConfiguration(
+      maxAdContentRating: audience.maxAdContentRating,
+      ageRestrictedTreatment: switch (audience.treatment) {
+        AdAgeTreatment.child => AgeRestrictedTreatment.child,
+        AdAgeTreatment.teen => AgeRestrictedTreatment.teen,
+        AdAgeTreatment.unspecified => AgeRestrictedTreatment.unspecified,
+      },
+    );
+
 /// AdMob through google_mobile_ads 9.1.0. API checked against the package
 /// source (lib/src/ad_containers.dart, request_configuration.dart) and its
 /// example app.
@@ -23,21 +35,23 @@ class GoogleAdsService implements AdsService {
   InterstitialAd? _interstitial;
   bool _loadingInterstitial = false;
 
+  /// False after [discardInterstitial]: one that finishes loading then is
+  /// thrown away instead of kept.
+  bool _wantInterstitial = false;
+
   @override
   bool get supported => true;
 
   @override
+  List<String> get unitIds => [ids.banner, ids.interstitial];
+
+  @override
   Future<void> initialize(AdAudience audience) async {
-    // Age settings first, so the very first request carries them.
+    // Age settings first, so the very first request carries them. With
+    // the DELAY_APP_MEASUREMENT_INIT / GADDelayAppMeasurementInit flags in
+    // the platform files, nothing is measured before this point.
     await MobileAds.instance.updateRequestConfiguration(
-      RequestConfiguration(
-        maxAdContentRating: audience.maxAdContentRating,
-        ageRestrictedTreatment: switch (audience.treatment) {
-          AdAgeTreatment.child => AgeRestrictedTreatment.child,
-          AdAgeTreatment.teen => AgeRestrictedTreatment.teen,
-          AdAgeTreatment.unspecified => AgeRestrictedTreatment.unspecified,
-        },
-      ),
+      requestConfigurationFor(audience),
     );
     await MobileAds.instance.initialize();
   }
@@ -48,6 +62,7 @@ class GoogleAdsService implements AdsService {
 
   @override
   Future<void> preloadInterstitial() async {
+    _wantInterstitial = true;
     if (_interstitial != null || _loadingInterstitial) return;
     _loadingInterstitial = true;
     await InterstitialAd.load(
@@ -56,7 +71,11 @@ class GoogleAdsService implements AdsService {
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
           _loadingInterstitial = false;
-          _interstitial = ad;
+          if (_wantInterstitial) {
+            _interstitial = ad;
+          } else {
+            ad.dispose(); // "Remove ads" was bought while it loaded.
+          }
         },
         onAdFailedToLoad: (error) {
           _loadingInterstitial = false;
@@ -71,8 +90,16 @@ class GoogleAdsService implements AdsService {
     final ad = _interstitial;
     if (ad == null) return false;
     _interstitial = null;
+    // Completes once the ad is on screen, so the frequency cap counts
+    // from then and the caller never waits for the person to close it.
     final done = Completer<bool>();
     ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (ad) {
+        if (!done.isCompleted) done.complete(true);
+      },
+      onAdImpression: (ad) {
+        if (!done.isCompleted) done.complete(true);
+      },
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
         if (!done.isCompleted) done.complete(true);
@@ -89,21 +116,20 @@ class GoogleAdsService implements AdsService {
 
   @override
   void discardInterstitial() {
+    _wantInterstitial = false;
     _interstitial?.dispose();
     _interstitial = null;
   }
 }
 
-/// A small inline adaptive banner as wide as its space allows. Inline
+/// A small inline adaptive banner as wide as its space allows and no
+/// taller than [AdBannerSlot.adHeight], which the slot reserves. Inline
 /// (not anchored) because it sits inside scrolling content, away from the
-/// navigation bar; its height is capped so it stays small.
+/// navigation bar. The slot keeps it alive while scrolled away.
 class _AdaptiveBanner extends StatefulWidget {
   const _AdaptiveBanner({super.key, required this.adUnitId});
 
   final String adUnitId;
-
-  /// Upper bound for the banner's height, in logical pixels.
-  static const maxHeight = 100;
 
   @override
   State<_AdaptiveBanner> createState() => _AdaptiveBannerState();
@@ -123,21 +149,27 @@ class _AdaptiveBannerState extends State<_AdaptiveBanner> {
       adUnitId: widget.adUnitId,
       size: AdSize.getInlineAdaptiveBannerAdSize(
         width,
-        _AdaptiveBanner.maxHeight,
+        AdBannerSlot.adHeight.toInt(),
       ),
       request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (ad) async {
           final banner = ad as BannerAd;
-          // Inline adaptive ads report their real height after loading.
-          final size = await banner.getPlatformAdSize();
-          if (!mounted || _ad != banner || size == null) {
+          AdSize? size;
+          try {
+            // Inline adaptive ads report their real height after loading.
+            size = await banner.getPlatformAdSize();
+          } catch (e) {
+            debugPrint('Banner size unavailable: $e');
+          }
+          if (!mounted || _ad != banner) {
             if (_ad != banner) await banner.dispose();
             return;
           }
-          setState(() => _size = size);
+          setState(() => _size = size ?? banner.size);
         },
         onAdFailedToLoad: (ad, error) {
+          // The slot keeps its space; nothing moves.
           debugPrint('Banner failed to load: $error');
           ad.dispose();
           if (mounted && _ad == ad) setState(() => _ad = null);
@@ -168,12 +200,10 @@ class _AdaptiveBannerState extends State<_AdaptiveBanner> {
         final ad = _ad;
         final size = _size;
         if (ad == null || size == null) return const SizedBox.shrink();
-        return AdFrame(
-          height: size.height.toDouble(),
-          child: SizedBox(
-            width: size.width.toDouble(),
-            child: AdWidget(ad: ad),
-          ),
+        return SizedBox(
+          width: size.width.toDouble(),
+          height: size.height.toDouble().clamp(0, AdBannerSlot.adHeight),
+          child: AdWidget(ad: ad),
         );
       },
     );
@@ -185,7 +215,10 @@ class UmpConsentService implements ConsentService {
   const UmpConsentService();
 
   @override
-  Future<void> gather({required bool underAgeOfConsent}) async {
+  Future<bool> gather({
+    required bool underAgeOfConsent,
+    bool showForm = true,
+  }) async {
     final updated = Completer<bool>();
     ConsentInformation.instance.requestConsentInfoUpdate(
       ConsentRequestParameters(
@@ -198,13 +231,15 @@ class UmpConsentService implements ConsentService {
         updated.complete(false);
       },
     );
-    if (!await updated.future) return;
+    if (!await updated.future) return false;
+    if (!showForm) return true;
     final dismissed = Completer<void>();
     await ConsentForm.loadAndShowConsentFormIfRequired((error) {
       if (error != null) debugPrint('Consent form: ${error.message}');
-      dismissed.complete();
+      if (!dismissed.isCompleted) dismissed.complete();
     });
     await dismissed.future;
+    return true;
   }
 
   /// For testing the consent messages on a device (debug builds only):

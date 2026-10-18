@@ -35,6 +35,10 @@ enum AccountErrorKind {
   unconfirmed,
 
   notSignedIn,
+
+  /// Accounts are off for this person (possibly under 13).
+  ageRestricted,
+
   other,
 }
 

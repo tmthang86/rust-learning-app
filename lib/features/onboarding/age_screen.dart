@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../monetization/age.dart';
-import '../../monetization/monetization.dart';
+import '../../data/age.dart';
+import '../../data/app_state.dart';
 
 /// First-launch age question: a plain birth-year field.
 ///
@@ -31,7 +31,7 @@ class _AgeScreenState extends State<AgeScreen> {
       setState(() => _error = 'Please enter a four-digit year.');
       return;
     }
-    MonetizationScope.read(context).setBirthYear(year);
+    AppScope.read(context).age.setBirthYear(year);
   }
 
   @override

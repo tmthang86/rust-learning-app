@@ -32,6 +32,7 @@ Future<void> main() async {
   final services = createPlatformServices();
   final monetization = Monetization(
     prefs: state.prefs,
+    age: state.age,
     purchases: PurchaseController(
       store: services.purchases,
       prefs: state.prefs,
@@ -85,6 +86,7 @@ class _RustLearnAppState extends State<RustLearnApp> {
       widget.monetization ??
       Monetization(
         prefs: widget.state.prefs,
+        age: widget.state.age,
         purchases: PurchaseController(
           store: const NoPurchaseService(),
           prefs: widget.state.prefs,
@@ -92,12 +94,27 @@ class _RustLearnAppState extends State<RustLearnApp> {
       );
   late final GoRouter _router = buildRouter(
     widget.state,
-    _monetization,
     initialLocation: widget.initialLocation,
   );
 
+  /// Store and consent retries when the app comes back to the foreground.
+  late final AppLifecycleListener _lifecycle = AppLifecycleListener(
+    onResume: () => _monetization.onResume(),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    assert(
+      identical(_monetization.age, widget.state.age),
+      'Monetization and AppState must share one AgeStore',
+    );
+    _lifecycle; // start listening
+  }
+
   @override
   void dispose() {
+    _lifecycle.dispose();
     _router.dispose();
     if (widget.monetization == null) {
       _monetization.purchases.dispose();

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 
 import '../data/app_state.dart';
@@ -10,17 +9,13 @@ import '../features/onboarding/age_screen.dart';
 import '../features/onboarding/track_picker_screen.dart';
 import '../features/progress/progress_screen.dart';
 import '../features/quiz/quiz_screen.dart';
-import '../monetization/monetization.dart';
 import 'shell.dart';
 
-GoRouter buildRouter(
-  AppState state,
-  Monetization monetization, {
-  String initialLocation = '/learn',
-}) =>
+GoRouter buildRouter(AppState state, {String initialLocation = '/learn'}) =>
     GoRouter(
       initialLocation: initialLocation,
-      refreshListenable: Listenable.merge([state, monetization]),
+      // AppState also notifies when the birth year is set.
+      refreshListenable: state,
       redirect: (context, route) {
         // Reachable without picking a track: linked from the store listing.
         if (route.matchedLocation == '/delete-account') return null;
@@ -29,12 +24,12 @@ GoRouter buildRouter(
         // First launch asks for a birth year, then for a track. A deep
         // link is remembered through both.
         final onAge = route.matchedLocation == '/age';
-        if (monetization.needsAge && !onAge) {
+        if (state.age.needsAge && !onAge) {
           return from == '/learn'
               ? '/age'
               : Uri(path: '/age', queryParameters: {'from': from}).toString();
         }
-        if (!monetization.needsAge && onAge) {
+        if (!state.age.needsAge && onAge) {
           return safeReturnLocation(route.uri.queryParameters['from']);
         }
         if (onAge) return null;

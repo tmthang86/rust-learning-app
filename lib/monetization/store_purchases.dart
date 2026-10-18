@@ -1,9 +1,11 @@
 // Android and iOS only: imported through platform_services_io.dart.
 import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 
 import 'purchase_service.dart';
 
@@ -19,14 +21,20 @@ class StorePurchaseService implements PurchaseService {
   @override
   bool get supported => true;
 
+  /// Google Play's query is always silent; on iOS only StoreKit 2's
+  /// restore is (StoreKit 1's restoreCompletedTransactions may ask for the
+  /// Apple ID). StoreKit 2 is the plugin's default.
   @override
-  bool get restoresSilently => Platform.isAndroid;
+  bool get restoresSilently =>
+      Platform.isAndroid || InAppPurchaseStoreKitPlatform.isStoreKit2Enabled;
 
   @override
   Stream<List<StorePurchase>> get purchaseUpdates =>
-      _iap.purchaseStream.map((list) => list.map(_convert).toList());
+      _iap.purchaseStream.map((list) => list.map(convert).toList());
 
-  static StorePurchase _convert(PurchaseDetails p) {
+  /// The plugin's purchase as the app's [StorePurchase].
+  @visibleForTesting
+  static StorePurchase convert(PurchaseDetails p) {
     var status = switch (p.status) {
       PurchaseStatus.pending => StorePurchaseStatus.pending,
       PurchaseStatus.purchased => StorePurchaseStatus.purchased,
@@ -49,7 +57,12 @@ class StorePurchaseService implements PurchaseService {
       // Never complete a purchase that isn't paid yet.
       needsCompletion:
           p.pendingCompletePurchase && status != StorePurchaseStatus.pending,
-      errorMessage: p.error?.message,
+      errorMessage: p.error == null
+          ? null
+          : '${p.error!.code}: ${p.error!.message} ${p.error!.details ?? ''}',
+      error: p.status == PurchaseStatus.error
+          ? storeErrorFrom('${p.error?.code} ${p.error?.message}')
+          : null,
       purchaseId: p.purchaseID,
       serverVerificationData: p.verificationData.serverVerificationData,
       raw: p,
@@ -86,4 +99,11 @@ class StorePurchaseService implements PurchaseService {
   @override
   Future<void> complete(StorePurchase purchase) =>
       _iap.completePurchase(purchase.raw! as PurchaseDetails);
+
+  @override
+  Future<void> syncWithStore() async {
+    if (Platform.isIOS && InAppPurchaseStoreKitPlatform.isStoreKit2Enabled) {
+      await InAppPurchaseStoreKitPlatformAddition().sync();
+    }
+  }
 }

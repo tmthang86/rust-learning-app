@@ -9,7 +9,6 @@ import 'package:rust_learn/account/progress_sync.dart';
 import 'package:rust_learn/data/app_state.dart';
 import 'package:rust_learn/data/course_repository.dart';
 import 'package:rust_learn/data/models.dart';
-import 'package:rust_learn/monetization/ad_banner.dart';
 import 'package:rust_learn/monetization/ad_config.dart';
 import 'package:rust_learn/monetization/ads_service.dart';
 import 'package:rust_learn/monetization/consent_service.dart';
@@ -338,12 +337,15 @@ void mockPrefs(Map<String, Object> values, {bool ageKnown = true}) =>
       ...values,
     });
 
-/// Ad SDK stand-in. Banners render as a labelled box keyed by placement.
+/// Ad SDK stand-in. Banners render as a box keyed by placement.
 class FakeAds implements AdsService {
   FakeAds({this.supported = true});
 
   @override
   final bool supported;
+
+  @override
+  List<String> get unitIds => const ['test-banner-unit', 'test-interstitial-unit'];
 
   final List<AdAudience> initializedWith = [];
   int preloads = 0;
@@ -353,23 +355,31 @@ class FakeAds implements AdsService {
   /// Whether an interstitial is loaded and ready to show.
   bool interstitialReady = true;
 
+  /// When true, showInterstitial never completes (a stuck SDK callback).
+  bool hangOnShow = false;
+
+  /// Runs during initialize (e.g. a purchase finishing meanwhile).
+  Future<void> Function()? duringInitialize;
+
   static Key bannerKey(AdPlacement p) => ValueKey('fake-banner-${p.name}');
 
   @override
-  Future<void> initialize(AdAudience audience) async =>
-      initializedWith.add(audience);
+  Future<void> initialize(AdAudience audience) async {
+    initializedWith.add(audience);
+    final f = duringInitialize;
+    if (f != null) await f();
+  }
 
   @override
-  Widget banner(AdPlacement placement) => AdFrame(
-    height: 50,
-    child: SizedBox(key: bannerKey(placement), height: 50),
-  );
+  Widget banner(AdPlacement placement) =>
+      SizedBox(key: bannerKey(placement), height: 50, width: 300);
 
   @override
   Future<void> preloadInterstitial() async => preloads++;
 
   @override
   Future<bool> showInterstitial() async {
+    if (hangOnShow) return Completer<bool>().future;
     if (!interstitialReady) return false;
     shown++;
     return true;
@@ -387,15 +397,25 @@ class FakeConsent implements ConsentService {
   bool allowAds;
   bool privacyRequired;
 
+  /// Whether the consent info update succeeds (false: offline).
+  bool updateSucceeds = true;
+
   /// What canRequestAds answers after the privacy options form closes.
   bool? allowAdsAfterPrivacyForm;
 
   final List<bool> gatheredWithUnderAge = [];
+  final List<bool> formsAllowed = [];
   int privacyFormsShown = 0;
 
   @override
-  Future<void> gather({required bool underAgeOfConsent}) async =>
-      gatheredWithUnderAge.add(underAgeOfConsent);
+  Future<bool> gather({
+    required bool underAgeOfConsent,
+    bool showForm = true,
+  }) async {
+    gatheredWithUnderAge.add(underAgeOfConsent);
+    formsAllowed.add(showForm);
+    return updateSucceeds;
+  }
 
   @override
   Future<bool> canRequestAds() async => allowAds;
@@ -411,7 +431,11 @@ class FakeConsent implements ConsentService {
   }
 }
 
-/// Store stand-in for in_app_purchase.
+/// Store stand-in for in_app_purchase, behaving like the real plugins:
+/// - Google Play (in_app_purchase_android 0.5.4) reports a cancel, or an
+///   error that comes with no purchase, as an update with an empty product
+///   id that needs no completion ([androidCancel], [androidError]);
+/// - StoreKit 2 needs completion only for purchased updates.
 class FakeStore implements PurchaseService {
   FakeStore({this.supported = true, this.restoresSilently = false});
 
@@ -436,9 +460,17 @@ class FakeStore implements PurchaseService {
   /// when nothing is owned.
   List<StorePurchase> onRestore = const [];
 
+  /// Becomes [onRestore] after syncWithStore (App Store sync).
+  List<StorePurchase>? afterSync;
+
+  /// When set, buyNonConsumable throws it (StoreKit 2 reports errors so).
+  Object? buyThrows;
+
   bool buyAccepted = true;
   int buys = 0;
   int restores = 0;
+  int syncs = 0;
+  int availabilityChecks = 0;
   final List<StorePurchase> completed = [];
 
   void emit(List<StorePurchase> purchases) => _updates.add(purchases);
@@ -447,7 +479,10 @@ class FakeStore implements PurchaseService {
   Stream<List<StorePurchase>> get purchaseUpdates => _updates.stream;
 
   @override
-  Future<bool> isAvailable() async => available;
+  Future<bool> isAvailable() async {
+    availabilityChecks++;
+    return available;
+  }
 
   @override
   Future<StoreProduct?> queryProduct(String id) async =>
@@ -456,6 +491,8 @@ class FakeStore implements PurchaseService {
   @override
   Future<bool> buyNonConsumable(StoreProduct product) async {
     buys++;
+    final e = buyThrows;
+    if (e != null) throw e;
     final updates = onBuy;
     if (updates != null) emit(updates);
     return buyAccepted;
@@ -468,9 +505,30 @@ class FakeStore implements PurchaseService {
   }
 
   @override
-  Future<void> complete(StorePurchase purchase) async =>
-      completed.add(purchase);
+  Future<void> complete(StorePurchase purchase) async => completed.add(purchase);
+
+  @override
+  Future<void> syncWithStore() async {
+    syncs++;
+    final next = afterSync;
+    if (next != null) onRestore = next;
+  }
 }
+
+/// Google Play's update for a cancelled purchase sheet.
+const androidCancel = StorePurchase(
+  productId: '',
+  status: StorePurchaseStatus.canceled,
+);
+
+/// Google Play's update for a billing error with no purchase, e.g.
+/// 'BillingResponse.itemAlreadyOwned'.
+StorePurchase androidError(String billingResponse) => StorePurchase(
+  productId: '',
+  status: StorePurchaseStatus.error,
+  errorMessage: billingResponse,
+  error: storeErrorFrom(billingResponse),
+);
 
 StorePurchase removeAds(
   StorePurchaseStatus status, {
@@ -481,6 +539,7 @@ StorePurchase removeAds(
   status: status,
   needsCompletion: needsCompletion,
   errorMessage: error,
+  error: error == null ? null : storeErrorFrom(error),
 );
 
 /// Lets queued stream events and their async handlers run.

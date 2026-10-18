@@ -18,18 +18,29 @@ class DeleteAccountScreen extends StatefulWidget {
 
 class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
   bool _deleted = false;
+  late final AppState _state;
 
   @override
   void initState() {
     super.initState();
     // After an unconfirmed deletion, check with the server on opening, so
     // an account that is already gone shows as deleted.
-    final state = AppScope.read(context);
+    final state = _state = AppScope.read(context);
     if (state.deletionUnconfirmed) {
       state.recheckDeletion().then((exists) {
         if (mounted && exists == false) setState(() => _deleted = true);
       });
     }
+  }
+
+  @override
+  void dispose() {
+    // A child may sign in here only to delete. Leaving without deleting
+    // signs them out again (keeping their progress on the device).
+    if (!_state.accountsAllowed && _state.user != null) {
+      _state.leaveAccountKeepingProgress();
+    }
+    super.dispose();
   }
 
   Future<void> _delete() async {
@@ -64,7 +75,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
         children: [
           Text('Sign in with the account you want to delete.'),
           SizedBox(height: 4),
-          SignInButtons(),
+          SignInButtons(toDelete: true),
         ],
       );
     } else {
@@ -113,6 +124,12 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                 'delete from is cleared too; on other devices it stays only '
                 'until you uninstall the app or clear its data.',
               ),
+              if (!state.accountsAllowed) ...[
+                const SizedBox(height: 12),
+                const Text(
+                  'For you, progress on this device stays, saved only here.',
+                ),
+              ],
               const SizedBox(height: 24),
               action,
               const SizedBox(height: 24),

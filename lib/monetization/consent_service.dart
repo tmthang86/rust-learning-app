@@ -4,11 +4,12 @@
 /// themselves (GDPR, US states, IDFA explainer) are set up in AdMob; see
 /// docs/ads-and-purchases.md.
 abstract class ConsentService {
-  /// Refreshes consent info and shows the consent form if one is required
-  /// (`requestConsentInfoUpdate`, then `loadAndShowConsentFormIfRequired`).
-  /// Never throws: on failure ads may still be allowed from an earlier
-  /// session, which [canRequestAds] reports.
-  Future<void> gather({required bool underAgeOfConsent});
+  /// Refreshes consent info (`requestConsentInfoUpdate`) and, if
+  /// [showForm], shows the consent form when one is required
+  /// (`loadAndShowConsentFormIfRequired`). Minors get no form, so no IDFA
+  /// explainer or ATT prompt either. Returns false if the update failed
+  /// (e.g. offline); the app tries again on the next resume. Never throws.
+  Future<bool> gather({required bool underAgeOfConsent, bool showForm = true});
 
   /// Whether ads may be requested now (UMP `canRequestAds`).
   Future<bool> canRequestAds();
@@ -26,7 +27,10 @@ class NoConsentService implements ConsentService {
   const NoConsentService();
 
   @override
-  Future<void> gather({required bool underAgeOfConsent}) async {}
+  Future<bool> gather({
+    required bool underAgeOfConsent,
+    bool showForm = true,
+  }) async => true;
   @override
   Future<bool> canRequestAds() async => false;
   @override

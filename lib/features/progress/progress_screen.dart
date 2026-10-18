@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../data/app_state.dart';
 import '../../data/models.dart';
@@ -106,6 +107,58 @@ class _AccountCardState extends State<_AccountCard> {
   }
 }
 
+/// For someone who may be under 13: no accounts, progress stays on the
+/// device. If the app signed them out of an existing account, deleting it
+/// is offered prominently.
+class _DeviceOnlyCard extends StatelessWidget {
+  const _DeviceOnlyCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = AppScope.of(context);
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.phone_android_outlined),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Your progress is saved on this device',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            if (state.childAccountToDelete) ...[
+              const SizedBox(height: 12),
+              const Text(
+                'You were signed out of your account on this device. You can '
+                'delete the account and the progress saved with it.',
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: theme.colorScheme.error,
+                  foregroundColor: theme.colorScheme.onError,
+                ),
+                onPressed: () => context.push('/delete-account'),
+                icon: const Icon(Icons.delete_forever_outlined),
+                label: const Text('Delete your account'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Overall progress and track setting.
 class ProgressScreen extends StatelessWidget {
   const ProgressScreen({super.key});
@@ -143,7 +196,10 @@ class ProgressScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              if (state.accounts.available) ...[
+              if (!state.accountsAllowed) ...[
+                const SizedBox(height: 16),
+                const _DeviceOnlyCard(),
+              ] else if (state.accounts.available) ...[
                 const SizedBox(height: 16),
                 const _AccountCard(),
               ],
@@ -174,6 +230,7 @@ class ProgressScreen extends StatelessWidget {
               const SizedBox(height: 24),
               const RemoveAdsCard(),
               const PrivacyOptionsTile(),
+              const ReportAdTile(),
             ],
           ),
         ),

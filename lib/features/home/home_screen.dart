@@ -28,12 +28,11 @@ class HomeScreen extends StatelessWidget {
                     for (final (i, unit) in units.indexed) ...[
                       if (i > 0) const SizedBox(height: 12),
                       _UnitCard(unit: unit),
-                      // One small banner after the first unit, inside the
-                      // list (not over the navigation bar). It brings its
-                      // own space when shown.
-                      if (i == 0)
-                        const AdBannerSlot(placement: AdPlacement.courseMap),
                     ],
+                    // One small banner after the last unit: inside the list
+                    // (not over the navigation bar), and nothing below it
+                    // can shift when it appears. It brings its own space.
+                    const AdBannerSlot(placement: AdPlacement.courseMap),
                   ],
                 ),
               ),

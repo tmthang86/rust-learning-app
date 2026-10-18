@@ -1,19 +1,37 @@
 import 'package:flutter/material.dart';
 
+import '../../monetization/ad_banner.dart';
 import '../../monetization/monetization.dart';
 import '../../monetization/purchase_controller.dart';
+import '../../monetization/purchase_service.dart';
 
 /// The one-time "Remove ads" purchase, with a visible "Restore purchases"
-/// button (App Store guideline 3.1.1). Only on platforms with a store:
-/// nothing is sold on the web, and nothing links to outside payment.
-class RemoveAdsCard extends StatelessWidget {
+/// button (App Store guideline 3.1.1).
+///
+/// Shown only to people who would see ads, or as "Ads removed" to people
+/// who own it ([Monetization.showRemoveAdsCard]): never on the web, never
+/// to someone under 13, and nothing links to outside payment.
+class RemoveAdsCard extends StatefulWidget {
   const RemoveAdsCard({super.key});
+
+  @override
+  State<RemoveAdsCard> createState() => _RemoveAdsCardState();
+}
+
+class _RemoveAdsCardState extends State<RemoveAdsCard> {
+  @override
+  void initState() {
+    super.initState();
+    // Try the store again if it was unreachable at start.
+    MonetizationScope.read(context).purchases.refresh();
+  }
 
   @override
   Widget build(BuildContext context) {
     // Monetization passes on every change of its PurchaseController.
-    final p = MonetizationScope.of(context).purchases;
-    if (!p.supported) return const SizedBox.shrink();
+    final m = MonetizationScope.of(context);
+    if (!m.showRemoveAdsCard) return const SizedBox.shrink();
+    final p = m.purchases;
     final theme = Theme.of(context);
     if (p.entitled) {
       return Card(
@@ -33,7 +51,7 @@ class RemoveAdsCard extends StatelessWidget {
       );
     }
     final product = p.product;
-    final message = _message(p);
+    final message = purchaseMessage(p);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -84,38 +102,51 @@ class RemoveAdsCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  static String? _message(PurchaseController p) {
-    switch (p.state) {
-      case PurchaseFlowState.idle:
-      case PurchaseFlowState.purchased:
-      case PurchaseFlowState.restored:
-        if (!p.storeAvailable) {
-          return "The store isn't available right now.";
-        }
-        if (p.product == null) {
-          return "This purchase isn't available right now.";
-        }
-        return null;
-      case PurchaseFlowState.buying:
-        return 'Opening the store…';
-      case PurchaseFlowState.restoring:
-        return 'Checking for earlier purchases…';
-      case PurchaseFlowState.pending:
-        return 'Your purchase is pending. Ads will be removed once the '
-            'store confirms it.';
-      case PurchaseFlowState.nothingToRestore:
-        return 'No earlier purchase was found for this store account.';
-      case PurchaseFlowState.cancelled:
-        return 'Purchase cancelled.';
-      case PurchaseFlowState.error:
-        final detail = p.errorMessage;
-        return detail == null || detail.isEmpty
-            ? "The purchase didn't go through. Please try again."
-            : "The purchase didn't go through: $detail";
-    }
+/// The card's status line, in plain words (never a raw store error).
+String? purchaseMessage(PurchaseController p) {
+  switch (p.state) {
+    case PurchaseFlowState.idle:
+    case PurchaseFlowState.purchased:
+    case PurchaseFlowState.restored:
+      if (!p.storeAvailable) {
+        return "The store isn't available right now.";
+      }
+      if (p.product == null) {
+        return "This purchase isn't available right now.";
+      }
+      return null;
+    case PurchaseFlowState.buying:
+      return 'Opening the store…';
+    case PurchaseFlowState.restoring:
+      return 'Checking for earlier purchases…';
+    case PurchaseFlowState.pending:
+      return 'Your purchase is pending. Ads will be removed once the '
+          'store confirms it.';
+    case PurchaseFlowState.nothingToRestore:
+      return 'No earlier purchase was found for this store account.';
+    case PurchaseFlowState.cancelled:
+      return 'Purchase cancelled.';
+    case PurchaseFlowState.error:
+      return storeErrorMessage(p.error ?? StoreError.other);
   }
 }
+
+String storeErrorMessage(StoreError error) => switch (error) {
+  StoreError.alreadyOwned =>
+    'You already own this. Tap "Restore purchases" to get it back.',
+  StoreError.network =>
+    "Couldn't reach the store. Check your connection and try again.",
+  StoreError.storeUnavailable =>
+    "Purchases aren't available on this device or account.",
+  StoreError.itemUnavailable =>
+    "This purchase isn't available right now. Please try again later.",
+  StoreError.pendingTransaction =>
+    'An earlier purchase is still being processed. Please try again in a '
+        'moment.',
+  StoreError.other => "The purchase didn't go through. Please try again.",
+};
 
 /// Lets the learner change their ad privacy choices. Shown only when UMP
 /// says the app must offer it.
@@ -134,3 +165,22 @@ class PrivacyOptionsTile extends StatelessWidget {
     );
   }
 }
+
+/// "Report an ad" (App Store guideline 2.5.18), shown only while ads are
+/// on. Each banner also has a "Report ad" link.
+class ReportAdTile extends StatelessWidget {
+  const ReportAdTile({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final m = MonetizationScope.of(context);
+    if (!m.adsEnabled) return const SizedBox.shrink();
+    return ListTile(
+      leading: const Icon(Icons.flag_outlined),
+      title: const Text('Report an ad'),
+      subtitle: const Text('Tell us about an ad that seemed inappropriate.'),
+      onTap: () => reportAdFrom(context, 'progress'),
+    );
+  }
+}
+

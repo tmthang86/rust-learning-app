@@ -2,13 +2,21 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../data/age.dart';
+import 'ad_report.dart';
 import 'ads_service.dart';
-import 'age.dart';
 import 'consent_service.dart';
 import 'purchase_controller.dart';
 
-/// Ads, consent, the learner's age band and the "Remove ads" purchase.
+/// Opens a link outside the app; returns false if nothing could open it.
+typedef UriLauncher = Future<bool> Function(Uri uri);
+
+Future<bool> _launchExternally(Uri uri) =>
+    launchUrl(uri, mode: LaunchMode.externalApplication);
+
+/// Ads, consent and the "Remove ads" purchase.
 ///
 /// Ads are only requested when all of these hold ([adsEnabled]):
 /// - the platform supports them (Android, iOS; never the web);
@@ -20,20 +28,19 @@ import 'purchase_controller.dart';
 class Monetization extends ChangeNotifier {
   Monetization({
     required this.prefs,
+    required this.age,
     required this.purchases,
     this.ads = const NoAdsService(),
     this.consent = const NoConsentService(),
     DateTime Function()? clock,
+    UriLauncher? launcher,
+    this.interstitialShowTimeout = const Duration(seconds: 10),
   }) : _clock = clock ?? DateTime.now,
-       _birthYear = prefs.getInt(birthYearKey) {
+       _launch = launcher ?? _launchExternally {
     purchases.addListener(_onPurchasesChanged);
+    age.addListener(_onAgeChanged);
   }
 
-  /// Stored on the device only. Not cleared on sign-out: it belongs to the
-  /// device's user, and asking again would let a child simply try another
-  /// year (FTC COPPA FAQ, neutral age screens:
-  /// https://www.ftc.gov/business-guidance/resources/complying-coppa-frequently-asked-questions).
-  static const birthYearKey = 'birthYear';
   static const sessionCountKey = 'adSessionCount';
   static const lastInterstitialKey = 'lastInterstitialMs';
 
@@ -42,12 +49,19 @@ class Monetization extends ChangeNotifier {
   static const interstitialMinInterval = Duration(minutes: 5);
 
   final SharedPreferences prefs;
+
+  /// The birth year; shared with AppState.
+  final AgeStore age;
   final PurchaseController purchases;
   final AdsService ads;
   final ConsentService consent;
-  final DateTime Function() _clock;
 
-  int? _birthYear;
+  /// [onLessonFinished] gives up waiting for the interstitial after this.
+  final Duration interstitialShowTimeout;
+
+  final DateTime Function() _clock;
+  final UriLauncher _launch;
+
   bool _started = false;
   bool _disposed = false;
   bool _firstSession = false;
@@ -58,25 +72,27 @@ class Monetization extends ChangeNotifier {
   bool _sdkReady = false;
   bool _privacyOptionsRequired = false;
 
-  int? get birthYear => _birthYear;
-  bool get needsAge => _birthYear == null;
-
-  AgeGroup? get ageGroup {
-    final y = _birthYear;
-    return y == null ? null : ageGroupFor(y, _clock());
-  }
-
   /// Whether ads are shown at all; see the class comment.
   bool get adsEnabled => _eligibleForAds && _canRequestAds && _sdkReady;
 
   /// Everything except consent allows ads.
   bool get _eligibleForAds =>
-      ads.supported && !purchases.entitled && (ageGroup?.allowsAds ?? false);
+      ads.supported && !purchases.entitled && (age.group?.allowsAds ?? false);
+
+  /// Whether to show the "Remove ads" offer: only to people who would see
+  /// ads (not under-13s, not on the web), or as "Ads removed" to people
+  /// who already own it.
+  bool get showRemoveAdsCard =>
+      purchases.supported &&
+      (purchases.entitled ||
+          (ads.supported && (age.group?.allowsAds ?? false)));
 
   /// Show a "Privacy options" entry (UMP says one is required).
   bool get privacyOptionsRequired => _privacyOptionsRequired;
 
-  /// Call once at app start.
+  /// Call once at app start. The silent restore runs first (bounded by
+  /// [PurchaseController.quietRestoreWait]), so someone who already paid
+  /// doesn't get the consent form.
   Future<void> start() async {
     if (_started) return;
     _started = true;
@@ -87,12 +103,17 @@ class Monetization extends ChangeNotifier {
     await _startAdsIfAllowed();
   }
 
-  /// Saves the answer from the age screen.
-  Future<void> setBirthYear(int year) async {
-    _birthYear = year;
+  /// Call when the app comes back to the foreground: retries the store and
+  /// a consent update that failed (e.g. offline at start).
+  Future<void> onResume() async {
+    if (!_started) return;
+    await purchases.onResume();
+    if (!_consentGathered) await _startAdsIfAllowed();
+  }
+
+  void _onAgeChanged() {
     _notify();
-    await prefs.setInt(birthYearKey, year);
-    if (_started) await _startAdsIfAllowed();
+    if (_started) unawaited(_startAdsIfAllowed());
   }
 
   /// Runs consent and starts the ad SDK once, when allowed.
@@ -100,26 +121,26 @@ class Monetization extends ChangeNotifier {
       _adsStarting ??= _startAds().whenComplete(() => _adsStarting = null);
 
   Future<void> _startAds() async {
-    if (!_eligibleForAds) return;
-    final year = _birthYear!;
-    final group = ageGroupFor(year, _clock());
-    final audience = AdAudience.forAge(
-      group,
-      youngestPossibleAge(year, _clock()),
-    );
+    final group = age.group;
+    if (!_eligibleForAds || group == null) return;
+    final audience = AdAudience.forAge(group);
     if (!_consentGathered) {
-      _consentGathered = true;
-      // UMP's recommended order: update consent info, show the form if
-      // required, then check canRequestAds before loading ads.
-      await consent.gather(underAgeOfConsent: audience.underAgeOfConsent);
+      // UMP's order: update consent info, show the form if required (not
+      // for minors), then check canRequestAds before loading ads.
+      _consentGathered = await consent.gather(
+        underAgeOfConsent: audience.underAgeOfConsent,
+        showForm: !audience.minor,
+      );
     }
     await _refreshConsent();
     if (!_canRequestAds || !_eligibleForAds) return;
     if (!_sdkReady) {
       await ads.initialize(audience);
       _sdkReady = true;
-      _notify();
     }
+    // "Remove ads" may have been bought while the SDK started.
+    if (!_eligibleForAds) return;
+    _notify();
     unawaited(ads.preloadInterstitial());
   }
 
@@ -140,28 +161,49 @@ class Monetization extends ChangeNotifier {
     }
   }
 
-  /// Call at a natural break: the learner just finished a lesson and is
-  /// leaving it. Shows an interstitial if one is ready and allowed:
+  /// Call at a natural break: the learner just finished a lesson for the
+  /// first time and is leaving it. Shows an interstitial if one is ready
+  /// and allowed:
   /// - never for the first lesson of the first session;
-  /// - at most one per [interstitialMinInterval].
-  /// Returns true if one was shown.
+  /// - at most one per [interstitialMinInterval], counted from when one
+  ///   was actually shown.
+  /// Returns true if one was shown. Never waits longer than
+  /// [interstitialShowTimeout].
   Future<bool> onLessonFinished() async {
     _lessonsFinishedThisSession++;
     if (!adsEnabled) return false;
     if (_firstSession && _lessonsFinishedThisSession == 1) return false;
-    final now = _clock();
     final lastMs = prefs.getInt(lastInterstitialKey);
     if (lastMs != null) {
       final last = DateTime.fromMillisecondsSinceEpoch(lastMs);
-      if (now.isBefore(last.add(interstitialMinInterval))) return false;
+      if (_clock().isBefore(last.add(interstitialMinInterval))) return false;
     }
-    final shown = await ads.showInterstitial();
+    final shown = await ads.showInterstitial().timeout(
+      interstitialShowTimeout,
+      onTimeout: () => false,
+    );
     if (shown) {
-      await prefs.setInt(lastInterstitialKey, now.millisecondsSinceEpoch);
+      await prefs.setInt(lastInterstitialKey, _clock().millisecondsSinceEpoch);
     }
-    // Get the next one ready (no-op if ads were switched off meanwhile).
+    // Get the next one ready (not if ads were switched off meanwhile).
     if (adsEnabled) unawaited(ads.preloadInterstitial());
     return shown;
+  }
+
+  /// Opens a report for an ad seen on [screen] (App Store guideline
+  /// 2.5.18). Returns false if no mail app or browser could open it.
+  Future<bool> reportAd(String screen) async {
+    final uri = adReportUri(
+      time: _clock(),
+      screen: screen,
+      adUnits: ads.unitIds,
+    );
+    try {
+      return await _launch(uri);
+    } catch (e) {
+      debugPrint('Opening the ad report failed: $e');
+      return false;
+    }
   }
 
   void _onPurchasesChanged() {
@@ -177,6 +219,7 @@ class Monetization extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     purchases.removeListener(_onPurchasesChanged);
+    age.removeListener(_onAgeChanged);
     super.dispose();
   }
 }
