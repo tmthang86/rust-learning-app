@@ -1312,4 +1312,34 @@ void main() {
     expect(accounts.deleted, isTrue);
     expect(sync.docs.containsKey('u1'), isFalse);
   });
+
+  test('a cancelled deletion leaves progress marked unsaved, so sign-out '
+      'asks (round 6)', () async {
+    SharedPreferences.setMockInitialValues({});
+    final accounts = FakeAccounts();
+    final sync = FakeSync(completed: {'cloud-l1'});
+    final state = await makeState(accounts, sync);
+    await signInAndSync(accounts, state, 'u1');
+    expect(state.syncFailed, isFalse);
+
+    // While the confirming sign-in pop-up is open, a lesson is finished
+    // (its write is held back) and a sync's read returns (it drops out).
+    accounts.reauthGate = Completer<void>();
+    final deletion = state.deleteAccount();
+    await settle();
+    await state.markCompleted('local-only');
+    state.retrySync();
+    await state.syncing;
+    expect(sync.doc('u1').completed, {'cloud-l1'});
+
+    // The person cancels the pop-up.
+    accounts.cancelReauth = true;
+    accounts.reauthGate!.complete();
+    await expectLater(deletion, throwsA(isA<AccountException>()));
+    expect(state.syncFailed, isTrue);
+
+    // Signing out syncs first instead of clearing silently.
+    expect(await state.signOut(), isTrue);
+    expect(sync.doc('u1').completed, {'cloud-l1', 'local-only'});
+  });
 }

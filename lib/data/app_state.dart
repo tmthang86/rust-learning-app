@@ -364,6 +364,13 @@ class AppState extends ChangeNotifier {
     _accountEpoch++; // A run finishing now must not write progress back.
     try {
       await _deleteAccount(u);
+    } catch (_) {
+      _deleting = false;
+      // Not deleted (cancelled or failed) and still signed in: a merge that
+      // ran meanwhile dropped out without saving, so treat the progress as
+      // not saved. Signing out then syncs first and asks before clearing.
+      if (_user?.uid == u.uid) _markUnsaved();
+      rethrow;
     } finally {
       _deleting = false;
     }

@@ -143,9 +143,24 @@ app starts), its write recreates `users/{uid}`. Nobody can delete that
 document afterwards from the app, because the account no longer exists, so
 it breaks the promise that deletion removes everything.
 
-Before launch, add a server-side cleanup: a Cloud Function triggered when
-an Auth user is deleted (`functions.auth.user().onDelete`, a first
-generation trigger) that deletes `users/{uid}` with the Admin SDK, then
-re-checks after a delay longer than the token lifetime (for example a
-Cloud Tasks job about 65 minutes later) and deletes the document again if
-it has reappeared. Not built yet.
+Before launch, add a server-side cleanup (not built yet):
+
+- A Cloud Function triggered when an Auth user is deleted. This trigger
+  exists only in the first generation API: import it with
+  `const functions = require('firebase-functions/v1')` and use
+  `functions.auth.user().onDelete(...)`. From firebase-functions v6 on, the
+  plain `require('firebase-functions')` gives the second generation API,
+  which has no such trigger.
+- The function deletes `users/{uid}` with the Admin SDK, then re-checks
+  after a delay longer than the token lifetime (for example a Cloud Tasks
+  job about 65 minutes later) and deletes the document again if it has
+  reappeared.
+- Deploying functions needs the Blaze (pay-as-you-go) plan.
+- Bulk deletion with the Admin SDK (`admin.auth().deleteUsers()`) doesn't
+  fire `onDelete`, so any admin script that deletes users in bulk must also
+  delete their `users/{uid}` documents.
+- Alternative that blocks recreation outright: `onDelete` writes a
+  tombstone `deletedUsers/{uid}` (server-only), and `firestore.rules` refuses
+  writes to `users/{uid}` while it exists, e.g.
+  `&& !exists(/databases/$(database)/documents/deletedUsers/$(uid))`. This
+  costs one extra document read per write.
