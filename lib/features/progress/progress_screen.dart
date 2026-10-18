@@ -1,7 +1,91 @@
 import 'package:flutter/material.dart';
 
+import '../../account/account_service.dart';
 import '../../data/app_state.dart';
 import '../../data/models.dart';
+
+/// Sign in to sync progress, or shows who is signed in.
+class _AccountCard extends StatefulWidget {
+  const _AccountCard();
+
+  @override
+  State<_AccountCard> createState() => _AccountCardState();
+}
+
+class _AccountCardState extends State<_AccountCard> {
+  bool _busy = false;
+
+  Future<void> _signIn(SignInMethod method) async {
+    setState(() => _busy = true);
+    try {
+      await AppScope.of(context).accounts.signIn(method);
+    } catch (e) {
+      // Closing the sign-in window also lands here; a short note is enough.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Sign-in didn't finish. Please try again.")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = AppScope.of(context);
+    final theme = Theme.of(context);
+    final user = state.user;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: user != null
+            ? Row(
+                children: [
+                  const Icon(Icons.cloud_done_outlined),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(user.label, style: theme.textTheme.titleMedium),
+                        const Text('Progress is synced across your devices.'),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => state.accounts.signOut(),
+                    child: const Text('Sign out'),
+                  ),
+                ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('Save your progress', style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 4),
+                  const Text('Sign in to keep your progress on all your devices.'),
+                  const SizedBox(height: 12),
+                  for (final method in state.accounts.methods)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: OutlinedButton.icon(
+                        onPressed: _busy ? null : () => _signIn(method),
+                        icon: Icon(method == SignInMethod.apple
+                            ? Icons.apple
+                            : Icons.account_circle_outlined),
+                        label: Text(method == SignInMethod.apple
+                            ? 'Continue with Apple'
+                            : 'Continue with Google'),
+                      ),
+                    ),
+                ],
+              ),
+      ),
+    );
+  }
+}
 
 /// Overall progress and track setting.
 class ProgressScreen extends StatelessWidget {
@@ -40,6 +124,10 @@ class ProgressScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              if (state.accounts.available) ...[
+                const SizedBox(height: 16),
+                const _AccountCard(),
+              ],
               const SizedBox(height: 16),
               for (final unit in state.visibleUnits.where((u) => !u.comingSoon))
                 ListTile(
