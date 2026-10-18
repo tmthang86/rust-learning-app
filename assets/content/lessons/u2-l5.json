@@ -12,7 +12,7 @@
     },
     {
       "type": "text",
-      "text": "The last expression in a function, without a semicolon, is the value it returns. Adding a semicolon turns it into a statement, which returns nothing. That's a common early mistake, and the compiler will point it out."
+      "text": "The last expression in a function, without a semicolon, is the value it returns. Adding a semicolon turns it into a statement, which returns nothing. Rust writes this \"nothing\" value as (), the unit type. Adding that semicolon by accident is a common early mistake, and the compiler will point it out with a message like: expected i32, found ()."
     },
     {
       "type": "text",
@@ -32,13 +32,13 @@
     },
     {
       "type": "note",
-      "text": "Parameter and return types are always written out; Rust only infers types inside function bodies. A function with no -> returns the unit type (), Rust's \"nothing\" value.",
+      "text": "Coming from another language: parameter and return types are always written out; Rust only infers types inside function bodies. A function with no -> returns (), the unit type.",
       "track": "fast"
     }
   ],
   "exercise": {
-    "prompt": "celsius_to_fahrenheit should return c * 9.0 / 5.0 + 32.0, but right now it only adds 32.0. Fix it so the program prints: 212",
-    "starter": "fn celsius_to_fahrenheit(c: f64) -> f64 {\n    c + 32.0\n}\n\nfn main() {\n    println!(\"{}\", celsius_to_fahrenheit(100.0));\n}",
+    "prompt": "This program doesn't compile. Fix it so it prints: 212",
+    "starter": "fn celsius_to_fahrenheit(c: f64) -> f64 {\n    c * 9.0 / 5.0 + 32.0;\n}\n\nfn main() {\n    println!(\"{}\", celsius_to_fahrenheit(100.0));\n}",
     "expectedOutput": "212",
     "solution": "fn celsius_to_fahrenheit(c: f64) -> f64 {\n    c * 9.0 / 5.0 + 32.0\n}\n\nfn main() {\n    println!(\"{}\", celsius_to_fahrenheit(100.0));\n}"
   },

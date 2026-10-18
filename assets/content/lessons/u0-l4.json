@@ -10,10 +10,10 @@
     { "type": "code", "code": "fn main() {\n    let mut total = 0;\n    for n in 1..=4 {\n        total = total + n;\n    }\n    println!(\"1 + 2 + 3 + 4 = {total}\");\n}" },
     { "type": "text", "text": "A while loop keeps going as long as its condition is true:" },
     { "type": "code", "code": "fn main() {\n    let mut countdown = 3;\n    while countdown > 0 {\n        println!(\"{countdown}...\");\n        countdown = countdown - 1;\n    }\n    println!(\"Lift off!\");\n}" },
-    { "type": "note", "text": "If a while condition never becomes false, the loop runs forever. In this app a program that runs too long is stopped and you'll see a time limit message." }
+    { "type": "note", "text": "If a while condition never becomes false, the loop runs forever. In this app such a program is stopped after a few seconds, or as soon as it prints too much, and you'll see a message saying why." }
   ],
   "exercise": {
-    "prompt": "Use a for loop to print the 3 times table from 3 x 1 to 3 x 5, one result per line: 3, 6, 9, 12, 15",
+    "prompt": "Use a for loop to print the 3 times table from 3 x 1 to 3 x 5. Print only the results, each on its own line: 3, 6, 9, 12, 15",
     "starter": "fn main() {\n    // your loop here\n}",
     "expectedOutput": "3\n6\n9\n12\n15",
     "solution": "fn main() {\n    for n in 1..=5 {\n        println!(\"{}\", 3 * n);\n    }\n}"

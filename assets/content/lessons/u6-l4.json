@@ -16,7 +16,7 @@
     },
     {
       "type": "text",
-      "text": "To print an error with {}, its type needs to implement Display. Display is a trait. A trait is a named set of methods that many types can share; Display is the one that says \"this type can be shown to a person with {}\". You give a type a trait by writing impl Trait for Type and filling in the methods the trait asks for. Traits get a whole unit later (Unit 7), so for now just follow the pattern."
+      "text": "To print an error with {}, its type needs to implement Display. Display is a trait. A trait is a named set of abilities or methods that a type promises to have, and many types can share one. Display is the one that says \"this type can be shown to a person with {}\". You give a type a trait by writing impl Trait for Type and filling in the methods the trait asks for. Traits get a whole unit later (Unit 7), so for now just follow the pattern."
     },
     {
       "type": "text",
@@ -28,7 +28,7 @@
     },
     {
       "type": "note",
-      "text": "Error types usually also implement the standard std::error::Error trait. It has no methods you must write, as long as the type has Debug and Display, so impl std::error::Error for LoginError {} is enough. It lets your error work with Box<dyn Error> and with other libraries.",
+      "text": "Error types usually also implement the standard std::error::Error trait. It has no methods you must write, but it requires Debug and Display. So for a LoginError that also has #[derive(Debug)], impl std::error::Error for LoginError {} is enough; without Debug it won't compile. It lets your error work with Box<dyn Error> and with other libraries.",
       "track": "fast"
     },
     {
@@ -37,7 +37,7 @@
     },
     {
       "type": "code",
-      "code": "use std::num::ParseIntError;\n\nenum ConfigError {\n    BadNumber(ParseIntError),\n    TooLoud(u32),\n}\n\nimpl From<ParseIntError> for ConfigError {\n    fn from(e: ParseIntError) -> Self {\n        ConfigError::BadNumber(e)\n    }\n}\n\nfn read_volume(s: &str) -> Result<u32, ConfigError> {\n    let v: u32 = s.parse()?;   // a ParseIntError becomes a ConfigError\n    if v > 100 {\n        return Err(ConfigError::TooLoud(v));\n    }\n    Ok(v)\n}\n\nfn main() {\n    for input in [\"70\", \"150\", \"loud\"] {\n        match read_volume(input) {\n            Ok(v) => println!(\"volume set to {v}\"),\n            Err(ConfigError::TooLoud(v)) => println!(\"{v} is over the limit of 100\"),\n            Err(ConfigError::BadNumber(e)) => println!(\"{input} is not a number: {e}\"),\n        }\n    }\n}"
+      "code": "use std::num::ParseIntError;\n\nenum ConfigError {\n    BadNumber(ParseIntError),\n    TooLoud(u32),\n}\n\nimpl From<ParseIntError> for ConfigError {\n    fn from(e: ParseIntError) -> ConfigError {\n        ConfigError::BadNumber(e)\n    }\n}\n\nfn read_volume(s: &str) -> Result<u32, ConfigError> {\n    let v: u32 = s.parse()?;   // a ParseIntError becomes a ConfigError\n    if v > 100 {\n        return Err(ConfigError::TooLoud(v));\n    }\n    Ok(v)\n}\n\nfn main() {\n    for input in [\"70\", \"150\", \"loud\"] {\n        match read_volume(input) {\n            Ok(v) => println!(\"volume set to {v}\"),\n            Err(ConfigError::TooLoud(v)) => println!(\"{v} is over the limit of 100\"),\n            Err(ConfigError::BadNumber(e)) => println!(\"{input} is not a number: {e}\"),\n        }\n    }\n}"
     },
     {
       "type": "text",
@@ -56,7 +56,7 @@
   ],
   "exercise": {
     "prompt": "Add a Display impl for ShopError, following the LoginError example, with the message \"out of stock\". Then change println!(\"Error: {:?}\", e) to println!(\"Error: {e}\"), so it uses your message instead of the debug form. It should print: Error: out of stock",
-    "starter": "use std::fmt;\n\n#[derive(Debug)]\nenum ShopError {\n    OutOfStock,\n}\n\nfn main() {\n    let e = ShopError::OutOfStock;\n    println!(\"Error: {:?}\", e);\n}",
+    "starter": "use std::fmt;   // keep this: your Display impl needs fmt\n\n#[derive(Debug)]\nenum ShopError {\n    OutOfStock,\n}\n\nfn main() {\n    let e = ShopError::OutOfStock;\n    println!(\"Error: {:?}\", e);\n}",
     "expectedOutput": "Error: out of stock",
     "solution": "use std::fmt;\n\n#[derive(Debug)]\nenum ShopError {\n    OutOfStock,\n}\n\nimpl fmt::Display for ShopError {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        match self {\n            ShopError::OutOfStock => write!(f, \"out of stock\"),\n        }\n    }\n}\n\nfn main() {\n    let e = ShopError::OutOfStock;\n    println!(\"Error: {e}\");\n}"
   },

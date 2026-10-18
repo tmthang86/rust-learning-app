@@ -12,7 +12,7 @@
     },
     {
       "type": "text",
-      "text": "Without ?, the same function needs a match for each parse. With it, the happy path reads top to bottom."
+      "text": "Without ?, the same function needs a match for each parse. With it, the happy path reads top to bottom. ParseIntError is the error type parse gives back when the text isn't a whole number; the use line at the top brings it in by name."
     },
     {
       "type": "text",
@@ -28,7 +28,7 @@
     },
     {
       "type": "code",
-      "code": "fn first_char_upper(s: &str) -> Option<char> {\n    let c = s.chars().next()?;\n    Some(c.to_ascii_uppercase())\n}\n\nfn main() {\n    println!(\"{:?}\", first_char_upper(\"rust\"));\n    println!(\"{:?}\", first_char_upper(\"\"));\n}"
+      "code": "fn first_char_upper(s: &str) -> Option<char> {\n    let c = s.chars().next()?;   // next() gives the first char, or None if s is empty\n    Some(c.to_ascii_uppercase())\n}\n\nfn main() {\n    println!(\"{:?}\", first_char_upper(\"rust\"));\n    println!(\"{:?}\", first_char_upper(\"\"));\n}"
     },
     {
       "type": "note",
@@ -42,7 +42,7 @@
     }
   ],
   "exercise": {
-    "prompt": "Use ? on both parses so the function adds the numbers. It should print: Ok(30)",
+    "prompt": "Set x and y with a.parse()? and b.parse()? instead of 0, so the function adds the numbers. It should print: Ok(30)",
     "starter": "use std::num::ParseIntError;\n\nfn total(a: &str, b: &str) -> Result<i32, ParseIntError> {\n    let x: i32 = 0;\n    let y: i32 = 0;\n    Ok(x + y)\n}\n\nfn main() {\n    println!(\"{:?}\", total(\"10\", \"20\"));\n}",
     "expectedOutput": "Ok(30)",
     "solution": "use std::num::ParseIntError;\n\nfn total(a: &str, b: &str) -> Result<i32, ParseIntError> {\n    let x: i32 = a.parse()?;\n    let y: i32 = b.parse()?;\n    Ok(x + y)\n}\n\nfn main() {\n    println!(\"{:?}\", total(\"10\", \"20\"));\n}"

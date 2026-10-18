@@ -12,7 +12,7 @@
     },
     {
       "type": "text",
-      "text": "These types implement Copy, which marks a type as cheap to copy byte for byte. Rust copies them automatically instead of moving them. (Copy is a trait: a named ability that a type can have. Unit 7 covers traits.) Tuples and arrays made only of Copy types are Copy too. String isn't Copy, because it owns text on the heap."
+      "text": "These types implement Copy, which marks a type as cheap to copy byte for byte. Rust copies them automatically instead of moving them. (Copy is a trait: a trait is a named set of abilities or methods that a type promises to have. Unit 7 covers traits.) Tuples and arrays made only of Copy types are Copy too. String isn't Copy, because it owns text on the heap."
     },
     {
       "type": "text",

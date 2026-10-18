@@ -4,7 +4,7 @@
   "sections": [
     {
       "type": "text",
-      "text": "Result is an enum for operations that can fail. Ok holds the success value, Err holds the error:"
+      "text": "Result is an enum for operations that can fail. Ok holds the success value, Err holds the error. In Result<T, E>, T is the type of the success value and E is the type of the error, so Result<f64, String> means \"an f64 on success, or a String describing the error\"."
     },
     {
       "type": "code",

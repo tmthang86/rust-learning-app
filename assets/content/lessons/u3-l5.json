@@ -24,6 +24,10 @@
     },
     {
       "type": "text",
+      "text": "first_word returns a reference, which the dangle example in the Borrowing lesson couldn't do. The difference: this slice borrows from s, the text passed in, so it stays valid as long as that text does. dangle had nothing to borrow from except a String that was dropped when the function ended."
+    },
+    {
+      "type": "text",
       "text": "Arrays have slices too, written &[T]:"
     },
     {
@@ -32,8 +36,7 @@
     },
     {
       "type": "note",
-      "text": "Don't worry about match and Some yet; they're coming in Unit 4. The idea here is that a slice points into existing data.",
-      "track": "starter"
+      "text": "Don't worry about match and Some yet; they're coming in Unit 4. The idea here is that a slice points into existing data."
     },
     {
       "type": "note",

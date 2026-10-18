@@ -16,7 +16,7 @@
     },
     {
       "type": "text",
-      "text": "Functions in an impl block without self are associated functions. They're called with :: and are often used as constructors named new:"
+      "text": "Every function in an impl block is an associated function: it belongs to the type. The ones that take self are methods, called with a dot. The ones without self are called with :: and are often used as constructors named new:"
     },
     {
       "type": "code",
@@ -34,10 +34,10 @@
     }
   ],
   "exercise": {
-    "prompt": "Add a method perimeter(&self) -> u32 to Rectangle that returns 2 * (width + height). It should print: 14",
-    "starter": "struct Rectangle {\n    width: u32,\n    height: u32,\n}\n\nimpl Rectangle {\n    // add perimeter here\n}\n\nfn main() {\n    let r = Rectangle { width: 3, height: 4 };\n    println!(\"{}\", r.width + r.height);\n}",
-    "expectedOutput": "14",
-    "solution": "struct Rectangle {\n    width: u32,\n    height: u32,\n}\n\nimpl Rectangle {\n    fn perimeter(&self) -> u32 {\n        2 * (self.width + self.height)\n    }\n}\n\nfn main() {\n    let r = Rectangle { width: 3, height: 4 };\n    println!(\"{}\", r.perimeter());\n}"
+    "prompt": "Add a method perimeter(&self) -> u32 to Rectangle that returns 2 * (width + height). Then change the println! so it prints both, using r.area() and r.perimeter(). It should print: area 12, perimeter 14",
+    "starter": "struct Rectangle {\n    width: u32,\n    height: u32,\n}\n\nimpl Rectangle {\n    fn area(&self) -> u32 {\n        self.width * self.height\n    }\n\n    // add perimeter here\n}\n\nfn main() {\n    let r = Rectangle { width: 3, height: 4 };\n    println!(\"area {}\", r.area());\n}",
+    "expectedOutput": "area 12, perimeter 14",
+    "solution": "struct Rectangle {\n    width: u32,\n    height: u32,\n}\n\nimpl Rectangle {\n    fn area(&self) -> u32 {\n        self.width * self.height\n    }\n\n    fn perimeter(&self) -> u32 {\n        2 * (self.width + self.height)\n    }\n}\n\nfn main() {\n    let r = Rectangle { width: 3, height: 4 };\n    println!(\"area {}, perimeter {}\", r.area(), r.perimeter());\n}"
   },
   "quiz": [
     {

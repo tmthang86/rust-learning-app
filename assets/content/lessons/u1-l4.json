@@ -21,7 +21,7 @@
     {
       "type": "text",
       "track": "starter",
-      "text": "Lines starting with // are comments: notes for people that the computer ignores. count += 1 is a short way to write count = count + 1."
+      "text": "count += 1 is a short way to write count = count + 1."
     },
     {
       "type": "note",
@@ -38,11 +38,21 @@
     },
     {
       "type": "text",
+      "text": "f64 is a number with a decimal point, and i32 is a whole number. Unit 2 covers the other number types.",
+      "track": "starter"
+    },
+    {
+      "type": "text",
       "text": "Constants use const and always need a written type. They never change. By convention their names are written in capitals, like MAX_SCORE."
     },
     {
       "type": "code",
       "code": "const MAX_SCORE: u32 = 100;\n\nfn main() {\n    println!(\"Max score: {MAX_SCORE}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "u32 is a whole number that can't be negative.",
+      "track": "starter"
     },
     {
       "type": "note",

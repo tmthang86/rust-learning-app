@@ -14,7 +14,7 @@
     {
       "type": "note",
       "track": "fast",
-      "text": "Coming from another language: println! ends in ! because it's a macro, not a function. Macros are expanded into ordinary code at compile time. That lets println! take any number of arguments and check its format string against them before the program runs."
+      "text": "Coming from another language: println! is a macro rather than a function because it needs to take any number of arguments and check its format string against them at compile time. Rust functions can't do either."
     },
     {
       "type": "code",
@@ -22,7 +22,7 @@
     },
     {
       "type": "text",
-      "text": "fn declares a function. Statements end with a semicolon. Strings go in double quotes."
+      "text": "fn declares a function. println! ends with ! because it's a macro: a special kind of command that Rust expands into more code before the program runs. You'll meet more macros later. Statements end with a semicolon. Strings go in double quotes."
     }
   ],
   "exercise": {

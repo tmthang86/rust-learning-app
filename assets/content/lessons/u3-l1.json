@@ -8,7 +8,7 @@
     },
     {
       "type": "text",
-      "text": "1. Every value has one owner, a variable. 2. There is only one owner at a time. 3. When the owner goes out of scope, the value is dropped (its memory is freed)."
+      "text": "1. Every value has an owner, usually a variable. 2. There is only one owner at a time. 3. When the owner goes out of scope, the value is dropped (its memory is freed)."
     },
     {
       "type": "code",
@@ -21,6 +21,11 @@
     {
       "type": "code",
       "code": "fn main() {\n    let a = String::from(\"crab\");\n    let b = a;              // ownership moves from a to b\n    // println!(\"{a}\");     // error: borrow of moved value: `a`\n    println!(\"{b}\");\n}"
+    },
+    {
+      "type": "note",
+      "track": "starter",
+      "text": "The heap is memory a program asks for while it runs, for data like text that can grow. That memory has to be given back when it's no longer needed, and ownership is how Rust decides when."
     },
     {
       "type": "text",

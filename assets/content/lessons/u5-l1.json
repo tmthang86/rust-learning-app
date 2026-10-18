@@ -39,7 +39,7 @@
   ],
   "exercise": {
     "prompt": "Push 4 and 5 onto the vector, then print it. It should print: [1, 2, 3, 4, 5]",
-    "starter": "fn main() {\n    let mut numbers = vec![1, 2, 3];\n    println!(\"{:?}\", numbers);\n}",
+    "starter": "fn main() {\n    let mut numbers = vec![1, 2, 3];   // keep mut: you'll push onto it\n    println!(\"{:?}\", numbers);\n}",
     "expectedOutput": "[1, 2, 3, 4, 5]",
     "solution": "fn main() {\n    let mut numbers = vec![1, 2, 3];\n    numbers.push(4);\n    numbers.push(5);\n    println!(\"{:?}\", numbers);\n}"
   },

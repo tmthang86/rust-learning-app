@@ -12,6 +12,10 @@
     },
     {
       "type": "text",
+      "text": "Option<i32> means \"an Option that may hold an i32\". In the definition, T stands for any type, so you can have Option<String>, Option<bool> and so on. The same angle-bracket notation appears in Vec<i32> and HashMap<char, i32> later. Unit 7 explains it fully."
+    },
+    {
+      "type": "text",
       "text": "A function that might not have an answer returns an Option. The caller has to deal with both cases before using the value:"
     },
     {

@@ -8,7 +8,7 @@
     },
     {
       "type": "code",
-      "code": "fn main() {\n    println!(\"Starting\");\n    let ok = true;\n    if !ok {\n        panic!(\"Something went badly wrong\");\n    }\n    println!(\"Still running\");\n}"
+      "code": "fn main() {\n    println!(\"Starting\");\n    let ok = true;\n    if !ok {   // ! means \"not\": this runs only when ok is false\n        panic!(\"Something went badly wrong\");\n    }\n    println!(\"Still running\");\n}"
     },
     {
       "type": "text",
@@ -32,7 +32,7 @@
     },
     {
       "type": "note",
-      "text": "If you try a panic in this app, you'll see the message in the error output. That's expected.",
+      "text": "If you try a panic in this app, the panic message appears in the output, after anything already printed. That's expected.",
       "track": "starter"
     },
     {

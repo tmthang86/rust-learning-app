@@ -24,11 +24,11 @@
     },
     {
       "type": "text",
-      "text": "entry(word).or_insert(0) inserts 0 if the word is new, then gives back a mutable reference (&mut) to the count stored in the map. The * in front follows that reference, so += 1 changes the count inside the map, just like *n in the Mutable references lesson. get works the other way round: it gives back an Option holding a reference to the value, so a fallback has to be a reference too, as in map.get(&key).unwrap_or(&0)."
+      "text": "entry(word).or_insert(0) inserts 0 if the word is new, then gives back a mutable reference (&mut) to the count stored in the map. The * in front follows that reference, so += 1 changes the count inside the map, just like *n in the Mutable references lesson. get is different: it returns an Option holding a reference to the value, so a fallback has to be a reference too, as in unwrap_or(&0). get also takes a reference to the key. A literal like \"apples\" is already a reference (&str), so stock.get(\"apples\") needs no &, but a char key needs one: counts.get(&'a')."
     },
     {
       "type": "text",
-      "text": "You can loop over all the keys. The order isn't guaranteed, so sort them if you need a fixed order. Below, ages.keys() hands out each key in turn and .collect() gathers them into a new Vec. Writing Vec<_> asks for a Vec and lets Rust work out the item type itself (here, references to the names). Unit 8 covers keys, collect and friends in depth."
+      "text": "You can loop over all the keys. The order isn't guaranteed, so sort them if you need a fixed order. Below, ages.keys() hands out each key in turn and .collect() gathers them into a new Vec. Writing Vec<_> asks for a Vec and lets Rust work out the item type itself (here, references to the names). Unit 8 covers iterators and collect."
     },
     {
       "type": "code",
@@ -47,7 +47,7 @@
   ],
   "exercise": {
     "prompt": "Use the entry API to count how many times each letter appears, then print the count for 'a'. It should print: 3",
-    "starter": "use std::collections::HashMap;\n\nfn main() {\n    let word = \"banana\";\n    let mut counts: HashMap<char, i32> = HashMap::new();\n    for c in word.chars() {\n        // count c here\n    }\n    println!(\"{}\", counts.get(&'a').unwrap_or(&0));\n}",
+    "starter": "use std::collections::HashMap;\n\nfn main() {\n    let word = \"banana\";\n    let mut counts: HashMap<char, i32> = HashMap::new();   // keep mut: you'll add counts\n    for c in word.chars() {\n        // count c here\n    }\n    println!(\"{}\", counts.get(&'a').unwrap_or(&0));\n}",
     "expectedOutput": "3",
     "solution": "use std::collections::HashMap;\n\nfn main() {\n    let word = \"banana\";\n    let mut counts: HashMap<char, i32> = HashMap::new();\n    for c in word.chars() {\n        *counts.entry(c).or_insert(0) += 1;\n    }\n    println!(\"{}\", counts.get(&'a').unwrap_or(&0));\n}"
   },
@@ -56,7 +56,7 @@
       "question": "What does map.get(key) return?",
       "options": [
         "The value, or a crash",
-        "An Option with the value",
+        "An Option holding a reference to the value",
         "A bool"
       ],
       "answer": 1
