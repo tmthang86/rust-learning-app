@@ -60,10 +60,6 @@ class RemoteProgress {
   }
 }
 
-/// Stores a signed-in learner's progress in the cloud.
-///
-/// Completed lessons are only ever added, never removed, so two devices
-/// syncing at the same time can't undo each other's progress.
 /// The cloud couldn't be reached (offline, or the server timed out).
 class SyncUnavailable implements Exception {
   const SyncUnavailable([this.cause]);
@@ -72,6 +68,36 @@ class SyncUnavailable implements Exception {
   String toString() => 'SyncUnavailable($cause)';
 }
 
+/// One read of the progress document: its data, and whether it came from
+/// the server with no pending local writes.
+typedef ProgressSnapshot = ({Map<String, dynamic>? data, bool confirmed});
+
+/// Decides what a sync sees, given a normal read and a server-only read.
+///
+/// A repair is only ever based on a confirmed read. When the normal read
+/// (possibly cached or with pending writes) looks broken, the server is
+/// asked once; if that fails, the unconfirmed copy is used for a normal
+/// merge, never for a repair.
+Future<RemoteProgress> resolveProgress({
+  required Future<ProgressSnapshot> Function() read,
+  required Future<ProgressSnapshot> Function() readServer,
+}) async {
+  final snap = await read();
+  final progress = RemoteProgress.fromMap(snap.data, confirmed: snap.confirmed);
+  final looksBroken = RemoteProgress.fromMap(snap.data).needsRepair;
+  if (!looksBroken || progress.needsRepair) return progress;
+  try {
+    final fresh = await readServer();
+    return RemoteProgress.fromMap(fresh.data, confirmed: fresh.confirmed);
+  } catch (_) {
+    return progress;
+  }
+}
+
+/// Stores a signed-in learner's progress in the cloud.
+///
+/// Completed lessons are only ever added, never removed, so two devices
+/// syncing at the same time can't undo each other's progress.
 abstract class ProgressSync {
   /// With [fromServer], fails with [SyncUnavailable] when offline instead
   /// of reading a cached copy.
@@ -113,34 +139,23 @@ class FirestoreProgressSync implements ProgressSync {
   static bool _offline(FirebaseException e) =>
       e.code == 'unavailable' || e.code == 'deadline-exceeded';
 
-  @override
-  Future<RemoteProgress> load(String uid, {bool fromServer = false}) async {
-    final DocumentSnapshot<Map<String, dynamic>> snap;
+  Future<ProgressSnapshot> _read(String uid, {required bool server}) async {
     try {
-      snap = await _doc(uid)
-          .get(fromServer ? const GetOptions(source: Source.server) : null);
+      final snap = await _doc(uid)
+          .get(server ? const GetOptions(source: Source.server) : null);
+      return (data: snap.data(), confirmed: _confirmed(snap));
     } on FirebaseException catch (e) {
       if (_offline(e)) throw SyncUnavailable(e);
       rethrow;
     }
-    final progress = RemoteProgress.fromMap(
-      snap.data(),
-      confirmed: _confirmed(snap),
-    );
-    final looksBroken = RemoteProgress.fromMap(snap.data()).needsRepair;
-    if (!looksBroken || progress.needsRepair || fromServer) return progress;
-
-    // The cached copy looks broken. Check the server before repairing; if
-    // that isn't possible now, merge as usual (a refused write shows as a
-    // sync problem and the next sync tries again).
-    try {
-      final fresh = await _doc(uid)
-          .get(const GetOptions(source: Source.server));
-      return RemoteProgress.fromMap(fresh.data(), confirmed: _confirmed(fresh));
-    } catch (_) {
-      return progress;
-    }
   }
+
+  @override
+  Future<RemoteProgress> load(String uid, {bool fromServer = false}) =>
+      resolveProgress(
+        read: () => _read(uid, server: fromServer),
+        readServer: () => _read(uid, server: true),
+      );
 
   @override
   Future<void> addCompleted(String uid, Iterable<String> lessonIds) => _doc(uid)

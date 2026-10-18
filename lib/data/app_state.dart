@@ -334,7 +334,7 @@ class AppState extends ChangeNotifier {
       } catch (_) {
         // A timed-out delete may still be queued; the restore is queued
         // after it, so the document ends up back either way.
-        await _restoreCloud(s, u.uid, remote);
+        if (!await _restoreCloud(s, u.uid, remote)) _markUnsaved();
         rethrow;
       }
     }
@@ -353,11 +353,17 @@ class AppState extends ChangeNotifier {
       }
       if (exists == null) {
         // Unknown: don't recreate the document for an account that may be
-        // gone. Device progress stays; if the account still exists, the
-        // next sign-in uploads it again.
+        // gone. Device progress stays and is marked as not saved, so
+        // signing out asks first, and the next sync (Try syncing again, or
+        // the retry before sign-out) uploads it again if the account still
+        // exists.
+        _markUnsaved();
         throw AccountException(AccountErrorKind.unconfirmed, e);
       }
-      if (s != null) await _restoreCloud(s, u.uid, remote);
+      if (s != null && !await _restoreCloud(s, u.uid, remote)) {
+        // The cloud copy is gone and couldn't be put back: same as above.
+        _markUnsaved();
+      }
       rethrow;
     }
     await _clearLocal();
@@ -378,7 +384,8 @@ class AppState extends ChangeNotifier {
   }
 
   /// Puts back everything the cloud and this device knew.
-  Future<void> _restoreCloud(
+  /// Returns false if the write failed.
+  Future<bool> _restoreCloud(
     ProgressSync s,
     String uid,
     RemoteProgress remote,
@@ -391,9 +398,19 @@ class AppState extends ChangeNotifier {
             completed: {...remote.completed, ..._completed},
           )
           .timeout(serverTimeout);
+      return true;
     } catch (e) {
       debugPrint('Restoring cloud progress failed: $e');
+      return false;
     }
+  }
+
+  /// The cloud may not hold this device's progress any more. Shown on the
+  /// Progress screen; [signOut] then retries the sync and asks before
+  /// clearing the device.
+  void _markUnsaved() {
+    _syncFailed = true;
+    notifyListeners();
   }
 
   /// Sends one change to the cloud without making the UI wait for it.

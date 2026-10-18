@@ -105,12 +105,15 @@ and on `/delete-account`. After the person confirms, the app:
 
 Each server step gives up after 20 seconds with an offline message. If the
 account is not deleted, the app writes the cloud document back, combining
-the saved copy with what this device has. That write can itself fail (for
-example when the connection drops at that moment); then whatever this
-device holds is synced again at the next sign-in, but lessons that were
-only in the cloud may be lost. The app writes the document back only when
-it can confirm with the server that the account still exists. If deleting
-reports an error but the account is in fact gone, nothing is written back.
-If it can't tell (for example a timeout while offline), it writes nothing,
-keeps the progress on the device and says so. If the account turns out to
-still exist, the next sign-in uploads that progress again.
+the saved copy with what this device has, but only when it can confirm with
+the server that the account still exists. If deleting reports an error but
+the account is in fact gone, nothing is written back.
+
+Two cases leave the cloud document missing while progress is still on the
+device: the app couldn't confirm whether the account was deleted (for
+example a timeout while offline), or the write putting the document back
+failed. In both, the app keeps the device progress and marks it as not
+saved: the Progress screen shows the sync problem with **Try syncing
+again**, and signing out first retries the sync and asks "Sign out anyway?"
+if it still fails. A successful sync uploads the device progress again;
+lessons that were only in the cloud copy are lost in that case.

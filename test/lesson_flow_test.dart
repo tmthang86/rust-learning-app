@@ -553,9 +553,18 @@ void main() {
         find.bySemanticsLabel(RegExp(r'^Run 2\. Output: hi')),
         findsOneWidget,
       );
+      final live = tester.getSemantics(
+        find.bySemanticsLabel(RegExp(r'^Run 2\.')),
+      );
+      // Only the short summary: no heading or output text merged in, so
+      // TalkBack doesn't read the output twice.
+      expect(live.label, 'Run 2. Output: hi');
+      expect(live.value, isEmpty);
+      expect(live, isSemantics(isLiveRegion: true));
+      // The output itself is a plain, separate node.
       expect(
-        tester.getSemantics(find.bySemanticsLabel(RegExp(r'^Run 2\.'))),
-        isSemantics(isLiveRegion: true),
+        tester.getSemantics(find.text('Output')),
+        isNot(isSemantics(isLiveRegion: true)),
       );
       expect(tester.takeAnnouncements(), isEmpty);
       handle.dispose();

@@ -400,11 +400,19 @@ class _RunOutput extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Announced through SemanticsService when a run finishes, or, where
-        // that isn't supported, through this live region's changing label.
+        // that isn't supported, through the live region below.
+        if (liveLabel != null)
+          // Its own node carrying only the short summary, so the output
+          // isn't read twice. 1×1 because nodes without size are dropped
+          // from the semantics tree.
+          Semantics(
+            container: true,
+            liveRegion: true,
+            label: liveLabel,
+            child: const SizedBox(width: 1, height: 1),
+          ),
         Semantics(
           container: true,
-          liveRegion: liveLabel != null,
-          label: liveLabel,
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(

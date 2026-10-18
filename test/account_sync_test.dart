@@ -970,4 +970,133 @@ void main() {
       expect(accounts.deleted, isTrue);
     });
   });
+
+  group('sign-out after a deletion that went wrong (round 3, item 1)', () {
+    Future<(FakeAccounts, FakeSync, AppState)> signedIn() async {
+      SharedPreferences.setMockInitialValues({});
+      final accounts = FakeAccounts();
+      final sync = FakeSync(track: Track.fast, completed: {'u1-l1'});
+      final state = await makeState(accounts, sync);
+      await signInAndSync(accounts, state, 'u1');
+      return (accounts, sync, state);
+    }
+
+    test(
+      'unconfirmed deletion: sign-out asks first, a retry re-uploads',
+      () async {
+        final (accounts, sync, state) = await signedIn();
+        accounts
+          ..deleteError = const AccountException(AccountErrorKind.network)
+          ..stillExistsAnswer = () => null;
+        await expectLater(
+          state.deleteAccount(),
+          throwsA(isA<AccountException>()),
+        );
+        expect(sync.docs.containsKey('u1'), isFalse);
+        expect(state.syncFailed, isTrue);
+
+        sync.failLoads = true; // still offline
+        expect(await state.signOut(), isFalse);
+        expect(state.completedLessons, {'u1-l1'});
+
+        sync.failLoads = false; // back online: the retry before sign-out
+        expect(await state.signOut(), isTrue);
+        expect(sync.doc('u1').completed, {'u1-l1'});
+        expect(sync.doc('u1').track, Track.fast);
+      },
+    );
+
+    test(
+      'failed deletion whose restore also failed: same protection',
+      () async {
+        final (accounts, sync, state) = await signedIn();
+        accounts.deleteError = const AccountException(AccountErrorKind.network);
+        // The account still exists, but the write putting the doc back fails.
+        final original = accounts.deleteError;
+        accounts.stillExistsAnswer = () {
+          sync.failWrites = true;
+          return true;
+        };
+        await expectLater(state.deleteAccount(), throwsA(same(original)));
+        expect(sync.docs.containsKey('u1'), isFalse);
+        expect(state.syncFailed, isTrue);
+
+        expect(await state.signOut(), isFalse); // writes still failing
+        expect(state.completedLessons, {'u1-l1'});
+
+        sync.failWrites = false;
+        state.retrySync();
+        await state.syncing;
+        expect(state.syncFailed, isFalse);
+        expect(sync.doc('u1').completed, {'u1-l1'});
+      },
+    );
+  });
+
+  group('cache-then-server check in load (round 3, item 4)', () {
+    ProgressSnapshot snap(
+      Map<String, dynamic>? data, {
+      required bool confirmed,
+    }) => (data: data, confirmed: confirmed);
+
+    test('a broken-looking cached copy is checked on the server', () async {
+      var serverReads = 0;
+      final p = await resolveProgress(
+        read: () async => snap({
+          'track': 42,
+          'completedLessons': ['a'],
+        }, confirmed: false),
+        readServer: () async {
+          serverReads++;
+          return snap({
+            'track': 42,
+            'completedLessons': ['a', 'b'],
+          }, confirmed: true);
+        },
+      );
+      expect(serverReads, 1);
+      expect(p.needsRepair, isTrue);
+      expect(p.completed, {'a', 'b'}); // the server's, not the stale cache
+    });
+
+    test('server unreachable: merge from the cache, never repair', () async {
+      final p = await resolveProgress(
+        read: () async => snap({
+          'track': 42,
+          'completedLessons': ['a'],
+        }, confirmed: false),
+        readServer: () async => throw const SyncUnavailable('offline'),
+      );
+      expect(p.needsRepair, isFalse);
+      expect(p.completed, {'a'});
+    });
+
+    test('server copy still has pending writes: no repair', () async {
+      final p = await resolveProgress(
+        read: () async => snap({'legacy': 1}, confirmed: false),
+        readServer: () async => snap({'legacy': 1}, confirmed: false),
+      );
+      expect(p.needsRepair, isFalse);
+    });
+
+    test('a clean or already confirmed read needs no second read', () async {
+      var serverReads = 0;
+      Future<ProgressSnapshot> server() async {
+        serverReads++;
+        return snap(null, confirmed: true);
+      }
+
+      await resolveProgress(
+        read: () async =>
+            snap({'updatedAt': null, 'track': 'fast'}, confirmed: false),
+        readServer: server,
+      );
+      final confirmed = await resolveProgress(
+        read: () async => snap({'track': 42}, confirmed: true),
+        readServer: server,
+      );
+      expect(serverReads, 0);
+      expect(confirmed.needsRepair, isTrue);
+    });
+  });
 }

@@ -26,8 +26,10 @@ String accountErrorMessage(AccountErrorKind kind, {SignInMethod? attempted}) =>
       AccountErrorKind.network =>
         "Couldn't reach the server. Check your connection and try again.",
       AccountErrorKind.unconfirmed =>
-        "We couldn't check whether it went through. When you're online, "
-            'try signing in: if the account still exists, delete it again.',
+        "We couldn't check whether it went through. Your progress is kept "
+            "on this device. When you're back online, open this again: if "
+            'you are still signed in, the account still exists and you can '
+            'delete it again.',
       AccountErrorKind.notSignedIn => 'Please sign in first.',
       AccountErrorKind.other => 'Something went wrong. Please try again.',
     };
