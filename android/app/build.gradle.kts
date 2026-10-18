@@ -1,8 +1,24 @@
+import java.util.Base64
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+// Values passed with `flutter build ... --dart-define=KEY=VALUE`. Flutter
+// hands them to Gradle base64-encoded in the "dart-defines" property.
+val dartDefines: Map<String, String> =
+    (project.findProperty("dart-defines") as String?)
+        ?.split(",")
+        ?.filter { it.isNotBlank() }
+        ?.map { String(Base64.getDecoder().decode(it)) }
+        ?.filter { it.contains("=") }
+        ?.associate { it.substringBefore("=") to it.substringAfter("=") }
+        ?: emptyMap()
+
+// Google's public TEST app id, used unless a real one is passed.
+val admobTestAppId = "ca-app-pub-3940256099942544~3347511713"
 
 android {
     namespace = "com.rustlearn.rust_learn"
@@ -27,6 +43,8 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["admobAppId"] =
+            dartDefines["ADMOB_APP_ID_ANDROID"] ?: admobTestAppId
     }
 
     buildTypes {

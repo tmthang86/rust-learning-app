@@ -10,7 +10,7 @@ with a one-time "Remove ads" purchase.
 1. **Foundation and design** (done): Flutter project, course map, main screens.
 2. **Code runner backend** (done): sandboxed server in [`runner/`](runner/README.md) that compiles and runs Rust.
 3. **Core app and first content** (in progress): Units 0 to 6 written (32 lessons, every example and exercise checked by the compiler); Google/Apple sign-in and progress sync via Firebase, off until a Firebase project is connected ([setup](docs/firebase-setup.md)).
-4. **Ads, purchase and launch**: AdMob (mobile), AdSense (web), "Remove ads" purchase, store release.
+4. **Ads, purchase and launch** (in progress): AdMob banners and a capped interstitial on Android and iOS with Google's consent (UMP), a neutral first-launch age screen (no ads for under-13s), and a one-time "Remove ads" purchase with Restore, all using Google test ids until real ones are passed ([setup](docs/ads-and-purchases.md)). The web launches ad-free. Still to do: AdMob/store setup, device testing, store release.
 
 See [docs/course-map.md](docs/course-map.md) for the course outline and lesson format.
 
@@ -21,7 +21,8 @@ lib/
   app/        theme, routing, responsive navigation shell
   data/       models, content loading, app state and progress
   runner/     CodeRunner: talks to the runner service
-  features/   onboarding, home, lesson, editor/playground, quiz, progress
+  monetization/ ads, consent (UMP), age band, "Remove ads" purchase
+  features/   onboarding (age, track), home, lesson, editor/playground, quiz, progress
 assets/content/
   course.json         units and lesson list
   lessons/<id>.json   lesson content
