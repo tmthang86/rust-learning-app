@@ -39,11 +39,10 @@ void main() {
     expect(await CourseRepository().loadLesson('does-not-exist'), isNull);
   });
 
-  test('every Unit 1 lesson is written and parses', () async {
+  test('every lesson in the course is written and parses', () async {
     final repo = CourseRepository();
     final course = await repo.loadCourse();
-    final unit1 = course.units.firstWhere((u) => u.id == 'u1');
-    for (final ref in unit1.lessons) {
+    for (final ref in course.units.expand((u) => u.lessons)) {
       final lesson = await repo.loadLesson(ref.id);
       expect(lesson, isNotNull, reason: '${ref.id} is missing');
       expect(lesson!.title, ref.title);

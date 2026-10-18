@@ -1,0 +1,75 @@
+{
+  "id": "u4-l3",
+  "title": "Enums",
+  "sections": [
+    {
+      "type": "text",
+      "text": "An enum is a type that can be one of a fixed set of variants. Use it when a value can only be one of a few things."
+    },
+    {
+      "type": "code",
+      "code": "#[derive(Debug)]\nenum Direction {\n    North,\n    East,\n    South,\n    West,\n}\n\nfn main() {\n    let heading = Direction::East;\n    println!(\"{:?}\", heading);\n}"
+    },
+    {
+      "type": "text",
+      "text": "Variants can carry data, and each variant can carry different data:"
+    },
+    {
+      "type": "code",
+      "code": "#[derive(Debug)]\nenum Shape {\n    Circle(f64),\n    Rectangle { width: f64, height: f64 },\n    Dot,\n}\n\nfn main() {\n    let shapes = [\n        Shape::Circle(1.5),\n        Shape::Rectangle { width: 2.0, height: 3.0 },\n        Shape::Dot,\n    ];\n    for s in shapes {\n        println!(\"{:?}\", s);\n    }\n}"
+    },
+    {
+      "type": "text",
+      "text": "Enums can have methods too. To do something different for each variant, use match, which you'll learn properly in the last lesson of this unit:"
+    },
+    {
+      "type": "code",
+      "code": "enum Light {\n    Red,\n    Yellow,\n    Green,\n}\n\nimpl Light {\n    fn seconds(&self) -> u32 {\n        match self {\n            Light::Red => 30,\n            Light::Yellow => 3,\n            Light::Green => 25,\n        }\n    }\n}\n\nfn main() {\n    println!(\"Red lasts {} seconds\", Light::Red.seconds());\n}"
+    },
+    {
+      "type": "note",
+      "text": "An enum is like a multiple-choice answer: the value is exactly one of the listed options, never something else.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Rust enums are tagged unions (sum types), much richer than C or Java enums. Together with structs they let you make invalid states unrepresentable.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Add a fourth variant, Mythic, to Rarity and make the program print it. It should print: Mythic",
+    "starter": "#[derive(Debug)]\nenum Rarity {\n    Common,\n    Rare,\n    Epic,\n}\n\nfn main() {\n    let r = Rarity::Epic;\n    println!(\"{:?}\", r);\n}",
+    "expectedOutput": "Mythic",
+    "solution": "#[derive(Debug)]\nenum Rarity {\n    Common,\n    Rare,\n    Epic,\n    Mythic,\n}\n\nfn main() {\n    let r = Rarity::Mythic;\n    println!(\"{:?}\", r);\n}"
+  },
+  "quiz": [
+    {
+      "question": "How many variants can an enum value be at one time?",
+      "options": [
+        "Exactly one",
+        "All of them",
+        "Any number"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "How do you write the East variant of Direction?",
+      "options": [
+        "Direction.East",
+        "Direction::East",
+        "East(Direction)"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Can different variants of the same enum carry different data?",
+      "options": [
+        "Yes",
+        "No",
+        "Only numbers"
+      ],
+      "answer": 0
+    }
+  ]
+}

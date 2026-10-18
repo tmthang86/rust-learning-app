@@ -1,0 +1,75 @@
+{
+  "id": "u5-l2",
+  "title": "String and &str",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Rust has two main string types. String is owned text you can grow and change. &str is a borrowed view of some text, like a string literal."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let literal: &str = \"hello\";\n    let mut owned: String = String::from(literal);\n    owned.push_str(\", world\");\n    owned.push('!');\n    println!(\"{owned}\");\n    let view: &str = &owned;   // borrow a String as &str\n    println!(\"{} characters\", view.len());\n}"
+    },
+    {
+      "type": "text",
+      "text": "Join strings with format!, which is usually clearer than +:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let first = \"Ada\";\n    let last = \"Lovelace\";\n    let full = format!(\"{first} {last}\");\n    println!(\"{full}\");\n\n    let s = String::from(\"tic\") + \"-tac\" + \"-toe\";\n    println!(\"{s}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Strings come with many useful methods:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let line = \"  Rust is fun  \";\n    let clean = line.trim();\n    println!(\"[{clean}]\");\n    println!(\"{}\", clean.to_uppercase());\n    println!(\"{}\", clean.contains(\"fun\"));\n    println!(\"{}\", clean.replace(\"fun\", \"great\"));\n    for word in clean.split_whitespace() {\n        println!(\"word: {word}\");\n    }\n}"
+    },
+    {
+      "type": "note",
+      "text": "Rust strings are always valid UTF-8. You can't index a single character with s[0], because a character can take more than one byte. Use s.chars() to walk characters, and s.chars().count() for the character count; len() is bytes.",
+      "track": "fast"
+    },
+    {
+      "type": "note",
+      "text": "A good rule: store text in a String, and take &str when a function only needs to read it.",
+      "track": "starter"
+    }
+  ],
+  "exercise": {
+    "prompt": "Build the sentence with format! using name and lang. It should print: Thang is learning Rust",
+    "starter": "fn main() {\n    let name = \"Thang\";\n    let lang = \"Rust\";\n    let sentence = String::new();\n    println!(\"{sentence}\");\n}",
+    "expectedOutput": "Thang is learning Rust",
+    "solution": "fn main() {\n    let name = \"Thang\";\n    let lang = \"Rust\";\n    let sentence = format!(\"{name} is learning {lang}\");\n    println!(\"{sentence}\");\n}"
+  },
+  "quiz": [
+    {
+      "question": "Which type owns its text and can grow?",
+      "options": [
+        "&str",
+        "String",
+        "char"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What does \"  hi \".trim() give?",
+      "options": [
+        "\"hi\"",
+        "\"  hi\"",
+        "\"hi \""
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Why can't you write s[0] to get the first character?",
+      "options": [
+        "Characters can be more than one byte",
+        "Strings are empty by default",
+        "You need s(0)"
+      ],
+      "answer": 0
+    }
+  ]
+}

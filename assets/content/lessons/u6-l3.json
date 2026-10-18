@@ -1,0 +1,79 @@
+{
+  "id": "u6-l3",
+  "title": "The ? operator",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Writing a match for every Result gets long. The ? operator is a shortcut: if the value is Ok, it unwraps it; if it's Err, it returns the error from the current function straight away."
+    },
+    {
+      "type": "code",
+      "code": "use std::num::ParseIntError;\n\nfn add_strings(a: &str, b: &str) -> Result<i32, ParseIntError> {\n    let x: i32 = a.parse()?;\n    let y: i32 = b.parse()?;\n    Ok(x + y)\n}\n\nfn main() {\n    println!(\"{:?}\", add_strings(\"2\", \"3\"));\n    println!(\"{:?}\", add_strings(\"2\", \"three\").is_err());\n}"
+    },
+    {
+      "type": "text",
+      "text": "Without ?, the same function needs a match for each parse. With it, the happy path reads top to bottom."
+    },
+    {
+      "type": "text",
+      "text": "? only works inside a function that itself returns Result (or Option). main can return a Result too:"
+    },
+    {
+      "type": "code",
+      "code": "use std::num::ParseIntError;\n\nfn main() -> Result<(), ParseIntError> {\n    let n: i32 = \"21\".parse()?;\n    println!(\"{}\", n * 2);\n    Ok(())\n}"
+    },
+    {
+      "type": "text",
+      "text": "It works with Option as well: on None, it returns None from the function."
+    },
+    {
+      "type": "code",
+      "code": "fn first_char_upper(s: &str) -> Option<char> {\n    let c = s.chars().next()?;\n    Some(c.to_ascii_uppercase())\n}\n\nfn main() {\n    println!(\"{:?}\", first_char_upper(\"rust\"));\n    println!(\"{:?}\", first_char_upper(\"\"));\n}"
+    },
+    {
+      "type": "note",
+      "text": "Ok(()) means \"success, with nothing else to report\". () is the empty value.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "? also converts the error with From::from, so different error types can flow into one return type. Box<dyn std::error::Error> is a quick catch-all error type for applications.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Use ? on both parses so the function adds the numbers. It should print: Ok(30)",
+    "starter": "use std::num::ParseIntError;\n\nfn total(a: &str, b: &str) -> Result<i32, ParseIntError> {\n    let x: i32 = 0;\n    let y: i32 = 0;\n    Ok(x + y)\n}\n\nfn main() {\n    println!(\"{:?}\", total(\"10\", \"20\"));\n}",
+    "expectedOutput": "Ok(30)",
+    "solution": "use std::num::ParseIntError;\n\nfn total(a: &str, b: &str) -> Result<i32, ParseIntError> {\n    let x: i32 = a.parse()?;\n    let y: i32 = b.parse()?;\n    Ok(x + y)\n}\n\nfn main() {\n    println!(\"{:?}\", total(\"10\", \"20\"));\n}"
+  },
+  "quiz": [
+    {
+      "question": "What does ? do with an Err value?",
+      "options": [
+        "Returns it from the current function",
+        "Panics",
+        "Turns it into 0"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Where can you use ? on a Result?",
+      "options": [
+        "Inside a function that returns Result",
+        "Anywhere",
+        "Only in loops"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "What does Ok(()) mean?",
+      "options": [
+        "Success with no extra value",
+        "An empty error",
+        "A failed result"
+      ],
+      "answer": 0
+    }
+  ]
+}

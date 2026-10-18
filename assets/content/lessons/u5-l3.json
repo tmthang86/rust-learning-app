@@ -1,0 +1,75 @@
+{
+  "id": "u5-l3",
+  "title": "HashMap",
+  "sections": [
+    {
+      "type": "text",
+      "text": "A HashMap stores values under keys, so you can look things up by name instead of by position. Bring it in with use."
+    },
+    {
+      "type": "code",
+      "code": "use std::collections::HashMap;\n\nfn main() {\n    let mut stock = HashMap::new();\n    stock.insert(\"apples\", 12);\n    stock.insert(\"pears\", 5);\n\n    println!(\"apples: {:?}\", stock.get(\"apples\"));\n    println!(\"kiwis: {:?}\", stock.get(\"kiwis\"));\n\n    stock.insert(\"pears\", 9);   // replaces the old value\n    println!(\"pears now {}\", stock[\"pears\"]);\n}"
+    },
+    {
+      "type": "text",
+      "text": "get returns an Option because the key might be missing. The entry API inserts a default the first time it sees a key, which is perfect for counting:"
+    },
+    {
+      "type": "code",
+      "code": "use std::collections::HashMap;\n\nfn main() {\n    let text = \"the cat and the hat\";\n    let mut counts = HashMap::new();\n    for word in text.split_whitespace() {\n        *counts.entry(word).or_insert(0) += 1;\n    }\n    println!(\"the: {}\", counts[\"the\"]);\n    println!(\"cat: {}\", counts[\"cat\"]);\n}"
+    },
+    {
+      "type": "text",
+      "text": "You can loop over all pairs. The order isn't guaranteed, so sort the keys if you need a fixed order:"
+    },
+    {
+      "type": "code",
+      "code": "use std::collections::HashMap;\n\nfn main() {\n    let mut ages = HashMap::new();\n    ages.insert(\"Minh\", 31);\n    ages.insert(\"Lan\", 28);\n    let mut names: Vec<_> = ages.keys().collect();\n    names.sort();\n    for name in names {\n        println!(\"{name} is {}\", ages[name]);\n    }\n}"
+    },
+    {
+      "type": "note",
+      "text": "A HashMap is like a dictionary: you look up a word (the key) to find its meaning (the value).",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Keys need Eq + Hash. Use BTreeMap from the same module when you want keys kept in sorted order.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Use the entry API to count how many times each letter appears, then print the count for 'a'. It should print: 3",
+    "starter": "use std::collections::HashMap;\n\nfn main() {\n    let word = \"banana\";\n    let mut counts: HashMap<char, i32> = HashMap::new();\n    for c in word.chars() {\n        // count c here\n    }\n    println!(\"{}\", counts.get(&'a').unwrap_or(&0));\n}",
+    "expectedOutput": "3",
+    "solution": "use std::collections::HashMap;\n\nfn main() {\n    let word = \"banana\";\n    let mut counts: HashMap<char, i32> = HashMap::new();\n    for c in word.chars() {\n        *counts.entry(c).or_insert(0) += 1;\n    }\n    println!(\"{}\", counts.get(&'a').unwrap_or(&0));\n}"
+  },
+  "quiz": [
+    {
+      "question": "What does map.get(key) return?",
+      "options": [
+        "The value, or a crash",
+        "An Option with the value",
+        "A bool"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What happens when you insert a key that already exists?",
+      "options": [
+        "The old value is replaced",
+        "It's ignored",
+        "The program stops"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Is the order of a HashMap's items guaranteed?",
+      "options": [
+        "Yes, insertion order",
+        "Yes, sorted",
+        "No"
+      ],
+      "answer": 2
+    }
+  ]
+}

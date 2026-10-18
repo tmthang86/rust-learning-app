@@ -1,0 +1,80 @@
+{
+  "id": "u2-l1",
+  "title": "Scalar types",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Every value in Rust has a type. Scalar types hold a single value: integers, floating-point numbers, booleans and characters."
+    },
+    {
+      "type": "text",
+      "text": "Integers come in signed (i8, i16, i32, i64, i128) and unsigned (u8 up to u128) sizes. i32 is the default. usize is used for counts and indexes."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let age: u8 = 30;\n    let balance: i64 = -1_250;\n    let items: usize = 3;\n    println!(\"{age} {balance} {items}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Rust usually works out the type for you. Add `: Type` after the name when you want to be explicit, or when Rust can't guess.",
+      "track": "starter"
+    },
+    {
+      "type": "text",
+      "text": "Floats are f64 (the default) and f32. bool is true or false. char is a single Unicode character in single quotes:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let price = 9.99;          // f64\n    let ready: bool = true;\n    let grade = 'A';           // char\n    let crab = '🦀';\n    println!(\"{price} {ready} {grade} {crab}\");\n    println!(\"7 / 2 = {}\", 7 / 2);\n    println!(\"7.0 / 2.0 = {}\", 7.0 / 2.0);\n}"
+    },
+    {
+      "type": "text",
+      "text": "Dividing two integers drops the remainder, so 7 / 2 is 3. Use floats when you need the fraction."
+    },
+    {
+      "type": "note",
+      "text": "Rust never converts between number types on its own. To mix them, convert with `as`: `let total = items as f64 * price;`. If an integer overflows in a debug build, the program stops with an error instead of silently wrapping.",
+      "track": "fast"
+    },
+    {
+      "type": "note",
+      "text": "The _ in 1_250 is just for readability, like a comma in 1,250.",
+      "track": "starter"
+    }
+  ],
+  "exercise": {
+    "prompt": "Convert count to f64 with as so the program can compute the average. It should print: 2.5",
+    "starter": "fn main() {\n    let total = 10.0;\n    let count = 4;\n    let average = total / count;\n    println!(\"{average}\");\n}",
+    "expectedOutput": "2.5",
+    "solution": "fn main() {\n    let total = 10.0;\n    let count = 4;\n    let average = total / count as f64;\n    println!(\"{average}\");\n}"
+  },
+  "quiz": [
+    {
+      "question": "What is the default integer type?",
+      "options": [
+        "i64",
+        "i32",
+        "usize"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What does 7 / 2 give with integers?",
+      "options": [
+        "3",
+        "3.5",
+        "4"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Which is a valid char?",
+      "options": [
+        "\"a\"",
+        "'a'",
+        "'ab'"
+      ],
+      "answer": 1
+    }
+  ]
+}

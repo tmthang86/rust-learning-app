@@ -1,0 +1,75 @@
+{
+  "id": "u6-l2",
+  "title": "Result",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Result is an enum for operations that can fail. Ok holds the success value, Err holds the error:"
+    },
+    {
+      "type": "code",
+      "code": "// enum Result<T, E> {\n//     Ok(T),\n//     Err(E),\n// }\nfn main() {\n    let good: Result<i32, _> = \"12\".parse::<i32>();\n    let bad: Result<i32, _> = \"twelve\".parse::<i32>();\n    println!(\"{:?}\", good);\n    println!(\"{}\", bad.is_err());\n}"
+    },
+    {
+      "type": "text",
+      "text": "Handle both cases with match. The compiler won't let you use the value without dealing with the error first:"
+    },
+    {
+      "type": "code",
+      "code": "fn divide(a: f64, b: f64) -> Result<f64, String> {\n    if b == 0.0 {\n        Err(String::from(\"cannot divide by zero\"))\n    } else {\n        Ok(a / b)\n    }\n}\n\nfn main() {\n    for b in [4.0, 0.0] {\n        match divide(10.0, b) {\n            Ok(v) => println!(\"result: {v}\"),\n            Err(e) => println!(\"error: {e}\"),\n        }\n    }\n}"
+    },
+    {
+      "type": "text",
+      "text": "Like Option, Result has helpers such as unwrap_or and is_ok:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let input = \"abc\";\n    let n: i32 = input.parse().unwrap_or(0);\n    println!(\"{n}\");\n}"
+    },
+    {
+      "type": "note",
+      "text": "Errors are ordinary values, not hidden jumps. Reading a function's signature tells you whether it can fail.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "No exceptions: Result<T, E> is Rust's error-handling mechanism, and #[must_use] warns if you ignore one. map_err, ok() and and_then convert and chain results.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Finish check_age so it returns Err(\"too young\") when age is under 18, and Ok(age) otherwise. With 15 it should print: error: too young",
+    "starter": "fn check_age(age: u32) -> Result<u32, String> {\n    Ok(age)\n}\n\nfn main() {\n    match check_age(15) {\n        Ok(a) => println!(\"welcome, age {a}\"),\n        Err(e) => println!(\"error: {e}\"),\n    }\n}",
+    "expectedOutput": "error: too young",
+    "solution": "fn check_age(age: u32) -> Result<u32, String> {\n    if age < 18 {\n        Err(String::from(\"too young\"))\n    } else {\n        Ok(age)\n    }\n}\n\nfn main() {\n    match check_age(15) {\n        Ok(a) => println!(\"welcome, age {a}\"),\n        Err(e) => println!(\"error: {e}\"),\n    }\n}"
+  },
+  "quiz": [
+    {
+      "question": "What are the two variants of Result?",
+      "options": [
+        "Some and None",
+        "Ok and Err",
+        "Pass and Fail"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "When should a function return a Result?",
+      "options": [
+        "When it can fail in a normal way",
+        "Never",
+        "Only in main"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "What does \"x\".parse::<i32>().unwrap_or(0) give?",
+      "options": [
+        "0",
+        "A panic",
+        "\"x\""
+      ],
+      "answer": 0
+    }
+  ]
+}

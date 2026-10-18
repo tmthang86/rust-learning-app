@@ -1,0 +1,75 @@
+{
+  "id": "u6-l4",
+  "title": "Custom error types",
+  "sections": [
+    {
+      "type": "text",
+      "text": "A String works as an error for small programs, but an enum describes exactly what went wrong and lets callers react to each case."
+    },
+    {
+      "type": "code",
+      "code": "#[derive(Debug)]\nenum LoginError {\n    UnknownUser,\n    WrongPassword,\n    Locked { minutes: u32 },\n}\n\nfn login(user: &str, password: &str) -> Result<(), LoginError> {\n    if user != \"admin\" {\n        return Err(LoginError::UnknownUser);\n    }\n    if password == \"locked\" {\n        return Err(LoginError::Locked { minutes: 5 });\n    }\n    if password != \"secret\" {\n        return Err(LoginError::WrongPassword);\n    }\n    Ok(())\n}\n\nfn main() {\n    println!(\"{:?}\", login(\"admin\", \"secret\"));\n    println!(\"{:?}\", login(\"bob\", \"x\"));\n    println!(\"{:?}\", login(\"admin\", \"locked\"));\n}"
+    },
+    {
+      "type": "text",
+      "text": "Implement Display to give each error a friendly message, so it can be printed with {}:"
+    },
+    {
+      "type": "code",
+      "code": "use std::fmt;\n\n#[derive(Debug)]\nenum LoginError {\n    UnknownUser,\n    WrongPassword,\n}\n\nimpl fmt::Display for LoginError {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        match self {\n            LoginError::UnknownUser => write!(f, \"no such user\"),\n            LoginError::WrongPassword => write!(f, \"wrong password\"),\n        }\n    }\n}\n\nimpl std::error::Error for LoginError {}\n\nfn main() {\n    let errors = [LoginError::UnknownUser, LoginError::WrongPassword];\n    for e in errors {\n        println!(\"Login failed: {e}\");\n    }\n}"
+    },
+    {
+      "type": "text",
+      "text": "To let ? turn other errors into yours, implement From:"
+    },
+    {
+      "type": "code",
+      "code": "use std::num::ParseIntError;\n\n#[derive(Debug)]\nenum ConfigError {\n    BadNumber(ParseIntError),\n    OutOfRange(i32),\n}\n\nimpl From<ParseIntError> for ConfigError {\n    fn from(e: ParseIntError) -> Self {\n        ConfigError::BadNumber(e)\n    }\n}\n\nfn read_volume(s: &str) -> Result<i32, ConfigError> {\n    let v: i32 = s.parse()?;   // ParseIntError becomes ConfigError\n    if !(0..=100).contains(&v) {\n        return Err(ConfigError::OutOfRange(v));\n    }\n    Ok(v)\n}\n\nfn main() {\n    println!(\"{:?}\", read_volume(\"70\"));\n    println!(\"{:?}\", read_volume(\"150\"));\n    println!(\"{}\", matches!(read_volume(\"loud\"), Err(ConfigError::BadNumber(_))));\n}"
+    },
+    {
+      "type": "note",
+      "text": "This lesson pulls together enums, match, impl and Result. If it feels like a lot, that's normal. Come back to it after a few more units.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "In real projects, the thiserror crate generates Display and From for error enums, and anyhow gives applications a convenient catch-all error type.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Add a Display impl for ShopError so the program prints the friendly message. It should print: Error: out of stock",
+    "starter": "use std::fmt;\n\n#[derive(Debug)]\nenum ShopError {\n    OutOfStock,\n}\n\nfn main() {\n    let e = ShopError::OutOfStock;\n    println!(\"Error: {:?}\", e);\n}",
+    "expectedOutput": "Error: out of stock",
+    "solution": "use std::fmt;\n\n#[derive(Debug)]\nenum ShopError {\n    OutOfStock,\n}\n\nimpl fmt::Display for ShopError {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        match self {\n            ShopError::OutOfStock => write!(f, \"out of stock\"),\n        }\n    }\n}\n\nfn main() {\n    let e = ShopError::OutOfStock;\n    println!(\"Error: {e}\");\n}"
+  },
+  "quiz": [
+    {
+      "question": "Why use an enum for errors instead of a String?",
+      "options": [
+        "Callers can react to each kind of error",
+        "Enums are shorter to type",
+        "Strings can't be errors"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Which trait lets an error be printed with {}?",
+      "options": [
+        "Debug",
+        "Display",
+        "Clone"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What does implementing From<ParseIntError> for your error let you do?",
+      "options": [
+        "Use ? on parse results in your functions",
+        "Parse faster",
+        "Skip error handling"
+      ],
+      "answer": 0
+    }
+  ]
+}

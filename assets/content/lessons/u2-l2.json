@@ -1,0 +1,75 @@
+{
+  "id": "u2-l2",
+  "title": "Tuples and arrays",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Compound types group several values together. Rust has two built in: tuples and arrays."
+    },
+    {
+      "type": "text",
+      "text": "A tuple groups a fixed number of values that can have different types. Get at the parts with .0, .1 and so on, or unpack them with let:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let point = (3, 7);\n    println!(\"x = {}, y = {}\", point.0, point.1);\n\n    let person = (\"Ada\", 36, true);\n    let (name, age, active) = person;\n    println!(\"{name} is {age}, active: {active}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "An array holds a fixed number of values that all have the same type. Count from 0 when you index it:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let days = [\"Mon\", \"Tue\", \"Wed\", \"Thu\", \"Fri\"];\n    println!(\"First day: {}\", days[0]);\n    println!(\"Number of days: {}\", days.len());\n\n    let zeros = [0; 4];   // four zeros\n    println!(\"{:?}\", zeros);\n}"
+    },
+    {
+      "type": "text",
+      "text": "{:?} is debug formatting. It prints whole tuples and arrays, which plain {} can't."
+    },
+    {
+      "type": "note",
+      "text": "Indexing past the end, like days[10], stops the program with an \"index out of bounds\" error instead of reading random memory. When you need a list that can grow, use a Vec (Unit 5).",
+      "track": "fast"
+    },
+    {
+      "type": "note",
+      "text": "The first item is at index 0, so the last item of a 5-item array is at index 4.",
+      "track": "starter"
+    }
+  ],
+  "exercise": {
+    "prompt": "Print the third score in the array using an index. It should print: 88",
+    "starter": "fn main() {\n    let scores = [72, 95, 88, 61];\n    println!(\"{}\", scores[0]);\n}",
+    "expectedOutput": "88",
+    "solution": "fn main() {\n    let scores = [72, 95, 88, 61];\n    println!(\"{}\", scores[2]);\n}"
+  },
+  "quiz": [
+    {
+      "question": "What's the main difference between a tuple and an array?",
+      "options": [
+        "Arrays can grow",
+        "Tuple items can have different types",
+        "Tuples can't be printed"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What is the index of the first item in an array?",
+      "options": [
+        "0",
+        "1",
+        "-1"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "How do you get the second value of the tuple t?",
+      "options": [
+        "t[1]",
+        "t.1",
+        "t.2"
+      ],
+      "answer": 1
+    }
+  ]
+}

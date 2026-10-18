@@ -1,0 +1,71 @@
+{
+  "id": "u3-l4",
+  "title": "Mutable references",
+  "sections": [
+    {
+      "type": "text",
+      "text": "A shared reference only lets you read. To change a borrowed value, use a mutable reference: &mut. The variable itself must be declared mut."
+    },
+    {
+      "type": "code",
+      "code": "fn add_exclamation(text: &mut String) {\n    text.push_str(\"!\");\n}\n\nfn main() {\n    let mut message = String::from(\"Hello\");\n    add_exclamation(&mut message);\n    add_exclamation(&mut message);\n    println!(\"{message}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "The key rule: at any moment you can have either one mutable reference, or any number of shared references, but not both."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let mut score = 10;\n    let r = &mut score;\n    *r += 5;              // * follows the reference to the value\n    // let r2 = &score;   // error while r is still in use\n    println!(\"{r}\");\n    let r2 = &score;      // fine: r isn't used any more\n    println!(\"{r2}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "This rule stops two parts of a program from changing the same data at once, which prevents a whole class of bugs called data races."
+    },
+    {
+      "type": "note",
+      "text": "A borrow lasts until the last time it's used, not until the end of the block. That's why r2 is allowed after the last use of r.",
+      "track": "fast"
+    },
+    {
+      "type": "note",
+      "text": "Think of a whiteboard: many people can read it at once, or one person can write on it, but nobody should read while someone is halfway through writing.",
+      "track": "starter"
+    }
+  ],
+  "exercise": {
+    "prompt": "Finish double so it doubles the number through the mutable reference (use *n). It should print: 42",
+    "starter": "fn double(n: &mut i32) {\n    // change n here\n}\n\nfn main() {\n    let mut value = 21;\n    double(&mut value);\n    println!(\"{value}\");\n}",
+    "expectedOutput": "42",
+    "solution": "fn double(n: &mut i32) {\n    *n *= 2;\n}\n\nfn main() {\n    let mut value = 21;\n    double(&mut value);\n    println!(\"{value}\");\n}"
+  },
+  "quiz": [
+    {
+      "question": "How many mutable references to a value can be in use at once?",
+      "options": [
+        "One",
+        "Two",
+        "Unlimited"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Can you have a &mut and a & to the same value in use at the same time?",
+      "options": [
+        "Yes",
+        "No",
+        "Only for numbers"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What does * do in *r += 1?",
+      "options": [
+        "Multiplies r",
+        "Follows the reference to change the value it points to",
+        "Makes r mutable"
+      ],
+      "answer": 1
+    }
+  ]
+}

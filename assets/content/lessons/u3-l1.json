@@ -1,0 +1,79 @@
+{
+  "id": "u3-l1",
+  "title": "Ownership and moves",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Ownership is how Rust manages memory without a garbage collector and without you freeing memory by hand. It rests on three rules."
+    },
+    {
+      "type": "text",
+      "text": "1. Every value has one owner, a variable. 2. There is only one owner at a time. 3. When the owner goes out of scope, the value is dropped (its memory is freed)."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    {\n        let greeting = String::from(\"hello\");\n        println!(\"{greeting}\");\n    } // greeting goes out of scope here and its memory is freed\n    println!(\"done\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "A String stores its text on the heap. When you assign it to another variable, ownership moves. The old variable can't be used any more:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let a = String::from(\"crab\");\n    let b = a;              // ownership moves from a to b\n    // println!(\"{a}\");     // error: borrow of moved value: `a`\n    println!(\"{b}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Passing a value to a function moves it too, unless the function hands it back:"
+    },
+    {
+      "type": "code",
+      "code": "fn shout(text: String) -> String {\n    text.to_uppercase()\n}\n\nfn main() {\n    let word = String::from(\"hi\");\n    let loud = shout(word);   // word moved into shout\n    println!(\"{loud}\");\n}"
+    },
+    {
+      "type": "note",
+      "text": "Think of it like handing someone a physical book. Once you've given it away, you don't have it any more. That's how Rust knows exactly when it's safe to free memory.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "A move is a cheap shallow copy of the pointer, length and capacity; the heap data isn't copied. Because only one owner exists, there's no double free and no need for reference counting. C++ programmers: this is like std::move, but checked by the compiler and the default.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "The program uses name after it was moved into greet. Change greet so it doesn't need to own the String: make the parameter a reference (&String) and call it with &name. It should print: Hello, Ferris\nBye, Ferris",
+    "starter": "fn greet(name: String) {\n    println!(\"Hello, {name}\");\n}\n\nfn main() {\n    let name = String::from(\"Ferris\");\n    greet(name);\n    println!(\"Bye, {name}\");\n}",
+    "expectedOutput": "Hello, Ferris\nBye, Ferris",
+    "solution": "fn greet(name: &String) {\n    println!(\"Hello, {name}\");\n}\n\nfn main() {\n    let name = String::from(\"Ferris\");\n    greet(&name);\n    println!(\"Bye, {name}\");\n}"
+  },
+  "quiz": [
+    {
+      "question": "How many owners can a value have at one time?",
+      "options": [
+        "One",
+        "Two",
+        "Any number"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "What happens to a value when its owner goes out of scope?",
+      "options": [
+        "It's dropped and its memory freed",
+        "It stays until the program ends",
+        "It moves to main"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "After let b = a; where a is a String, can you still use a?",
+      "options": [
+        "Yes",
+        "No, it was moved",
+        "Only to print it"
+      ],
+      "answer": 1
+    }
+  ]
+}

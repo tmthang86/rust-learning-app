@@ -1,0 +1,74 @@
+{
+  "id": "u2-l5",
+  "title": "Functions and return values",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Functions are declared with fn. Each parameter needs a type, and the return type comes after ->."
+    },
+    {
+      "type": "code",
+      "code": "fn square(n: i32) -> i32 {\n    n * n\n}\n\nfn describe(n: i32) {\n    println!(\"{n} squared is {}\", square(n));\n}\n\nfn main() {\n    describe(4);\n    describe(9);\n}"
+    },
+    {
+      "type": "text",
+      "text": "The last expression in a function, without a semicolon, is the value it returns. Adding a semicolon turns it into a statement, which returns nothing. That's a common early mistake, and the compiler will point it out."
+    },
+    {
+      "type": "text",
+      "text": "Use return to leave a function early:"
+    },
+    {
+      "type": "code",
+      "code": "fn safe_divide(a: i32, b: i32) -> i32 {\n    if b == 0 {\n        return 0;\n    }\n    a / b\n}\n\nfn main() {\n    println!(\"{}\", safe_divide(10, 2));\n    println!(\"{}\", safe_divide(10, 0));\n}"
+    },
+    {
+      "type": "text",
+      "text": "A function can return several values at once by returning a tuple:"
+    },
+    {
+      "type": "code",
+      "code": "fn min_max(a: i32, b: i32) -> (i32, i32) {\n    if a < b { (a, b) } else { (b, a) }\n}\n\nfn main() {\n    let (low, high) = min_max(8, 3);\n    println!(\"low {low}, high {high}\");\n}"
+    },
+    {
+      "type": "note",
+      "text": "Parameter and return types are always written out; Rust only infers types inside function bodies. A function with no -> returns the unit type (), Rust's \"nothing\" value.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Write celsius_to_fahrenheit so it returns c * 9.0 / 5.0 + 32.0. It should print: 212",
+    "starter": "fn celsius_to_fahrenheit(c: f64) -> f64 {\n    0.0\n}\n\nfn main() {\n    println!(\"{}\", celsius_to_fahrenheit(100.0));\n}",
+    "expectedOutput": "212",
+    "solution": "fn celsius_to_fahrenheit(c: f64) -> f64 {\n    c * 9.0 / 5.0 + 32.0\n}\n\nfn main() {\n    println!(\"{}\", celsius_to_fahrenheit(100.0));\n}"
+  },
+  "quiz": [
+    {
+      "question": "What does a function return if its last line ends with a semicolon?",
+      "options": [
+        "The last value anyway",
+        "Nothing: the unit type ()",
+        "An error at runtime"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Where does the return type go?",
+      "options": [
+        "Before fn",
+        "After -> following the parameters",
+        "Inside the braces"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "How can a function return two values?",
+      "options": [
+        "Return a tuple",
+        "Use two return statements",
+        "It can't"
+      ],
+      "answer": 0
+    }
+  ]
+}
