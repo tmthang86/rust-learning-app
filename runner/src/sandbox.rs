@@ -131,7 +131,9 @@ fi
 printf '\001RR-RUN\n'
 printf '\001RR-RUN\n' >&2
 # A CPU-time limit the kernel enforces, in case the program stops `timeout`.
-ulimit -t "$((secs + 1))"
+# The soft limit sends SIGXCPU; the hard limit a second later sends SIGKILL.
+ulimit -t "$((secs + 2))"
+ulimit -S -t "$((secs + 1))"
 exec timeout --signal=TERM --kill-after=1 "$secs" "$work/prog" </dev/null
 "#;
 
@@ -293,36 +295,27 @@ pub async fn reap_all_job_containers() {
 }
 
 /// Checks that Docker, the sandbox image and the runtime work, by running a
-/// trivial job. Call it at startup so a broken setup fails loudly instead of
-/// answering every request with an error.
-pub async fn check_docker(sandbox: &Sandbox) -> Result<(), String> {
-    let Sandbox::Docker(d) = sandbox else {
-        return Ok(());
+/// trivial program through the same path as real jobs. Call it at startup so
+/// a broken setup fails loudly instead of answering every request with an
+/// error. Limits are relaxed because the first compile can be slow.
+pub async fn check_sandbox(sandbox: &Sandbox, limits: &Limits) -> Result<(), String> {
+    let relaxed = Limits {
+        compile_timeout: Duration::from_secs(60),
+        run_timeout: limits.run_timeout,
+        job_timeout: Duration::from_secs(60) + limits.run_timeout + Duration::from_secs(30),
+        ..limits.clone()
     };
-    let mut args = vec!["run", "--rm", "--pull", "never", "--network", "none"];
-    if let Some(runtime) = &d.runtime {
-        args.extend(["--runtime", runtime.as_str()]);
-    }
-    args.extend([d.image.as_str(), "rustc", "--version"]);
-    let run = Command::new("docker")
-        .args(&args)
-        .stdin(Stdio::null())
-        .kill_on_drop(true)
-        .output();
-    match tokio::time::timeout(Duration::from_secs(120), run).await {
-        Ok(Ok(out)) if out.status.success() => {
-            tracing::info!(
-                "sandbox ready: {}",
-                String::from_utf8_lossy(&out.stdout).trim()
-            );
-            Ok(())
-        }
-        Ok(Ok(out)) => Err(format!(
-            "sandbox check failed: {}",
-            String::from_utf8_lossy(&out.stderr).trim()
+    match sandbox
+        .run("fn main() { println!(\"ok\"); }", &relaxed)
+        .await
+    {
+        Ok(out) if out.success && out.stdout == "ok\n" => Ok(()),
+        Ok(out) => Err(format!(
+            "sandbox check failed ({:?}): {}",
+            out.stage,
+            out.stderr.trim()
         )),
-        Ok(Err(e)) => Err(format!("could not run docker: {e}")),
-        Err(_) => Err("sandbox check timed out".into()),
+        Err(e) => Err(format!("sandbox check failed: {e}")),
     }
 }
 
@@ -687,7 +680,7 @@ fn interpret(c: Collected, limits: &Limits, duration_ms: u64) -> std::io::Result
         None => (&c.stderr[..], &[][..]),
     };
     let stdout = text(stdout, max, c.overflow && stdout.len() >= max);
-    let mut stderr = text(program_err, max, false);
+    let mut stderr = text(program_err, max, c.overflow && program_err.len() >= max);
 
     let (success, stage) = if c.timed_out {
         stderr.push_str(&format!(

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use rust_runner::sandbox::{Limits, Sandbox, check_docker, reap_all_job_containers};
+use rust_runner::sandbox::{Limits, Sandbox, check_sandbox, reap_all_job_containers};
 use rust_runner::{AppState, app};
 use tokio::sync::Semaphore;
 
@@ -89,7 +89,7 @@ async fn main() {
         }
     };
 
-    if let Err(e) = check_docker(&sandbox).await {
+    if let Err(e) = check_sandbox(&sandbox, &limits).await {
         fail(&e);
     }
 

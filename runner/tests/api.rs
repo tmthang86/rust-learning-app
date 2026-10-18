@@ -300,15 +300,22 @@ async fn docker_sandbox_runs_and_blocks_network() {
     );
 
     // Freezing the in-container timer must not extend the run past the host timer.
+    // The image has no /bin/kill, so use the bash builtin.
     let freeze = r#"fn main() {
         let ppid = std::os::unix::process::parent_id();
-        let _ = std::process::Command::new("kill").args(["-STOP", &ppid.to_string()]).status();
+        let cmd = format!("kill -STOP {ppid}");
+        let ok = std::process::Command::new("bash").args(["-c", &cmd]).status().unwrap().success();
+        assert!(ok, "could not freeze the timer");
         loop {}
     }"#;
     let started = std::time::Instant::now();
     let (_, out) = post_run(state(docker()), freeze).await;
     assert_eq!(out["stage"], "timeout", "{out}");
-    assert!(started.elapsed() < Duration::from_secs(15), "{out}");
+    let took = started.elapsed();
+    assert!(
+        took >= Duration::from_secs(3) && took < Duration::from_secs(15),
+        "{took:?} {out}"
+    );
 
     // A client that disconnects mid-job must not leave a container running.
     let sandbox = docker();
