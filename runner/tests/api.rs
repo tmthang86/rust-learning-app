@@ -117,6 +117,20 @@ async fn faked_exit_codes_do_not_change_the_stage() {
 }
 
 #[tokio::test]
+async fn cpu_limit_signal_counts_as_timeout() {
+    // The kernel's CPU-time limit sends SIGXCPU; a program killed by it must
+    // be reported as a timeout, not a plain failure.
+    let code = r#"fn main() {
+    let pid = std::process::id().to_string();
+    std::process::Command::new("kill").args(["-XCPU", &pid]).status().unwrap();
+    std::thread::sleep(std::time::Duration::from_secs(3));
+}"#;
+    let out = run_local(code).await;
+    assert_eq!(out["stage"], "timeout", "{out}");
+    assert_eq!(out["success"], false);
+}
+
+#[tokio::test]
 async fn endless_compile_is_stopped() {
     let st = Arc::new(AppState {
         sandbox: Sandbox::Local,
