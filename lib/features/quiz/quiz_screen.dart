@@ -26,9 +26,6 @@ class _QuizScreenState extends State<QuizScreen> {
   int? _picked;
   bool _checked = false;
 
-  /// Passing this quiz completed the lesson for the first time.
-  bool _newlyCompleted = false;
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -48,9 +45,7 @@ class _QuizScreenState extends State<QuizScreen> {
     });
     if (_index == lesson.quiz.length &&
         _correct / lesson.quiz.length >= QuizScreen.passMark) {
-      final state = AppScope.read(context);
-      _newlyCompleted = !state.isCompleted(lesson.id);
-      state.markCompleted(lesson.id);
+      AppScope.read(context).markCompleted(lesson.id);
     }
   }
 
@@ -178,9 +173,10 @@ class _QuizScreenState extends State<QuizScreen> {
           onPressed: () {
             final monetization = MonetizationScope.read(context);
             context.go('/learn');
-            // A natural break: the lesson is done and closed. Repeat
-            // finishes don't count.
-            if (passed && _newlyCompleted) monetization.onLessonFinished();
+            // A natural break: the lesson is done and closed. Only the
+            // first pass counts, even when solving the exercise already
+            // completed the lesson (onLessonFinished ignores repeats).
+            if (passed) monetization.onLessonFinished(lesson.id);
           },
           child: const Text('Back to lessons'),
         ),

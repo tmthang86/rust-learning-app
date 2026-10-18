@@ -70,12 +70,22 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
         'uninstalling the app or clearing its data removes it.',
       );
     } else if (user == null) {
-      action = const Column(
+      action = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Sign in with the account you want to delete.'),
-          SizedBox(height: 4),
-          SignInButtons(toDelete: true),
+          if (state.signInCreatedNoAccount) ...[
+            Semantics(
+              liveRegion: true,
+              child: const Text(
+                'There was no Learn Rust account for that sign-in, so there '
+                'is nothing to delete. The sign-in was not kept.',
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          const Text('Sign in with the account you want to delete.'),
+          const SizedBox(height: 4),
+          const SignInButtons(toDelete: true),
         ],
       );
     } else {

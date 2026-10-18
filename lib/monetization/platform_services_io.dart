@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 
 import 'ad_config.dart';
+import 'ad_report.dart';
 import 'ads_service.dart';
 import 'consent_service.dart';
 import 'google_ads.dart';
@@ -27,12 +28,18 @@ PlatformServices createPlatformServices() {
   }
   final store = StorePurchaseService();
   final ids = Platform.isIOS ? AdUnitIds.ios : AdUnitIds.android;
-  if (kReleaseMode && ids.areTestIds && !allowTestAdsInRelease) {
-    // A release build without the real ad unit ids: show no ads at all
-    // rather than test ads. See docs/ads-and-purchases.md.
+  final problem = releaseAdsProblem(
+    ids: ids,
+    reportEmail: adReportEmail,
+    reportUrl: adReportUrl,
+  );
+  if (kReleaseMode && problem != null && !allowTestAdsInRelease) {
+    // A release build without the real ad unit ids, or without a real
+    // address for ad reports (App Store guideline 2.5.18): show no ads at
+    // all. See docs/ads-and-purchases.md.
     debugPrint(
-      '*** ADS ARE OFF: this release build uses Google\'s TEST ad unit ids. '
-      'Pass the real ids with --dart-define or --dart-define-from-file. ***',
+      '*** ADS ARE OFF in this release build: $problem. Pass the real '
+      'values with --dart-define or --dart-define-from-file. ***',
     );
     return PlatformServices(
       ads: const NoAdsService(),

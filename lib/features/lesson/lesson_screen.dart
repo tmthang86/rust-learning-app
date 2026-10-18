@@ -191,13 +191,12 @@ class _LessonBody extends StatelessWidget {
               else if (exercise == null)
                 FilledButton(
                   onPressed: () {
-                    final firstTime = !state.isCompleted(lesson.id);
                     state.markCompleted(lesson.id);
                     final monetization = MonetizationScope.read(context);
                     leaveLesson(context);
                     // A natural break: the lesson is done and closed.
-                    // Repeat finishes don't count.
-                    if (firstTime) monetization.onLessonFinished();
+                    // Repeat finishes are ignored there.
+                    monetization.onLessonFinished(lesson.id);
                   },
                   child: const Text('Mark as done'),
                 ),

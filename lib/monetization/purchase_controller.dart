@@ -84,8 +84,14 @@ class PurchaseController extends ChangeNotifier {
   /// Updates are handled one batch at a time, in order.
   Future<void> _queue = Future.value();
 
-  /// Completed after the next batch of updates has been handled.
-  final List<Completer<void>> _batchWaiters = [];
+  /// Number of update batches received so far; each batch is numbered by
+  /// its arrival.
+  int _batchesReceived = 0;
+
+  /// Restores waiting for a batch: each completes once a batch numbered at
+  /// or above its value has been handled, so a batch that arrived before
+  /// its own restore call (an earlier purchase or error) doesn't count.
+  final Map<Completer<void>, int> _batchWaiters = {};
 
   /// True once "Remove ads" is owned on this device.
   bool get entitled => _entitled;
@@ -98,6 +104,10 @@ class PurchaseController extends ChangeNotifier {
 
   /// Why the last action failed, when [state] is [PurchaseFlowState.error].
   StoreError? get error => _error;
+
+  /// True when the last error came from a restore rather than a purchase.
+  bool get errorWhileRestoring => _errorWhileRestoring;
+  bool _errorWhileRestoring = false;
   bool get busy =>
       _state == PurchaseFlowState.buying ||
       _state == PurchaseFlowState.restoring;
@@ -111,10 +121,14 @@ class PurchaseController extends ChangeNotifier {
     _started = true;
     _sub = store.purchaseUpdates.listen(
       (updates) {
+        final number = _batchesReceived++;
         _queue = _queue.then((_) => _handle(updates)).whenComplete(() {
-          final waiters = List.of(_batchWaiters);
-          _batchWaiters.clear();
-          for (final w in waiters) {
+          final done = [
+            for (final e in _batchWaiters.entries)
+              if (number >= e.value) e.key,
+          ];
+          for (final w in done) {
+            _batchWaiters.remove(w);
             if (!w.isCompleted) w.complete();
           }
         });
@@ -171,11 +185,11 @@ class PurchaseController extends ChangeNotifier {
     }
   }
 
-  /// Asks the store to restore, then waits until the batch it sends has
-  /// been handled (or [timeout]).
+  /// Asks the store to restore, then waits until a batch that arrived after
+  /// this call has been handled (or [timeout]).
   Future<void> _restoreAndWait(Duration timeout) async {
     final handled = Completer<void>();
-    _batchWaiters.add(handled);
+    _batchWaiters[handled] = _batchesReceived;
     try {
       await store.restore();
     } catch (_) {
@@ -330,6 +344,9 @@ class PurchaseController extends ChangeNotifier {
   }
 
   void _set(PurchaseFlowState s, {StoreError? error}) {
+    if (s == PurchaseFlowState.error) {
+      _errorWhileRestoring = _state == PurchaseFlowState.restoring;
+    }
     _state = s;
     _error = error;
     _notify();

@@ -21,16 +21,16 @@ Future<void> reportAdFrom(BuildContext context, String screen) async {
   }
 }
 
-
 /// A spot for a small banner on a reading or list screen. Takes no space
 /// when ads are off (web, "Remove ads", under 13, no consent).
 ///
 /// While ads are on it reserves the banner's full height before the ad
 /// loads, and keeps it if loading fails, so content never jumps under a
-/// tap. It has space around it and an "Advertisement" label with a
-/// "Report" link, so it isn't mistaken for content or tapped by accident
-/// (https://support.google.com/admob/answer/6275345), and inappropriate
-/// ads can be reported (App Store guideline 2.5.18).
+/// tap. It has space around it and an "Advertisement" label, so it isn't
+/// mistaken for content or tapped by accident
+/// (https://support.google.com/admob/answer/6275345). Nothing tappable sits
+/// next to it; ads are reported from Progress → "Report an ad" (App Store
+/// guideline 2.5.18), which names the screen of the last banner seen.
 ///
 /// It stays alive while scrolled out of view, so scrolling doesn't throw
 /// away and re-request the ad.
@@ -66,6 +66,7 @@ class _AdBannerSlotState extends State<AdBannerSlot>
     }
     super.build(context);
     if (!_adsEnabled) return const SizedBox.shrink();
+    m.lastAdScreen = widget.placement.name;
     final theme = Theme.of(context);
     final label = theme.textTheme.labelSmall?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
@@ -75,26 +76,9 @@ class _AdBannerSlotState extends State<AdBannerSlot>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              Text('Advertisement', style: label),
-              const Spacer(),
-              InkWell(
-                onTap: () => reportAdFrom(context, widget.placement.name),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 2,
-                  ),
-                  child: Text(
-                    'Report ad',
-                    style: label?.copyWith(
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text('Advertisement', style: label),
           ),
           const SizedBox(height: 4),
           SizedBox(

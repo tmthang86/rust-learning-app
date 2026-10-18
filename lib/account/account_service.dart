@@ -61,6 +61,19 @@ class ReauthProof {
   final String? appleAuthorizationCode;
 }
 
+/// What a sign-in reported.
+class SignInResult {
+  const SignInResult({this.isNewUser = false, this.appleAuthorizationCode});
+
+  /// The sign-in created a new account (Firebase
+  /// `AdditionalUserInfo.isNewUser`).
+  final bool isNewUser;
+
+  /// For revoking Apple tokens if this new account is deleted right away;
+  /// only on a fresh Apple sign-in, not on the web.
+  final String? appleAuthorizationCode;
+}
+
 /// Signing in and out. Lets the rest of the app ignore whether Firebase is
 /// configured in this build.
 ///
@@ -75,7 +88,7 @@ abstract class AccountService {
   /// Sign-in methods to offer on this platform.
   List<SignInMethod> get methods;
 
-  Future<void> signIn(SignInMethod method);
+  Future<SignInResult> signIn(SignInMethod method);
   Future<void> signOut();
 
   /// Asks the signed-in person to sign in again with the same provider, to
@@ -108,7 +121,8 @@ class DisabledAccountService implements AccountService {
   @override
   List<SignInMethod> get methods => const [];
   @override
-  Future<void> signIn(SignInMethod method) async {}
+  Future<SignInResult> signIn(SignInMethod method) async =>
+      const SignInResult();
   @override
   Future<void> signOut() async {}
   @override
@@ -183,14 +197,19 @@ class FirebaseAccountService implements AccountService {
   };
 
   @override
-  Future<void> signIn(SignInMethod method) async {
+  Future<SignInResult> signIn(SignInMethod method) async {
     final provider = _provider(method);
     try {
-      if (kIsWeb) {
-        await _auth.signInWithPopup(provider);
-      } else {
-        await _auth.signInWithProvider(provider);
-      }
+      final credential = kIsWeb
+          ? await _auth.signInWithPopup(provider)
+          : await _auth.signInWithProvider(provider);
+      final info = credential.additionalUserInfo;
+      return SignInResult(
+        isNewUser: info?.isNewUser ?? false,
+        appleAuthorizationCode: method == SignInMethod.apple
+            ? info?.authorizationCode
+            : null,
+      );
     } catch (e) {
       throw accountExceptionFrom(e);
     }

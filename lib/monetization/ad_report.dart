@@ -8,9 +8,12 @@
 /// docs/ads-and-purchases.md).
 library;
 
+/// The default of AD_REPORT_EMAIL, to be replaced before release.
+const placeholderAdReportEmail = 'ads-report@example.com';
+
 const adReportEmail = String.fromEnvironment(
   'AD_REPORT_EMAIL',
-  defaultValue: 'ads-report@example.com',
+  defaultValue: placeholderAdReportEmail,
 );
 const adReportUrl = String.fromEnvironment('AD_REPORT_URL');
 

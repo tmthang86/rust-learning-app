@@ -166,7 +166,15 @@ class _AdaptiveBannerState extends State<_AdaptiveBanner> {
             if (_ad != banner) await banner.dispose();
             return;
           }
-          setState(() => _size = size ?? banner.size);
+          // Without the real size, use the slot's full height: the
+          // requested InlineAdaptiveSize always reports height 0
+          // (google_mobile_ads 9.1.0 ad_containers.dart).
+          final fallback = AdSize(
+            width: banner.size.width,
+            height: AdBannerSlot.adHeight.toInt(),
+          );
+          final real = size != null && size.height > 0 ? size : null;
+          setState(() => _size = real ?? fallback);
         },
         onAdFailedToLoad: (ad, error) {
           // The slot keeps its space; nothing moves.
@@ -232,14 +240,24 @@ class UmpConsentService implements ConsentService {
       },
     );
     if (!await updated.future) return false;
-    if (!showForm) return true;
-    final dismissed = Completer<void>();
-    await ConsentForm.loadAndShowConsentFormIfRequired((error) {
-      if (error != null) debugPrint('Consent form: ${error.message}');
-      if (!dismissed.isCompleted) dismissed.complete();
-    });
-    await dismissed.future;
-    return true;
+    if (showForm) {
+      final formOk = Completer<bool>();
+      await ConsentForm.loadAndShowConsentFormIfRequired((error) {
+        if (error != null) debugPrint('Consent form: ${error.message}');
+        if (!formOk.isCompleted) formOk.complete(error == null);
+      });
+      if (!await formOk.future) return false;
+    }
+    final canRequest = await canRequestAds();
+    if (kDebugMode) {
+      // For the device check in docs/ads-and-purchases.md.
+      final status = await ConsentInformation.instance.getConsentStatus();
+      debugPrint(
+        'UMP: underAgeOfConsent=$underAgeOfConsent showForm=$showForm '
+        'status=$status canRequestAds=$canRequest',
+      );
+    }
+    return canRequest;
   }
 
   /// For testing the consent messages on a device (debug builds only):

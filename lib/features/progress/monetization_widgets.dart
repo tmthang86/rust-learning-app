@@ -129,7 +129,10 @@ String? purchaseMessage(PurchaseController p) {
     case PurchaseFlowState.cancelled:
       return 'Purchase cancelled.';
     case PurchaseFlowState.error:
-      return storeErrorMessage(p.error ?? StoreError.other);
+      final error = p.error ?? StoreError.other;
+      return p.errorWhileRestoring
+          ? restoreErrorMessage(error)
+          : storeErrorMessage(error);
   }
 }
 
@@ -146,6 +149,15 @@ String storeErrorMessage(StoreError error) => switch (error) {
     'An earlier purchase is still being processed. Please try again in a '
         'moment.',
   StoreError.other => "The purchase didn't go through. Please try again.",
+};
+
+String restoreErrorMessage(StoreError error) => switch (error) {
+  StoreError.network =>
+    "Couldn't reach the store to check for earlier purchases. Check your "
+        'connection and try again.',
+  StoreError.storeUnavailable =>
+    "Purchases aren't available on this device or account.",
+  _ => "Couldn't check for earlier purchases. Please try again.",
 };
 
 /// Lets the learner change their ad privacy choices. Shown only when UMP
@@ -167,7 +179,8 @@ class PrivacyOptionsTile extends StatelessWidget {
 }
 
 /// "Report an ad" (App Store guideline 2.5.18), shown only while ads are
-/// on. Each banner also has a "Report ad" link.
+/// on. The report names the screen of the last banner seen, since nothing
+/// tappable sits next to a banner.
 class ReportAdTile extends StatelessWidget {
   const ReportAdTile({super.key});
 
@@ -179,7 +192,7 @@ class ReportAdTile extends StatelessWidget {
       leading: const Icon(Icons.flag_outlined),
       title: const Text('Report an ad'),
       subtitle: const Text('Tell us about an ad that seemed inappropriate.'),
-      onTap: () => reportAdFrom(context, 'progress'),
+      onTap: () => reportAdFrom(context, m.lastAdScreen ?? 'progress'),
     );
   }
 }

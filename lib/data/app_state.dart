@@ -146,7 +146,43 @@ class AppState extends ChangeNotifier {
         const AccountException(AccountErrorKind.ageRestricted),
       );
     }
-    return accounts.signIn(method);
+    _signInCreatedNoAccount = false;
+    final signingIn = accounts.signIn(method);
+    if (accountsAllowed) return signingIn.then((_) {});
+    return signingIn.then(_afterChildSignIn);
+  }
+
+  /// True after a child signed in on /delete-account with a sign-in that
+  /// had no account yet: the account it created was deleted at once.
+  bool get signInCreatedNoAccount => _signInCreatedNoAccount;
+  bool _signInCreatedNoAccount = false;
+
+  /// A child signed in only to delete an account. If that sign-in created
+  /// a new one, there was nothing to delete: remove it right away, so no
+  /// account is left for a child. (Fresh from signing in, it needs no
+  /// second confirmation.)
+  Future<void> _afterChildSignIn(SignInResult result) async {
+    if (!result.isNewUser || _user == null) return;
+    _deleting = true;
+    _keepLocalOnSignOut = true;
+    try {
+      await _server(
+        accounts.deleteUser(
+          ReauthProof(appleAuthorizationCode: result.appleAuthorizationCode),
+        ),
+      );
+      _signInCreatedNoAccount = true;
+    } catch (e) {
+      // Still there: sign out on this device, and Progress offers to
+      // delete it.
+      debugPrint('Deleting the new account failed: $e');
+      _keepLocalOnSignOut = false;
+      _deleting = false;
+      await leaveAccountKeepingProgress();
+    } finally {
+      _deleting = false;
+    }
+    notifyListeners();
   }
 
   void _onAgeChanged() {

@@ -24,6 +24,8 @@
 /// https://developers.google.com/admob/flutter/test-ads.
 library;
 
+import 'ad_report.dart' show placeholderAdReportEmail;
+
 /// Google's test app ids; also the defaults in the platform files.
 const testAppIdAndroid = 'ca-app-pub-3940256099942544~3347511713';
 const testAppIdIos = 'ca-app-pub-3940256099942544~1458002511';
@@ -41,9 +43,10 @@ class AdUnitIds {
   final String banner;
   final String interstitial;
 
-  /// True when these are Google's test ids.
+  /// True when any of these is one of Google's test ids (a release build
+  /// must have real ids for every unit).
   bool get areTestIds =>
-      banner.startsWith('ca-app-pub-3940256099942544/') &&
+      banner.startsWith('ca-app-pub-3940256099942544/') ||
       interstitial.startsWith('ca-app-pub-3940256099942544/');
 
   static const android = AdUnitIds(
@@ -72,3 +75,18 @@ class AdUnitIds {
 /// The one non-consumable product, set up with this id in both Play
 /// Console and App Store Connect.
 const removeAdsProductId = 'remove_ads';
+
+/// Why a release build must not show ads with these settings, or null when
+/// it may: any Google test unit id, or the placeholder ad report address
+/// with no report URL.
+String? releaseAdsProblem({
+  required AdUnitIds ids,
+  required String reportEmail,
+  required String reportUrl,
+}) {
+  if (ids.areTestIds) return "it uses Google's TEST ad unit ids";
+  if (reportUrl.isEmpty && reportEmail == placeholderAdReportEmail) {
+    return 'AD_REPORT_EMAIL is still the placeholder $placeholderAdReportEmail';
+  }
+  return null;
+}

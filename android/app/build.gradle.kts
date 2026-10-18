@@ -66,20 +66,38 @@ flutter {
     source = "../.."
 }
 
-// A release build must not ship Google's test app id: fail early (AGP's
+// A release build must not ship Google's test app id, or the placeholder ad
+// report address (App Store guideline 2.5.18 needs a real way to report
+// ads; the same build feeds both stores). It fails early (AGP's
 // preReleaseBuild runs before compiling) unless the build says on purpose
 // that it is a test build, with --dart-define=ALLOW_TEST_ADS_IN_RELEASE=true.
-val releaseAppId = dartDefines["ADMOB_APP_ID_ANDROID"] ?: admobTestAppId
-val allowTestAdsInRelease = dartDefines["ALLOW_TEST_ADS_IN_RELEASE"] == "true"
-tasks.matching { it.name == "preReleaseBuild" }.configureEach {
-    doFirst {
-        if (releaseAppId == admobTestAppId && !allowTestAdsInRelease) {
-            throw GradleException(
-                "Release build with the AdMob TEST app id. Pass the real ids, " +
-                    "e.g. flutter build appbundle --dart-define-from-file=" +
-                    "admob.json (see docs/ads-and-purchases.md), or add " +
-                    "--dart-define=ALLOW_TEST_ADS_IN_RELEASE=true for a test build.",
-            )
+// The message is computed here, so the task action captures only a String
+// (works with the configuration cache).
+val releaseAdsProblem: String? = run {
+    if (dartDefines["ALLOW_TEST_ADS_IN_RELEASE"] == "true") return@run null
+    val appId = dartDefines["ADMOB_APP_ID_ANDROID"] ?: admobTestAppId
+    val reportEmail = dartDefines["AD_REPORT_EMAIL"].orEmpty()
+    val reportUrl = dartDefines["AD_REPORT_URL"].orEmpty()
+    val problems = buildList {
+        if (appId == admobTestAppId) add("the AdMob TEST app id")
+        if (reportUrl.isEmpty() &&
+            (reportEmail.isEmpty() || reportEmail == "ads-report@example.com")
+        ) {
+            add("no real AD_REPORT_EMAIL or AD_REPORT_URL")
         }
+    }
+    if (problems.isEmpty()) {
+        null
+    } else {
+        "Release build with " + problems.joinToString(" and ") + ". Pass " +
+            "the real values, e.g. flutter build appbundle " +
+            "--dart-define-from-file=admob.json (see docs/ads-and-purchases.md), " +
+            "or add --dart-define=ALLOW_TEST_ADS_IN_RELEASE=true for a test build."
+    }
+}
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    val problem = releaseAdsProblem
+    doFirst {
+        if (problem != null) throw GradleException(problem)
     }
 }

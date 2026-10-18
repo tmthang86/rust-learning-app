@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart'
     show AgeRestrictedTreatment;
 import 'package:in_app_purchase/in_app_purchase.dart';
@@ -12,6 +13,7 @@ import 'package:rust_learn/data/age.dart';
 import 'package:rust_learn/data/app_state.dart';
 import 'package:rust_learn/data/course_repository.dart';
 import 'package:rust_learn/features/editor/code_editor.dart';
+import 'package:rust_learn/features/progress/monetization_widgets.dart';
 import 'package:rust_learn/main.dart';
 import 'package:rust_learn/monetization/ad_banner.dart';
 import 'package:rust_learn/monetization/ad_config.dart';
@@ -29,6 +31,10 @@ import 'fakes.dart';
 
 final today = DateTime(2026, 10, 18, 12);
 
+/// A lesson id not finished before (only a lesson's first finish counts).
+var _lessonCounter = 0;
+String nextLesson() => 'lesson-${_lessonCounter++}';
+
 class RejectingVerifier implements PurchaseVerifier {
   @override
   Future<bool> verify(StorePurchase purchase) async => false;
@@ -39,6 +45,17 @@ class SilentStore extends FakeStore {
   SilentStore() : super(restoresSilently: true);
   @override
   Future<void> restore() async => restores++;
+}
+
+/// A store whose product query waits for [gate] (slow network at start).
+class SlowStore extends FakeStore {
+  SlowStore() : super(restoresSilently: true);
+  final gate = Completer<void>();
+  @override
+  Future<StoreProduct?> queryProduct(String id) async {
+    await gate.future;
+    return super.queryProduct(id);
+  }
 }
 
 /// Banner that never loads, like a failed ad request.
@@ -229,8 +246,8 @@ void main() {
       // The ad SDK and UMP are never even started.
       expect(consent.gatheredWithUnderAge, isEmpty);
       expect(ads.initializedWith, isEmpty);
-      expect(await m.onLessonFinished(), isFalse);
-      expect(await m.onLessonFinished(), isFalse);
+      expect(await m.onLessonFinished(nextLesson()), isFalse);
+      expect(await m.onLessonFinished(nextLesson()), isFalse);
       expect(ads.shown, 0);
     });
 
@@ -267,8 +284,8 @@ void main() {
       final m = await makeMonetization(ads: ads, consent: consent);
       expect(m.adsEnabled, isFalse);
       expect(ads.initializedWith, isEmpty);
-      expect(await m.onLessonFinished(), isFalse);
-      expect(await m.onLessonFinished(), isFalse);
+      expect(await m.onLessonFinished(nextLesson()), isFalse);
+      expect(await m.onLessonFinished(nextLesson()), isFalse);
       expect(ads.shown, 0);
     });
 
@@ -282,6 +299,29 @@ void main() {
       expect(consent.gatheredWithUnderAge, hasLength(2));
       await m.onResume();
       expect(consent.gatheredWithUnderAge, hasLength(2)); // done now
+    });
+
+    test('a consent form error, or canRequestAds still false, is retried on '
+        'resume', () async {
+      final ads = FakeAds();
+      final consent = FakeConsent()
+        ..formFails = true
+        ..allowAds = false;
+      final m = await makeMonetization(ads: ads, consent: consent);
+      expect(m.adsEnabled, isFalse);
+
+      consent.formFails = false;
+      consent.allowAds = false;
+      await m.onResume();
+      expect(consent.gatheredWithUnderAge, hasLength(2));
+      expect(m.adsEnabled, isFalse);
+
+      consent.allowAds = true;
+      await m.onResume();
+      expect(consent.gatheredWithUnderAge, hasLength(3));
+      expect(m.adsEnabled, isTrue);
+      await m.onResume();
+      expect(consent.gatheredWithUnderAge, hasLength(3)); // done now
     });
 
     test('no ads on the web (no ad service)', () async {
@@ -304,8 +344,8 @@ void main() {
       await flushAsync();
       expect(m.adsEnabled, isFalse);
       expect(ads.discards, greaterThan(0));
-      expect(await m.onLessonFinished(), isFalse);
-      expect(await m.onLessonFinished(), isFalse);
+      expect(await m.onLessonFinished(nextLesson()), isFalse);
+      expect(await m.onLessonFinished(nextLesson()), isFalse);
       expect(ads.shown, 0);
     });
 
@@ -322,8 +362,8 @@ void main() {
       expect(ads.preloads, 0);
     });
 
-    test('privacy options: offered when required; withdrawing consent stops '
-        'ads', () async {
+    test('privacy options: offered when required; ads stop only when '
+        'canRequestAds turns false after the form', () async {
       final ads = FakeAds();
       final consent = FakeConsent(privacyRequired: true)
         ..allowAdsAfterPrivacyForm = false;
@@ -387,6 +427,33 @@ void main() {
       expect(ads.initializedWith, hasLength(1));
       expect(m.adsEnabled, isTrue);
     });
+
+    test('a payer who answers the age screen while the store is still '
+        'loading never gets consent or the ad SDK', () async {
+      mockPrefs({}, ageKnown: false);
+      final consent = FakeConsent();
+      final ads = FakeAds();
+      final store = SlowStore()
+        ..onRestore = [removeAds(StorePurchaseStatus.restored)];
+      final m = await makeMonetization(
+        ads: ads,
+        consent: consent,
+        store: store,
+        start: false,
+      );
+      final starting = m.start();
+      await m.age.setBirthYear(1990); // before the store replied
+      await flushAsync();
+      expect(consent.gatheredWithUnderAge, isEmpty);
+      expect(ads.initializedWith, isEmpty);
+      store.gate.complete();
+      await starting;
+      await flushAsync();
+      expect(m.purchases.entitled, isTrue);
+      expect(consent.gatheredWithUnderAge, isEmpty);
+      expect(ads.initializedWith, isEmpty);
+      expect(m.adsEnabled, isFalse);
+    });
   });
 
   group('interstitial cap', () {
@@ -398,32 +465,32 @@ void main() {
       final ads = FakeAds();
       final m = await makeMonetization(ads: ads, clock: () => now);
 
-      expect(await m.onLessonFinished(), isFalse); // first lesson ever
-      expect(await m.onLessonFinished(), isTrue);
+      expect(await m.onLessonFinished(nextLesson()), isFalse); // first lesson ever
+      expect(await m.onLessonFinished(nextLesson()), isTrue);
       expect(ads.shown, 1);
 
       now = now.add(const Duration(minutes: 4, seconds: 59));
-      expect(await m.onLessonFinished(), isFalse); // too soon
+      expect(await m.onLessonFinished(nextLesson()), isFalse); // too soon
       expect(ads.shown, 1);
 
       now = now.add(const Duration(seconds: 1)); // exactly 5 minutes
-      expect(await m.onLessonFinished(), isTrue);
+      expect(await m.onLessonFinished(nextLesson()), isTrue);
       expect(ads.shown, 2);
     });
 
     test('the cap holds across app restarts', () async {
       var now = today;
       final first = await makeMonetization(clock: () => now);
-      await first.onLessonFinished();
-      expect(await first.onLessonFinished(), isTrue);
+      await first.onLessonFinished(nextLesson());
+      expect(await first.onLessonFinished(nextLesson()), isTrue);
 
       now = now.add(const Duration(minutes: 2));
       final ads = FakeAds();
       final second = await makeMonetization(ads: ads, clock: () => now);
-      expect(await second.onLessonFinished(), isFalse);
+      expect(await second.onLessonFinished(nextLesson()), isFalse);
 
       now = now.add(const Duration(minutes: 3));
-      expect(await second.onLessonFinished(), isTrue);
+      expect(await second.onLessonFinished(nextLesson()), isTrue);
       expect(ads.shown, 1);
     });
 
@@ -431,12 +498,12 @@ void main() {
       var now = today;
       final ads = FakeAds()..interstitialReady = false;
       final m = await makeMonetization(ads: ads, clock: () => now);
-      await m.onLessonFinished();
-      expect(await m.onLessonFinished(), isFalse);
+      await m.onLessonFinished(nextLesson());
+      expect(await m.onLessonFinished(nextLesson()), isFalse);
 
       ads.interstitialReady = true;
       now = now.add(const Duration(seconds: 10));
-      expect(await m.onLessonFinished(), isTrue);
+      expect(await m.onLessonFinished(nextLesson()), isTrue);
     });
 
     test('a stuck interstitial times out and is not counted', () async {
@@ -445,8 +512,8 @@ void main() {
         ads: ads,
         interstitialShowTimeout: const Duration(milliseconds: 20),
       );
-      await m.onLessonFinished();
-      expect(await m.onLessonFinished(), isFalse);
+      await m.onLessonFinished(nextLesson());
+      expect(await m.onLessonFinished(nextLesson()), isFalse);
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getInt(Monetization.lastInterstitialKey), isNull);
     });
@@ -598,16 +665,66 @@ void main() {
       expect(p.busy, isFalse);
     });
 
-    test('Android "already owned" restores the purchase', () async {
+    test('Android "already owned" restores the purchase with one store '
+        'restore and no store sync', () async {
       await make();
+      final restoresBefore = store.restores;
       store.onBuy = [androidError('BillingResponse.itemAlreadyOwned')];
-      store.onRestore = [removeAds(StorePurchaseStatus.restored)];
+      store.onRestore = [
+        removeAds(StorePurchaseStatus.restored, needsCompletion: false),
+      ];
       await p.buy();
       await flushAsync();
       await Future<void>.delayed(const Duration(milliseconds: 100));
-      expect(store.restores, greaterThan(0));
+      expect(store.restores - restoresBefore, 1);
+      expect(store.syncs, 0);
       expect(p.entitled, isTrue);
       expect(p.state, PurchaseFlowState.restored);
+    });
+
+    test('a restore waits for its own batch, not one that arrived before '
+        'its call', () async {
+      await make();
+      final restoresBefore = store.restores;
+      // An earlier batch (another product) is still being handled, slowly,
+      // when the person taps Restore.
+      store.completeGate = Completer<void>();
+      store.emit([
+        const StorePurchase(
+          productId: 'other_product',
+          status: StorePurchaseStatus.purchased,
+          needsCompletion: true,
+        ),
+      ]);
+      await flushAsync();
+      store.onRestore = [
+        removeAds(StorePurchaseStatus.restored, needsCompletion: false),
+      ];
+      final restoring = p.restore();
+      await flushAsync();
+      store.completeGate!.complete();
+      await restoring;
+      expect(store.restores - restoresBefore, 1);
+      expect(store.syncs, 0);
+      expect(p.entitled, isTrue);
+      expect(p.state, PurchaseFlowState.restored);
+    });
+
+    test('a failed restore has its own wording', () async {
+      await make();
+      store.restoreThrows = Exception('boom');
+      await p.restore();
+      expect(p.state, PurchaseFlowState.error);
+      expect(p.errorWhileRestoring, isTrue);
+      expect(purchaseMessage(p), "Couldn't check for earlier purchases. "
+          'Please try again.');
+
+      store.restoreThrows = null;
+      store.buyThrows = Exception('boom');
+      await p.buy();
+      expect(p.errorWhileRestoring, isFalse);
+      expect(purchaseMessage(p), "The purchase didn't go through. "
+          'Please try again.');
     });
 
     test('a store exception (StoreKit 2) becomes a plain error', () async {
@@ -992,11 +1109,22 @@ void main() {
       );
     });
 
-    testWidgets('"Report ad" by the banner opens a report with the details', (
-      tester,
-    ) async {
+    testWidgets('nothing tappable beside a banner; Progress "Report an ad" '
+        'names the screen of the last banner seen', (tester) async {
       await open(tester, '/learn');
-      await tester.tap(find.text('Report ad'));
+      expect(find.text('Advertisement'), findsOneWidget);
+      expect(find.text('Report ad'), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(AdBannerSlot),
+          matching: find.byType(InkWell),
+        ),
+        findsNothing,
+      );
+      await tester.tap(find.text('Progress'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('Report an ad'), 200);
+      await tester.tap(find.text('Report an ad'));
       await tester.pumpAndSettle();
       expect(launched, hasLength(1));
       final text = Uri.decodeComponent(launched.single.toString());
@@ -1018,38 +1146,71 @@ void main() {
       expect(find.text('Report an ad'), findsNothing);
     });
 
-    testWidgets('finishing a lesson is a break for an interstitial; repeat '
-        'finishes do not count', (tester) async {
-      await open(tester, '/lesson/long/quiz');
-      Future<void> passQuiz() async {
-        await tester.tap(find.text('B'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Check'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Next'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Back to lessons'));
-        await tester.pumpAndSettle();
-      }
+    void goTo(WidgetTester tester, String location) =>
+        GoRouter.of(tester.element(find.byType(Scaffold).first)).go(location);
 
-      await passQuiz();
+    Future<void> passQuizAndLeave(WidgetTester tester) async {
+      await tester.tap(find.text('B'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Check'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Back to lessons'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('R1: solve the exercise, then pass the quiz (the usual path): '
+        'one interstitial; passing again shows none', (tester) async {
+      await open(
+        tester,
+        '/lesson/long',
+        prefs: {'track': 'fast', Monetization.sessionCountKey: 3},
+      );
+      expect(monetization.adsEnabled, isTrue);
+      await tester.ensureVisible(find.text('Run'));
+      await tester.tap(find.text('Run'));
+      await tester.runAsync(flushAsync);
+      await tester.pumpAndSettle();
+      expect(state.isCompleted('long'), isTrue); // the exercise completed it
+      await tester.ensureVisible(find.text('Take the quiz'));
+      await tester.tap(find.text('Take the quiz'));
+      await tester.pumpAndSettle();
+      await passQuizAndLeave(tester);
+      expect(find.text('Learn Rust'), findsOneWidget);
+      expect(ads.shown, 1);
+
+      // Past the time cap, so only the repeat rule can stop it.
+      await tester.runAsync(() async {
+        final sp = await SharedPreferences.getInstance();
+        await sp.remove(Monetization.lastInterstitialKey);
+      });
+      goTo(tester, '/lesson/long/quiz');
+      await tester.pumpAndSettle();
+      await passQuizAndLeave(tester);
+      expect(ads.shown, 1);
+    });
+
+    testWidgets('first lesson of the first session: no interstitial; the '
+        'next finish ("Mark as done") shows one, a repeat does not', (
+      tester,
+    ) async {
+      await open(tester, '/lesson/long/quiz');
+      await passQuizAndLeave(tester);
       expect(find.text('Learn Rust'), findsOneWidget);
       expect(ads.shown, 0); // first lesson of the first session
 
-      // Doing the same quiz again is not a new finish.
-      await tester.tap(find.text('Basics'));
+      goTo(tester, '/lesson/plain');
       await tester.pumpAndSettle();
-      await open(tester, '/lesson/long/quiz', prefs: {
-        'track': 'fast',
-        'completedLessons': ['long'],
-        Monetization.sessionCountKey: 1,
-      });
-      await passQuiz();
-      expect(ads.shown, 0);
+      await tester.tap(find.text('Mark as done'));
+      await tester.pumpAndSettle();
+      expect(ads.shown, 1);
 
-      await tester.tap(find.text('Basics'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Lesson plain'));
+      await tester.runAsync(() async {
+        final sp = await SharedPreferences.getInstance();
+        await sp.remove(Monetization.lastInterstitialKey);
+      });
+      goTo(tester, '/lesson/plain');
       await tester.pumpAndSettle();
       await tester.tap(find.text('Mark as done'));
       await tester.pumpAndSettle();
@@ -1217,14 +1378,29 @@ void main() {
     });
   });
 
+  test('release guard: any test unit id, or the placeholder report address '
+      'with no URL, means no ads', () {
+    const real = AdUnitIds(
+      banner: 'ca-app-pub-1/1',
+      interstitial: 'ca-app-pub-1/2',
+    );
+    const oneTest = AdUnitIds(
+      banner: 'ca-app-pub-1/1',
+      interstitial: 'ca-app-pub-3940256099942544/1033173712',
+    );
+    expect(oneTest.areTestIds, isTrue);
+    expect(real.areTestIds, isFalse);
+    String? problem(AdUnitIds ids, String email, [String url = '']) =>
+        releaseAdsProblem(ids: ids, reportEmail: email, reportUrl: url);
+    expect(problem(oneTest, 'a@b.c'), contains('TEST'));
+    expect(problem(real, placeholderAdReportEmail), contains('placeholder'));
+    expect(problem(real, placeholderAdReportEmail, 'https://x.y/r'), isNull);
+    expect(problem(real, 'a@b.c'), isNull);
+  });
+
   test('default ids are Google test ids', () {
     expect(AdUnitIds.android.areTestIds, isTrue);
     expect(AdUnitIds.ios.areTestIds, isTrue);
     expect(removeAdsProductId, 'remove_ads');
-  });
-
-  test('unused helpers stay referenced', () {
-    // Keeps the import of dart:async meaningful for Completer-based fakes.
-    expect(Completer<void>().isCompleted, isFalse);
   });
 }

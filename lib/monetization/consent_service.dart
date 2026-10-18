@@ -7,8 +7,9 @@ abstract class ConsentService {
   /// Refreshes consent info (`requestConsentInfoUpdate`) and, if
   /// [showForm], shows the consent form when one is required
   /// (`loadAndShowConsentFormIfRequired`). Minors get no form, so no IDFA
-  /// explainer or ATT prompt either. Returns false if the update failed
-  /// (e.g. offline); the app tries again on the next resume. Never throws.
+  /// explainer or ATT prompt either. Returns `canRequestAds()` afterwards,
+  /// or false if the update or the form failed (e.g. offline), so the app
+  /// tries again on the next resume. Never throws.
   Future<bool> gather({required bool underAgeOfConsent, bool showForm = true});
 
   /// Whether ads may be requested now (UMP `canRequestAds`).

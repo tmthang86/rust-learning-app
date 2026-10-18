@@ -62,11 +62,17 @@ class FakeAccounts implements AccountService {
   /// When set, signing in fails with this error.
   Object? signInError;
 
+  /// When true, the next sign-in creates a new account.
+  bool nextSignInIsNew = false;
+
   @override
-  Future<void> signIn(SignInMethod method) async {
+  Future<SignInResult> signIn(SignInMethod method) async {
     final e = signInError;
     if (e != null) throw e;
     emit(const AccountUser(uid: 'u1', displayName: 'Ferris'));
+    final isNew = nextSignInIsNew;
+    nextSignInIsNew = false;
+    return SignInResult(isNewUser: isNew);
   }
 
   @override
@@ -407,6 +413,9 @@ class FakeConsent implements ConsentService {
   final List<bool> formsAllowed = [];
   int privacyFormsShown = 0;
 
+  /// When true, the consent form reports an error.
+  bool formFails = false;
+
   @override
   Future<bool> gather({
     required bool underAgeOfConsent,
@@ -414,7 +423,8 @@ class FakeConsent implements ConsentService {
   }) async {
     gatheredWithUnderAge.add(underAgeOfConsent);
     formsAllowed.add(showForm);
-    return updateSucceeds;
+    if (!updateSucceeds || (showForm && formFails)) return false;
+    return allowAds;
   }
 
   @override
@@ -466,6 +476,12 @@ class FakeStore implements PurchaseService {
   /// When set, buyNonConsumable throws it (StoreKit 2 reports errors so).
   Object? buyThrows;
 
+  /// When set, restore throws it.
+  Object? restoreThrows;
+
+  /// When set, completing a purchase waits for it (slow store).
+  Completer<void>? completeGate;
+
   bool buyAccepted = true;
   int buys = 0;
   int restores = 0;
@@ -501,11 +517,17 @@ class FakeStore implements PurchaseService {
   @override
   Future<void> restore() async {
     restores++;
+    final e = restoreThrows;
+    if (e != null) throw e;
     emit(onRestore);
   }
 
   @override
-  Future<void> complete(StorePurchase purchase) async => completed.add(purchase);
+  Future<void> complete(StorePurchase purchase) async {
+    final g = completeGate;
+    if (g != null) await g.future;
+    completed.add(purchase);
+  }
 
   @override
   Future<void> syncWithStore() async {

@@ -57,6 +57,56 @@ void main() {
     expect(sync.completed, {'u1-l9'});
   });
 
+  test('a child whose delete-only sign-in created a new account: it is '
+      'deleted at once, progress stays', () async {
+    mockPrefs({
+      'track': 'fast',
+      'birthYear': childYear,
+      'completedLessons': ['u1-l1'],
+    });
+    final accounts = FakeAccounts()..nextSignInIsNew = true;
+    final sync = FakeSync();
+    final state = await makeState(accounts, sync);
+
+    await state.signIn(SignInMethod.google, toDelete: true);
+    await settle();
+
+    expect(accounts.deleted, isTrue);
+    expect(accounts.reauthCount, 0);
+    expect(state.user, isNull);
+    expect(state.signInCreatedNoAccount, isTrue);
+    expect(state.completedLessons, {'u1-l1'});
+    expect(state.childAccountToDelete, isFalse);
+    expect(sync.loads, isEmpty);
+  });
+
+  test('if deleting that new account fails, the child is signed out here '
+      'and offered deletion', () async {
+    mockPrefs({'track': 'fast', 'birthYear': childYear});
+    final accounts = FakeAccounts()
+      ..nextSignInIsNew = true
+      ..deleteError = Exception('offline');
+    final state = await makeState(accounts, FakeSync());
+
+    await state.signIn(SignInMethod.google, toDelete: true);
+    await settle();
+
+    expect(accounts.deleted, isFalse);
+    expect(state.user, isNull);
+    expect(state.childAccountToDelete, isTrue);
+  });
+
+  test('an adult signing in with a new account keeps it', () async {
+    mockPrefs({'track': 'fast'});
+    final accounts = FakeAccounts()..nextSignInIsNew = true;
+    final state = await makeState(accounts, FakeSync());
+    await state.signIn(SignInMethod.google);
+    await settle();
+    await state.syncing;
+    expect(accounts.deleted, isFalse);
+    expect(state.user, isNotNull);
+  });
+
   test('deleting as a child keeps the progress on this device', () async {
     mockPrefs({
       'track': 'fast',
@@ -195,6 +245,22 @@ void main() {
       expect(find.text('Your account has been deleted.'), findsOneWidget);
       expect(state.completedLessons, {'u1-l1'});
       expect(state.childAccountToDelete, isFalse);
+    });
+
+    testWidgets('/delete-account: a sign-in with no account says so', (
+      tester,
+    ) async {
+      final accounts = FakeAccounts()..nextSignInIsNew = true;
+      final state = await open(tester, '/delete-account', accounts);
+      await tester.tap(find.text('Continue with Google'));
+      await tester.runAsync(settle);
+      await tester.pumpAndSettle();
+      expect(state.user, isNull);
+      expect(accounts.deleted, isTrue);
+      expect(
+        find.textContaining('There was no Learn Rust account'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('/delete-account: a child who signs in and leaves without '
