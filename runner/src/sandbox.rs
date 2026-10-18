@@ -540,7 +540,10 @@ async fn collect(
         if stderr.is_none() {
             stderr = Some(finish(&mut err_task).await);
         }
-        Ok::<_, std::io::Error>(status.code())
+        // A process killed by a signal has no exit code; report it the way a
+        // shell does (128 + signal) so it is treated as stopped or timed out.
+        use std::os::unix::process::ExitStatusExt;
+        Ok::<_, std::io::Error>(status.code().or_else(|| status.signal().map(|s| 128 + s)))
     }
     .await;
 
