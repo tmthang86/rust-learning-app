@@ -31,6 +31,9 @@ enum AccountErrorKind {
   /// No connection, or the server took too long.
   network,
 
+  /// Deleting may or may not have worked; it couldn't be checked.
+  unconfirmed,
+
   notSignedIn,
   other,
 }
@@ -81,8 +84,9 @@ abstract class AccountService {
   /// Revoking Apple tokens is best-effort.
   Future<void> deleteUser(ReauthProof proof);
 
-  /// After [deleteUser] failed: whether the account is in fact still there.
-  Future<bool> accountStillExists();
+  /// After [deleteUser] failed: whether the account is in fact still
+  /// there, or null when that can't be told right now (offline).
+  Future<bool?> accountStillExists();
 }
 
 /// Used when Firebase isn't configured: progress stays on the device.
@@ -108,7 +112,7 @@ class DisabledAccountService implements AccountService {
   @override
   Future<void> deleteUser(ReauthProof proof) async => throw _off;
   @override
-  Future<bool> accountStillExists() async => false;
+  Future<bool?> accountStillExists() async => false;
 }
 
 /// Maps Firebase Auth error codes to what the UI explains.
@@ -120,12 +124,10 @@ AccountException accountExceptionFrom(Object e) {
       'cancelled-popup-request' ||
       'web-context-cancelled' ||
       'web-context-canceled' ||
-      'canceled' =>
-        AccountErrorKind.cancelled,
+      'canceled' => AccountErrorKind.cancelled,
       'popup-blocked' => AccountErrorKind.popupBlocked,
       'account-exists-with-different-credential' ||
-      'credential-already-in-use' =>
-        AccountErrorKind.otherProvider,
+      'credential-already-in-use' => AccountErrorKind.otherProvider,
       'user-mismatch' => AccountErrorKind.wrongAccount,
       'network-request-failed' => AccountErrorKind.network,
       _ => AccountErrorKind.other,
@@ -136,7 +138,8 @@ AccountException accountExceptionFrom(Object e) {
 }
 
 class FirebaseAccountService implements AccountService {
-  FirebaseAccountService([FirebaseAuth? auth]) : _auth = auth ?? FirebaseAuth.instance;
+  FirebaseAccountService([FirebaseAuth? auth])
+    : _auth = auth ?? FirebaseAuth.instance;
 
   final FirebaseAuth _auth;
 
@@ -160,16 +163,20 @@ class FirebaseAccountService implements AccountService {
     // Apple sign-in on Android needs extra web-flow setup, so it's offered on
     // Apple platforms and the web. App Store rules require it on iOS
     // whenever Google sign-in is offered.
-    final apple = kIsWeb ||
+    final apple =
+        kIsWeb ||
         defaultTargetPlatform == TargetPlatform.iOS ||
         defaultTargetPlatform == TargetPlatform.macOS;
     return [SignInMethod.google, if (apple) SignInMethod.apple];
   }
 
   static AuthProvider _provider(SignInMethod method) => switch (method) {
-        SignInMethod.google => GoogleAuthProvider(),
-        SignInMethod.apple => AppleAuthProvider()..addScope('email')..addScope('name'),
-      };
+    SignInMethod.google => GoogleAuthProvider(),
+    SignInMethod.apple =>
+      AppleAuthProvider()
+        ..addScope('email')
+        ..addScope('name'),
+  };
 
   @override
   Future<void> signIn(SignInMethod method) async {
@@ -191,10 +198,14 @@ class FirebaseAccountService implements AccountService {
   @override
   Future<ReauthProof> reauthenticate() async {
     final user = _auth.currentUser;
-    if (user == null) throw const AccountException(AccountErrorKind.notSignedIn);
+    if (user == null) {
+      throw const AccountException(AccountErrorKind.notSignedIn);
+    }
     final apple = user.providerData.any((p) => p.providerId == _appleId);
     // Google is the only other provider the app offers.
-    final provider = _provider(apple ? SignInMethod.apple : SignInMethod.google);
+    final provider = _provider(
+      apple ? SignInMethod.apple : SignInMethod.google,
+    );
     try {
       // No await before this call: on the web the pop-up must open while
       // the browser still counts it as a response to the click.
@@ -202,8 +213,9 @@ class FirebaseAccountService implements AccountService {
           ? await user.reauthenticateWithPopup(provider)
           : await user.reauthenticateWithProvider(provider);
       return ReauthProof(
-        appleAuthorizationCode:
-            apple ? credential.additionalUserInfo?.authorizationCode : null,
+        appleAuthorizationCode: apple
+            ? credential.additionalUserInfo?.authorizationCode
+            : null,
       );
     } catch (e) {
       throw accountExceptionFrom(e);
@@ -213,7 +225,9 @@ class FirebaseAccountService implements AccountService {
   @override
   Future<void> deleteUser(ReauthProof proof) async {
     final user = _auth.currentUser;
-    if (user == null) throw const AccountException(AccountErrorKind.notSignedIn);
+    if (user == null) {
+      throw const AccountException(AccountErrorKind.notSignedIn);
+    }
     final code = proof.appleAuthorizationCode;
     if (code != null) {
       try {
@@ -233,17 +247,20 @@ class FirebaseAccountService implements AccountService {
   }
 
   @override
-  Future<bool> accountStillExists() async {
+  Future<bool?> accountStillExists() async {
     final user = _auth.currentUser;
     if (user == null) return false;
     try {
-      await user.reload();
+      // Asks the server, not the cached user.
+      await user.reload().timeout(const Duration(seconds: 10));
       return true;
     } on FirebaseAuthException catch (e) {
-      return !(e.code == 'user-not-found' || e.code == 'user-token-expired');
+      if (e.code == 'user-not-found' || e.code == 'user-token-expired') {
+        return false;
+      }
+      return null;
     } catch (_) {
-      // Can't tell (offline): assume it exists so progress gets restored.
-      return true;
+      return null; // offline or timed out: can't tell
     }
   }
 }

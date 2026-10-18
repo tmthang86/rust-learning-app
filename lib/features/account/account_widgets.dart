@@ -11,19 +11,23 @@ String accountErrorMessage(AccountErrorKind kind, {SignInMethod? attempted}) =>
         'Your browser blocked the sign-in window. Allow pop-ups for this '
             'site, then try again.',
       AccountErrorKind.otherProvider => switch (attempted) {
-          SignInMethod.apple =>
-            'This email already has an account that uses Google. '
-                'Please use "Continue with Google" instead.',
-          SignInMethod.google =>
-            'This email already has an account that uses Apple. '
-                'Please use "Continue with Apple" instead.',
-          null => 'This email already has an account with another sign-in method.',
-        },
+        SignInMethod.apple =>
+          'This email already has an account that uses Google. '
+              'Please use "Continue with Google" instead.',
+        SignInMethod.google =>
+          'This email already has an account that uses Apple. '
+              'Please use "Continue with Apple" instead.',
+        null =>
+          'This email already has an account with another sign-in method.',
+      },
       AccountErrorKind.wrongAccount =>
         'That was a different account. Please confirm with the account you '
             'are signed in with.',
       AccountErrorKind.network =>
         "Couldn't reach the server. Check your connection and try again.",
+      AccountErrorKind.unconfirmed =>
+        "We couldn't check whether it went through. When you're online, "
+            'try signing in: if the account still exists, delete it again.',
       AccountErrorKind.notSignedIn => 'Please sign in first.',
       AccountErrorKind.other => 'Something went wrong. Please try again.',
     };
@@ -68,12 +72,16 @@ class _SignInButtonsState extends State<SignInButtons> {
             padding: const EdgeInsets.only(top: 8),
             child: OutlinedButton.icon(
               onPressed: _busy ? null : () => _signIn(method),
-              icon: Icon(method == SignInMethod.apple
-                  ? Icons.apple
-                  : Icons.account_circle_outlined),
-              label: Text(method == SignInMethod.apple
-                  ? 'Continue with Apple'
-                  : 'Continue with Google'),
+              icon: Icon(
+                method == SignInMethod.apple
+                    ? Icons.apple
+                    : Icons.account_circle_outlined,
+              ),
+              label: Text(
+                method == SignInMethod.apple
+                    ? 'Continue with Apple'
+                    : 'Continue with Google',
+              ),
             ),
           ),
       ],
@@ -152,7 +160,9 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
       final kind = e is AccountException ? e.kind : AccountErrorKind.other;
       setState(() {
         _busy = false;
-        _error = "Your account wasn't deleted. ${accountErrorMessage(kind)}";
+        _error = kind == AccountErrorKind.unconfirmed
+            ? 'Your account may not have been deleted. ${accountErrorMessage(kind)}'
+            : "Your account wasn't deleted. ${accountErrorMessage(kind)}";
       });
     }
   }
@@ -160,45 +170,49 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return AlertDialog(
-      title: const Text('Delete your account?'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'This permanently deletes your account and the progress saved '
-            'with it on all your devices. Progress on this device is cleared '
-            "too. This can't be undone.\n\n"
-            "You'll be asked to sign in again to confirm.",
-          ),
-          if (_busy) ...[
-            const SizedBox(height: 16),
-            const LinearProgressIndicator(),
-          ],
-          if (_error != null) ...[
-            const SizedBox(height: 16),
-            Semantics(
-              liveRegion: true,
-              child: Text(_error!, style: TextStyle(color: scheme.error)),
+    // The system back button must not close the dialog mid-deletion.
+    return PopScope(
+      canPop: !_busy,
+      child: AlertDialog(
+        title: const Text('Delete your account?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'This permanently deletes your account and the progress saved '
+              'with it on all your devices. Progress on this device is cleared '
+              "too. This can't be undone.\n\n"
+              "You'll be asked to sign in again to confirm.",
             ),
+            if (_busy) ...[
+              const SizedBox(height: 16),
+              const LinearProgressIndicator(),
+            ],
+            if (_error != null) ...[
+              const SizedBox(height: 16),
+              Semantics(
+                liveRegion: true,
+                child: Text(_error!, style: TextStyle(color: scheme.error)),
+              ),
+            ],
           ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: _busy ? null : () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: scheme.error,
+              foregroundColor: scheme.onError,
+            ),
+            onPressed: _busy ? null : _delete,
+            child: const Text('Delete account'),
+          ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: _busy ? null : () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: scheme.error,
-            foregroundColor: scheme.onError,
-          ),
-          onPressed: _busy ? null : _delete,
-          child: const Text('Delete account'),
-        ),
-      ],
     );
   }
 }

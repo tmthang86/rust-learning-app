@@ -79,7 +79,9 @@ Google account and an Apple developer account.
 - The rules check the whole document on every write, so one bad field
   (written by hand, or by an old build) would block all later writes. When
   the app finds such a document it rewrites it in one write with only the
-  allowed fields.
+  allowed fields, but only when the read came from the server with no
+  writes of its own still pending. A cached or half-written copy is out of
+  date, and rewriting from it could remove lessons added on another device.
 - `test/firestore_rules/run.sh` checks the rules against the Firestore
   emulator (needs Node and Java).
 
@@ -106,5 +108,9 @@ account is not deleted, the app writes the cloud document back, combining
 the saved copy with what this device has. That write can itself fail (for
 example when the connection drops at that moment); then whatever this
 device holds is synced again at the next sign-in, but lessons that were
-only in the cloud may be lost. If deleting reports an error but the account
-is in fact gone, nothing is written back.
+only in the cloud may be lost. The app writes the document back only when
+it can confirm with the server that the account still exists. If deleting
+reports an error but the account is in fact gone, nothing is written back.
+If it can't tell (for example a timeout while offline), it writes nothing,
+keeps the progress on the device and says so. If the account turns out to
+still exist, the next sign-in uploads that progress again.

@@ -12,7 +12,9 @@ import 'package:rust_learn/runner/code_runner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FakeAccounts implements AccountService {
-  FakeAccounts({AccountUser? initialUser}) : _user = initialUser;
+  FakeAccounts({AccountUser? initialUser, List<String>? steps})
+    : _user = initialUser,
+      steps = steps ?? [];
 
   final _controller = StreamController<AccountUser?>.broadcast();
   AccountUser? _user;
@@ -26,8 +28,13 @@ class FakeAccounts implements AccountService {
   /// With [deleteError]: the account was removed anyway.
   bool goneDespiteError = false;
 
-  /// Order of the deletion steps, for checking the sequence.
-  final List<String> steps = [];
+  /// Order of the deletion steps, for checking the sequence. Can be shared
+  /// with [FakeSync.steps] to see auth and cloud steps in one list.
+  final List<String> steps;
+
+  /// What [accountStillExists] answers after a failed delete; null means
+  /// "can't tell". Defaults to the truth.
+  bool? Function()? stillExistsAnswer;
   int reauthCount = 0;
   bool deleted = false;
 
@@ -46,6 +53,7 @@ class FakeAccounts implements AccountService {
   Stream<AccountUser?> get userChanges => _controller.stream;
   @override
   List<SignInMethod> get methods => SignInMethod.values;
+
   /// When set, signing in fails with this error.
   Object? signInError;
 
@@ -55,20 +63,31 @@ class FakeAccounts implements AccountService {
     if (e != null) throw e;
     emit(const AccountUser(uid: 'u1', displayName: 'Ferris'));
   }
+
   @override
   Future<void> signOut() async => emit(null);
+
+  /// When set, the confirming sign-in waits for it.
+  Completer<void>? reauthGate;
 
   @override
   Future<ReauthProof> reauthenticate() async {
     steps.add('reauth');
+    final g = reauthGate;
+    if (g != null) await g.future;
     reauthCount++;
     if (cancelReauth) throw const AccountException(AccountErrorKind.cancelled);
     return const ReauthProof(appleAuthorizationCode: 'code');
   }
 
+  /// When set, deleting the user waits for it.
+  Completer<void>? deleteUserGate;
+
   @override
   Future<void> deleteUser(ReauthProof proof) async {
     steps.add('deleteUser');
+    final g = deleteUserGate;
+    if (g != null) await g.future;
     final e = deleteError;
     if (e != null) {
       if (goneDespiteError) deleted = true;
@@ -80,18 +99,26 @@ class FakeAccounts implements AccountService {
   }
 
   @override
-  Future<bool> accountStillExists() async => !deleted;
+  Future<bool?> accountStillExists() async =>
+      stillExistsAnswer != null ? stillExistsAnswer!() : !deleted;
 }
 
 class CloudDoc {
-  CloudDoc({this.track, Set<String>? completed, this.broken = false})
-      : completed = completed ?? {};
+  CloudDoc({this.track, Set<String>? completed}) : completed = completed ?? {};
   Track? track;
   final Set<String> completed;
 
-  /// Holds a field firestore.rules refuses, so merge writes fail until the
-  /// whole document is replaced.
-  bool broken;
+  /// Raw fields stored on top of the clean ones, e.g. `{'track': 42}` or
+  /// `{'legacy': true}`. firestore.rules refuses merge writes to a document
+  /// with such fields until it is replaced as a whole.
+  final Map<String, Object?> raw = {};
+
+  bool get broken =>
+      raw.keys.any((k) => !RemoteProgress.fields.contains(k)) ||
+      (raw.containsKey('track') && raw['track'] is! String) ||
+      (raw.containsKey('completedLessons') && raw['completedLessons'] is! List);
+
+  void breakWith(Map<String, Object?> fields) => raw.addAll(fields);
 }
 
 class FakeWriteError implements Exception {
@@ -128,6 +155,10 @@ class FakeSync implements ProgressSync {
   /// What [flush] answers.
   bool flushResult = true;
 
+  /// Simulates a snapshot from the local cache or with a write still
+  /// pending (Firestore then shows `updatedAt` as null).
+  bool unconfirmedReads = false;
+
   CloudDoc doc(String uid) => docs.putIfAbsent(uid, CloudDoc.new);
 
   // The `u1` document, for the original tests.
@@ -148,12 +179,15 @@ class FakeSync implements ProgressSync {
     final snapshot = docs[uid];
     final g = gate;
     if (g != null) await g.future;
-    if (failLoads) throw const FakeWriteError('unavailable');
-    return RemoteProgress(
-      track: snapshot?.track,
-      completed: {...?snapshot?.completed},
-      needsRepair: snapshot?.broken ?? false,
-    );
+    if (failLoads) throw const SyncUnavailable('offline');
+    if (snapshot == null) return RemoteProgress.fromMap(null);
+    // Built like the real thing, through the same parser.
+    return RemoteProgress.fromMap({
+      if (snapshot.track != null) 'track': snapshot.track!.name,
+      'completedLessons': snapshot.completed.toList(),
+      'updatedAt': unconfirmedReads ? null : 'server-time',
+      ...snapshot.raw,
+    }, confirmed: !unconfirmedReads);
   }
 
   @override
@@ -170,7 +204,11 @@ class FakeSync implements ProgressSync {
   }
 
   @override
-  Future<void> replace(String uid, {Track? track, required Set<String> completed}) async {
+  Future<void> replace(
+    String uid, {
+    Track? track,
+    required Set<String> completed,
+  }) async {
     steps?.add('replace');
     _write(uid, replacing: true);
     replaces++;

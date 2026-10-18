@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rust_learn/app/router.dart';
 import 'package:rust_learn/data/app_state.dart';
+
 import 'dart:async';
 
 import 'package:rust_learn/data/course_repository.dart';
@@ -272,9 +273,9 @@ void main() {
   );
 
   TextEditingValue v(String text, int start, [int? end]) => TextEditingValue(
-        text: text,
-        selection: TextSelection(baseOffset: start, extentOffset: end ?? start),
-      );
+    text: text,
+    selection: TextSelection(baseOffset: start, extentOffset: end ?? start),
+  );
 
   test('Tab indents selected lines, Shift+Tab outdents them (F9)', () {
     const code = 'fn main() {\nlet a = 1;\nlet b = 2;\n}';
@@ -299,11 +300,15 @@ void main() {
     expect(indentLines(v('ab', 1)).text, 'a    b');
   });
 
-  testWidgets('Shift+Tab without a selection leaves the editor (F9)', (tester) async {
+  testWidgets('Shift+Tab without a selection leaves the editor (F9)', (
+    tester,
+  ) async {
     await open(tester, '/playground');
     await tester.tap(find.byType(TextField));
     await tester.pump();
-    final controller = tester.widget<TextField>(find.byType(TextField)).controller!;
+    final controller = tester
+        .widget<TextField>(find.byType(TextField))
+        .controller!;
     final before = controller.text;
     controller.selection = const TextSelection.collapsed(offset: 0);
     await tester.pump();
@@ -324,7 +329,11 @@ void main() {
     await open(
       tester,
       '/playground',
-      runResult: const RunResult(success: true, stage: RunStage.run, stdout: 'ran'),
+      runResult: const RunResult(
+        success: true,
+        stage: RunStage.run,
+        stdout: 'ran',
+      ),
     );
     await tester.tap(find.byType(TextField));
     await tester.pump();
@@ -335,125 +344,261 @@ void main() {
     expect(find.text('ran'), findsOneWidget);
   });
 
-  testWidgets('every run is announced with its output, verdict on its own (F5)',
-      (tester) async {
-    await open(
-      tester,
-      '/lesson/exercise',
-      runResult: const RunResult(success: true, stage: RunStage.run, stdout: 'hi\n'),
-    );
-    final handle = tester.ensureSemantics();
-    tester.takeAnnouncements();
+  testWidgets(
+    'every run is announced with its output, verdict on its own (F5)',
+    (tester) async {
+      await open(
+        tester,
+        '/lesson/exercise',
+        runResult: const RunResult(
+          success: true,
+          stage: RunStage.run,
+          stdout: 'hi\n',
+        ),
+      );
+      final handle = tester.ensureSemantics();
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(supportsAnnounce: true);
+      addTearDown(
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
+      await tester.pump();
+      tester.takeAnnouncements();
 
-    await tester.tap(find.text('Run'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Run'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Run'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Run'));
+      await tester.pumpAndSettle();
 
-    final said = tester.takeAnnouncements().map((a) => a.message).toList();
-    expect(said, ['Output: hi Correct! Nice work.', 'Output: hi Correct! Nice work.']);
+      final said = tester.takeAnnouncements().map((a) => a.message).toList();
+      expect(said, [
+        'Output: hi Correct! Nice work.',
+        'Output: hi Correct! Nice work.',
+      ]);
 
-    final verdict = tester.getSemantics(find.text('Correct! Nice work.'));
-    expect(verdict.label, 'Correct! Nice work.');
-    handle.dispose();
-  });
+      final verdict = tester.getSemantics(find.text('Correct! Nice work.'));
+      expect(verdict.label, 'Correct! Nice work.');
+      handle.dispose();
+    },
+  );
 
   test('compile errors and failures are announced too (F5)', () {
     expect(
-      runAnnouncement(const RunResult(
-          success: false, stage: RunStage.compile, stderr: 'error[E0308]: mismatched types')),
+      runAnnouncement(
+        const RunResult(
+          success: false,
+          stage: RunStage.compile,
+          stderr: 'error[E0308]: mismatched types',
+        ),
+      ),
       "Your code didn't compile. error[E0308]: mismatched types",
     );
     expect(
-      runAnnouncement(const RunResult(success: true, stage: RunStage.run, warnings: 'w')),
+      runAnnouncement(
+        const RunResult(success: true, stage: RunStage.run, warnings: 'w'),
+      ),
       'Your program ran with no output. There are compiler warnings.',
     );
   });
 
-  CourseRepository longLesson() => fakeCourse(extraFiles: {
-        'assets/content/lessons/long.json': '''
+  CourseRepository longLesson() => fakeCourse(
+    extraFiles: {
+      'assets/content/lessons/long.json':
+          '''
 {"id": "long", "title": "Long",
  "sections": [${List.generate(40, (i) => '{"type": "text", "text": "Paragraph $i"}').join(',')}],
  "exercise": {"prompt": "Print hi", "starter": "fn main() {}", "expectedOutput": "hi"}}
 ''',
-      });
+    },
+  );
 
-  testWidgets('the exercise code survives scrolling away and back (F7)', (tester) async {
+  testWidgets('the exercise code survives scrolling away and back (F7)', (
+    tester,
+  ) async {
     await open(tester, '/lesson/long', repository: longLesson());
     tester.view.physicalSize = const Size(390, 600);
     await tester.pumpAndSettle();
 
     final list = find.byType(Scrollable).first;
-    await tester.scrollUntilVisible(find.byType(TextField), 300, scrollable: list);
-    await tester.enterText(find.byType(TextField), 'fn main() { println!("mine"); }');
+    await tester.scrollUntilVisible(
+      find.byType(TextField),
+      300,
+      scrollable: list,
+    );
+    await tester.enterText(
+      find.byType(TextField),
+      'fn main() { println!("mine"); }',
+    );
     await tester.pump();
     // A focused field keeps itself alive; the learner has moved on.
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pump();
 
-    await tester.scrollUntilVisible(find.text('Paragraph 0'), -300, scrollable: list);
-    expect(find.byType(TextField, skipOffstage: false), findsOneWidget); // kept alive
-    await tester.scrollUntilVisible(find.byType(TextField), 300, scrollable: list);
+    await tester.scrollUntilVisible(
+      find.text('Paragraph 0'),
+      -300,
+      scrollable: list,
+    );
+    expect(
+      find.byType(TextField, skipOffstage: false),
+      findsOneWidget,
+    ); // kept alive
+    await tester.scrollUntilVisible(
+      find.byType(TextField),
+      300,
+      scrollable: list,
+    );
     expect(find.text('fn main() { println!("mine"); }'), findsOneWidget);
   });
 
-  testWidgets('a result that arrives after leaving the lesson still counts (F7)',
-      (tester) async {
-    final runner = _GatedRunner();
-    SharedPreferences.setMockInitialValues({'track': 'fast'});
-    tester.view.physicalSize = const Size(390, 1400);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    final s = (await tester.runAsync(() async {
-      final st = AppState(
-        repository: fakeCourse(),
-        runner: runner,
-        prefs: await SharedPreferences.getInstance(),
+  testWidgets(
+    'a result that arrives after leaving the lesson still counts (F7)',
+    (tester) async {
+      final runner = _GatedRunner();
+      SharedPreferences.setMockInitialValues({'track': 'fast'});
+      tester.view.physicalSize = const Size(390, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final s = (await tester.runAsync(() async {
+        final st = AppState(
+          repository: fakeCourse(),
+          runner: runner,
+          prefs: await SharedPreferences.getInstance(),
+        );
+        await st.load();
+        return st;
+      }))!;
+      await tester.pumpWidget(
+        RustLearnApp(state: s, initialLocation: '/lesson/exercise'),
       );
-      await st.load();
-      return st;
-    }))!;
-    await tester.pumpWidget(RustLearnApp(state: s, initialLocation: '/lesson/exercise'));
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Run'));
-    await tester.pump();
+      await tester.tap(find.text('Run'));
+      await tester.pump();
+      await tester.tap(find.byTooltip('Back to lessons'));
+      await tester.pumpAndSettle();
+      expect(find.text('Learn Rust'), findsOneWidget);
+
+      runner.gate.complete(
+        const RunResult(success: true, stage: RunStage.run, stdout: 'hi'),
+      );
+      await tester.pumpAndSettle();
+      expect(s.isCompleted('exercise'), isTrue);
+    },
+  );
+
+  testWidgets(
+    'a deep-linked lesson has a way back, also with system back (F8)',
+    (tester) async {
+      await open(tester, '/lesson/plain');
+      final handled = await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(handled, isTrue); // the app didn't close
+      expect(find.text('Learn Rust'), findsOneWidget);
+    },
+  );
+
+  testWidgets('a deep-linked lesson shows a button to the course map (F8)', (
+    tester,
+  ) async {
+    await open(tester, '/lesson/plain');
     await tester.tap(find.byTooltip('Back to lessons'));
     await tester.pumpAndSettle();
     expect(find.text('Learn Rust'), findsOneWidget);
-
-    runner.gate.complete(const RunResult(success: true, stage: RunStage.run, stdout: 'hi'));
-    await tester.pumpAndSettle();
-    expect(s.isCompleted('exercise'), isTrue);
   });
 
-  testWidgets('a deep-linked lesson has a way back, also with system back (F8)',
-      (tester) async {
-    await open(tester, '/lesson/plain');
-    final handled = await tester.binding.handlePopRoute();
-    await tester.pumpAndSettle();
-    expect(handled, isTrue); // the app didn't close
-    expect(find.text('Learn Rust'), findsOneWidget);
-  });
+  testWidgets(
+    'a lesson opened from the course map keeps the normal back button',
+    (tester) async {
+      await open(tester, '/learn');
+      await tester.tap(find.text('Basics'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Lesson plain'));
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Back to lessons'), findsNothing);
+      expect(find.byType(BackButton), findsOneWidget);
+    },
+  );
 
-  testWidgets('a deep-linked lesson shows a button to the course map (F8)',
-      (tester) async {
-    await open(tester, '/lesson/plain');
-    await tester.tap(find.byTooltip('Back to lessons'));
-    await tester.pumpAndSettle();
-    expect(find.text('Learn Rust'), findsOneWidget);
-  });
+  testWidgets(
+    'without announcement support, a live region changes every run (N3)',
+    (tester) async {
+      await open(
+        tester,
+        '/playground',
+        runResult: const RunResult(
+          success: true,
+          stage: RunStage.run,
+          stdout: 'hi',
+        ),
+      );
+      final handle = tester.ensureSemantics();
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(supportsAnnounce: false);
+      addTearDown(
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
+      await tester.pump();
+      tester.takeAnnouncements();
 
-  testWidgets('a lesson opened from the course map keeps the normal back button',
-      (tester) async {
-    await open(tester, '/learn');
-    await tester.tap(find.text('Basics'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Lesson plain'));
-    await tester.pumpAndSettle();
-    expect(find.byTooltip('Back to lessons'), findsNothing);
-    expect(find.byType(BackButton), findsOneWidget);
-  });
+      await tester.tap(find.text('Run'));
+      await tester.pumpAndSettle();
+      expect(
+        find.bySemanticsLabel(RegExp(r'^Run 1\. Output: hi')),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Run'));
+      await tester.pumpAndSettle();
+      expect(
+        find.bySemanticsLabel(RegExp(r'^Run 2\. Output: hi')),
+        findsOneWidget,
+      );
+      expect(
+        tester.getSemantics(find.bySemanticsLabel(RegExp(r'^Run 2\.'))),
+        isSemantics(isLiveRegion: true),
+      );
+      expect(tester.takeAnnouncements(), isEmpty);
+      handle.dispose();
+    },
+  );
+
+  testWidgets(
+    'a result arriving after sign-out does not mark the lesson (N2)',
+    (tester) async {
+      final runner = _GatedRunner();
+      SharedPreferences.setMockInitialValues({'track': 'fast'});
+      tester.view.physicalSize = const Size(390, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final accounts = FakeAccounts();
+      final s = (await tester.runAsync(() async {
+        final st = await makeState(
+          accounts,
+          FakeSync(),
+          repository: fakeCourse(),
+          runner: runner,
+        );
+        await st.load();
+        return st;
+      }))!;
+      accounts.signInAs('u1');
+      await tester.pumpWidget(
+        RustLearnApp(state: s, initialLocation: '/lesson/exercise'),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Run'));
+      await tester.pump();
+      await tester.runAsync(() => s.signOut(force: true));
+      await tester.pumpAndSettle();
+
+      runner.gate.complete(
+        const RunResult(success: true, stage: RunStage.run, stdout: 'hi'),
+      );
+      await tester.pumpAndSettle();
+      expect(s.isCompleted('exercise'), isFalse);
+    },
+  );
 }
 
 class _GatedRunner implements CodeRunner {

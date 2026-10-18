@@ -30,10 +30,14 @@ class CodeEditor extends StatefulWidget {
 
 class _CodeEditorState extends State<CodeEditor>
     with AutomaticKeepAliveClientMixin {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.initialCode);
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialCode,
+  );
   RunResult? _result;
   bool _running = false;
+
+  /// Counts runs, so the fallback live region below changes every time.
+  int _runCount = 0;
 
   /// Keeps the code and the last result when the lesson list scrolls the
   /// editor out of view (ListView disposes off-screen children otherwise).
@@ -47,7 +51,10 @@ class _CodeEditorState extends State<CodeEditor>
   }
 
   static bool _matches(RunResult? r, String? expected) =>
-      expected != null && r != null && r.success && r.stdout.trim() == expected.trim();
+      expected != null &&
+      r != null &&
+      r.success &&
+      r.stdout.trim() == expected.trim();
 
   bool get _solved => _matches(_result, widget.expectedOutput);
 
@@ -58,30 +65,38 @@ class _CodeEditorState extends State<CodeEditor>
     // and solving still counts then.
     final expected = widget.expectedOutput;
     final onSolved = widget.onSolved;
+    // ...but only for the same person: not after a sign-out, a switch to
+    // another account, or during account deletion.
+    final epoch = state.accountEpoch;
     setState(() => _running = true);
     final result = await state.runner.run(_controller.text);
     final solved = _matches(result, expected);
-    if (solved) onSolved?.call();
+    if (solved && state.accountEpoch == epoch) onSolved?.call();
     if (!mounted) return;
     setState(() {
       _result = result;
       _running = false;
+      _runCount++;
     });
     // Screen readers hear every run, including repeats with the same text.
-    SemanticsService.sendAnnouncement(
-      View.of(context),
-      runAnnouncement(result, solved: expected == null ? null : solved),
-      Directionality.of(context),
-    );
+    // Where the platform doesn't support announcements (they are
+    // deprecated on Android), the output's live region does the job.
+    if (MediaQuery.supportsAnnounceOf(context)) {
+      SemanticsService.sendAnnouncement(
+        View.of(context),
+        runAnnouncement(result, solved: expected == null ? null : solved),
+        Directionality.of(context),
+      );
+    }
   }
 
   void _indent() => _controller.value = indentLines(_controller.value);
   void _outdent() => _controller.value = outdentLines(_controller.value);
 
   void _reset() => setState(() {
-        _controller.text = widget.initialCode;
-        _result = null;
-      });
+    _controller.text = widget.initialCode;
+    _result = null;
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -100,9 +115,12 @@ class _CodeEditorState extends State<CodeEditor>
           child: Shortcuts(
             shortcuts: const {
               SingleActivator(LogicalKeyboardKey.tab): _IndentIntent(),
-              SingleActivator(LogicalKeyboardKey.tab, shift: true): _OutdentIntent(),
-              SingleActivator(LogicalKeyboardKey.enter, control: true): _RunIntent(),
-              SingleActivator(LogicalKeyboardKey.enter, meta: true): _RunIntent(),
+              SingleActivator(LogicalKeyboardKey.tab, shift: true):
+                  _OutdentIntent(),
+              SingleActivator(LogicalKeyboardKey.enter, control: true):
+                  _RunIntent(),
+              SingleActivator(LogicalKeyboardKey.enter, meta: true):
+                  _RunIntent(),
             },
             child: Actions(
               actions: {
@@ -128,7 +146,8 @@ class _CodeEditorState extends State<CodeEditor>
               },
               child: Semantics(
                 label: 'Rust code',
-                hint: 'Tab indents. Shift+Tab outdents selected lines, or '
+                hint:
+                    'Tab indents. Shift+Tab outdents selected lines, or '
                     'leaves the editor when nothing is selected. '
                     'Control+Enter runs the code.',
                 child: TextField(
@@ -171,7 +190,14 @@ class _CodeEditorState extends State<CodeEditor>
         ),
         if (result != null) ...[
           const SizedBox(height: 8),
-          _RunOutput(result: result),
+          _RunOutput(
+            result: result,
+            // Fallback when announcements aren't supported: a live region
+            // whose label changes on every run, so repeats are read too.
+            liveLabel: MediaQuery.supportsAnnounceOf(context)
+                ? null
+                : 'Run $_runCount. ${runAnnouncement(result, solved: widget.expectedOutput == null ? null : _solved)}',
+          ),
           if (widget.expectedOutput != null &&
               result.stage != RunStage.unavailable) ...[
             const SizedBox(height: 8),
@@ -188,7 +214,9 @@ class _CodeEditorState extends State<CodeEditor>
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      _solved ? 'Correct! Nice work.' : 'Not quite yet. Keep trying.',
+                      _solved
+                          ? 'Correct! Nice work.'
+                          : 'Not quite yet. Keep trying.',
                       style: TextStyle(
                         color: _solved ? scheme.primary : scheme.error,
                         fontWeight: FontWeight.w600,
@@ -256,7 +284,9 @@ TextEditingValue indentLines(TextEditingValue value) {
   if (sel.isCollapsed) {
     return value.copyWith(
       text: text.replaceRange(sel.start, sel.end, _indentUnit),
-      selection: TextSelection.collapsed(offset: sel.start + _indentUnit.length),
+      selection: TextSelection.collapsed(
+        offset: sel.start + _indentUnit.length,
+      ),
       composing: TextRange.empty,
     );
   }
@@ -296,7 +326,10 @@ TextEditingValue outdentLines(TextEditingValue value) {
     out.add(line.substring(n));
   }
   final newStart = (sel.start - removedFirst).clamp(start, sel.start);
-  final newEnd = (sel.end - removedTotal).clamp(newStart, text.length - removedTotal);
+  final newEnd = (sel.end - removedTotal).clamp(
+    newStart,
+    text.length - removedTotal,
+  );
   return value.copyWith(
     text: text.replaceRange(start, end, out.join('\n')),
     selection: TextSelection(baseOffset: newStart, extentOffset: newEnd),
@@ -312,13 +345,18 @@ String runAnnouncement(RunResult r, {bool? solved}) {
     return t.length > 200 ? '${t.substring(0, 200)}…' : t;
   }
 
-  final output = [r.stdout, r.stderr].where((s) => s.trim().isNotEmpty).join('\n');
+  final output = [
+    r.stdout,
+    r.stderr,
+  ].where((s) => s.trim().isNotEmpty).join('\n');
   final base = switch (r.stage) {
     RunStage.compile => "Your code didn't compile. ${clip(r.stderr)}",
     RunStage.unavailable => "Couldn't run your code. ${clip(r.stderr)}",
     RunStage.timeout => 'Your program took too long.',
     RunStage.run =>
-      output.isEmpty ? 'Your program ran with no output.' : 'Output: ${clip(output)}',
+      output.isEmpty
+          ? 'Your program ran with no output.'
+          : 'Output: ${clip(output)}',
   };
   final verdict = switch (solved) {
     true => ' Correct! Nice work.',
@@ -333,9 +371,10 @@ String runAnnouncement(RunResult r, {bool? solved}) {
 /// runner couldn't be used), then any compiler warnings, kept apart and
 /// folded away because the program ran anyway.
 class _RunOutput extends StatelessWidget {
-  const _RunOutput({required this.result});
+  const _RunOutput({required this.result, this.liveLabel});
 
   final RunResult result;
+  final String? liveLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -346,13 +385,13 @@ class _RunOutput extends StatelessWidget {
       RunStage.compile => ("Your code didn't compile", result.stderr),
       RunStage.unavailable => ("Couldn't run your code", result.stderr),
       RunStage.timeout => (
-          'Your program took too long',
-          [result.stdout, result.stderr].where((s) => s.isNotEmpty).join('\n'),
-        ),
+        'Your program took too long',
+        [result.stdout, result.stderr].where((s) => s.isNotEmpty).join('\n'),
+      ),
       RunStage.run => (
-          'Output',
-          [result.stdout, result.stderr].where((s) => s.isNotEmpty).join('\n'),
-        ),
+        'Output',
+        [result.stdout, result.stderr].where((s) => s.isNotEmpty).join('\n'),
+      ),
     };
     final isError = result.stage != RunStage.run;
     final warnings = result.warnings.trim();
@@ -360,17 +399,20 @@ class _RunOutput extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Announced when a run finishes, so screen reader users hear it.
-        // Announced through SemanticsService when a run finishes; a live
-        // region here would only read the heading.
+        // Announced through SemanticsService when a run finishes, or, where
+        // that isn't supported, through this live region's changing label.
         Semantics(
           container: true,
+          liveRegion: liveLabel != null,
+          label: liveLabel,
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: scheme.inverseSurface,
               borderRadius: BorderRadius.circular(12),
-              border: isError ? Border.all(color: scheme.error, width: 2) : null,
+              border: isError
+                  ? Border.all(color: scheme.error, width: 2)
+                  : null,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -399,10 +441,15 @@ class _RunOutput extends StatelessWidget {
             child: ExpansionTile(
               tilePadding: const EdgeInsets.symmetric(horizontal: 4),
               childrenPadding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
-              leading: Icon(Icons.warning_amber_outlined, color: scheme.onSurfaceVariant),
+              leading: Icon(
+                Icons.warning_amber_outlined,
+                color: scheme.onSurfaceVariant,
+              ),
               title: Text(
                 'Compiler warnings (your program still ran)',
-                style: textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+                style: textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
               children: [
                 Align(
