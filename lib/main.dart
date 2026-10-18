@@ -12,7 +12,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final state = AppState(
     repository: CourseRepository(),
-    runner: const PlaceholderCodeRunner(),
+    runner: codeRunnerFromEnvironment(),
     prefs: await SharedPreferences.getInstance(),
   );
   await state.load();

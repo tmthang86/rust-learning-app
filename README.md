@@ -7,8 +7,8 @@ with a one-time "Remove ads" purchase.
 
 ## Plan
 
-1. **Foundation and design** (this step): Flutter project, course map, main screens.
-2. **Code runner backend**: a sandboxed server that compiles and runs Rust.
+1. **Foundation and design** (done): Flutter project, course map, main screens.
+2. **Code runner backend** (done): sandboxed server in [`runner/`](runner/README.md) that compiles and runs Rust.
 3. **Core app and first content**: editor wired to the runner, accounts and sync, first full module.
 4. **Ads, purchase and launch**: AdMob (mobile), AdSense (web), "Remove ads" purchase, store release.
 
@@ -20,7 +20,7 @@ See [docs/course-map.md](docs/course-map.md) for the course outline and lesson f
 lib/
   app/        theme, routing, responsive navigation shell
   data/       models, content loading, app state and progress
-  runner/     CodeRunner interface (placeholder until step 2)
+  runner/     CodeRunner: talks to the runner service
   features/   onboarding, home, lesson, editor/playground, quiz, progress
 assets/content/
   course.json         units and lesson list
@@ -31,6 +31,9 @@ assets/content/
 
 ```sh
 flutter pub get
-flutter run -d chrome     # or an iOS/Android simulator
+flutter run -d chrome --dart-define=RUNNER_URL=http://localhost:8080
 flutter test
 ```
+
+Without `RUNNER_URL` the app works but the Run button explains that running
+code isn't set up. See [runner/README.md](runner/README.md) to start the runner.
