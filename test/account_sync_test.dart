@@ -1271,4 +1271,45 @@ void main() {
       expect(sync.doc('u1').completed, {'u1-l1', 'cloud-only'});
     },
   );
+
+  test('a merge waiting on the deletion check drops out if a new deletion '
+      'starts meanwhile (round 5)', () async {
+    SharedPreferences.setMockInitialValues({});
+    final accounts = FakeAccounts();
+    final sync = FakeSync(completed: {'u1-l1'});
+    final state = await makeState(accounts, sync);
+    await signInAndSync(accounts, state, 'u1');
+    accounts
+      ..deleteError = const AccountException(AccountErrorKind.network)
+      ..stillExistsAnswer = () => null;
+    await expectLater(state.deleteAccount(), throwsA(isA<AccountException>()));
+    expect(sync.docs.containsKey('u1'), isFalse);
+
+    // A sync starts and waits on a slow server check.
+    accounts.stillExistsGate = Completer<void>();
+    state.retrySync();
+    final merge = state.syncing;
+    await settle();
+
+    // A second deletion starts and gets as far as deleting the user.
+    accounts
+      ..deleteError = null
+      ..stillExistsAnswer = (() => true)
+      ..deleteUserGate = Completer<void>();
+    accounts.steps.clear();
+    final deletion = state.deleteAccount();
+    while (!accounts.steps.contains('deleteUser')) {
+      await settle();
+    }
+
+    // The held check now says "exists": the old merge must not write.
+    accounts.stillExistsGate!.complete();
+    await merge;
+    expect(sync.docs.containsKey('u1'), isFalse);
+
+    accounts.deleteUserGate!.complete();
+    await deletion;
+    expect(accounts.deleted, isTrue);
+    expect(sync.docs.containsKey('u1'), isFalse);
+  });
 }

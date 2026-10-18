@@ -123,10 +123,29 @@ fails).
   the cached sign-in keeps working for up to an hour, so any write could
   recreate `users/{uid}` for a deleted account, and the rules would then
   stop anyone deleting it. The app therefore writes nothing for that
-  account until it checks with the server again. It does that before every
-  sync, background write and sign-out, and when the delete dialog or the
+  account until it checks with the server again. Changes made meanwhile
+  (finished lessons, a new track) are not sent: they stay on the device and
+  show as not saved. The check runs at the next sync (sign-in, app start,
+  **Try syncing again**), at sign-out, and when the delete dialog or the
   `/delete-account` page opens. If the account is gone, the device is
   cleared and signed out, and the page shows it as deleted. If it still
-  exists, syncing resumes and the person can delete it again. If the
-  server still can't be asked, nothing is written and the next try asks
-  again. This survives restarting the app.
+  exists, syncing resumes (uploading what was kept) and the person can
+  delete it again. If the server still can't be asked, nothing is written
+  and the next check asks again. This survives restarting the app.
+
+### Known limitation: other signed-in devices (must be fixed before launch)
+
+Deleting an account removes `users/{uid}` and the Auth user, but another
+device that is still signed in to that account keeps a valid ID token for
+up to an hour (Firebase ID tokens last that long and the rules only check
+the token). If that device syncs in that time (it finishes a lesson, or the
+app starts), its write recreates `users/{uid}`. Nobody can delete that
+document afterwards from the app, because the account no longer exists, so
+it breaks the promise that deletion removes everything.
+
+Before launch, add a server-side cleanup: a Cloud Function triggered when
+an Auth user is deleted (`functions.auth.user().onDelete`, a first
+generation trigger) that deletes `users/{uid}` with the Admin SDK, then
+re-checks after a delay longer than the token lifetime (for example a
+Cloud Tasks job about 65 minutes later) and deletes the document again if
+it has reappeared. Not built yet.

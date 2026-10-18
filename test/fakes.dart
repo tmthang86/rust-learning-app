@@ -98,9 +98,15 @@ class FakeAccounts implements AccountService {
     emit(null);
   }
 
+  /// When set, [accountStillExists] waits for it (a slow check).
+  Completer<void>? stillExistsGate;
+
   @override
-  Future<bool?> accountStillExists() async =>
-      stillExistsAnswer != null ? stillExistsAnswer!() : !deleted;
+  Future<bool?> accountStillExists() async {
+    final g = stillExistsGate;
+    if (g != null) await g.future;
+    return stillExistsAnswer != null ? stillExistsAnswer!() : !deleted;
+  }
 }
 
 class CloudDoc {

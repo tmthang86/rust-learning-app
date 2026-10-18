@@ -259,17 +259,20 @@ class AppState extends ChangeNotifier {
   /// long as the device progress is this account's or nobody's.
   Future<void> _mergeWithCloud(AccountUser user) async {
     final s = sync;
-    if (s == null) return;
+    if (s == null || _deleting) return;
+    // Taken before any wait, so a deletion (or account change) that starts
+    // meanwhile makes this merge drop out instead of writing.
+    final generation = ++_generation;
+    bool stale() =>
+        generation != _generation || _user?.uid != user.uid || _deleting;
     if (prefs.getString(_unconfirmedKey) == user.uid) {
       final exists = await recheckDeletion();
-      if (_user?.uid != user.uid || exists == false) return;
+      if (stale() || exists == false) return;
       if (exists == null) {
         _markUnsaved();
         return;
       }
     }
-    final generation = ++_generation;
-    bool stale() => generation != _generation || _user?.uid != user.uid;
     _finishedDuringMerge.clear();
     _merging = true;
 
@@ -286,6 +289,7 @@ class AppState extends ChangeNotifier {
         _completed = {...remote.completed, ..._finishedDuringMerge};
         _track = finalTrack = remote.track;
         await _saveLocal();
+        if (stale()) return;
         if (remote.needsRepair) {
           await s.replace(
             user.uid,
@@ -303,6 +307,7 @@ class AppState extends ChangeNotifier {
         _completed.addAll(remote.completed);
         _track = finalTrack;
         await _saveLocal();
+        if (stale()) return;
 
         if (remote.needsRepair) {
           // One write with everything, so the rules accept it.
