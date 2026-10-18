@@ -347,7 +347,7 @@ web form) with the time, the screen of the last banner seen and the ad unit
 ids filled in. There is no link next to the banners themselves, to keep
 tappable controls away from live ads.
 
-- `--dart-define=AD_REPORT_EMAIL=you@example.com` sets the address. The
+- `--dart-define=AD_REPORT_EMAIL=you@your-domain.example` sets the address. The
   default, `ads-report@example.com`, is a placeholder: **replace it before
   release.** Release builds refuse it (see the guards below).
 - `--dart-define=AD_REPORT_URL=https://…` sends people to a web form instead;
