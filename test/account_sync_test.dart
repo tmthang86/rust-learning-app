@@ -982,7 +982,7 @@ void main() {
     }
 
     test(
-      'unconfirmed deletion: sign-out asks first, a retry re-uploads',
+      'unconfirmed deletion, account still there: asks, then re-uploads',
       () async {
         final (accounts, sync, state) = await signedIn();
         accounts
@@ -994,12 +994,17 @@ void main() {
         );
         expect(sync.docs.containsKey('u1'), isFalse);
         expect(state.syncFailed, isTrue);
+        expect(state.deletionUnconfirmed, isTrue);
 
-        sync.failLoads = true; // still offline
+        // Still can't tell: nothing written, sign-out asks.
         expect(await state.signOut(), isFalse);
+        state.retrySync();
+        await state.syncing;
+        expect(sync.docs.containsKey('u1'), isFalse);
         expect(state.completedLessons, {'u1-l1'});
 
-        sync.failLoads = false; // back online: the retry before sign-out
+        // The server says the account exists: normal sync again.
+        accounts.stillExistsAnswer = () => true;
         expect(await state.signOut(), isTrue);
         expect(sync.doc('u1').completed, {'u1-l1'});
         expect(sync.doc('u1').track, Track.fast);
@@ -1099,4 +1104,171 @@ void main() {
       expect(confirmed.needsRepair, isTrue);
     });
   });
+
+  group('unconfirmed deletion never resurrects the account (round 4)', () {
+    Future<(FakeAccounts, FakeSync, AppState)> unconfirmed() async {
+      SharedPreferences.setMockInitialValues({});
+      final accounts = FakeAccounts();
+      final sync = FakeSync(track: Track.fast, completed: {'u1-l1'});
+      final state = await makeState(accounts, sync);
+      await signInAndSync(accounts, state, 'u1');
+      // Only in the cloud (another device), not on this one.
+      sync.doc('u1').completed.add('cloud-only');
+      accounts
+        ..deleteError = const AccountException(AccountErrorKind.network)
+        ..stillExistsAnswer = () => null;
+      await expectLater(
+        state.deleteAccount(),
+        throwsA(
+          isA<AccountException>().having(
+            (e) => e.kind,
+            'kind',
+            AccountErrorKind.unconfirmed,
+          ),
+        ),
+      );
+      return (accounts, sync, state);
+    }
+
+    test(
+      'the device keeps the cloud-only lessons it read before deleting',
+      () async {
+        final (_, _, state) = await unconfirmed();
+        expect(state.completedLessons, {'u1-l1', 'cloud-only'});
+      },
+    );
+
+    test(
+      'account in fact gone: sign-out clears the device, writes nothing',
+      () async {
+        final (accounts, sync, state) = await unconfirmed();
+        accounts.stillExistsAnswer = () => false;
+
+        expect(await state.signOut(), isTrue);
+        await settle();
+        expect(sync.docs.containsKey('u1'), isFalse);
+        expect(state.user, isNull);
+        expect(state.completedLessons, isEmpty);
+        expect(state.deletionUnconfirmed, isFalse);
+      },
+    );
+
+    test(
+      'account in fact gone: "Try syncing again" clears instead of writing',
+      () async {
+        final (accounts, sync, state) = await unconfirmed();
+        accounts.stillExistsAnswer = () => false;
+
+        state.retrySync();
+        await state.syncing;
+        await settle();
+        expect(sync.docs.containsKey('u1'), isFalse);
+        expect(state.user, isNull);
+        expect(state.completedLessons, isEmpty);
+      },
+    );
+
+    test('lessons finished meanwhile stay on the device only', () async {
+      final (_, sync, state) = await unconfirmed();
+      await state.markCompleted('meanwhile');
+      await state.chooseTrack(Track.starter);
+      await settle();
+      expect(sync.docs.containsKey('u1'), isFalse);
+      expect(state.isCompleted('meanwhile'), isTrue);
+      expect(state.syncFailed, isTrue);
+    });
+
+    test('the flag survives an app restart', () async {
+      final (accounts, sync, _) = await unconfirmed();
+      // A new start with the same signed-in user (cached token).
+      final again = await makeState(
+        FakeAccounts(initialUser: const AccountUser(uid: 'u1'))
+          ..stillExistsAnswer = () => null,
+        sync,
+      );
+      await again.syncing;
+      expect(sync.docs.containsKey('u1'), isFalse);
+      expect(again.deletionUnconfirmed, isTrue);
+      expect(accounts.deleted, isFalse);
+    });
+
+    testWidgets('opening the delete page shows a gone account as deleted', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({'track': 'fast'});
+      tester.view.physicalSize = const Size(390, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final (accounts, sync, state) = (await tester.runAsync(() async {
+        final r = await unconfirmed();
+        await r.$3.load();
+        return r;
+      }))!;
+      accounts.stillExistsAnswer = () => false;
+
+      await tester.pumpWidget(
+        RustLearnApp(state: state, initialLocation: '/delete-account'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Your account has been deleted.'), findsOneWidget);
+      expect(sync.docs.containsKey('u1'), isFalse);
+      expect(state.user, isNull);
+    });
+
+    testWidgets('the Delete button checks first and reports a gone account', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({'track': 'fast'});
+      tester.view.physicalSize = const Size(390, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final (accounts, _, state) = (await tester.runAsync(() async {
+        final r = await unconfirmed();
+        await r.$3.load();
+        return r;
+      }))!;
+      await tester.pumpWidget(
+        RustLearnApp(state: state, initialLocation: '/progress'),
+      );
+      await tester.pumpAndSettle();
+      accounts.stillExistsAnswer = () => false;
+      final reauths = accounts.reauthCount;
+
+      await tester.tap(find.text('Delete account'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete your account?'), findsNothing);
+      expect(find.text('Your account has been deleted.'), findsOneWidget);
+      expect(accounts.reauthCount, reauths); // no new deletion attempt
+    });
+  });
+
+  test(
+    'restore failed: the device keeps cloud-only lessons for the retry',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final accounts = FakeAccounts();
+      final sync = FakeSync(completed: {'u1-l1'});
+      final state = await makeState(accounts, sync);
+      await signInAndSync(accounts, state, 'u1');
+      sync.doc('u1').completed.add('cloud-only');
+      accounts
+        ..deleteError = const AccountException(AccountErrorKind.network)
+        ..stillExistsAnswer = () {
+          sync.failWrites = true;
+          return true;
+        };
+      await expectLater(
+        state.deleteAccount(),
+        throwsA(isA<AccountException>()),
+      );
+      expect(state.completedLessons, {'u1-l1', 'cloud-only'});
+
+      sync.failWrites = false;
+      state.retrySync();
+      await state.syncing;
+      expect(sync.doc('u1').completed, {'u1-l1', 'cloud-only'});
+    },
+  );
 }

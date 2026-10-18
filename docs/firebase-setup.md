@@ -109,11 +109,24 @@ the saved copy with what this device has, but only when it can confirm with
 the server that the account still exists. If deleting reports an error but
 the account is in fact gone, nothing is written back.
 
-Two cases leave the cloud document missing while progress is still on the
-device: the app couldn't confirm whether the account was deleted (for
-example a timeout while offline), or the write putting the document back
-failed. In both, the app keeps the device progress and marks it as not
-saved: the Progress screen shows the sync problem with **Try syncing
-again**, and signing out first retries the sync and asks "Sign out anyway?"
-if it still fails. A successful sync uploads the device progress again;
-lessons that were only in the cloud copy are lost in that case.
+Two cases leave the cloud document missing while the account may still
+exist. In both, the device first adds the cloud copy it read before
+deleting to its own progress, so nothing that was only in the cloud is
+lost, and marks the progress as not saved (the Progress screen shows **Try
+syncing again**, and signing out asks "Sign out anyway?" if a sync still
+fails).
+
+- **The write putting the document back failed** (the account is known to
+  exist). The next successful sync uploads everything again.
+- **The app couldn't confirm whether the account was deleted** (for
+  example a timeout while offline). The server may have deleted it, and
+  the cached sign-in keeps working for up to an hour, so any write could
+  recreate `users/{uid}` for a deleted account, and the rules would then
+  stop anyone deleting it. The app therefore writes nothing for that
+  account until it checks with the server again. It does that before every
+  sync, background write and sign-out, and when the delete dialog or the
+  `/delete-account` page opens. If the account is gone, the device is
+  cleared and signed out, and the page shows it as deleted. If it still
+  exists, syncing resumes and the person can delete it again. If the
+  server still can't be asked, nothing is written and the next try asks
+  again. This survives restarting the app.

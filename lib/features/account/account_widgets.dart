@@ -26,9 +26,10 @@ String accountErrorMessage(AccountErrorKind kind, {SignInMethod? attempted}) =>
       AccountErrorKind.network =>
         "Couldn't reach the server. Check your connection and try again.",
       AccountErrorKind.unconfirmed =>
-        "We couldn't check whether it went through. Your progress is kept "
-            "on this device. When you're back online, open this again: if "
-            'you are still signed in, the account still exists and you can '
+        "We couldn't confirm whether it went through. Your progress is kept "
+            'on this device and nothing is sent to the cloud for now. When '
+            "you're back online, open this again: the app checks with the "
+            'server and either shows the account as deleted or lets you '
             'delete it again.',
       AccountErrorKind.notSignedIn => 'Please sign in first.',
       AccountErrorKind.other => 'Something went wrong. Please try again.',
@@ -124,6 +125,12 @@ Future<void> signOutWithCheck(BuildContext context) async {
 /// Confirms and deletes the signed-in account. Returns true once deleted.
 Future<bool> confirmAndDeleteAccount(BuildContext context) async {
   final state = AppScope.read(context);
+  // An earlier attempt couldn't be confirmed: ask the server first, so an
+  // account that is already gone shows as deleted.
+  if (state.deletionUnconfirmed && await state.recheckDeletion() == false) {
+    return true;
+  }
+  if (!context.mounted) return false;
   await showDialog<bool>(
     context: context,
     barrierDismissible: false,

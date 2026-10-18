@@ -19,6 +19,19 @@ class DeleteAccountScreen extends StatefulWidget {
 class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
   bool _deleted = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // After an unconfirmed deletion, check with the server on opening, so
+    // an account that is already gone shows as deleted.
+    final state = AppScope.read(context);
+    if (state.deletionUnconfirmed) {
+      state.recheckDeletion().then((exists) {
+        if (mounted && exists == false) setState(() => _deleted = true);
+      });
+    }
+  }
+
   Future<void> _delete() async {
     final deleted = await confirmAndDeleteAccount(context);
     if (mounted && deleted) setState(() => _deleted = true);
@@ -34,8 +47,10 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     if (_deleted) {
       action = Semantics(
         liveRegion: true,
-        child: Text('Your account has been deleted.',
-            style: theme.textTheme.titleMedium),
+        child: Text(
+          'Your account has been deleted.',
+          style: theme.textTheme.titleMedium,
+        ),
       );
     } else if (!state.accounts.available) {
       action = const Text(
@@ -79,8 +94,10 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
           child: ListView(
             padding: const EdgeInsets.all(24),
             children: [
-              Text('Learn Rust: account deletion',
-                  style: theme.textTheme.headlineSmall),
+              Text(
+                'Learn Rust: account deletion',
+                style: theme.textTheme.headlineSmall,
+              ),
               const SizedBox(height: 12),
               const Text(
                 'You can delete your Learn Rust account at any time, here or '

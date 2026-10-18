@@ -48,6 +48,13 @@ class AppState extends ChangeNotifier {
   /// two devices don't keep overwriting each other's choice.
   static const _trackDirtyKey = 'trackDirty';
 
+  /// Set to the uid when deleting that account couldn't be confirmed. The
+  /// server may have deleted it while the cached sign-in keeps working for
+  /// up to an hour, so nothing is written for that account until a fresh
+  /// check says it still exists: a write would recreate users/{uid}, which
+  /// the rules then won't let anyone delete.
+  static const _unconfirmedKey = 'deletionUnconfirmedUid';
+
   final CourseRepository repository;
   final CodeRunner runner;
   final SharedPreferences prefs;
@@ -149,6 +156,11 @@ class AppState extends ChangeNotifier {
   /// still waiting to be sent. Signing out clears the device, so the UI
   /// then asks before calling again with [force].
   Future<bool> signOut({bool force = false}) async {
+    if (!force && deletionUnconfirmed) {
+      final exists = await recheckDeletion();
+      if (exists == false) return true; // already cleared and signed out
+      if (exists == null) return false; // can't tell: nothing written, ask
+    }
     final u = _user;
     final s = sync;
     if (!force && u != null && s != null) {
@@ -213,6 +225,34 @@ class AppState extends ChangeNotifier {
     await prefs.remove(_completedKey);
     await prefs.remove(_syncedUidKey);
     await prefs.remove(_trackDirtyKey);
+    await prefs.remove(_unconfirmedKey);
+  }
+
+  /// True while deleting the signed-in account is unconfirmed; see
+  /// [recheckDeletion].
+  bool get deletionUnconfirmed {
+    final u = _user;
+    return u != null && prefs.getString(_unconfirmedKey) == u.uid;
+  }
+
+  /// After an unconfirmed deletion, asks the server whether the account
+  /// still exists. false: it's gone, so the device is cleared and signed
+  /// out locally, with nothing written. true: back to normal syncing.
+  /// null: still can't tell; nothing is written and the next sync or
+  /// sign-out asks again. Returns true when no deletion is pending.
+  Future<bool?> recheckDeletion() async {
+    if (!deletionUnconfirmed) return true;
+    final exists = await accounts.accountStillExists();
+    if (exists == false) {
+      await _clearLocal();
+      await accounts.signOut();
+      return false;
+    }
+    if (exists == true) {
+      await prefs.remove(_unconfirmedKey);
+      notifyListeners();
+    }
+    return exists;
   }
 
   /// Combines device and cloud progress so neither side loses anything, as
@@ -220,6 +260,14 @@ class AppState extends ChangeNotifier {
   Future<void> _mergeWithCloud(AccountUser user) async {
     final s = sync;
     if (s == null) return;
+    if (prefs.getString(_unconfirmedKey) == user.uid) {
+      final exists = await recheckDeletion();
+      if (_user?.uid != user.uid || exists == false) return;
+      if (exists == null) {
+        _markUnsaved();
+        return;
+      }
+    }
     final generation = ++_generation;
     bool stale() => generation != _generation || _user?.uid != user.uid;
     _finishedDuringMerge.clear();
@@ -334,7 +382,10 @@ class AppState extends ChangeNotifier {
       } catch (_) {
         // A timed-out delete may still be queued; the restore is queued
         // after it, so the document ends up back either way.
-        if (!await _restoreCloud(s, u.uid, remote)) _markUnsaved();
+        if (!await _restoreCloud(s, u.uid, remote)) {
+          await _keepCloudCopy(remote);
+          _markUnsaved();
+        }
         rethrow;
       }
     }
@@ -349,19 +400,26 @@ class AppState extends ChangeNotifier {
       if (exists == false) {
         // The error came after the account was in fact removed.
         await _clearLocal();
+        await accounts.signOut();
         return;
       }
       if (exists == null) {
         // Unknown: don't recreate the document for an account that may be
-        // gone. Device progress stays and is marked as not saved, so
-        // signing out asks first, and the next sync (Try syncing again, or
-        // the retry before sign-out) uploads it again if the account still
-        // exists.
+        // gone. The device keeps everything (its own progress plus the
+        // cloud copy read above) and nothing is written until a fresh check
+        // says the account still exists (recheckDeletion, run before every
+        // sync, background write and sign-out). If it's gone, the device
+        // is cleared; if it exists, the next sync uploads the progress.
+        await prefs.setString(_unconfirmedKey, u.uid);
+        await _keepCloudCopy(remote);
         _markUnsaved();
         throw AccountException(AccountErrorKind.unconfirmed, e);
       }
       if (s != null && !await _restoreCloud(s, u.uid, remote)) {
-        // The cloud copy is gone and couldn't be put back: same as above.
+        // The account exists but its cloud copy is gone and couldn't be put
+        // back: keep it on the device and mark it as not saved, so signing
+        // out asks first and the next sync uploads it.
+        await _keepCloudCopy(remote);
         _markUnsaved();
       }
       rethrow;
@@ -405,6 +463,14 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Adds the cloud copy read before deleting to the device, so a later
+  /// upload doesn't lose lessons that were only in the cloud.
+  Future<void> _keepCloudCopy(RemoteProgress remote) async {
+    _completed.addAll(remote.completed);
+    _track ??= remote.track;
+    await _saveLocal();
+  }
+
   /// The cloud may not hold this device's progress any more. Shown on the
   /// Progress screen; [signOut] then retries the sync and asks before
   /// clearing the device.
@@ -419,6 +485,11 @@ class AppState extends ChangeNotifier {
     final s = sync;
     final u = _user;
     if (s == null || u == null || _deleting) return;
+    if (deletionUnconfirmed) {
+      // Kept on the device; the next sync uploads it if the account exists.
+      _markUnsaved();
+      return;
+    }
     unawaited(
       write(s, u.uid).catchError((Object e) {
         // Shown on the Progress screen, which offers a retry (a full merge,
