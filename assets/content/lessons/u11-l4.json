@@ -20,7 +20,7 @@
     },
     {
       "type": "text",
-      "text": "Look at the order of the output. Calling greet(\"Ada\") printed nothing. All the work happened inside block_on. The .await on PauseOnce paused greet once and then it continued, while add(2, 3).await finished at once. Note that block_on runs just one future, so no two futures make progress together here. Interleaving needs a real runtime."
+      "text": "Look at the order of the output. Calling greet(\"Ada\") printed nothing. All the work happened inside block_on. The .await on PauseOnce paused greet once and then it continued, while add(2, 3).await finished at once. Note that block_on runs just one future, so no two futures make progress together here. Interleaving needs a runtime or a join helper."
     },
     {
       "type": "note",

@@ -74,7 +74,7 @@
       "options": [
         "Clone the sender with tx.clone() and give each thread one copy",
         "Clone the receiver with rx.clone() and give each thread one copy",
-        "Pass the same tx into every thread, because a Sender can be shared freely"
+        "Move the same tx into every thread's closure, without cloning it first"
       ],
       "answer": 0
     },

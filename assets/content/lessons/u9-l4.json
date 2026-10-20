@@ -24,7 +24,7 @@
     },
     {
       "type": "text",
-      "text": "The code sections in this lesson can't be run, but if you paste this program into the editor below and press Run, the app compiles it without the tests, so it just prints 5 5. On your own computer, cargo test builds the tests and runs every #[test] function. You would see something like this (the order can differ, because tests run in parallel):"
+      "text": "None of the code sections in the app can be run; only the exercise editor has a Run button. If you paste this program into that editor and press Run, the app compiles it without the tests, so it just prints 5 5. Careful: pasting replaces the exercise code, so copy it back or reset the exercise afterwards. On your own computer, cargo test builds the tests and runs every #[test] function. You would see something like this (the order can differ, because tests run in parallel):"
     },
     {
       "type": "code",
@@ -77,8 +77,8 @@
     {
       "question": "Which attribute marks a function as a test?",
       "options": [
-        "#[check], placed above the function",
-        "#[assert], placed above the function",
+        "#[cfg(test)], placed above the function",
+        "#[derive(Debug)], placed above the function",
         "#[test], placed above the function"
       ],
       "answer": 2

@@ -16,11 +16,7 @@
     },
     {
       "type": "text",
-      "text": "Other consumers turn the whole sequence into one value:"
-    },
-    {
-      "type": "text",
-      "text": "sum adds the items up, and count says how many there are. fold is the general one: you give it a starting value and a closure that takes the running total (acc) and the next item, and returns the new total."
+      "text": "Other consumers turn the whole sequence into one value. sum adds the items up, and count says how many there are. fold is the general one: you give it a starting value and a closure that takes the running total (acc) and the next item, and returns the new total."
     },
     {
       "type": "text",

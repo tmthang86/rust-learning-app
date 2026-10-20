@@ -45,7 +45,7 @@
     },
     {
       "type": "note",
-      "text": "Coming from Java, C# or Python: those languages share objects freely and use a garbage collector. Rc is closer to Python's reference counting, or to a C++ std::shared_ptr whose count is not atomic (Arc is the atomic one). It is opt-in in Rust, and the count is not atomic, which is why the compiler refuses to send an Rc to another thread. Cycles (A points to B, B points back to A) are never freed, so use Weak for back-pointers, as the next lesson shows.",
+      "text": "Coming from Java, C# or Python: those languages share objects freely and use a garbage collector. Rc is closer to Python's reference counting, or to a C++ std::shared_ptr. It is opt-in in Rust, and its count is not atomic (Arc is the atomic one), which is why the compiler refuses to send an Rc to another thread. Cycles (A points to B, B points back to A) are never freed, so use Weak for back-pointers, as the next lesson shows.",
       "track": "fast"
     }
   ],
