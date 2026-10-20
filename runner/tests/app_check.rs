@@ -636,6 +636,72 @@ async fn jwks_over_http_is_parsed_and_max_age_honoured() {
     assert!(cache.ready());
 }
 
+/// Serves one raw HTTP response and reports how many body bytes it managed to
+/// send. `chunked` streams 64 KiB chunks until the client hangs up; otherwise
+/// it announces a huge Content-Length and sends nothing.
+async fn serve_oversized(chunked: bool) -> (String, tokio::task::JoinHandle<usize>) {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}/jwks", listener.local_addr().unwrap());
+    let task = tokio::spawn(async move {
+        let (mut sock, _) = listener.accept().await.unwrap();
+        let mut buf = [0u8; 2048];
+        let _ = sock.read(&mut buf).await;
+        let head = if chunked {
+            "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ntransfer-encoding: chunked\r\n\r\n"
+        } else {
+            "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: 50000000\r\n\r\n"
+        };
+        sock.write_all(head.as_bytes()).await.unwrap();
+        if !chunked {
+            // Hold the connection open: only the header can reject this.
+            tokio::time::sleep(Duration::from_secs(20)).await;
+            return 0;
+        }
+        let chunk = format!("{:x}\r\n{}\r\n", 65536, "a".repeat(65536));
+        let mut sent = 0;
+        // 64 MiB is far beyond the 1 MiB cap; a capped reader hangs up long before.
+        while sent < 64 * 1024 * 1024 {
+            if sock.write_all(chunk.as_bytes()).await.is_err() {
+                break;
+            }
+            sent += 65536;
+        }
+        sent
+    });
+    (url, task)
+}
+
+#[tokio::test]
+async fn oversized_jwks_is_rejected_while_reading() {
+    // Announced size: rejected from the header, without waiting for a body.
+    let (url, _server) = serve_oversized(false).await;
+    let started = std::time::Instant::now();
+    let err = HttpKeySource::new(url)
+        .unwrap()
+        .fetch()
+        .await
+        .err()
+        .expect("error");
+    assert!(err.contains("unreasonably large"), "{err}");
+    assert!(started.elapsed() < Duration::from_secs(5));
+
+    // No announced size: reading stops at the cap and the server sees the hang-up.
+    let (url, server) = serve_oversized(true).await;
+    let err = HttpKeySource::new(url)
+        .unwrap()
+        .fetch()
+        .await
+        .err()
+        .expect("error");
+    assert!(err.contains("unreasonably large"), "{err}");
+    let sent = tokio::time::timeout(Duration::from_secs(10), server)
+        .await
+        .expect("server should see the client hang up")
+        .unwrap();
+    assert!(sent < 32 * 1024 * 1024, "client kept reading: {sent} bytes");
+}
+
 #[tokio::test]
 async fn jwks_errors_are_reported() {
     let (url, _) = serve_jwks("no-store", "application/json", 500).await;
@@ -668,4 +734,18 @@ async fn tokens_verify_against_keys_fetched_over_http() {
     )
     .await;
     assert_eq!(status, StatusCode::OK, "{body}");
+}
+
+#[tokio::test]
+async fn an_ipv6_client_is_noted_once_and_still_served() {
+    use std::sync::atomic::Ordering;
+    let st = Arc::new(AppState::for_tests(Sandbox::Local, limits()));
+    // IPv4: nothing to note.
+    let (status, _, _) = send(router(st.clone(), "127.0.0.1"), run_request(EMPTY)).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert!(!st.ipv6_logged.load(Ordering::Relaxed));
+    // IPv6 peer: served as usual, flag set.
+    let (status, _, _) = send(router(st.clone(), "[2001:db8::1]"), run_request(EMPTY)).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert!(st.ipv6_logged.load(Ordering::Relaxed));
 }

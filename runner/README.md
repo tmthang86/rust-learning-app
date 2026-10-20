@@ -54,13 +54,15 @@ No auth, no rate limit, never cached. JSON:
 
 ```json
 {"status":"ok","lastGoodJobSecsAgo":42,"keysReady":true,"diskFreeMb":11834,
- "runs":{"ok":1520,"compileError":310,"timeout":12,"memLimit":3,"rateLimited":4,"busy":0,"internal":0},
+ "runs":{"ok":1520,"runFailed":40,"compileError":310,"timeout":12,"memLimit":3,"rateLimited":4,"busy":0,"internal":0},
  "uptimeSecs":86400,"version":"0.2.0"}
 ```
 
 `status` is `"ok"` (HTTP 200) when the sandbox gave a real compiler verdict in
 the last 30 minutes, the App Check keys are loaded (if required) and at least
-2 GB of disk is free (where Docker keeps its images). Otherwise it is
+2 GB of disk is free (where Docker keeps its images; if the free space
+cannot be read, `diskFreeMb` is `null` and the runner counts as unhealthy).
+Otherwise it is
 `"unhealthy"` with HTTP 503 and the same body. Counters are totals since
 start. A job killed by the host, a timeout or an internal error is not a
 verdict, so a host that keeps failing jobs goes unhealthy; an idle runner runs
@@ -177,8 +179,8 @@ systemd, `docker stop -t 60`).
 ### Logs
 
 One JSON line per `/run` request (`event: "run_finished"`) with the request
-ID, outcome (`ok`, `compile_error`, `timeout`, `mem_limit`, `rate_limited`,
-`auth_failed`, `busy`, `bad_request`, `internal`), stage, timings, sizes,
+ID, outcome (`ok`, `run_failed` for a panic or non-zero exit, `compile_error`,
+`timeout`, `mem_limit`, `rate_limited`, `auth_failed`, `busy`, `bad_request`, `internal`), stage, timings, sizes,
 platform and a hashed client key. A `summary` line every 60 s. Never logged:
 code, program output, tokens or other header values, full IPs, the user agent,
 compiler output from failed starts.

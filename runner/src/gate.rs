@@ -9,6 +9,7 @@
 
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 
 use axum::extract::{ConnectInfo, Request, State};
@@ -71,6 +72,15 @@ pub async fn gate(
             "trusted proxy sent no usable X-Forwarded-For; keying by the proxy address"
         );
     }
+    if first_ipv6(&state.ipv6_logged, ip) {
+        // The VM has no IPv6, so this is unexpected. Limiters key it by the
+        // full address; /64 grouping is future work. Once per process, and
+        // without the address (logs never hold client addresses).
+        tracing::warn!(
+            event = "ipv6_client",
+            "an IPv6 client address was seen; rate limits key it by the full address"
+        );
+    }
     let client = state.telemetry.hasher.short(ip.to_string().as_bytes());
 
     // Read the header now: the request body isn't `Sync`, so the request
@@ -88,6 +98,12 @@ pub async fn gate(
         Err(e) => (e.into_response(), "none"),
     };
     finish(&state, response, &request_id, platform, &client, started)
+}
+
+/// True the first time an IPv6 client address is seen (IPv4-mapped addresses
+/// were already folded to IPv4 by `client_ip`).
+fn first_ipv6(logged: &AtomicBool, ip: IpAddr) -> bool {
+    ip.is_ipv6() && !logged.swap(true, Ordering::Relaxed)
 }
 
 /// Steps 1-3: IP buckets, App Check, token buckets.
@@ -190,4 +206,20 @@ fn finish(
         log!(info);
     }
     response
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ipv6_is_flagged_once() {
+        let flag = AtomicBool::new(false);
+        let v4: IpAddr = "198.51.100.7".parse().unwrap();
+        let v6: IpAddr = "2001:db8::1".parse().unwrap();
+        assert!(!first_ipv6(&flag, v4));
+        assert!(first_ipv6(&flag, v6));
+        assert!(!first_ipv6(&flag, v6));
+        assert!(!first_ipv6(&flag, "2001:db8::2".parse().unwrap()));
+    }
 }

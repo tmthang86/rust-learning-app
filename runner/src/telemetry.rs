@@ -28,10 +28,12 @@ pub enum Outcome {
     Busy,
     BadRequest,
     Internal,
+    /// The program ran and failed on its own: a panic or a non-zero exit.
+    RunFailed,
 }
 
 impl Outcome {
-    pub const ALL: [Outcome; 9] = [
+    pub const ALL: [Outcome; 10] = [
         Outcome::Ok,
         Outcome::CompileError,
         Outcome::Timeout,
@@ -41,6 +43,7 @@ impl Outcome {
         Outcome::Busy,
         Outcome::BadRequest,
         Outcome::Internal,
+        Outcome::RunFailed,
     ];
 
     pub fn as_str(self) -> &'static str {
@@ -54,6 +57,7 @@ impl Outcome {
             Outcome::Busy => "busy",
             Outcome::BadRequest => "bad_request",
             Outcome::Internal => "internal",
+            Outcome::RunFailed => "run_failed",
         }
     }
 
@@ -65,7 +69,11 @@ impl Outcome {
     fn ran_code(self) -> bool {
         matches!(
             self,
-            Outcome::Ok | Outcome::CompileError | Outcome::Timeout | Outcome::MemLimit
+            Outcome::Ok
+                | Outcome::RunFailed
+                | Outcome::CompileError
+                | Outcome::Timeout
+                | Outcome::MemLimit
         )
     }
 }
@@ -240,6 +248,7 @@ pub fn log_summary(state: &AppState) {
         event = "summary",
         requests,
         ok = w.count(Outcome::Ok),
+        run_failed = w.count(Outcome::RunFailed),
         compile_error = w.count(Outcome::CompileError),
         timeout = w.count(Outcome::Timeout),
         mem_limit = w.count(Outcome::MemLimit),

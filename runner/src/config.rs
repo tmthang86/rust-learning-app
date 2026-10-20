@@ -360,11 +360,13 @@ impl<'a> Parser<'a> {
             ));
         }
         let mut app_ids = Vec::new();
+        let mut app_ids_malformed = false;
         if let Some(list) = self.get("RUNNER_APP_CHECK_APP_IDS") {
             for id in list.split(',').map(str::trim).filter(|i| !i.is_empty()) {
                 if valid_app_id(id) {
                     app_ids.push(id.to_string());
                 } else {
+                    app_ids_malformed = true;
                     self.err(format!(
                         "RUNNER_APP_CHECK_APP_IDS has a malformed app ID (expected 1:<number>:<android|ios|web>:<hex>): {id}"
                     ));
@@ -393,8 +395,11 @@ impl<'a> Parser<'a> {
         if number.is_none() {
             self.err("RUNNER_FIREBASE_PROJECT_NUMBER is required when App Check is required");
         }
-        if app_ids.is_empty() && self.get("RUNNER_APP_CHECK_APP_IDS").is_none() {
-            self.err("RUNNER_APP_CHECK_APP_IDS is required when App Check is required");
+        // A list that parses to nothing (e.g. ",") is as bad as a missing one.
+        if app_ids.is_empty() && !app_ids_malformed {
+            self.err(
+                "RUNNER_APP_CHECK_APP_IDS is required when App Check is required (at least one app ID)",
+            );
         }
         Some(AppCheckConfig {
             project_number: number.unwrap_or_default(),
@@ -405,11 +410,13 @@ impl<'a> Parser<'a> {
     }
 
     fn trusted_proxies(&mut self, prod: bool) -> TrustedProxies {
+        let mut malformed = false;
         let proxies = match self.get("RUNNER_TRUSTED_PROXIES") {
             None => TrustedProxies::default(),
             Some(list) => match TrustedProxies::parse(list) {
                 Ok(p) => p,
                 Err(errors) => {
+                    malformed = true;
                     for e in errors {
                         self.err(format!("RUNNER_TRUSTED_PROXIES: {e}"));
                     }
@@ -417,9 +424,11 @@ impl<'a> Parser<'a> {
                 }
             },
         };
-        if prod && self.get("RUNNER_TRUSTED_PROXIES").is_none() {
+        // Missing, or a list that parses to nothing (e.g. ","): both leave the
+        // runner unable to tell clients apart behind the proxy.
+        if prod && proxies.is_empty() && !malformed {
             self.err(
-                "RUNNER_TRUSTED_PROXIES is required in production (e.g. 127.0.0.1/32,::1/128)",
+                "RUNNER_TRUSTED_PROXIES is required in production and must list at least one range (e.g. 127.0.0.1/32,::1/128)",
             );
         }
         proxies
@@ -670,6 +679,31 @@ mod tests {
             .contains("https://host")
         );
         assert!(errors_of(&with(&base, &[("RUNNER_ENV", "staging")])).contains("RUNNER_ENV"));
+    }
+
+    #[test]
+    fn lists_that_parse_to_nothing_are_errors_in_production() {
+        let base = production();
+        for value in [",", " , ,", ""] {
+            let e = errors_of(&with(&base, &[("RUNNER_TRUSTED_PROXIES", value)]));
+            assert!(e.contains("RUNNER_TRUSTED_PROXIES"), "{value:?}: {e}");
+            let e = errors_of(&with(&base, &[("RUNNER_APP_CHECK_APP_IDS", value)]));
+            assert!(e.contains("RUNNER_APP_CHECK_APP_IDS"), "{value:?}: {e}");
+        }
+        // A real entry next to the commas is fine.
+        let ok = with(
+            &base,
+            &[
+                ("RUNNER_TRUSTED_PROXIES", ",127.0.0.1/32,"),
+                (
+                    "RUNNER_APP_CHECK_APP_IDS",
+                    ", ,1:123456789012:ios:0123abcd,",
+                ),
+            ],
+        );
+        let cfg = Config::from_env_map(&ok).unwrap();
+        assert!(cfg.trusted_proxies.contains("127.0.0.1".parse().unwrap()));
+        assert_eq!(cfg.app_check.unwrap().app_ids.len(), 1);
     }
 
     #[test]

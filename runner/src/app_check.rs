@@ -17,7 +17,10 @@ use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
 use jsonwebtoken::jwk::Jwk;
-use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode, decode_header, errors::ErrorKind};
+use jsonwebtoken::{
+    Algorithm, DecodingKey, Validation, decode, decode_header, errors::ErrorKind,
+    get_current_timestamp,
+};
 use serde::Deserialize;
 use tokio::sync::Mutex;
 use tokio::time::Instant;
@@ -100,13 +103,26 @@ impl KeySource for HttpKeySource {
                 .get(reqwest::header::CACHE_CONTROL)
                 .and_then(|v| v.to_str().ok())
                 .and_then(parse_max_age);
-            // The body is JSON whatever its Content-Type says.
-            let body = res
-                .bytes()
-                .await
-                .map_err(|e| format!("reading the App Check keys failed: {e}"))?;
-            if body.len() > MAX_JWKS_BYTES {
+            // The body is JSON whatever its Content-Type says. Refuse a big one
+            // up front, and stop reading a streamed one at the cap, so an
+            // endless response cannot fill memory before it is measured.
+            if res
+                .content_length()
+                .is_some_and(|n| n > MAX_JWKS_BYTES as u64)
+            {
                 return Err("the App Check key set is unreasonably large".into());
+            }
+            let mut res = res;
+            let mut body = Vec::new();
+            while let Some(chunk) = res
+                .chunk()
+                .await
+                .map_err(|e| format!("reading the App Check keys failed: {e}"))?
+            {
+                if body.len() + chunk.len() > MAX_JWKS_BYTES {
+                    return Err("the App Check key set is unreasonably large".into());
+                }
+                body.extend_from_slice(&chunk);
             }
             Ok(FetchedKeys {
                 keys: parse_jwks(&body)?,
@@ -391,7 +407,12 @@ pub struct Verified {
 #[derive(Deserialize)]
 struct Claims {
     sub: String,
+    /// Issued-at, seconds. Optional, but when present it must not be in the future.
+    iat: Option<i64>,
 }
+
+/// Allowed clock difference between Google and this machine.
+const LEEWAY_SECS: u64 = 60;
 
 /// Verifies App Check tokens for one Firebase project.
 pub struct AppCheck {
@@ -442,13 +463,23 @@ impl AppCheck {
         };
 
         let mut validation = Validation::new(Algorithm::RS256);
-        validation.leeway = 60;
+        validation.leeway = LEEWAY_SECS;
+        validation.validate_nbf = true;
         validation.set_issuer(&[&self.issuer]);
         validation.set_audience(&self.audiences);
         validation.set_required_spec_claims(&["exp", "iss", "aud", "sub"]);
         let claims = decode::<Claims>(token, &key, &validation)
             .map_err(|e| AuthError::Invalid(reason_for(e.kind())))?
             .claims;
+
+        // `iat` is not checked by the library. A token "issued" after now
+        // (beyond the leeway) comes from a broken or hostile issuer.
+        if let Some(iat) = claims.iat {
+            let latest = get_current_timestamp().saturating_add(LEEWAY_SECS);
+            if iat > i64::try_from(latest).unwrap_or(i64::MAX) {
+                return Err(AuthError::Invalid("not_yet_valid"));
+            }
+        }
 
         if !self.app_ids.contains(&claims.sub) {
             return Err(AuthError::NotAllowed);
@@ -559,6 +590,41 @@ mod tests {
             AuthError::Invalid("expired")
         );
         assert!(v.verify(&valid(&claims(-30))).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn not_before_and_issued_at_may_not_be_in_the_future() {
+        let now = get_current_timestamp() as i64;
+        let v = verifier().await;
+
+        // nbf: in the future beyond the leeway is rejected, within it accepted.
+        let mut c = claims(3600);
+        c["nbf"] = json!(now + 600);
+        assert_eq!(
+            v.verify(&valid(&c)).await.unwrap_err(),
+            AuthError::Invalid("not_yet_valid")
+        );
+        let mut c = claims(3600);
+        c["nbf"] = json!(now + 30);
+        assert!(v.verify(&valid(&c)).await.is_ok());
+        let mut c = claims(3600);
+        c["nbf"] = json!(now - 10);
+        assert!(v.verify(&valid(&c)).await.is_ok());
+
+        // iat: same rule.
+        let mut c = claims(3600);
+        c["iat"] = json!(now + 600);
+        assert_eq!(
+            v.verify(&valid(&c)).await.unwrap_err(),
+            AuthError::Invalid("not_yet_valid")
+        );
+        let mut c = claims(3600);
+        c["iat"] = json!(now + 30);
+        assert!(v.verify(&valid(&c)).await.is_ok());
+        // A missing iat is fine; Google always sends one, but it is not required.
+        let mut c = claims(3600);
+        c.as_object_mut().unwrap().remove("iat");
+        assert!(v.verify(&valid(&c)).await.is_ok());
     }
 
     #[tokio::test]

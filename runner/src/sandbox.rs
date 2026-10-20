@@ -50,6 +50,10 @@ pub struct RunOutput {
     /// counts only these. Not sent to clients.
     #[serde(skip)]
     pub compiler_verdict: bool,
+    /// Output was cut: the server's own byte cap was hit (or a stream was
+    /// longer than the cap). Used for logs; not sent to clients.
+    #[serde(skip)]
+    pub truncated: bool,
 }
 
 impl RunOutput {
@@ -63,6 +67,7 @@ impl RunOutput {
             duration_ms,
             mem_limit: false,
             compiler_verdict: false,
+            truncated: false,
         }
     }
 }
@@ -193,8 +198,11 @@ const JOB_SCRIPT: &str = r#"
 csecs="$1"; secs="$2"; work="$3"; vmem="$4"
 cat > "$work/main.rs"
 printf '\001RR-COMPILE\n'
-timeout --signal=KILL "$csecs" rustc --edition 2024 -C opt-level=1 -C overflow-checks=on \
-  -o "$work/prog" "$work/main.rs" 1>&2
+# When `timeout` kills rustc it dies of SIGKILL too, and bash would print
+# "job: line N: PID Killed ..." to the learner. The group sends the shell's
+# own stderr to /dev/null while rustc's output goes to the real stderr (fd 3).
+{ timeout --signal=KILL "$csecs" rustc --edition 2024 -C opt-level=1 -C overflow-checks=on \
+  -o "$work/prog" "$work/main.rs" 1>&3 2>&3; } 3>&2 2>/dev/null
 rc=$?
 if [ "$rc" -ne 0 ]; then
   [ "$rc" -eq 137 ] && exit 202
@@ -298,11 +306,15 @@ impl Sandbox {
                 });
             }
         };
-        if collected.overflow || collected.timed_out {
+        // A docker CLI killed by a signal may leave its container running.
+        if collected.overflow || collected.timed_out || collected.signaled {
             guard.remove_now().await;
         } else {
             // The container exited by itself, so `--rm` cleans it up.
             guard.disarm();
+        }
+        if let Some(e) = host_failure(&collected, matches!(self, Sandbox::Docker(_))) {
+            return Err(e);
         }
         interpret(collected, limits, duration_ms)
     }
@@ -558,6 +570,24 @@ struct Collected {
     /// The host-side run timer fired.
     timed_out: bool,
     code: Option<i32>,
+    /// The child process ended because of a signal (so `code` is 128 + signal,
+    /// made up by us). In Docker mode the child is the `docker` CLI, and a
+    /// signal means someone killed the CLI, not that the container exited.
+    signaled: bool,
+}
+
+/// A signalled `docker` CLI that we did not kill ourselves is a host failure
+/// (OOM killer, an operator, a crash), not a result of the learner's code. Its
+/// made-up 137 would otherwise read as "out of memory" to the learner and
+/// count as proof that the toolchain works.
+fn host_failure(c: &Collected, docker: bool) -> Option<std::io::Error> {
+    if docker && c.signaled && !c.overflow && !c.timed_out {
+        return Some(std::io::Error::other(format!(
+            "docker CLI was killed by a signal (reported as exit {:?})",
+            c.code
+        )));
+    }
+    None
 }
 
 /// Sends the code, then reads both output streams with a hard byte cap.
@@ -658,7 +688,8 @@ async fn collect(
         // A process killed by a signal has no exit code; report it the way a
         // shell does (128 + signal) so it is treated as stopped or timed out.
         use std::os::unix::process::ExitStatusExt;
-        Ok::<_, std::io::Error>(status.code().or_else(|| status.signal().map(|s| 128 + s)))
+        let code = status.code().or_else(|| status.signal().map(|s| 128 + s));
+        Ok::<_, std::io::Error>((code, status.signal().is_some()))
     }
     .await;
 
@@ -666,13 +697,14 @@ async fn collect(
     for task in [out_task, err_task].into_iter().flatten() {
         task.abort();
     }
-    let code = result?;
+    let (code, signaled) = result?;
     Ok(Collected {
         stdout: stdout.unwrap_or_default(),
         stderr: stderr.unwrap_or_default(),
         overflow,
         timed_out,
         code,
+        signaled,
     })
 }
 
@@ -817,6 +849,7 @@ fn interpret(c: Collected, limits: &Limits, duration_ms: u64) -> std::io::Result
             }
         }
         out.stderr = out.stderr.trim().to_string();
+        out.truncated = c.overflow || c.stderr.len() > max;
         return Ok(out);
     }
 
@@ -825,6 +858,7 @@ fn interpret(c: Collected, limits: &Limits, duration_ms: u64) -> std::io::Result
         Some(i) => (&c.stderr[..i], &c.stderr[i + RUN_MARKER.len()..]),
         None => (&c.stderr[..], &[][..]),
     };
+    let truncated = c.overflow || stdout.len() > max || program_err.len() > max;
     let stdout = text(stdout, max, c.overflow && stdout.len() >= max);
     let mut stderr = text(program_err, max, c.overflow && program_err.len() >= max);
     let mut mem_limit = false;
@@ -875,6 +909,7 @@ fn interpret(c: Collected, limits: &Limits, duration_ms: u64) -> std::io::Result
         duration_ms,
         mem_limit,
         compiler_verdict: true,
+        truncated,
     })
 }
 
@@ -902,11 +937,38 @@ mod tests {
             overflow: false,
             timed_out: false,
             code,
+            signaled: false,
         }
     }
 
     fn interp(c: Collected) -> std::io::Result<RunOutput> {
         interpret(c, &Limits::default(), 5)
+    }
+
+    #[test]
+    fn a_signalled_docker_cli_is_a_host_failure_not_a_container_exit() {
+        // The program had started (both markers) when the CLI was killed.
+        let mut stdout = COMPILE_MARKER.to_vec();
+        stdout.extend_from_slice(RUN_MARKER);
+        let mut c = collected(&stdout, b"RR-RUN-ish", Some(137));
+        c.signaled = true;
+        assert!(host_failure(&c, true).is_some());
+        // Without the signal it is the container's own exit 137: a learner result.
+        c.signaled = false;
+        assert!(host_failure(&c, true).is_none());
+        assert!(interp(c).unwrap().mem_limit);
+        // Local mode: the signal is the program's own, so it is a result.
+        let mut c = collected(&stdout, b"", Some(137));
+        c.signaled = true;
+        assert!(host_failure(&c, false).is_none());
+        // A kill we did ourselves (output cap, run timer) is not a host failure.
+        for (overflow, timed_out) in [(true, false), (false, true)] {
+            let mut c = collected(&stdout, b"", Some(137));
+            c.signaled = true;
+            c.overflow = overflow;
+            c.timed_out = timed_out;
+            assert!(host_failure(&c, true).is_none());
+        }
     }
 
     #[test]
@@ -1024,6 +1086,30 @@ mod tests {
         assert_eq!(out.stdout, "hello\n");
         assert_eq!(out.warnings, "warning: x");
         assert!(out.compiler_verdict && !out.mem_limit);
+    }
+
+    #[test]
+    fn truncated_follows_the_servers_overflow_flag_not_the_text() {
+        let mut stdout = both_markers();
+        // A program that prints the marker text itself is not "truncated".
+        stdout.extend_from_slice(b"[output truncated]");
+        let out = interp(collected(&stdout, b"\x01RR-RUN\n", Some(0))).unwrap();
+        assert!(!out.truncated, "program text must not set the flag");
+
+        // The server cut the stream: truncated, whatever the text says.
+        let mut stdout = both_markers();
+        stdout.extend_from_slice(b"abc");
+        let mut c = collected(&stdout, b"\x01RR-RUN\n", Some(137));
+        c.overflow = true;
+        let out = interp(c).unwrap();
+        assert!(out.truncated);
+
+        // Compile stage too.
+        let mut c = collected(COMPILE_MARKER, b"error: x", Some(COMPILE_FAILED));
+        c.overflow = true;
+        assert!(interp(c).unwrap().truncated);
+        let c = collected(COMPILE_MARKER, b"error: x", Some(COMPILE_FAILED));
+        assert!(!interp(c).unwrap().truncated);
     }
 
     #[test]

@@ -127,24 +127,39 @@ async fn cpu_limit_signal_counts_as_timeout() {
     assert_eq!(out["success"], false);
 }
 
+const ENDLESS_COMPILE: &str = "#![allow(long_running_const_eval)]\nconst X: u64 = { let mut i = 0u64; loop { i = i.wrapping_add(1); } };\nfn main() { println!(\"{}\", X); }";
+
+/// A compile stopped by the timeout must read as a plain message to the
+/// learner, with none of bash's job-control text
+/// (`job: line 6: 4 Killed timeout --signal=KILL ... rustc ...`).
+fn assert_compile_timeout_is_clean(out: &Value) {
+    assert_eq!(out["stage"], "timeout", "{out}");
+    assert_eq!(out["success"], false, "{out}");
+    let stderr = out["stderr"].as_str().unwrap();
+    assert!(stderr.contains("Compiling was stopped"), "{out}");
+    for leak in ["Killed", "line ", "timeout --signal", "job:"] {
+        assert!(!stderr.contains(leak), "{leak:?} leaked: {out}");
+    }
+}
+
+fn short_compile_limits() -> Limits {
+    Limits {
+        compile_timeout: Duration::from_secs(2),
+        run_timeout: Duration::from_secs(2),
+        job_timeout: Duration::from_secs(10),
+        ..Limits::default()
+    }
+}
+
 #[tokio::test]
 async fn endless_compile_is_stopped() {
-    let mut st = AppState::for_tests(
-        Sandbox::Local,
-        Limits {
-            compile_timeout: Duration::from_secs(2),
-            run_timeout: Duration::from_secs(2),
-            job_timeout: Duration::from_secs(10),
-            ..Limits::default()
-        },
-    );
+    let mut st = AppState::for_tests(Sandbox::Local, short_compile_limits());
     st.slots = Semaphore::new(1);
     st.queue_timeout = Duration::from_secs(5);
     let st = Arc::new(st);
-    let code = "#![allow(long_running_const_eval)]\nconst X: u64 = { let mut i = 0u64; loop { i = i.wrapping_add(1); } };\nfn main() { println!(\"{}\", X); }";
-    let (status, out) = post_run(st, code).await;
+    let (status, out) = post_run(st, ENDLESS_COMPILE).await;
     assert_eq!(status, StatusCode::OK, "{out}");
-    assert_eq!(out["stage"], "timeout", "{out}");
+    assert_compile_timeout_is_clean(&out);
 }
 
 #[tokio::test]
@@ -353,6 +368,16 @@ fn assert_memory_stop(out: &Value) {
 
 #[tokio::test]
 #[ignore]
+async fn docker_compile_timeout_shows_no_shell_noise() {
+    let _turn = DOCKER_SUITE.lock().await;
+    let st = Arc::new(AppState::for_tests(docker(), short_compile_limits()));
+    let (status, out) = post_run(st, ENDLESS_COMPILE).await;
+    assert_eq!(status, StatusCode::OK, "{out}");
+    assert_compile_timeout_is_clean(&out);
+}
+
+#[tokio::test]
+#[ignore]
 async fn docker_sandbox_runs_and_blocks_network() {
     let _turn = DOCKER_SUITE.lock().await;
     let (_, out) = post_run(docker_state(), r#"fn main() { println!("hi"); }"#).await;
@@ -411,6 +436,7 @@ async fn docker_sandbox_runs_and_blocks_network() {
         Err(_) => {
             assert_eq!(out["success"], false, "no count and no failure: {out}");
             assert_eq!(out["stage"], "run", "{out}");
+            assert_eq!(out["stdout"], "", "a failed bomb must print nothing: {out}");
         }
     }
 

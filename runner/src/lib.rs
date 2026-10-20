@@ -14,7 +14,7 @@ pub mod sandbox;
 pub mod telemetry;
 
 use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
 use axum::extract::rejection::JsonRejection;
@@ -54,6 +54,8 @@ pub struct AppState {
     pub max_queued: usize,
     /// Requests waiting for a slot right now.
     pub waiting: AtomicUsize,
+    /// Set once the "IPv6 client seen" line has been logged.
+    pub ipv6_logged: AtomicBool,
     /// Web origins allowed to call the API from a browser. Empty allows any
     /// origin, which is only meant for local development.
     pub allowed_origins: Vec<String>,
@@ -78,6 +80,7 @@ impl AppState {
             queue_timeout: Duration::from_secs(10),
             max_queued: 16,
             waiting: AtomicUsize::new(0),
+            ipv6_logged: AtomicBool::new(false),
             allowed_origins: Vec::new(),
             app_check: None,
             proxies: TrustedProxies::default(),
@@ -97,6 +100,7 @@ impl AppState {
             queue_timeout: cfg.queue_timeout,
             max_queued: cfg.max_queued,
             waiting: AtomicUsize::new(0),
+            ipv6_logged: AtomicBool::new(false),
             allowed_origins: cfg.allowed_origins.clone(),
             app_check,
             proxies: cfg.trusted_proxies.clone(),
@@ -251,7 +255,10 @@ fn run_info(output: &RunOutput, code_bytes: usize, queue_ms: u64) -> RunInfo {
         (
             match output.stage {
                 Stage::Compile => Outcome::CompileError,
-                Stage::Run => Outcome::Ok,
+                // The program ran; it either finished cleanly or failed on
+                // its own (a panic, a non-zero exit).
+                Stage::Run if output.success => Outcome::Ok,
+                Stage::Run => Outcome::RunFailed,
                 Stage::Timeout => Outcome::Timeout,
             },
             output.stage,
@@ -268,8 +275,48 @@ fn run_info(output: &RunOutput, code_bytes: usize, queue_ms: u64) -> RunInfo {
         code_bytes: Some(code_bytes),
         stdout_bytes: Some(output.stdout.len()),
         stderr_bytes: Some(output.stderr.len()),
-        truncated: output.stdout.ends_with("[output truncated]")
-            || output.stderr.ends_with("[output truncated]"),
+        truncated: output.truncated,
         ..RunInfo::default()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn output(success: bool, stage: Stage) -> RunOutput {
+        RunOutput {
+            success,
+            stage,
+            stdout: String::new(),
+            stderr: String::new(),
+            warnings: String::new(),
+            duration_ms: 1,
+            mem_limit: false,
+            compiler_verdict: true,
+            truncated: false,
+        }
+    }
+
+    #[test]
+    fn run_info_separates_clean_runs_from_failed_ones() {
+        let info = |o: &RunOutput| run_info(o, 10, 0).outcome.unwrap();
+        assert_eq!(info(&output(true, Stage::Run)), Outcome::Ok);
+        // A panic or non-zero exit: the program ran, but did not succeed.
+        assert_eq!(info(&output(false, Stage::Run)), Outcome::RunFailed);
+        assert_eq!(info(&output(false, Stage::Compile)), Outcome::CompileError);
+        assert_eq!(info(&output(false, Stage::Timeout)), Outcome::Timeout);
+        let mut oom = output(false, Stage::Run);
+        oom.mem_limit = true;
+        assert_eq!(info(&oom), Outcome::MemLimit);
+    }
+
+    #[test]
+    fn run_info_takes_truncated_from_the_output_flag() {
+        let mut o = output(true, Stage::Run);
+        o.stdout = "[output truncated]".into();
+        assert!(!run_info(&o, 1, 0).truncated, "text alone must not count");
+        o.truncated = true;
+        assert!(run_info(&o, 1, 0).truncated);
     }
 }

@@ -2,7 +2,8 @@
 //!
 //! "Healthy" means the sandbox recently gave a real compiler verdict (a
 //! program ran, or the compiler reported errors), the App Check keys are
-//! loaded (when required) and the disk has room. Jobs killed by the host,
+//! loaded (when required) and the disk has room. A disk reading that fails
+//! counts as not healthy. Jobs killed by the host,
 //! timeouts and internal errors don't count as proof of life, so a host
 //! that keeps failing jobs goes unhealthy even under load.
 
@@ -90,14 +91,26 @@ pub fn free_mb_at(path: &Path) -> Option<u64> {
     Some((stat.f_bavail as u64).saturating_mul(stat.f_frsize as u64) / (1024 * 1024))
 }
 
+/// All conditions must hold. A disk reading that could not be taken counts
+/// against health ("unknown" is not "fine"): `diskFreeMb` is `null` in the
+/// JSON and the status is 503.
+pub fn is_healthy(
+    since_good_secs: Option<u64>,
+    keys_ready: bool,
+    disk_free_mb: Option<u64>,
+    min_disk_mb: u64,
+) -> bool {
+    since_good_secs.is_some_and(|s| s <= MAX_IDLE_SECS)
+        && keys_ready
+        && disk_free_mb.is_some_and(|d| d >= min_disk_mb)
+}
+
 /// `GET /health`: JSON, no auth, no rate limit, never cached.
 pub async fn health(State(state): State<Arc<AppState>>) -> Response {
     let since_good = state.health.secs_since_good_job();
     let keys_ready = state.keys_ready();
     let disk = disk_free_mb();
-    let healthy = since_good.is_some_and(|s| s <= MAX_IDLE_SECS)
-        && keys_ready
-        && disk.is_none_or(|d| d >= state.health.min_disk_mb);
+    let healthy = is_healthy(since_good, keys_ready, disk, state.health.min_disk_mb);
     let t = &state.telemetry;
     let body = json!({
         "status": if healthy { "ok" } else { "unhealthy" },
@@ -106,6 +119,7 @@ pub async fn health(State(state): State<Arc<AppState>>) -> Response {
         "diskFreeMb": disk,
         "runs": {
             "ok": t.total(Outcome::Ok),
+            "runFailed": t.total(Outcome::RunFailed),
             "compileError": t.total(Outcome::CompileError),
             "timeout": t.total(Outcome::Timeout),
             "memLimit": t.total(Outcome::MemLimit),
@@ -208,6 +222,20 @@ mod tests {
         assert_eq!(
             idle_check_once(&st, Duration::ZERO).await,
             IdleCheck::Ran(Ok(()))
+        );
+    }
+
+    #[test]
+    fn unknown_disk_space_is_unhealthy() {
+        let min = DEFAULT_MIN_DISK_MB;
+        assert!(is_healthy(Some(5), true, Some(min), min));
+        assert!(!is_healthy(Some(5), true, Some(min - 1), min));
+        assert!(!is_healthy(Some(5), true, None, min), "unreadable disk");
+        assert!(!is_healthy(None, true, Some(min), min), "no good job yet");
+        assert!(!is_healthy(Some(MAX_IDLE_SECS + 1), true, Some(min), min));
+        assert!(
+            !is_healthy(Some(5), false, Some(min), min),
+            "keys not loaded"
         );
     }
 
