@@ -1,0 +1,75 @@
+{
+  "id": "u4-l1",
+  "title": "Structs",
+  "sections": [
+    {
+      "type": "text",
+      "text": "A struct groups related values under one name. Each value is a field with its own name and type."
+    },
+    {
+      "type": "code",
+      "code": "struct Player {\n    name: String,\n    level: u32,\n    online: bool,\n}\n\nfn main() {\n    let p = Player {\n        name: String::from(\"Mai\"),\n        level: 7,\n        online: true,\n    };\n    println!(\"{} is level {} (online: {})\", p.name, p.level, p.online);\n}"
+    },
+    {
+      "type": "text",
+      "text": "Read a field with a dot: p.name. To change fields, the whole variable must be mut:"
+    },
+    {
+      "type": "code",
+      "code": "struct Counter {\n    count: u32,\n}\n\nfn main() {\n    let mut c = Counter { count: 0 };\n    c.count += 1;\n    c.count += 1;\n    println!(\"{}\", c.count);\n}"
+    },
+    {
+      "type": "text",
+      "text": "Add #[derive(Debug)] above a struct to print it with {:?}, or {:#?} for a tidy multi-line view:"
+    },
+    {
+      "type": "code",
+      "code": "#[derive(Debug)]\nstruct Point {\n    x: i32,\n    y: i32,\n}\n\nfn main() {\n    let x = 4;\n    let p = Point { x, y: -2 };   // x is shorthand for x: x\n    println!(\"{:?}\", p);\n    println!(\"{:#?}\", p);\n    println!(\"x is {}, y is {}\", p.x, p.y);\n}"
+    },
+    {
+      "type": "note",
+      "text": "A struct is like a form with labelled boxes: every Player has a name box, a level box and an online box.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Rust has no classes or inheritance. Data lives in structs, behaviour goes in impl blocks (next lesson), and shared behaviour comes from traits. Tuple structs like struct Meters(f64); give a plain value its own type.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Create a Book with title \"Dune\" and pages 412, then print it as shown. It should print: Dune has 412 pages",
+    "starter": "struct Book {\n    title: String,\n    pages: u32,\n}\n\nfn main() {\n    // create the book here\n    println!(\"? has ? pages\");\n}",
+    "expectedOutput": "Dune has 412 pages",
+    "solution": "struct Book {\n    title: String,\n    pages: u32,\n}\n\nfn main() {\n    let book = Book {\n        title: String::from(\"Dune\"),\n        pages: 412,\n    };\n    println!(\"{} has {} pages\", book.title, book.pages);\n}"
+  },
+  "quiz": [
+    {
+      "question": "How do you read the level field of a struct value p?",
+      "options": [
+        "p[level]",
+        "p.level",
+        "p->level"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What do you need to change a field?",
+      "options": [
+        "The variable must be declared mut",
+        "Nothing",
+        "A special setter"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "What does #[derive(Debug)] let you do?",
+      "options": [
+        "Print the struct with {:?}",
+        "Run the debugger",
+        "Copy the struct"
+      ],
+      "answer": 0
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "units": [
+    {
+      "id": "u0",
+      "number": 0,
+      "title": "Programming basics",
+      "summary": "What a program is, values, decisions, loops and functions.",
+      "tracks": ["starter"],
+      "lessons": [
+        { "id": "u0-l1", "title": "What is a program?" },
+        { "id": "u0-l2", "title": "Values and variables" },
+        { "id": "u0-l3", "title": "Making decisions" },
+        { "id": "u0-l4", "title": "Repeating with loops" },
+        { "id": "u0-l5", "title": "Functions" }
+      ]
+    },
+    {
+      "id": "u1",
+      "number": 1,
+      "title": "Getting started",
+      "summary": "Hello world, Cargo, printing, variables and shadowing.",
+      "tracks": ["starter", "fast"],
+      "lessons": [
+        { "id": "u1-l1", "title": "Hello, world!" },
+        { "id": "u1-l2", "title": "Cargo, Rust's build tool" },
+        { "id": "u1-l3", "title": "Printing with println!" },
+        { "id": "u1-l4", "title": "Variables and mutability" },
+        { "id": "u1-l5", "title": "Shadowing" }
+      ]
+    },
+    {
+      "id": "u2",
+      "number": 2,
+      "title": "Types and control flow",
+      "summary": "Numbers, booleans, tuples, arrays, if, loops and functions.",
+      "tracks": ["starter", "fast"],
+      "lessons": [
+        { "id": "u2-l1", "title": "Scalar types" },
+        { "id": "u2-l2", "title": "Tuples and arrays" },
+        { "id": "u2-l3", "title": "if is an expression" },
+        { "id": "u2-l4", "title": "loop, while and for" },
+        { "id": "u2-l5", "title": "Functions and return values" }
+      ]
+    },
+    {
+      "id": "u3",
+      "number": 3,
+      "title": "Ownership",
+      "summary": "The idea that makes Rust safe without a garbage collector.",
+      "tracks": ["starter", "fast"],
+      "lessons": [
+        { "id": "u3-l1", "title": "Ownership and moves" },
+        { "id": "u3-l2", "title": "Copy and Clone" },
+        { "id": "u3-l3", "title": "Borrowing and references" },
+        { "id": "u3-l4", "title": "Mutable references" },
+        { "id": "u3-l5", "title": "Slices" }
+      ]
+    },
+    {
+      "id": "u4",
+      "number": 4,
+      "title": "Structs and enums",
+      "summary": "Model your data and match on it.",
+      "tracks": ["starter", "fast"],
+      "lessons": [
+        { "id": "u4-l1", "title": "Structs" },
+        { "id": "u4-l2", "title": "Methods" },
+        { "id": "u4-l3", "title": "Enums" },
+        { "id": "u4-l4", "title": "Option" },
+        { "id": "u4-l5", "title": "match and if let" }
+      ]
+    },
+    {
+      "id": "u5",
+      "number": 5,
+      "title": "Collections and strings",
+      "summary": "Vec, String vs &str, and HashMap.",
+      "tracks": ["starter", "fast"],
+      "lessons": [
+        { "id": "u5-l1", "title": "Vectors" },
+        { "id": "u5-l2", "title": "String and &str" },
+        { "id": "u5-l3", "title": "HashMap" }
+      ]
+    },
+    {
+      "id": "u6",
+      "number": 6,
+      "title": "Error handling",
+      "summary": "panic!, Result, the ? operator and custom error types.",
+      "tracks": ["starter", "fast"],
+      "lessons": [
+        { "id": "u6-l1", "title": "panic!" },
+        { "id": "u6-l2", "title": "Result" },
+        { "id": "u6-l3", "title": "The ? operator" },
+        { "id": "u6-l4", "title": "Custom error types" }
+      ]
+    },
+    { "id": "u7", "number": 7, "title": "Generics and traits", "summary": "Write code that works for many types.", "tracks": ["starter", "fast"], "lessons": [] },
+    { "id": "u8", "number": 8, "title": "Closures and iterators", "summary": "Functional-style Rust.", "tracks": ["starter", "fast"], "lessons": [] },
+    { "id": "u9", "number": 9, "title": "Modules, crates and testing", "summary": "Organize and test real projects.", "tracks": ["starter", "fast"], "lessons": [] },
+    { "id": "u10", "number": 10, "title": "Smart pointers", "summary": "Box, Rc and RefCell.", "tracks": ["starter", "fast"], "lessons": [] },
+    { "id": "u11", "number": 11, "title": "Concurrency", "summary": "Threads, channels and shared state.", "tracks": ["starter", "fast"], "lessons": [] },
+    { "id": "u12", "number": 12, "title": "Capstone projects", "summary": "Build complete programs.", "tracks": ["starter", "fast"], "lessons": [] }
+  ]
+}

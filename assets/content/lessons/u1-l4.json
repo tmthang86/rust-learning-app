@@ -1,0 +1,98 @@
+{
+  "id": "u1-l4",
+  "title": "Variables and mutability",
+  "sections": [
+    {
+      "type": "text",
+      "text": "let creates a variable. By default a variable can't change after it's set. Rust calls this immutable."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let x = 5;\n    println!(\"x is {x}\");\n    // x = 6;  // error: cannot assign twice to immutable variable\n}"
+    },
+    {
+      "type": "text",
+      "text": "Add mut to allow changes:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let mut count = 0;\n    count = count + 1;\n    count += 1;\n    println!(\"count is {count}\");\n}"
+    },
+    {
+      "type": "text",
+      "track": "starter",
+      "text": "count += 1 is a short way to write count = count + 1."
+    },
+    {
+      "type": "note",
+      "track": "fast",
+      "text": "Coming from another language: this is the reverse of most languages, where variables are mutable unless you say const or final. Immutable by default makes it easy to see which values change, and the compiler enforces it."
+    },
+    {
+      "type": "text",
+      "text": "Rust works out each variable's type from its value, but you can also write it yourself after a colon:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let speed: f64 = 2.5;\n    let lives: i32 = 3;\n    println!(\"{speed} {lives}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "f64 is a number with a decimal point, and i32 is a whole number. Unit 2 covers the other number types.",
+      "track": "starter"
+    },
+    {
+      "type": "text",
+      "text": "Constants use const and always need a written type. They never change. By convention their names are written in capitals, like MAX_SCORE."
+    },
+    {
+      "type": "code",
+      "code": "const MAX_SCORE: u32 = 100;\n\nfn main() {\n    println!(\"Max score: {MAX_SCORE}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "u32 is a whole number that can't be negative.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Coming from another language: an immutable let is still a normal variable, so its value can be worked out while the program runs. A const must be known at compile time, is copied into each place it's used, and can be declared outside any function.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "This program doesn't compile. Fix it so it prints: score is 15",
+    "starter": "fn main() {\n    let score = 10;\n    score = score + 5;\n    println!(\"score is {score}\");\n}",
+    "expectedOutput": "score is 15",
+    "solution": "fn main() {\n    let mut score = 10;\n    score = score + 5;\n    println!(\"score is {score}\");\n}"
+  },
+  "quiz": [
+    {
+      "question": "What happens if you change a variable declared with plain let?",
+      "options": [
+        "It changes",
+        "The program crashes when it runs",
+        "The code doesn't compile"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Which line declares a variable you can change?",
+      "options": [
+        "let x = 1;",
+        "let mut x = 1;",
+        "const x = 1;"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What must a const always have?",
+      "options": [
+        "A written type",
+        "The mut keyword",
+        "A lowercase name"
+      ],
+      "answer": 0
+    }
+  ]
+}

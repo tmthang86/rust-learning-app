@@ -1,0 +1,54 @@
+{
+  "id": "u1-l1",
+  "title": "Hello, world!",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Every Rust program starts running at a function called main. Inside it, println! prints a line of text."
+    },
+    {
+      "type": "text",
+      "track": "starter",
+      "text": "A function is a named block of instructions. The curly braces { } mark where it starts and ends. The computer runs the lines inside main from top to bottom."
+    },
+    {
+      "type": "note",
+      "track": "fast",
+      "text": "Coming from another language: println! is a macro rather than a function because it needs to take any number of arguments and check its format string against them at compile time. Rust functions can't do either."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    println!(\"Hello, world!\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "fn declares a function. println! ends with ! because it's a macro: a special kind of command that Rust expands into more code before the program runs. You'll meet more macros later. Statements end with a semicolon. Strings go in double quotes."
+    }
+  ],
+  "exercise": {
+    "prompt": "Change the program so it prints: Hello, Rust!",
+    "starter": "fn main() {\n    println!(\"Hello, world!\");\n}",
+    "expectedOutput": "Hello, Rust!",
+    "solution": "fn main() {\n    println!(\"Hello, Rust!\");\n}"
+  },
+  "quiz": [
+    {
+      "question": "Where does a Rust program start running?",
+      "options": [
+        "The first line of the file",
+        "The main function",
+        "Any function named start"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Why does println! end with an exclamation mark?",
+      "options": [
+        "It prints loudly",
+        "It is a macro",
+        "It returns an error"
+      ],
+      "answer": 1
+    }
+  ]
+}

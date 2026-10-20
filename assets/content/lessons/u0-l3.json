@@ -1,0 +1,35 @@
+{
+  "id": "u0-l3",
+  "title": "Making decisions",
+  "sections": [
+    { "type": "text", "text": "Programs often need to choose what to do. if runs some code only when a condition is true. else runs when it isn't." },
+    { "type": "code", "code": "fn main() {\n    let temperature = 30;\n    if temperature > 25 {\n        println!(\"It's hot. Drink water!\");\n    } else {\n        println!(\"Nice weather.\");\n    }\n}" },
+    { "type": "text", "text": "A condition is a question with a true-or-false answer. Common comparisons are > (greater than), < (less than), >= (at least), <= (at most), == (equal to) and != (not equal to)." },
+    { "type": "note", "text": "Watch out: one = stores a value, two == compares values. if age == 18 asks a question; let age = 18 sets the value." },
+    { "type": "text", "text": "Use else if to check more than two cases. Rust checks them from top to bottom and runs only the first one that's true:" },
+    { "type": "code", "code": "fn main() {\n    let score = 72;\n    if score >= 90 {\n        println!(\"Grade A\");\n    } else if score >= 70 {\n        println!(\"Grade B\");\n    } else {\n        println!(\"Keep practising\");\n    }\n}" }
+  ],
+  "exercise": {
+    "prompt": "Finish the program so it prints Even when number is even and Odd otherwise. number % 2 gives the remainder after dividing by 2. With 8 it should print: Even",
+    "starter": "fn main() {\n    let number = 8;\n    // print Even or Odd here\n}",
+    "expectedOutput": "Even",
+    "solution": "fn main() {\n    let number = 8;\n    if number % 2 == 0 {\n        println!(\"Even\");\n    } else {\n        println!(\"Odd\");\n    }\n}"
+  },
+  "quiz": [
+    {
+      "question": "When does the code inside if run?",
+      "options": ["Always", "When the condition is true", "When the condition is false"],
+      "answer": 1
+    },
+    {
+      "question": "Which one compares two values?",
+      "options": ["=", "==", "=>"],
+      "answer": 1
+    },
+    {
+      "question": "With score = 95, what does the grade example print?",
+      "options": ["Grade A", "Grade B", "Grade A and Grade B"],
+      "answer": 0
+    }
+  ]
+}

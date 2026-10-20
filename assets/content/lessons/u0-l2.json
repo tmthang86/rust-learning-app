@@ -1,0 +1,39 @@
+{
+  "id": "u0-l2",
+  "title": "Values and variables",
+  "sections": [
+    { "type": "text", "text": "Programs work with values: numbers like 42 or 3.5, text like \"hello\", and true or false." },
+    { "type": "text", "text": "A variable is a name you give to a value so you can use it later. In Rust you create one with let:" },
+    { "type": "code", "code": "fn main() {\n    let apples = 5;\n    let price = 2;\n    let total = apples * price;\n    println!(\"Total: {total}\");\n}" },
+    { "type": "text", "text": "Read let apples = 5; as \"let apples be 5\". The = sign means \"store this value\", not \"is equal to\" like in maths." },
+    { "type": "text", "text": "You can do arithmetic with + (add), - (subtract), * (multiply) and / (divide). Writing a variable's name inside {} in println! shows its value." },
+    { "type": "code", "code": "fn main() {\n    let name = \"Sam\";\n    let age = 12;\n    println!(\"{name} is {age}\");\n    println!(\"Next year {name} will be {}\", age + 1);\n}" },
+    { "type": "text", "text": "An empty {} is a placeholder too. It's filled with the value written after the text, here age + 1. That's handy when the value isn't stored in a variable." },
+    { "type": "note", "text": "Text values go in double quotes. Numbers don't. \"5\" is text that looks like a number; 5 is a number you can do maths with." },
+    { "type": "note", "text": "A line that starts with // is a comment: a note for people reading the code. The computer ignores it. Exercises use comments to show where your code goes." },
+    { "type": "note", "text": "After you press Run you may sometimes see warnings, shown apart from your program's output. A warning means the compiler noticed something odd, but your program still ran. In exercises a warning often just means you haven't used a variable yet, and it goes away when you finish. If a warning suggests putting an underscore (_) in front of a name, don't follow that advice in exercises: you're meant to use the variable." }
+  ],
+  "exercise": {
+    "prompt": "A box holds 6 eggs. Below the first println!, work out how many eggs are in 4 boxes and print it, so the program prints:\n6 eggs per box, 4 boxes\n24 eggs",
+    "starter": "fn main() {\n    let eggs_per_box = 6;\n    let boxes = 4;\n    println!(\"{eggs_per_box} eggs per box, {boxes} boxes\");\n    // work out the total here and print it\n}",
+    "expectedOutput": "6 eggs per box, 4 boxes\n24 eggs",
+    "solution": "fn main() {\n    let eggs_per_box = 6;\n    let boxes = 4;\n    println!(\"{eggs_per_box} eggs per box, {boxes} boxes\");\n    let total = eggs_per_box * boxes;\n    println!(\"{total} eggs\");\n}"
+  },
+  "quiz": [
+    {
+      "question": "What does let score = 10; do?",
+      "options": ["Checks if score equals 10", "Stores 10 under the name score", "Prints 10"],
+      "answer": 1
+    },
+    {
+      "question": "Which of these is text, not a number?",
+      "options": ["7", "\"7\"", "7.0"],
+      "answer": 1
+    },
+    {
+      "question": "What does * do between two numbers?",
+      "options": ["Adds them", "Multiplies them", "Compares them"],
+      "answer": 1
+    }
+  ]
+}

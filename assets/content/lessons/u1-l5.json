@@ -1,0 +1,78 @@
+{
+  "id": "u1-l5",
+  "title": "Shadowing",
+  "sections": [
+    {
+      "type": "text",
+      "text": "You can declare a new variable with the same name as an earlier one. The new one shadows the old one: from that line on, the name means the new value."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let x = 5;\n    let x = x + 1;\n    let x = x * 2;\n    println!(\"x is {x}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "This prints x is 12. Each let makes a brand-new variable; none of them is ever changed, so no mut is needed."
+    },
+    {
+      "type": "text",
+      "text": "Shadowing can also change the type, which mut can't do. This is useful when converting a value:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let input = \"42\";\n    let input: i32 = input.parse().unwrap();\n    println!(\"{}\", input + 1);\n}"
+    },
+    {
+      "type": "text",
+      "text": "\"42\" is text, not a number. parse() turns the text into a number, and the : i32 tells it which kind of number to make. Parsing can fail (think of \"hello\"), so parse() hands back a result you have to unwrap. unwrap() says \"I'm sure this worked\" and stops the program if it didn't. You'll learn safer ways to handle failure in the error handling unit."
+    },
+    {
+      "type": "note",
+      "track": "fast",
+      "text": "Coming from another language: in many languages, redeclaring a name in the same scope is an error. In Rust it's idiomatic, especially for parse-and-replace steps like the one above."
+    },
+    {
+      "type": "text",
+      "text": "Shadowing inside a block only lasts until the block ends:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let level = 1;\n    {\n        let level = 2;\n        println!(\"inside: {level}\");\n    }\n    println!(\"outside: {level}\");\n}"
+    }
+  ],
+  "exercise": {
+    "prompt": "Use shadowing (not mut) to turn the text \"7\" into a number and print it doubled. Expected output: 14",
+    "starter": "fn main() {\n    let value = \"7\";\n    // shadow value here\n    println!(\"{}\", value);\n}",
+    "expectedOutput": "14",
+    "solution": "fn main() {\n    let value = \"7\";\n    let value: i32 = value.parse().unwrap();\n    println!(\"{}\", value * 2);\n}"
+  },
+  "quiz": [
+    {
+      "question": "What does this print? let a = 2; let a = a + 3; println!(\"{a}\");",
+      "options": [
+        "2",
+        "5",
+        "It doesn't compile"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What can shadowing do that mut can't?",
+      "options": [
+        "Change the variable's type",
+        "Change the value",
+        "Make the variable global"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "After a block ends, a name shadowed inside it refers to...",
+      "options": [
+        "The value from inside the block",
+        "The value from before the block",
+        "Nothing; it's an error"
+      ],
+      "answer": 1
+    }
+  ]
+}

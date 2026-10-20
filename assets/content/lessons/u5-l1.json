@@ -1,0 +1,75 @@
+{
+  "id": "u5-l1",
+  "title": "Vectors",
+  "sections": [
+    {
+      "type": "text",
+      "text": "A Vec<T> is a list that can grow and shrink. It's the collection you'll use most often."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let mut scores: Vec<i32> = Vec::new();\n    scores.push(80);\n    scores.push(95);\n    scores.push(72);\n    println!(\"{:?} has {} items\", scores, scores.len());\n\n    let primes = vec![2, 3, 5, 7];   // vec! makes one with values\n    println!(\"{:?}\", primes);\n}"
+    },
+    {
+      "type": "text",
+      "text": "Read items by index, or more safely with get, which returns an Option in case the index is out of range:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let names = vec![\"An\", \"Binh\", \"Chi\"];\n    println!(\"{}\", names[1]);\n    match names.get(10) {\n        Some(n) => println!(\"found {n}\"),\n        None => println!(\"no item at 10\"),\n    }\n}"
+    },
+    {
+      "type": "text",
+      "text": "Loop over a vector with for. Borrow it with & to read, or &mut to change items in place:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let mut prices = vec![10, 20, 30];\n    for p in &mut prices {\n        *p += 1;\n    }\n    for p in &prices {\n        println!(\"{p}\");\n    }\n    let last = prices.pop();   // removes and returns Some(31)\n    println!(\"{:?} {:?}\", last, prices);\n}"
+    },
+    {
+      "type": "note",
+      "text": "Iterators make common jobs short: v.iter().sum::<i32>(), v.iter().max(), v.iter().map(|x| x * 2).collect::<Vec<_>>(), v.iter().filter(|x| **x > 10).count().",
+      "track": "fast"
+    },
+    {
+      "type": "note",
+      "text": "for p in prices (without &) moves the vector into the loop, so you couldn't use prices afterwards. Borrowing with & keeps it.",
+      "track": "starter"
+    }
+  ],
+  "exercise": {
+    "prompt": "Push 4 and 5 onto the vector, then print it. It should print: [1, 2, 3, 4, 5]",
+    "starter": "fn main() {\n    let mut numbers = vec![1, 2, 3];   // keep mut: you'll push onto it\n    println!(\"{:?}\", numbers);\n}",
+    "expectedOutput": "[1, 2, 3, 4, 5]",
+    "solution": "fn main() {\n    let mut numbers = vec![1, 2, 3];\n    numbers.push(4);\n    numbers.push(5);\n    println!(\"{:?}\", numbers);\n}"
+  },
+  "quiz": [
+    {
+      "question": "Which method adds an item to the end of a Vec?",
+      "options": [
+        "add",
+        "push",
+        "append_one"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What does v.get(99) return when v has 3 items?",
+      "options": [
+        "A crash",
+        "None",
+        "0"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "How do you change every item of v inside a for loop?",
+      "options": [
+        "for x in &mut v",
+        "for x in v.read()",
+        "for mut x in &v"
+      ],
+      "answer": 0
+    }
+  ]
+}

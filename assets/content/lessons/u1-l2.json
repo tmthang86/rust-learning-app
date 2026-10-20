@@ -1,0 +1,66 @@
+{
+  "id": "u1-l2",
+  "title": "Cargo, Rust's build tool",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Real Rust projects are managed with Cargo. It creates projects, downloads libraries (called crates), builds your code and runs tests."
+    },
+    {
+      "type": "text",
+      "track": "starter",
+      "text": "Building means turning your source code into a program the computer can run. Rust is a compiled language: the compiler checks your whole program for mistakes before it ever runs."
+    },
+    {
+      "type": "note",
+      "track": "fast",
+      "text": "Coming from another language: Cargo plays the role of npm, pip + venv, Maven or Gradle, all in one tool that ships with Rust."
+    },
+    {
+      "type": "text",
+      "text": "To start a project, run this in a terminal:"
+    },
+    {
+      "type": "code",
+      "code": "cargo new hello\ncd hello\ncargo run"
+    },
+    {
+      "type": "text",
+      "text": "cargo new creates a folder with Cargo.toml (the project settings and list of dependencies) and src/main.rs (your code). cargo run builds the project and runs it."
+    },
+    {
+      "type": "code",
+      "code": "[package]\nname = \"hello\"\nversion = \"0.1.0\"\nedition = \"2024\"\n\n[dependencies]"
+    },
+    {
+      "type": "text",
+      "text": "Other commands you'll use often: cargo build to compile, cargo check to quickly look for errors without building, and cargo test to run tests. In this app, the Run button does the building and running for you."
+    }
+  ],
+  "exercise": {
+    "prompt": "The program Cargo generates prints \"Hello, world!\". Make it print: Built with Cargo",
+    "starter": "fn main() {\n    println!(\"Hello, world!\");\n}",
+    "expectedOutput": "Built with Cargo",
+    "solution": "fn main() {\n    println!(\"Built with Cargo\");\n}"
+  },
+  "quiz": [
+    {
+      "question": "Which file lists a project's dependencies?",
+      "options": [
+        "src/main.rs",
+        "Cargo.toml",
+        "Cargo.lock.rs"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Which command looks for errors fastest, without producing a program?",
+      "options": [
+        "cargo check",
+        "cargo run",
+        "cargo new"
+      ],
+      "answer": 0
+    }
+  ]
+}

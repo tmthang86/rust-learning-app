@@ -1,0 +1,71 @@
+{
+  "id": "u4-l2",
+  "title": "Methods",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Methods are functions that belong to a type. You write them inside an impl block. The first parameter, self, is the value the method is called on."
+    },
+    {
+      "type": "code",
+      "code": "struct Rectangle {\n    width: u32,\n    height: u32,\n}\n\nimpl Rectangle {\n    fn area(&self) -> u32 {\n        self.width * self.height\n    }\n\n    fn is_square(&self) -> bool {\n        self.width == self.height\n    }\n}\n\nfn main() {\n    let r = Rectangle { width: 3, height: 4 };\n    println!(\"area {}, square: {}\", r.area(), r.is_square());\n}"
+    },
+    {
+      "type": "text",
+      "text": "&self borrows the value to read it. &mut self borrows it to change it. Plain self takes ownership."
+    },
+    {
+      "type": "text",
+      "text": "Every function in an impl block is an associated function: it belongs to the type. The ones that take self are methods, called with a dot. The ones without self are called with :: and are often used as constructors named new:"
+    },
+    {
+      "type": "code",
+      "code": "struct Account {\n    balance: i64,\n}\n\nimpl Account {\n    fn new() -> Account {\n        Account { balance: 0 }\n    }\n\n    fn deposit(&mut self, amount: i64) {\n        self.balance += amount;\n    }\n}\n\nfn main() {\n    let mut acc = Account::new();\n    acc.deposit(50);\n    acc.deposit(25);\n    println!(\"balance {}\", acc.balance);\n}"
+    },
+    {
+      "type": "note",
+      "text": "You've already used associated functions: String::from is one.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Inside an impl you can write Self instead of the type name, e.g. fn new() -> Self. Method calls auto-reference, so r.area() works whether r is a value or a reference.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Add a method perimeter(&self) -> u32 to Rectangle that returns 2 * (width + height). Then change the println! so it prints both, using r.area() and r.perimeter(). It should print: area 12, perimeter 14",
+    "starter": "struct Rectangle {\n    width: u32,\n    height: u32,\n}\n\nimpl Rectangle {\n    fn area(&self) -> u32 {\n        self.width * self.height\n    }\n\n    // add perimeter here\n}\n\nfn main() {\n    let r = Rectangle { width: 3, height: 4 };\n    println!(\"area {}\", r.area());\n}",
+    "expectedOutput": "area 12, perimeter 14",
+    "solution": "struct Rectangle {\n    width: u32,\n    height: u32,\n}\n\nimpl Rectangle {\n    fn area(&self) -> u32 {\n        self.width * self.height\n    }\n\n    fn perimeter(&self) -> u32 {\n        2 * (self.width + self.height)\n    }\n}\n\nfn main() {\n    let r = Rectangle { width: 3, height: 4 };\n    println!(\"area {}, perimeter {}\", r.area(), r.perimeter());\n}"
+  },
+  "quiz": [
+    {
+      "question": "Where do you write methods for a struct?",
+      "options": [
+        "In an impl block",
+        "Inside the struct",
+        "In main"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Which self should a method that changes the value take?",
+      "options": [
+        "&self",
+        "&mut self",
+        "No self"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "How do you call an associated function new on Account?",
+      "options": [
+        "Account.new()",
+        "Account::new()",
+        "new Account()"
+      ],
+      "answer": 1
+    }
+  ]
+}

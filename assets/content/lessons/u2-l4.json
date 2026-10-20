@@ -1,0 +1,70 @@
+{
+  "id": "u2-l4",
+  "title": "loop, while and for",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Rust has three kinds of loop. loop repeats forever until you break out of it:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let mut tries = 0;\n    let result = loop {\n        tries += 1;\n        if tries == 3 {\n            break tries * 10;\n        }\n    };\n    println!(\"Stopped after {tries} tries, result {result}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "break can carry a value out of a loop, so loop can be used as an expression too. This only works with loop: while and for can't give back a value with break."
+    },
+    {
+      "type": "text",
+      "text": "while repeats while a condition is true. for walks through a range or a collection, and is the one you'll use most:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let mut n = 3;\n    while n > 0 {\n        println!(\"{n}\");\n        n -= 1;\n    }\n\n    for i in 0..3 {\n        println!(\"i = {i}\");\n    }\n\n    let fruits = [\"apple\", \"pear\", \"plum\"];\n    for fruit in fruits {\n        println!(\"I like {fruit}\");\n    }\n}"
+    },
+    {
+      "type": "text",
+      "text": "0..3 counts 0, 1, 2 (it stops before 3). 0..=3 includes the 3. Use continue to skip to the next round and break to stop early."
+    },
+    {
+      "type": "note",
+      "text": "for loops in Rust always go through an iterator, so off-by-one index bugs are rare. Need the index too? Use for (i, fruit) in fruits.iter().enumerate().",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Use a for loop to add up the numbers 1 to 10 and print the total. It should print: 55",
+    "starter": "fn main() {\n    // keep mut: your loop will change total\n    let mut total = 0;\n    // loop here\n    println!(\"{total}\");\n}",
+    "expectedOutput": "55",
+    "solution": "fn main() {\n    let mut total = 0;\n    for n in 1..=10 {\n        total += n;\n    }\n    println!(\"{total}\");\n}"
+  },
+  "quiz": [
+    {
+      "question": "Which numbers does 0..3 produce?",
+      "options": [
+        "0, 1, 2",
+        "0, 1, 2, 3",
+        "1, 2, 3"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Inside a loop block (the loop keyword), how do you stop and give back the value 5?",
+      "options": [
+        "return 5 loop",
+        "break 5;",
+        "stop(5)"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What does continue do?",
+      "options": [
+        "Ends the program",
+        "Skips to the next round of the loop",
+        "Exits the loop"
+      ],
+      "answer": 1
+    }
+  ]
+}

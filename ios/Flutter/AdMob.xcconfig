@@ -1,0 +1,5 @@
+// AdMob app id for iOS, read by Info.plist (GADApplicationIdentifier).
+// The default is Google's public TEST app id. For release, replace it
+// with the real id from AdMob (Apps > App settings), which looks like
+// ca-app-pub-1234567890123456~1234567890. See docs/ads-and-purchases.md.
+ADMOB_APP_ID_IOS = ca-app-pub-3940256099942544~1458002511

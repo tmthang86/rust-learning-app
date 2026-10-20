@@ -1,0 +1,79 @@
+{
+  "id": "u3-l3",
+  "title": "Borrowing and references",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Moving values in and out of every function would be tiring. Instead you can lend a value with a reference, written with &. This is called borrowing."
+    },
+    {
+      "type": "code",
+      "code": "fn count_letters(text: &String) -> usize {\n    text.len()   // len counts bytes: one per letter in plain English text\n}\n\nfn main() {\n    let word = String::from(\"borrow\");\n    let n = count_letters(&word);\n    println!(\"{word} has {n} letters\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "The function gets a reference, uses it, and gives it back automatically. The owner keeps the value, so word is still usable afterwards."
+    },
+    {
+      "type": "text",
+      "text": "You can have as many shared references as you like at the same time, because nobody can change the value through them:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let city = String::from(\"Hanoi\");\n    let r1 = &city;\n    let r2 = &city;\n    println!(\"{r1} {r2} {city}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "A reference must never outlive the value it points to. The compiler checks this, so Rust can't have dangling pointers. The commented-out dangle function below doesn't compile: it tries to return a reference, but there's no value that lives long enough for it to borrow from:"
+    },
+    {
+      "type": "code",
+      "code": "// fn dangle() -> &String {   // error: missing lifetime specifier\n//     let s = String::from(\"oops\");\n//     &s   // s is dropped when the function ends\n// }\nfn make() -> String {\n    String::from(\"fine\")   // return the owned value instead\n}\n\nfn main() {\n    println!(\"{}\", make());\n}"
+    },
+    {
+      "type": "note",
+      "text": "A reference is like letting a friend read your book while you watch. They give it back, and you still own it.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "The part of the compiler that enforces this is the borrow checker. In idiomatic code, parameters usually take &str rather than &String; you'll see why in the Slices lesson.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Change total_length to borrow both Strings instead of taking ownership, so main can still print a. It should print: 9\ngood",
+    "starter": "fn total_length(x: String, y: String) -> usize {\n    x.len() + y.len()\n}\n\nfn main() {\n    let a = String::from(\"good\");\n    let b = String::from(\"night\");\n    println!(\"{}\", total_length(a, b));\n    println!(\"{a}\");\n}",
+    "expectedOutput": "9\ngood",
+    "solution": "fn total_length(x: &String, y: &String) -> usize {\n    x.len() + y.len()\n}\n\nfn main() {\n    let a = String::from(\"good\");\n    let b = String::from(\"night\");\n    println!(\"{}\", total_length(&a, &b));\n    println!(\"{a}\");\n}"
+  },
+  "quiz": [
+    {
+      "question": "What does &word create?",
+      "options": [
+        "A copy of word",
+        "A reference that borrows word",
+        "A new owner of word"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "How many shared (&) references can exist at once?",
+      "options": [
+        "Only one",
+        "As many as you like",
+        "Two"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Why can't a function return a reference to its own local String?",
+      "options": [
+        "The String is dropped when the function ends",
+        "References can't be returned",
+        "Strings are too big"
+      ],
+      "answer": 0
+    }
+  ]
+}

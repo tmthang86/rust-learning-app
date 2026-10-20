@@ -1,0 +1,109 @@
+{
+  "id": "u2-l1",
+  "title": "Scalar types",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Every value in Rust has a type. Scalar types hold a single value: integers, floating-point numbers, booleans and characters."
+    },
+    {
+      "type": "text",
+      "text": "Integers are whole numbers. Signed types (i8, i16, i32, i64, i128) can be negative; unsigned types (u8, u16, u32, u64, u128) can't. The number is the size in bits, which sets the range: a u8 holds 0 to 255 and an i8 holds -128 to 127. i32 is the default. usize is used for counts and indexes."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let age: u8 = 30;\n    let balance: i64 = -1_250;\n    let items: usize = 3;\n    println!(\"{age} {balance} {items}\");\n}"
+    },
+    {
+      "type": "note",
+      "text": "The _ in 1_250 is just for readability, like a comma in 1,250.",
+      "track": "starter"
+    },
+    {
+      "type": "text",
+      "text": "Floats are f64 (the default) and f32. bool is true or false. char is a single Unicode character in single quotes:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let price = 9.99;          // f64\n    let ready: bool = true;\n    let grade = 'A';           // char\n    let crab = '🦀';\n    println!(\"{price} {ready} {grade} {crab}\");\n    println!(\"7 / 2 = {}\", 7 / 2);\n    println!(\"7.0 / 2.0 = {}\", 7.0 / 2.0);\n}"
+    },
+    {
+      "type": "text",
+      "text": "Dividing two integers drops the remainder, so 7 / 2 is 3. Use floats when you need the fraction."
+    },
+    {
+      "type": "text",
+      "text": "Rust never mixes number types on its own. You can't multiply an integer by a float, even when the answer seems obvious. Convert the integer to a float first with as:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let items = 3;\n    let price = 2.5;\n    let total = items as f64 * price;\n    println!(\"{total}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "items as f64 turns the integer 3 into the float 3.0, so both sides of * are f64 and the program prints 7.5."
+    },
+    {
+      "type": "text",
+      "text": "as never fails, but it can lose information when the value doesn't fit the new type:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let price = 2.9;\n    let big = 300;\n    println!(\"{}\", price as i32);\n    println!(\"{}\", big as u8);\n}"
+    },
+    {
+      "type": "text",
+      "text": "2.9 as i32 is 2, because the fraction is dropped. 300 is too big for a u8, and an integer cast keeps only the bits that fit, so it wraps around to 300 - 256 = 44. (A float is different: 300.0 as u8 gives 255, the biggest u8.) Only use as when you know the value fits."
+    },
+    {
+      "type": "note",
+      "text": "Coming from another language: there are no automatic number conversions in Rust, not even from i32 to i64. If an integer overflows while the program runs, it stops with an error. That's what happens in this app and in cargo run (a debug build). Release builds skip that check and wrap around silently, unless you turn overflow checks on.",
+      "track": "fast"
+    },
+    {
+      "type": "note",
+      "text": "Coming from another language: for conversions that can never lose data, use i64::from(x) (or x.into()) instead of as. They only compile when every possible value fits, like i32 to i64.",
+      "track": "fast"
+    },
+    {
+      "type": "note",
+      "text": "Coming from another language: number literals can carry a type suffix, like 5u8 or 2.5f32. usize is as wide as a pointer, so 64 bits on most machines today. A char is 4 bytes, because it holds any Unicode character, not a single byte.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "This program doesn't compile because total is a float and count is an integer, and Rust won't divide one by the other. Convert count to f64 with as so it prints: 2.5",
+    "starter": "fn main() {\n    let total = 10.0;\n    let count = 4;\n    let average = total / count;\n    println!(\"{average}\");\n}",
+    "expectedOutput": "2.5",
+    "solution": "fn main() {\n    let total = 10.0;\n    let count = 4;\n    let average = total / count as f64;\n    println!(\"{average}\");\n}"
+  },
+  "quiz": [
+    {
+      "question": "What is the default integer type?",
+      "options": [
+        "i64",
+        "i32",
+        "usize"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What does 7 / 2 give with integers?",
+      "options": [
+        "3",
+        "3.5",
+        "4"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Which is a valid char?",
+      "options": [
+        "\"a\"",
+        "'a'",
+        "'ab'"
+      ],
+      "answer": 1
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "id": "u4-l4",
+  "title": "Option",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Many languages use null to mean \"no value\", and forgetting to check for it causes crashes. Rust has no null. Instead it has the enum Option:"
+    },
+    {
+      "type": "code",
+      "code": "// Defined in the standard library:\n// enum Option<T> {\n//     Some(T),\n//     None,\n// }\nfn main() {\n    let found: Option<i32> = Some(42);\n    let missing: Option<i32> = None;\n    println!(\"{:?} {:?}\", found, missing);\n}"
+    },
+    {
+      "type": "text",
+      "text": "Option<i32> means \"an Option that may hold an i32\". In the definition, T stands for any type, so you can have Option<String>, Option<bool> and so on. The same angle-bracket notation appears in Vec<i32> and HashMap<char, i32> later. Unit 7 explains it fully."
+    },
+    {
+      "type": "text",
+      "text": "A function that might not have an answer returns an Option. The caller has to deal with both cases before using the value:"
+    },
+    {
+      "type": "code",
+      "code": "// items is a slice of string slices\nfn find_index(items: &[&str], target: &str) -> Option<usize> {\n    for i in 0..items.len() {\n        if items[i] == target {\n            return Some(i);\n        }\n    }\n    None\n}\n\nfn main() {\n    let colors = [\"red\", \"green\", \"blue\"];\n    println!(\"{:?}\", find_index(&colors, \"blue\"));\n    println!(\"{:?}\", find_index(&colors, \"pink\"));\n}"
+    },
+    {
+      "type": "text",
+      "text": "Handy helpers: unwrap_or gives the value, or a fallback if there's none. is_some and is_none tell you which case you have. To use the value only when it's there, you'll use match or if let, coming in the next lesson."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let nickname: Option<&str> = None;\n    println!(\"Hi, {}\", nickname.unwrap_or(\"friend\"));\n\n    let age: Option<u32> = Some(20);\n    println!(\"Do we know the age? {}\", age.is_some());\n    println!(\"Age: {}\", age.unwrap_or(0));\n}"
+    },
+    {
+      "type": "note",
+      "text": "unwrap() stops the program if the value is None. It's fine in quick experiments, but prefer unwrap_or, match or if let in real code.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Option<T> is generic over T. Many collection methods return it, e.g. Vec::get, Iterator::next, str::find. Combinators like map, and_then and ok_or let you chain transformations without unwrapping.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "first_even returns an Option. Print its value, or 0 if there's no even number, using unwrap_or. It should print: 8",
+    "starter": "fn first_even(numbers: &[i32]) -> Option<i32> {\n    for &n in numbers {   // each item is a &i32; &n gives the plain number n\n        if n % 2 == 0 {\n            return Some(n);\n        }\n    }\n    None\n}\n\nfn main() {\n    let result = first_even(&[3, 7, 8, 10]);\n    println!(\"{:?}\", result);\n}",
+    "expectedOutput": "8",
+    "solution": "fn first_even(numbers: &[i32]) -> Option<i32> {\n    for &n in numbers {   // each item is a &i32; &n gives the plain number n\n        if n % 2 == 0 {\n            return Some(n);\n        }\n    }\n    None\n}\n\nfn main() {\n    let result = first_even(&[3, 7, 8, 10]);\n    println!(\"{}\", result.unwrap_or(0));\n}"
+  },
+  "quiz": [
+    {
+      "question": "What are the two variants of Option?",
+      "options": [
+        "Ok and Err",
+        "Some and None",
+        "True and False"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What does Rust use instead of null?",
+      "options": [
+        "0",
+        "Option",
+        "An empty string"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What does None.unwrap_or(5) give?",
+      "options": [
+        "None",
+        "5",
+        "A crash"
+      ],
+      "answer": 1
+    }
+  ]
+}

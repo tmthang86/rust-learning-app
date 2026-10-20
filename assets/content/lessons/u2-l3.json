@@ -1,0 +1,81 @@
+{
+  "id": "u2-l3",
+  "title": "if is an expression",
+  "sections": [
+    {
+      "type": "text",
+      "text": "You met if and else in Unit 0, where they chose which lines to run.",
+      "track": "starter"
+    },
+    {
+      "type": "text",
+      "text": "In Rust, if isn't only a way to choose which code runs: it also produces a value. That means you can use it on the right of a let."
+    },
+    {
+      "type": "note",
+      "text": "Coming from another language: the condition needs no parentheses (the compiler warns about extra ones), but the curly braces are always required, even around a single line.",
+      "track": "fast"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let temperature = 18;\n    let coat = if temperature < 15 { \"heavy\" } else { \"light\" };\n    println!(\"Wear a {coat} coat\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Both branches must give back the same type. Notice there's no semicolon after \"heavy\" and \"light\": the last expression in a block is its value."
+    },
+    {
+      "type": "note",
+      "text": "This replaces the ternary operator (cond ? a : b) found in C, Java and JavaScript. Rust doesn't have one, because if already does the job.",
+      "track": "fast"
+    },
+    {
+      "type": "text",
+      "text": "The condition must be a bool. Rust won't treat a number as true or false:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let count = 3;\n    // if count { ... }      // error: expected bool, found integer\n    if count != 0 {\n        println!(\"We have {count} items\");\n    }\n    let label = if count == 1 { \"item\" } else { \"items\" };\n    println!(\"{count} {label}\");\n}"
+    },
+    {
+      "type": "note",
+      "text": "A block in curly braces is also an expression. let x = { let a = 2; a * 3 }; sets x to 6.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Use if as an expression to set size to \"big\" when n is over 100 and \"small\" otherwise. It should print: big",
+    "starter": "fn main() {\n    let n = 250;\n    let size = \"?\";\n    println!(\"{size}\");\n}",
+    "expectedOutput": "big",
+    "solution": "fn main() {\n    let n = 250;\n    let size = if n > 100 { \"big\" } else { \"small\" };\n    println!(\"{size}\");\n}"
+  },
+  "quiz": [
+    {
+      "question": "What does let x = if true { 1 } else { 2 }; set x to?",
+      "options": [
+        "1",
+        "2",
+        "true"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "What must be true about both branches of an if used as a value?",
+      "options": [
+        "They must be the same length",
+        "They must give the same type",
+        "They must both print"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Can you write if 5 { ... } in Rust?",
+      "options": [
+        "Yes, 5 counts as true",
+        "No, the condition must be a bool",
+        "Only inside main"
+      ],
+      "answer": 1
+    }
+  ]
+}

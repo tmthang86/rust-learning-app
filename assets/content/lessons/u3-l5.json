@@ -1,0 +1,82 @@
+{
+  "id": "u3-l5",
+  "title": "Slices",
+  "sections": [
+    {
+      "type": "text",
+      "text": "A slice is a reference to part of a collection, without copying it. A string slice has the type &str."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let text = String::from(\"hello world\");\n    let hello = &text[0..5];\n    let world = &text[6..];\n    println!(\"{hello} / {world}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "[0..5] means from index 0 up to (not including) 5. Leave out the start or end to mean the beginning or the end. String indexes count bytes, not characters. In plain English text every letter is one byte, so it comes to the same thing. Letters like é take more than one byte; Unit 5 explains why."
+    },
+    {
+      "type": "text",
+      "text": "String literals like \"hi\" are already &str. A function that takes &str accepts both literals and borrowed Strings, so prefer &str for parameters:"
+    },
+    {
+      "type": "code",
+      "code": "fn first_word(s: &str) -> &str {\n    match s.find(' ') {\n        Some(i) => &s[..i],\n        None => s,\n    }\n}\n\nfn main() {\n    let owned = String::from(\"quick brown fox\");\n    println!(\"{}\", first_word(&owned));\n    println!(\"{}\", first_word(\"lazy dog\"));\n}"
+    },
+    {
+      "type": "text",
+      "text": "first_word returns a reference, which the dangle example in the Borrowing lesson couldn't do. The difference: this slice borrows from s, the text passed in, so it stays valid as long as that text does. dangle had nothing to borrow from except a String that was dropped when the function ended."
+    },
+    {
+      "type": "text",
+      "text": "Arrays have slices too, written &[T]:"
+    },
+    {
+      "type": "code",
+      "code": "fn sum(numbers: &[i32]) -> i32 {\n    let mut total = 0;\n    for n in numbers {\n        total += n;\n    }\n    total\n}\n\nfn main() {\n    let all = [1, 2, 3, 4, 5];\n    println!(\"{}\", sum(&all));\n    println!(\"{}\", sum(&all[1..3]));\n}"
+    },
+    {
+      "type": "note",
+      "text": "Don't worry about match and Some yet; they're coming in Unit 4. The idea here is that a slice points into existing data."
+    },
+    {
+      "type": "note",
+      "text": "Slicing in the middle of a multi-byte UTF-8 character panics. For user text, prefer methods like split_whitespace or chars over manual indexes.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Make last_three return a slice of the last three bytes (use &s[s.len() - 3..]). For plain English text like \"rust\", that's the last three letters. It should print: ust",
+    "starter": "fn last_three(s: &str) -> &str {\n    s\n}\n\nfn main() {\n    println!(\"{}\", last_three(\"rust\"));\n}",
+    "expectedOutput": "ust",
+    "solution": "fn last_three(s: &str) -> &str {\n    &s[s.len() - 3..]\n}\n\nfn main() {\n    println!(\"{}\", last_three(\"rust\"));\n}"
+  },
+  "quiz": [
+    {
+      "question": "What does &text[0..3] give you?",
+      "options": [
+        "A copy of the first 3 characters",
+        "A reference to the first 3 bytes",
+        "The 3rd character"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What's the type of the literal \"hi\"?",
+      "options": [
+        "String",
+        "&str",
+        "char"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Why prefer &str over &String for parameters?",
+      "options": [
+        "It accepts both literals and Strings",
+        "It's faster to type",
+        "&String doesn't work"
+      ],
+      "answer": 0
+    }
+  ]
+}

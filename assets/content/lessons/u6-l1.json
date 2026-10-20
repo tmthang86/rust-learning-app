@@ -1,0 +1,79 @@
+{
+  "id": "u6-l1",
+  "title": "panic!",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Some errors can't be recovered from, like a bug that leaves the program in a broken state. For those, Rust panics: it prints a message and stops."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    println!(\"Starting\");\n    let ok = true;\n    if !ok {   // ! means \"not\": this runs only when ok is false\n        panic!(\"Something went badly wrong\");\n    }\n    println!(\"Still running\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "You'll also see panics from things like indexing past the end of an array, dividing an integer by zero, or calling unwrap on None."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let v = vec![1, 2, 3];\n    // let x = v[10];   // panics: index out of bounds\n    let safe = v.get(10);\n    println!(\"{:?}\", safe);\n}"
+    },
+    {
+      "type": "text",
+      "text": "expect is like unwrap, but lets you write the message shown if it fails. It's a good habit when you're sure a value is there:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let port: u16 = \"8080\".parse().expect(\"port should be a number\");\n    println!(\"Listening on {port}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Use panic! for bugs: situations that should never happen. For problems that can happen normally, like a missing file or bad user input, return a Result instead. That's the next lesson."
+    },
+    {
+      "type": "note",
+      "text": "If you try a panic in this app, the panic message appears in the output, after anything already printed. That's expected.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "A panic unwinds the stack by default, running destructors. Set RUST_BACKTRACE=1 to see where it came from. Library code should almost never panic on bad input.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "parse returns a Result. Use expect with a message to get the number out so it can be doubled. It should print: 84",
+    "starter": "fn main() {\n    let n: i32 = \"42\".parse();\n    println!(\"{}\", n * 2);\n}",
+    "expectedOutput": "84",
+    "solution": "fn main() {\n    let n: i32 = \"42\".parse().expect(\"not a number\");\n    println!(\"{}\", n * 2);\n}"
+  },
+  "quiz": [
+    {
+      "question": "What does a panic do?",
+      "options": [
+        "Stops the program with a message",
+        "Retries the line",
+        "Returns None"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "When should you use panic!?",
+      "options": [
+        "For bugs that should never happen",
+        "For any user mistake",
+        "Instead of println!"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "How is expect different from unwrap?",
+      "options": [
+        "It lets you set the error message",
+        "It never panics",
+        "It returns a String"
+      ],
+      "answer": 0
+    }
+  ]
+}
