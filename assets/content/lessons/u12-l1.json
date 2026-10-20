@@ -1,0 +1,79 @@
+{
+  "id": "u12-l1",
+  "title": "A command-line tool",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Welcome to the capstone units. Each lesson builds a complete small program and uses ideas from the whole course. First up is a command-line tool: a program you run with extra words after its name, like a tiny version of the Unix wc command that counts lines, words and characters (real wc counts bytes by default)."
+    },
+    {
+      "type": "text",
+      "text": "Those extra words are command-line arguments. std::env::args() gives them to you as an iterator of Strings. The first item is normally the program's own name, so the real arguments start at the second item. collect() gathers the iterator into a Vec<String>."
+    },
+    {
+      "type": "code",
+      "code": "use std::env;\n\nfn main() {\n    let args: Vec<String> = env::args().collect();\n    println!(\"{} argument(s), counting the program's own name\", args.len());\n    let user_args = &args[1..];   // skip the program name\n    println!(\"your arguments: {user_args:?}\");\n}\n\n// Output:\n// 1 argument(s), counting the program's own name\n// your arguments: []"
+    },
+    {
+      "type": "text",
+      "text": "This app runs your code without any arguments, so you see just one. On your own computer you would run cargo run -- --words, and everything after the -- goes to your program. In our tool, the code in main builds a Vec<String> by hand to stand in for those arguments."
+    },
+    {
+      "type": "note",
+      "text": "When you run ls -l in a terminal, ls is the program and -l is an argument telling it how to behave. Arguments that start with -- (like --words) are usually called flags or options.",
+      "track": "starter"
+    },
+    {
+      "type": "text",
+      "text": "The design: keep the real work in functions that take plain values, and keep main thin. parse_args turns the arguments into a Mode enum, or an error if the user typed something wrong. report counts and formats. run joins the two with the ? operator."
+    },
+    {
+      "type": "code",
+      "code": "use std::env;\nuse std::fmt;\n\nenum Mode {\n    All,\n    Lines,\n    Words,\n    Chars,\n}\n\nenum CliError {\n    UnknownFlag(String),\n    TooManyFlags,\n}\n\nimpl fmt::Display for CliError {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        match self {\n            CliError::UnknownFlag(flag) => write!(f, \"unknown flag {flag}\"),\n            CliError::TooManyFlags => write!(f, \"please give at most one flag\"),\n        }\n    }\n}\n\nfn parse_args(args: &[String]) -> Result<Mode, CliError> {\n    if args.len() > 1 {\n        return Err(CliError::TooManyFlags);\n    }\n    match args.first() {   // first() is Some(first item), or None if args is empty\n        None => Ok(Mode::All),\n        Some(flag) => match flag.as_str() {\n            \"--lines\" => Ok(Mode::Lines),\n            \"--words\" => Ok(Mode::Words),\n            \"--chars\" => Ok(Mode::Chars),\n            other => Err(CliError::UnknownFlag(other.to_string())),\n        },\n    }\n}\n\nfn report(text: &str, mode: &Mode) -> String {\n    let lines = text.lines().count();\n    let words = text.split_whitespace().count();\n    let chars = text.chars().count();\n    match mode {\n        Mode::Lines => format!(\"{lines}\"),\n        Mode::Words => format!(\"{words}\"),\n        Mode::Chars => format!(\"{chars}\"),\n        Mode::All => format!(\"{lines} lines, {words} words, {chars} characters\"),\n    }\n}\n\nfn run(args: &[String], text: &str) -> Result<String, CliError> {\n    let mode = parse_args(args)?;\n    Ok(report(text, &mode))\n}\n\nfn main() {\n    let text = \"the quick brown fox\\njumps over\\nthe lazy dog\\n\";\n\n    // Pretend command lines, because the app can't pass real arguments.\n    let mut runs: Vec<Vec<String>> = vec![\n        vec![],\n        vec![String::from(\"--words\")],\n        vec![String::from(\"--chars\")],\n        vec![String::from(\"--bogus\")],\n        vec![String::from(\"--lines\"), String::from(\"--words\")],\n    ];\n    // If you run this on your own computer with real arguments, use them instead.\n    let real: Vec<String> = env::args().skip(1).collect();\n    if !real.is_empty() {\n        runs = vec![real];\n    }\n\n    for args in &runs {\n        println!(\"$ counter {}\", args.join(\" \"));   // join glues the Strings together with a space between\n        match run(args, text) {\n            Ok(output) => println!(\"{output}\"),\n            Err(e) => println!(\"error: {e}\"),\n        }\n    }\n}\n\n// Output:\n// $ counter\n// 3 lines, 9 words, 44 characters\n// $ counter --words\n// 9\n// $ counter --chars\n// 44\n// $ counter --bogus\n// error: unknown flag --bogus\n// $ counter --lines --words\n// error: please give at most one flag"
+    },
+    {
+      "type": "text",
+      "text": "Splitting the program this way pays off. parse_args and report can be tested on their own, as you learned in Unit 9 with #[test] and assert_eq!, and main is only glue. Errors are values, not panics: a typo in a flag is expected, so the tool reports it politely. A real tool would print errors with eprintln! (which writes to the error stream) and then call std::process::exit(1), so that scripts can see that it failed."
+    },
+    {
+      "type": "note",
+      "text": "Coming from Python or Go: env::args() is like sys.argv or os.Args. env::args() panics if an argument is not valid Unicode; env::args_os() does not. For real tools most people use the clap crate, which parses flags, writes --help text and reports errors for you. Also note that text.lines() splits on \\n and \\r\\n, and that chars().count() counts Unicode scalar values, not bytes (which is what wc -c counts).",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "count() does not know the --chars flag yet, so it reports an unknown flag. Teach it to count the characters in the text for --chars, the same way the other flags count lines and words. The program should print three lines: --lines: 2, --words: 5, --chars: 24. Hint: add the match arm \"--chars\" => Some(text.chars().count()).",
+    "starter": "fn count(text: &str, flag: &str) -> Option<usize> {\n    match flag {\n        \"--lines\" => Some(text.lines().count()),\n        \"--words\" => Some(text.split_whitespace().count()),\n        _ => None,\n    }\n}\n\nfn main() {\n    let text = \"one two\\nthree four five\\n\";\n    for flag in [\"--lines\", \"--words\", \"--chars\"] {\n        match count(text, flag) {\n            Some(n) => println!(\"{flag}: {n}\"),\n            None => println!(\"{flag}: unknown flag\"),\n        }\n    }\n}",
+    "expectedOutput": "--lines: 2\n--words: 5\n--chars: 24",
+    "solution": "fn count(text: &str, flag: &str) -> Option<usize> {\n    match flag {\n        \"--lines\" => Some(text.lines().count()),\n        \"--words\" => Some(text.split_whitespace().count()),\n        \"--chars\" => Some(text.chars().count()),\n        _ => None,\n    }\n}\n\nfn main() {\n    let text = \"one two\\nthree four five\\n\";\n    for flag in [\"--lines\", \"--words\", \"--chars\"] {\n        match count(text, flag) {\n            Some(n) => println!(\"{flag}: {n}\"),\n            None => println!(\"{flag}: unknown flag\"),\n        }\n    }\n}"
+  },
+  "quiz": [
+    {
+      "question": "What is the first item that env::args() gives you?",
+      "options": [
+        "The first flag the user typed after the program's name, such as --words",
+        "Normally the program's own name, so real arguments start at index 1",
+        "An empty string that marks where the real arguments begin"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Why does parse_args return a Result instead of panicking on a bad flag?",
+      "options": [
+        "Panics are not allowed in programs that read arguments",
+        "Result is always faster to run than a panic would be, even when nothing fails",
+        "A mistyped flag is expected, so the caller can report it politely"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "What does the ? in run do when parse_args returns an Err?",
+      "options": [
+        "Returns that Err from run straight away, skipping the rest of run",
+        "Ignores the error and carries on with the default Mode::All",
+        "Prints the error message and then continues with the next line of code"
+      ],
+      "answer": 0
+    }
+  ]
+}

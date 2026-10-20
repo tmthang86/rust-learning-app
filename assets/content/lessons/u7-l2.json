@@ -1,0 +1,99 @@
+{
+  "id": "u7-l2",
+  "title": "Generic structs and enums",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Structs and enums can have type parameters too. Here is a Point whose coordinates can be any type, as long as x and y are the same type:"
+    },
+    {
+      "type": "code",
+      "code": "struct Point<T> {\n    x: T,\n    y: T,\n}\n\nimpl<T> Point<T> {\n    fn x(&self) -> &T {\n        &self.x\n    }\n}\n\nfn main() {\n    let whole = Point { x: 5, y: 10 };\n    let fractional = Point { x: 1.5, y: 4.0 };\n    println!(\"{} {}\", whole.x(), whole.y);\n    println!(\"{} {}\", fractional.x(), fractional.y);\n}"
+    },
+    {
+      "type": "text",
+      "text": "Point<T> declares T after the name, then uses it for the fields. Rust works out T from the values: whole is a Point<i32> and fractional is a Point<f64>. A method may share a name with a field: whole.x() calls the method, while whole.y reads the field."
+    },
+    {
+      "type": "text",
+      "text": "Look at impl<T> Point<T>. The first <T> declares the placeholder, just like in a generic function. Without it Rust would think T is a real type named T. The second one, in Point<T>, says which type the impl is for. Writing the whole thing out once is how you say \"for every Point, whatever T is\"."
+    },
+    {
+      "type": "text",
+      "text": "Both fields share one T, so mixing types is an error. Point { x: 5, y: 4.0 } does not compile: Rust fixes T as an integer from x, then finds a float in y (error E0308, mismatched types). If you want two different types, use two type parameters, Point<T, U>."
+    },
+    {
+      "type": "text",
+      "text": "You can also write an impl for one specific type. This method only exists for Point<f64>, because it needs square roots:"
+    },
+    {
+      "type": "code",
+      "code": "struct Point<T> {\n    x: T,\n    y: T,\n}\n\nimpl Point<f64> {\n    fn distance_from_origin(&self) -> f64 {\n        (self.x * self.x + self.y * self.y).sqrt()\n    }\n}\n\nfn main() {\n    let p = Point { x: 3.0, y: 4.0 };\n    println!(\"distance: {}\", p.distance_from_origin());\n}"
+    },
+    {
+      "type": "text",
+      "text": "You have already used generic types. Option<T> and Result<T, E> are plain enums with type parameters. Their real definitions in the standard library look like this:"
+    },
+    {
+      "type": "code",
+      "code": "// Copies of the standard library definitions (simplified), shown for reading\nenum Option<T> {\n    Some(T),\n    None,\n}\n\nenum Result<T, E> {\n    Ok(T),\n    Err(E),\n}"
+    },
+    {
+      "type": "text",
+      "text": "So Option<i32> is \"an Option holding an i32\", and Result<u32, String> is \"a Result that is Ok with a u32 or Err with a String\". Vec<T> is the same idea: a generic struct, so Vec<i32> and Vec<String> are different types made from one definition. Here is a small generic type of our own that wraps a Vec<T>:"
+    },
+    {
+      "type": "code",
+      "code": "struct Stack<T> {\n    items: Vec<T>,\n}\n\nimpl<T> Stack<T> {\n    fn new() -> Stack<T> {\n        Stack { items: Vec::new() }\n    }\n\n    fn push(&mut self, item: T) {\n        self.items.push(item);\n    }\n\n    fn pop(&mut self) -> Option<T> {\n        self.items.pop()\n    }\n\n    fn peek(&self) -> Option<&T> {\n        self.items.last()\n    }\n}\n\nfn main() {\n    let mut plates: Stack<String> = Stack::new();\n    plates.push(String::from(\"blue\"));\n    plates.push(String::from(\"red\"));\n    println!(\"top: {:?}\", plates.peek());\n    println!(\"took: {:?}\", plates.pop());\n    println!(\"took: {:?}\", plates.pop());\n    println!(\"took: {:?}\", plates.pop());\n}"
+    },
+    {
+      "type": "text",
+      "text": "Rust can work out T from the later push calls, so the annotation Stack<String> is not strictly needed here. Writing it makes the code clearer, and you do need it when nothing later says what T is. last() on a Vec returns an Option holding a reference to the final item, or None if the Vec is empty. peek reuses that."
+    },
+    {
+      "type": "note",
+      "text": "Stack<T> is generic over any T, even types you have not seen yet. That is the whole point: one definition, and the compiler builds the right version for each T you use. If it helps, picture Vec<T> as a box labelled \"T goes here\".",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Like List<T> in Java/C# or std::vector<T> in C++. Unlike Java there is no type erasure and no boxing; like C# and C++, Stack<i32> stores plain i32 values. Option<T> is Rust's replacement for null, and Result<T, E> replaces thrown exceptions. Both are ordinary generic enums, not language magic.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Pair only holds i32 values. Make it generic so it can hold any type, and keep swapped working. Then, at the end of main, build a Pair of two words (a and b), swap it, and print its left and right fields separated by a space. It should print two lines: 2 1 and b a. Hint: struct Pair<T>, impl<T> Pair<T>, and fn swapped(self) -> Pair<T>.",
+    "starter": "struct Pair {\n    left: i32,\n    right: i32,\n}\n\nimpl Pair {\n    fn swapped(self) -> Pair {\n        Pair { left: self.right, right: self.left }\n    }\n}\n\nfn main() {\n    let numbers = Pair { left: 1, right: 2 }.swapped();\n    println!(\"{} {}\", numbers.left, numbers.right);\n}",
+    "expectedOutput": "2 1\nb a",
+    "solution": "struct Pair<T> {\n    left: T,\n    right: T,\n}\n\nimpl<T> Pair<T> {\n    fn swapped(self) -> Pair<T> {\n        Pair { left: self.right, right: self.left }\n    }\n}\n\nfn main() {\n    let numbers = Pair { left: 1, right: 2 }.swapped();\n    println!(\"{} {}\", numbers.left, numbers.right);\n    let words = Pair { left: \"a\", right: \"b\" }.swapped();\n    println!(\"{} {}\", words.left, words.right);\n}"
+  },
+  "quiz": [
+    {
+      "question": "Why is it written impl<T> Point<T> and not just impl Point<T>?",
+      "options": [
+        "The first <T> chooses the one concrete type that every Point will hold from then on",
+        "The first <T> declares T as a placeholder, so Rust does not look for a real type named T",
+        "The first <T> makes only the return types of the methods generic, not their parameters"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What is Option<T>?",
+      "options": [
+        "A generic struct with a value field and an is_present flag",
+        "A keyword the compiler handles specially, with no definition in the library",
+        "A generic enum with two variants, Some(T) and None"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Why does Point { x: 5, y: 4.0 } fail when both fields of Point<T> have type T?",
+      "options": [
+        "x and y share one T, but 5 is an integer and 4.0 is a float",
+        "Point can only be created with integer values in its fields",
+        "Floats cannot be stored in generic structs, only in ordinary ones"
+      ],
+      "answer": 0
+    }
+  ]
+}

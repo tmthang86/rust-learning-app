@@ -1,0 +1,79 @@
+{
+  "id": "u9-l1",
+  "title": "Modules",
+  "sections": [
+    {
+      "type": "text",
+      "text": "As a program grows, you want to group related code and keep names from clashing. A module is a named group of items: functions, structs, enums and more. You write one with the mod keyword and a block in curly braces."
+    },
+    {
+      "type": "code",
+      "code": "mod greetings {\n    pub fn hello() -> String {\n        String::from(\"Hello\")\n    }\n\n    pub mod formal {\n        pub fn hello(name: &str) -> String {\n            format!(\"Good day, {name}\")\n        }\n    }\n}\n\nfn main() {\n    println!(\"{}\", greetings::hello());\n    println!(\"{}\", greetings::formal::hello(\"Ada\"));\n}\n\n// Output:\n// Hello\n// Good day, Ada"
+    },
+    {
+      "type": "text",
+      "text": "You reach into a module with ::, like a path to a file. greetings::hello is the function hello inside greetings. There are two functions called hello here, and they don't clash, because each lives in its own module. Modules can be nested, so greetings::formal::hello is a function inside formal, which is inside greetings."
+    },
+    {
+      "type": "text",
+      "text": "The word pub in front of an item means \"public\": code outside the module may use it. Without pub, an item is private. We cover that fully in the next lesson. For now, put pub on whatever main needs to reach."
+    },
+    {
+      "type": "text",
+      "text": "Every program starts from one file, called the crate root. Its contents form the top-level module, which is named crate. That is why an absolute path starts with crate::. In a single-file program, the crate root is the file itself, and main lives there. A path can start from the top with crate::, from the current module with self::, or from the parent module with super::."
+    },
+    {
+      "type": "code",
+      "code": "fn shout(text: &str) -> String {\n    text.to_uppercase()\n}\n\nmod greetings {\n    pub fn hello() -> String {\n        String::from(\"hello\")\n    }\n\n    pub fn loud() -> String {\n        // shout isn't pub, but a child module may use its parent's items (more next lesson)\n        // self:: starts in this module, super:: starts in the parent (the crate root here)\n        super::shout(&self::hello())\n    }\n\n    pub mod formal {\n        pub fn bow() -> String {\n            // crate:: always starts at the top\n            format!(\"{} (bows)\", crate::greetings::loud())\n        }\n    }\n}\n\nfn main() {\n    println!(\"{}\", greetings::loud());\n    println!(\"{}\", greetings::formal::bow());\n}\n\n// Output:\n// HELLO\n// HELLO (bows)"
+    },
+    {
+      "type": "text",
+      "text": "Inside main you can also write a path from where you are, like greetings::loud(). That is a relative path. crate::greetings::loud() is the same function by an absolute path. Either works. Absolute paths are handy when you might move code around later."
+    },
+    {
+      "type": "note",
+      "text": "Think of modules as folders on your computer. A path like /home/docs/notes.txt names a file inside folders; greetings::formal::hello names a function inside modules. crate:: is like the / at the start: the very top.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Coming from Python, JS or Java: a Rust module is like a namespace, a Python module or a Java package. As with a JS module's export, nothing leaves a Rust module unless you mark it pub. Python, by contrast, only has the _name convention. In this lesson the modules are written inline with a block. Later you will see mod garden; with a semicolon, which loads the module from a file.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Add a function double(n: i32) -> i32 to the math module that returns n * 2. Remember the pub. Then add a second println! in main that prints math::double(21). The program should print two lines: 36 and then 42",
+    "starter": "mod math {\n    pub fn square(n: i32) -> i32 {\n        n * n\n    }\n\n    // add pub fn double here\n}\n\nfn main() {\n    println!(\"{}\", math::square(6));\n}",
+    "expectedOutput": "36\n42",
+    "solution": "mod math {\n    pub fn square(n: i32) -> i32 {\n        n * n\n    }\n\n    pub fn double(n: i32) -> i32 {\n        n * 2\n    }\n}\n\nfn main() {\n    println!(\"{}\", math::square(6));\n    println!(\"{}\", math::double(21));\n}"
+  },
+  "quiz": [
+    {
+      "question": "What does super:: refer to in a path?",
+      "options": [
+        "The crate root, whatever module you are in",
+        "The parent of the module where the path is written",
+        "The module where the path is written, as a shortcut"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "From main at the crate root, which absolute path names the hello function inside formal, inside greetings?",
+      "options": [
+        "crate::formal::greetings::hello",
+        "crate::greetings::hello::formal",
+        "crate::greetings::formal::hello"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "What is the crate root when your whole program is one file?",
+      "options": [
+        "The file itself, with main living in it",
+        "The first mod block written in the file",
+        "The function main and everything it calls"
+      ],
+      "answer": 0
+    }
+  ]
+}

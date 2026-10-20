@@ -1,0 +1,87 @@
+{
+  "id": "u10-l3",
+  "title": "Rc<T>",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Usually one value has one owner. Sometimes that is too strict. Think of a graph, or of several gadgets that all belong to the same person. Rc<T> (Reference Counted) allows several owners of the same value. It keeps a count of how many owners there are, and frees the value when the last owner is gone."
+    },
+    {
+      "type": "text",
+      "text": "You create one with Rc::new(value). To add another owner, call Rc::clone(&a). This does not copy the data. It makes a new pointer to the same data and adds 1 to the count. Rc::strong_count(&a) tells you the current count. The type lives in std::rc, so bring it in with use."
+    },
+    {
+      "type": "code",
+      "code": "use std::rc::Rc;\n\nstruct Owner {\n    name: String,\n}\n\nstruct Gadget {\n    id: u32,\n    owner: Rc<Owner>,\n}\n\nfn main() {\n    let owner = Rc::new(Owner { name: String::from(\"Ada\") });\n    let g1 = Gadget { id: 1, owner: Rc::clone(&owner) };\n    let g2 = Gadget { id: 2, owner: Rc::clone(&owner) };\n\n    println!(\"gadget {} belongs to {}\", g1.id, g1.owner.name);\n    println!(\"gadget {} belongs to {}\", g2.id, g2.owner.name);\n    println!(\"owners: {}\", Rc::strong_count(&owner));\n}\n\n// Output:\n// gadget 1 belongs to Ada\n// gadget 2 belongs to Ada\n// owners: 3"
+    },
+    {
+      "type": "text",
+      "text": "Three Rcs point at one Owner: the variable owner and the two gadgets. You can read through an Rc just like through a Box, so g1.owner.name works. If we had put Owner directly in both gadgets, the data would have been moved into the first one."
+    },
+    {
+      "type": "text",
+      "text": "The count goes down again when an owner goes out of scope. The comment at the end shows how it changes:"
+    },
+    {
+      "type": "code",
+      "code": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(String::from(\"shared\"));\n    println!(\"count after creating a = {}\", Rc::strong_count(&a));\n    let b = Rc::clone(&a);\n    println!(\"count after creating b = {}\", Rc::strong_count(&a));\n    {\n        let c = Rc::clone(&a);\n        println!(\"count after creating c = {} ({c})\", Rc::strong_count(&a));\n    }\n    println!(\"count after c goes out of scope = {}\", Rc::strong_count(&a));\n    println!(\"{a} {b}\");\n}\n\n// Output:\n// count after creating a = 1\n// count after creating b = 2\n// count after creating c = 3 (shared)\n// count after c goes out of scope = 2\n// shared shared"
+    },
+    {
+      "type": "text",
+      "text": "When the count reaches 0, the value is dropped, using the Drop idea from the last lesson. You could write a.clone() instead of Rc::clone(&a). Both work, but Rc::clone makes it clear to the reader that it is a cheap pointer copy, not a deep copy of the data."
+    },
+    {
+      "type": "text",
+      "text": "There is a catch. An Rc only gives shared, read-only access. If several owners could change the value at once, that would break the borrowing rules. This code does not compile. Rust reports E0594: cannot assign to data in an Rc. The next lesson shows how to get shared and mutable. Also, Rc is for one thread only. Unit 11 introduces Arc, its thread-safe sibling."
+    },
+    {
+      "type": "code",
+      "code": "// This does NOT compile: E0594, cannot assign to data in an Rc.\nuse std::rc::Rc;\n\nfn bump() {\n    let a = Rc::new(5);\n    *a += 1;\n}"
+    },
+    {
+      "type": "note",
+      "text": "Imagine a family sharing one streaming account. Nobody owns it alone. Each person holds a reference, and the account is only closed when the last person leaves. Rc is that: a count of how many people still use the thing.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Coming from Java, C# or Python: those languages share objects freely and use a garbage collector. Rc is closer to Python's reference counting, or to a C++ std::shared_ptr. It is opt-in in Rust, and its count is not atomic (Arc is the atomic one), which is why the compiler refuses to send an Rc to another thread. Cycles (A points to B, B points back to A) are never freed (Python's cycle collector has no Rust equivalent), so use Weak for back-pointers, as the next lesson shows.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Make a second owner b of the same string (share it, don't copy it). Then print how many owners there are, and change the last println! so it prints a and b separated by a space. It should print two lines: count = 2 and hello hello. Hint: let b = Rc::clone(&a); and println!(\"count = {}\", Rc::strong_count(&a));",
+    "starter": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(String::from(\"hello\"));\n    // add b and the count line here\n    println!(\"{a}\");\n}",
+    "expectedOutput": "count = 2\nhello hello",
+    "solution": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(String::from(\"hello\"));\n    let b = Rc::clone(&a);\n    println!(\"count = {}\", Rc::strong_count(&a));\n    println!(\"{a} {b}\");\n}"
+  },
+  "quiz": [
+    {
+      "question": "What does Rc::clone(&a) do?",
+      "options": [
+        "Makes a deep copy of the data and gives it a new owner",
+        "Adds another owner and increases the count, without copying the data",
+        "Moves the value out of a, so a can no longer be used"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "When is the value inside an Rc dropped?",
+      "options": [
+        "When the first owner goes out of scope",
+        "When the program ends, whichever owners remain",
+        "When the last owner is gone and the count reaches 0"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Can you change the data inside an Rc<i32> using only the Rc?",
+      "options": [
+        "No, an Rc only gives shared, read-only access to the data",
+        "Yes, by writing *a += 1 on the Rc directly",
+        "Yes, but only when the Rc is declared inside main"
+      ],
+      "answer": 0
+    }
+  ]
+}

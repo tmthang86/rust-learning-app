@@ -1,0 +1,99 @@
+{
+  "id": "u8-l2",
+  "title": "Capturing and move",
+  "sections": [
+    {
+      "type": "text",
+      "text": "A closure can use variables from the scope where it was written. A normal function can't. This is called capturing. By default a closure captures what it uses as lightly as it can: it borrows with a shared reference if it only reads, borrows mutably if it changes the value, and takes ownership if its body moves the value away (for example by returning it)."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let threshold = 10;\n    let is_big = |n: i32| n > threshold;   // reads threshold: borrows it\n    println!(\"{} {}\", is_big(5), is_big(15));\n\n    let mut count = 0;\n    let mut bump = || count += 1;           // changes count: borrows it mutably\n    bump();\n    bump();\n    println!(\"count is {count}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "A closure that changes a captured variable must be stored in a variable declared mut, because calling it changes state. The usual borrow rules still apply: while bump can still be called, you can't read count. That is why println! comes after the last call to bump. If you printed count between the two bump() calls, you would get error E0502 (cannot borrow as immutable because it is also borrowed as mutable)."
+    },
+    {
+      "type": "text",
+      "text": "Writing move before the bars makes the closure take ownership of everything it uses. Values that implement Copy (like numbers) are copied. Other values, like a String, are moved in and can no longer be used outside:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let name = String::from(\"Ana\");\n    let greet = move || println!(\"hi {name}\");\n    greet();\n    greet();\n    // println!(\"{name}\");  // would not compile: E0382, borrow of moved value\n}"
+    },
+    {
+      "type": "text",
+      "text": "Why would you want that? Because a closure that borrows can't leave the function where the borrowed value lives. When you return a closure, or send one to another thread (Unit 11), it must own its data. This function returns a closure, so it needs move:"
+    },
+    {
+      "type": "code",
+      "code": "fn make_adder(n: i32) -> impl Fn(i32) -> i32 {\n    move |x| x + n\n}\n\nfn main() {\n    let add_five = make_adder(5);\n    let add_ten = make_adder(10);\n    println!(\"{} {}\", add_five(1), add_ten(1));\n}"
+    },
+    {
+      "type": "text",
+      "text": "impl Fn(i32) -> i32 in the return type means \"I return some closure with this shape\". Without move, the closure would only borrow n, which disappears when make_adder ends: error E0373, closure may outlive the current function."
+    },
+    {
+      "type": "text",
+      "text": "Every closure implements one or more of three traits, depending on what it does with the values it captures:"
+    },
+    {
+      "type": "text",
+      "text": "Fn: only reads its captures, so it can be called any number of times. FnMut: changes its captures, so it can be called many times but needs mut. FnOnce: moves a captured value out, so it can be called only once. A closure that is Fn is also FnMut and FnOnce, and every closure is at least FnOnce. When you accept a closure, ask for the least you need. If you call it only once, ask for FnOnce. If you call it many times, ask for FnMut. Ask for Fn only if it must not change anything. Each step down that list lets fewer closures in."
+    },
+    {
+      "type": "code",
+      "code": "fn call_twice(f: impl Fn()) {\n    f();\n    f();\n}\n\nfn call_mut_twice(mut f: impl FnMut()) {\n    f();\n    f();\n}\n\nfn call_once(f: impl FnOnce() -> String) -> String {\n    f()\n}\n\nfn main() {\n    call_twice(|| println!(\"hello\"));\n\n    let mut total = 0;\n    call_mut_twice(|| total += 5);\n    println!(\"total {total}\");\n\n    let name = String::from(\"Ana\");\n    let reply = call_once(move || name);   // gives name away, so only once\n    println!(\"{reply}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "call_mut_twice declares its parameter as mut f, because calling an FnMut changes the closure. call_once moves name out of the closure by returning it. (move is optional there, because returning a value already makes the closure take ownership of it. It just makes the intent clear.) Calling that closure a second time would fail (E0382), because the String is already gone."
+    },
+    {
+      "type": "note",
+      "text": "Rule of thumb: Fn only looks, FnMut changes, FnOnce uses up. You name these traits in function signatures, but you never implement them yourself. The compiler works out which ones a closure has from its body.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Compare with other languages. C++ makes you pick a capture list ([&], [=], [x, &y]) and happily lets you capture a dangling reference. JavaScript, Python and Java capture variables silently (Java requires them to be effectively final). Rust infers the capture mode from the body, and the borrow checker rejects any capture that could dangle. move is the equivalent of [=] by value, but it moves non-Copy types.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "The starter prints 15. Below the first println!, add a call counter: a variable that starts at 0, and a closure that adds 1 to it. Call the closure three times, then print the counter. It should print two lines: 15 and 3. Hint: let mut calls = 0; let mut count_call = || calls += 1;",
+    "starter": "fn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n}",
+    "expectedOutput": "15\n3",
+    "solution": "fn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n\n    let mut calls = 0;\n    let mut count_call = || calls += 1;\n    count_call();\n    count_call();\n    count_call();\n    println!(\"{calls}\");\n}"
+  },
+  "quiz": [
+    {
+      "question": "What does the move keyword do to a closure?",
+      "options": [
+        "The closure runs on another thread and its result is sent back",
+        "The closure may change captured variables without them being declared mut",
+        "The closure takes ownership of the variables it uses, instead of borrowing them"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "After let greet = move || println!(\"hi {name}\"); where name is a String, can you use name again in main?",
+      "options": [
+        "No, name was moved into the closure, so main can't use it",
+        "Yes, move copies every captured value, so name is still valid",
+        "Yes, but only if you borrow it with & before the closure runs"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Which trait does a closure have if it changes a captured variable but can be called many times?",
+      "options": [
+        "Fn: it can be called many times and may change what it captured",
+        "FnMut: it may change captured values and can be called many times",
+        "FnOnce: it changes captured values, so it can be called only once"
+      ],
+      "answer": 1
+    }
+  ]
+}

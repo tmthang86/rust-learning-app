@@ -1,0 +1,87 @@
+{
+  "id": "u9-l4",
+  "title": "Writing tests",
+  "sections": [
+    {
+      "type": "text",
+      "text": "A test is a small function that checks your code and fails if the answer is wrong. Rust has testing built in. You mark a function with #[test] and run all of them with cargo test."
+    },
+    {
+      "type": "text",
+      "text": "Inside a test you use macros that panic when something is wrong. assert!(condition) panics if the condition is false. assert_eq!(left, right) panics if the two values are not equal, and it prints both values so you can see the difference. assert_ne! is the opposite: it panics if they are equal. A test passes if it finishes, and fails if it panics."
+    },
+    {
+      "type": "text",
+      "text": "By convention, tests go in a module at the bottom of the same file, named tests. It is marked #[cfg(test)], which tells Rust to compile that module only when running tests, not in a normal build. Inside it, use super::*; brings everything from the parent module into scope so the tests can call your functions. A * import is rare elsewhere, but here it is the usual habit."
+    },
+    {
+      "type": "code",
+      "code": "fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\nfn divide(a: i32, b: i32) -> i32 {\n    if b == 0 {\n        panic!(\"divide by zero\");\n    }\n    a / b\n}\n\nfn main() {\n    println!(\"{} {}\", add(2, 3), divide(10, 2));\n}\n\n#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n    fn add_works() {\n        assert_eq!(add(2, 3), 5);\n    }\n\n    #[test]\n    fn add_opposites() {\n        assert_eq!(add(-2, 2), 0, \"adding opposites should give zero\");\n    }\n\n    #[test]\n    fn divide_works() {\n        assert!(divide(10, 2) == 5);\n    }\n\n    #[test]\n    #[should_panic(expected = \"divide by zero\")]\n    fn divide_by_zero_panics() {\n        divide(1, 0);\n    }\n}\n\n// Output when run normally (the tests are left out):\n// 5 5"
+    },
+    {
+      "type": "text",
+      "text": "The third argument to assert_eq! (\"adding opposites should give zero\") is an optional message shown if the check fails. #[should_panic] is for the opposite case: the test passes only if the code panics. The expected = \"...\" part also checks that the panic message contains that text."
+    },
+    {
+      "type": "text",
+      "text": "Code sections in a lesson can't be run. To try this one, paste it into the Playground tab and press Run: the app compiles it without the tests, so it just prints 5 5. On your own computer, cargo test builds the tests and runs every #[test] function. You would see something like this (the order can differ, because tests run in parallel):"
+    },
+    {
+      "type": "code",
+      "code": "     Running unittests src/main.rs (target/debug/deps/my_app-1a2b3c4d5e6f)\n\nrunning 4 tests\ntest tests::add_opposites ... ok\ntest tests::divide_works ... ok\ntest tests::add_works ... ok\ntest tests::divide_by_zero_panics - should panic ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+    },
+    {
+      "type": "text",
+      "text": "If a check fails, that one test is marked FAILED. For assert_eq! and assert_ne!, the output also shows the left and right values. The other tests still run. You can also run just some tests by giving a part of the name: cargo test divide runs the two tests with divide in their names."
+    },
+    {
+      "type": "text",
+      "text": "Because the app cannot run #[test] functions, the exercise below uses the same idea in a way you can run here. Put assert_eq! calls straight in main. If they all pass, the program reaches the println! at the end. If one fails, the program panics with a message showing what was expected."
+    },
+    {
+      "type": "note",
+      "text": "A test is a little program that says \"I expect this input to give this output\". When you change your code later, you run the tests again, and they tell you at once if something stopped working. That is much faster than checking by hand.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Like Go's testing package, and unlike pytest or JUnit, testing is built in: there is no test framework to install. Tests can live in the same file as the code, so they can also test private functions. Larger integration tests go in a tests/ folder next to src/, where they can only use your public API. They need a library crate (src/lib.rs), so programs usually keep their logic in lib.rs and a thin main.rs. Test functions can return Result<(), E> and use ? instead of panicking. In library crates, cargo test also runs the code examples in doc comments (doctests).",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "The function is_even has a bug, so the first assert_eq! panics. Fix is_even so it returns true when n % 2 == 0. Then add one more check before the println!: assert!(!is_even(7)); It should print: all tests passed",
+    "starter": "fn is_even(n: i32) -> bool {\n    n % 2 == 1\n}\n\nfn main() {\n    assert_eq!(is_even(4), true);\n    assert_eq!(is_even(10), true);\n    // add assert!(!is_even(7)); here\n    println!(\"all tests passed\");\n}",
+    "expectedOutput": "all tests passed",
+    "solution": "fn is_even(n: i32) -> bool {\n    n % 2 == 0\n}\n\nfn main() {\n    assert_eq!(is_even(4), true);\n    assert_eq!(is_even(10), true);\n    assert!(!is_even(7));\n    println!(\"all tests passed\");\n}"
+  },
+  "quiz": [
+    {
+      "question": "What makes a Rust test fail?",
+      "options": [
+        "The function returns false at the end",
+        "The function panics while it runs",
+        "The function prints nothing to the screen"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Why is the tests module marked #[cfg(test)]?",
+      "options": [
+        "So the module is compiled only when running tests, not in a normal build",
+        "So cargo build runs the tests as well as compiling the code",
+        "So the tests may call private functions that live in other crates"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Which attribute marks a function as a test?",
+      "options": [
+        "#[cfg(test)], placed above the function",
+        "#[derive(Debug)], placed above the function",
+        "#[test], placed above the function"
+      ],
+      "answer": 2
+    }
+  ]
+}

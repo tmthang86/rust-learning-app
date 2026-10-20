@@ -1,0 +1,91 @@
+{
+  "id": "u8-l3",
+  "title": "The Iterator trait",
+  "sections": [
+    {
+      "type": "text",
+      "text": "An iterator is something that hands out items one at a time. It is a trait called Iterator, and it needs just one method: next. Each call to next returns Some(item) with the next item, and when there are none left it returns None. Here we call next by hand on a Vec's iterator:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let colors = vec![\"red\", \"green\", \"blue\"];\n    let mut it = colors.iter();\n    println!(\"{:?}\", it.next());\n    println!(\"{:?}\", it.next());\n    println!(\"{:?}\", it.next());\n    println!(\"{:?}\", it.next());\n}\n\n// Output:\n// Some(\"red\")\n// Some(\"green\")\n// Some(\"blue\")\n// None"
+    },
+    {
+      "type": "text",
+      "text": "it must be mut, because each call to next changes the iterator's inner position. The Output comment shows what the four calls return: three Some values holding the items (they are references to the strings, which print the same way), and then None."
+    },
+    {
+      "type": "text",
+      "text": "This is what a for loop does behind the scenes. for x in something first calls into_iter() on it to get an iterator, then calls next again and again until it gets None. A range like 0..3 already is an iterator. A Vec is not, but into_iter() turns it into one."
+    },
+    {
+      "type": "text",
+      "text": "A collection can give you its items in three ways. iter() borrows each item (you get &T). iter_mut() borrows each item mutably (you get &mut T). into_iter() takes ownership of the collection and gives you the items themselves (T)."
+    },
+    {
+      "type": "text",
+      "text": "The for loops you already know are shorthand for these: for x in &v is v.iter(), for x in &mut v is v.iter_mut(), and for x in v is v.into_iter()."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let mut numbers = vec![1, 2, 3];\n\n    for n in numbers.iter() {\n        println!(\"read {n}\");\n    }\n\n    for n in numbers.iter_mut() {\n        *n *= 10;\n    }\n    println!(\"{:?}\", numbers);\n\n    for n in numbers.into_iter() {\n        println!(\"owned {n}\");\n    }\n    // numbers has been moved into the loop and can't be used here\n}"
+    },
+    {
+      "type": "text",
+      "text": "You can make your own iterator by implementing the Iterator trait for a struct. You need to write two things. type Item = u32; says what type of items you hand out (an associated type: a type that belongs to the trait impl). And fn next(&mut self) -> Option<u32>, which returns the next item or None."
+    },
+    {
+      "type": "code",
+      "code": "struct Countdown {\n    n: u32,\n}\n\nimpl Iterator for Countdown {\n    type Item = u32;\n\n    fn next(&mut self) -> Option<u32> {\n        if self.n == 0 {\n            None\n        } else {\n            let current = self.n;\n            self.n -= 1;\n            Some(current)\n        }\n    }\n}\n\nfn main() {\n    for x in (Countdown { n: 3 }) {\n        println!(\"{x}\");\n    }\n\n    // writing next gave us more methods for free, such as sum\n    let total: u32 = Countdown { n: 4 }.sum();   // 4 + 3 + 2 + 1\n    println!(\"total {total}\");\n}\n\n// Output:\n// 3\n// 2\n// 1\n// total 10"
+    },
+    {
+      "type": "text",
+      "text": "The countdown stores its state in the struct (n) and changes it on every call. The extra parentheses around the struct in the for line are needed because Rust would otherwise read the { as the start of the loop body. The free methods, like sum, are the subject of the next two lessons."
+    },
+    {
+      "type": "note",
+      "text": "Remember Option from Unit 4: Some(x) means there is a value, None means there is none. An iterator is just a machine that keeps answering \"what's next?\" with Some(item), and finally None when it's done.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Rust iterators are lazy and pull-based, like Python generators, Java Iterator/Stream, C# IEnumerable and JS iterators (but there is no separate hasNext: None means done). They usually compile to the same machine code as a hand-written loop (a zero-cost abstraction). The for loop over a Vec you own (into_iter) moves the Vec: that is the main difference from other languages.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Counter should give out the numbers from 1 up to max. Fill in next so that it returns None once current is greater than max. Until then it returns Some of the current value, and moves current up by 1 for the next call. It should print 1, 2, 3 and 4 on four lines. The starter shows warnings that current and max are never read; they go away when you write next. Hint: save self.current in a variable, add 1 to self.current, then return Some(that variable).",
+    "starter": "struct Counter {\n    current: u32,\n    max: u32,\n}\n\nimpl Iterator for Counter {\n    type Item = u32;\n\n    fn next(&mut self) -> Option<u32> {\n        // write the logic here; for now it always says \"no more items\"\n        None\n    }\n}\n\nfn main() {\n    let counter = Counter { current: 1, max: 4 };\n    for n in counter {\n        println!(\"{n}\");\n    }\n}",
+    "expectedOutput": "1\n2\n3\n4",
+    "solution": "struct Counter {\n    current: u32,\n    max: u32,\n}\n\nimpl Iterator for Counter {\n    type Item = u32;\n\n    fn next(&mut self) -> Option<u32> {\n        if self.current > self.max {\n            None\n        } else {\n            let value = self.current;\n            self.current += 1;\n            Some(value)\n        }\n    }\n}\n\nfn main() {\n    let counter = Counter { current: 1, max: 4 };\n    for n in counter {\n        println!(\"{n}\");\n    }\n}"
+  },
+  "quiz": [
+    {
+      "question": "What does an iterator's next method return when there are no items left?",
+      "options": [
+        "Some with the default value of the item type, such as 0",
+        "None, which a for loop takes as the signal to stop",
+        "An Err value that the for loop turns into a panic"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Which method takes ownership of a Vec and gives you its items by value?",
+      "options": [
+        "iter(), which yields owned items and leaves the Vec empty",
+        "iter_mut(), which hands over the items and consumes the Vec",
+        "into_iter(), which consumes the Vec and yields owned items"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "What must you write to implement Iterator for your own struct?",
+      "options": [
+        "Set type Item and write the next method",
+        "Write a for loop and store the items in a Vec field",
+        "Write next and also a len method that says how many items are left"
+      ],
+      "answer": 0
+    }
+  ]
+}
