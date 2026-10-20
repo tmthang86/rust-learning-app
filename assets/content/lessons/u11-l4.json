@@ -41,7 +41,7 @@
     },
     {
       "type": "note",
-      "text": "Coming from JavaScript or C#: a JavaScript Promise or a C# Task starts running as soon as you create it. A Rust future does not: it is lazy and does nothing until awaited or polled (a Python coroutine is lazy in the same way). Rust also ships no executor, so you choose one (tokio is the most common; smol is a small alternative). If you know Python's asyncio, async fn is like async def, and block_on plays the role of asyncio.run.",
+      "text": "Coming from JavaScript or C#: a JavaScript Promise, or the Task a C# async method returns, is already running by the time you get it. A Rust future does not: it is lazy and does nothing until awaited or polled (a Python coroutine is lazy in the same way). Rust also ships no executor, so you choose one (tokio is the most common; smol is a small alternative). If you know Python's asyncio, async fn is like async def, and block_on plays the role of asyncio.run.",
       "track": "fast"
     }
   ],

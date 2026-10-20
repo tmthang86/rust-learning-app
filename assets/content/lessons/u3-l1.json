@@ -46,7 +46,7 @@
     },
     {
       "type": "note",
-      "text": "A move is a cheap shallow copy of the pointer, length and capacity; the heap data isn't copied. Because only one owner exists, there's no double free and no need for reference counting. C++ programmers: a Rust move is the default, the compiler forbids any later use of the old variable, and the old variable isn't dropped (only the new owner is). A C++ moved-from object stays alive in a valid but unspecified state.",
+      "text": "A move is a cheap shallow copy of the pointer, length and capacity; the heap data isn't copied. Because only one owner exists, there's no double free and no need for reference counting. C++ programmers: a Rust move is the default, the compiler forbids any later use of the old variable, and the old variable isn't dropped (only the new owner is). A moved-from C++ object stays alive and its destructor still runs later; standard-library types are left in a valid but unspecified state.",
       "track": "fast"
     }
   ],

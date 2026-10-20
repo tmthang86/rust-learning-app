@@ -45,7 +45,7 @@
     },
     {
       "type": "note",
-      "text": "Generics have no run-time cost. The compiler makes a separate copy of the function for each type you really use (this is called monomorphization), so largest::<i32> runs as fast as a hand-written i32 version. This is closer to C++ templates than to Java generics, which erase the types. Rust checks the function body once, using the bounds, instead of when each use is expanded like C++ templates.",
+      "text": "Generics have no run-time cost. The compiler makes a separate copy of the function for each type you really use (this is called monomorphization), so largest::<i32> runs as fast as a hand-written i32 version. This is closer to C++ templates than to Java generics, which erase the types. Rust checks the whole function body once, using only the bounds, whereas C++ checks the parts that depend on T only when each use is expanded.",
       "track": "fast"
     }
   ],
