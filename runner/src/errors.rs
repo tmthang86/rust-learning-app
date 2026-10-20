@@ -17,8 +17,9 @@ pub struct ApiError {
     pub message: String,
     /// Seconds for the `Retry-After` header.
     pub retry_after: Option<u64>,
-    /// What the request log line should say about this failure.
-    pub info: RunInfo,
+    /// What the request log line should say about this failure. Boxed to
+    /// keep `Result<_, ApiError>` small (clippy::result_large_err).
+    pub info: Box<RunInfo>,
 }
 
 impl ApiError {
@@ -37,10 +38,10 @@ impl ApiError {
             code,
             message: message.into(),
             retry_after: None,
-            info: RunInfo {
+            info: Box::new(RunInfo {
                 outcome: Some(outcome),
                 ..RunInfo::default()
-            },
+            }),
         }
     }
 
@@ -150,7 +151,7 @@ impl IntoResponse for ApiError {
             res.headers_mut()
                 .insert(header::RETRY_AFTER, HeaderValue::from(secs));
         }
-        res.extensions_mut().insert(self.info);
+        res.extensions_mut().insert(*self.info);
         res
     }
 }
