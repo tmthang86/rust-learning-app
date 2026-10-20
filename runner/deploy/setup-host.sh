@@ -27,6 +27,11 @@ take_lock
   || die "this setup is for Ubuntu 24.04 (noble), found ${PRETTY_NAME:-unknown}"
 
 log "== Host: $HOST_PROVIDER, CPU $ARCH"
+# push.sh passes the PROVIDER from vars.sh. If the VM doesn't look like that
+# cloud, stop: the firewall and metadata steps differ per cloud.
+if [[ -n ${EXPECT_PROVIDER:-} && $EXPECT_PROVIDER != "$HOST_PROVIDER" ]]; then
+  die "PROVIDER is $EXPECT_PROVIDER but this VM looks like '$HOST_PROVIDER'. If you are sure it is $EXPECT_PROVIDER, run setup again from your computer as: HOST_PROVIDER=$EXPECT_PROVIDER runner/deploy/push.sh --setup"
+fi
 
 log "== 1/10 Base packages"
 apt_get update

@@ -7,6 +7,12 @@
 Unattended-Upgrade::Origins-Pattern {
 	"site=dl.cloudsmith.io";
 };
+// /etc/caddy/Caddyfile is ours; keep it on upgrade instead of stopping at a
+// conffile prompt (which would make unattended-upgrades skip Caddy forever).
+Dpkg::Options {
+	"--force-confdef";
+	"--force-confold";
+};
 APT::Periodic::Update-Package-Lists "1";
 APT::Periodic::Unattended-Upgrade "1";
 Unattended-Upgrade::Automatic-Reboot "true";

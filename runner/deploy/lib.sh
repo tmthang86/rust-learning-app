@@ -325,7 +325,6 @@ oracle_ssh_hardening() {
 PasswordAuthentication no
 KbdInteractiveAuthentication no
 PermitRootLogin no
-MaxAuthTries 3
 EOS
   mv "$conf.part" "$conf"
   chmod 0644 "$conf"

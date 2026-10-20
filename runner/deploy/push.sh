@@ -160,7 +160,7 @@ case $MODE in
     check_env_file
     echo "== Uploading deploy/ ($ID) and setting up the VM"
     git archive --format=tar --prefix=deploy/ "HEAD:runner/deploy" | upload "setup-$ID"
-    remote "sudo ~/incoming/setup-$ID/deploy/setup-host.sh"
+    remote "sudo EXPECT_PROVIDER=$PROVIDER ${HOST_PROVIDER:+HOST_PROVIDER=$HOST_PROVIDER }~/incoming/setup-$ID/deploy/setup-host.sh"
     tidy_incoming
     ;;
 
