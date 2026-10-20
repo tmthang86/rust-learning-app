@@ -30,7 +30,7 @@
     },
     {
       "type": "text",
-      "text": "Rust works out each variable's type from its value, but you can also write it yourself after a colon:"
+      "text": "Rust usually works out each variable's type from its value and how it's used, but you can also write it yourself after a colon:"
     },
     {
       "type": "code",

@@ -22,7 +22,7 @@
     },
     {
       "type": "text",
-      "text": "fn declares a function. println! ends with ! because it's a macro: a special kind of command that Rust expands into more code before the program runs. You'll meet more macros later. Statements end with a semicolon. Strings go in double quotes."
+      "text": "fn declares a function. println! ends with ! because it's a macro: a special kind of command that Rust expands into more code before the program runs. You'll meet more macros later. Most lines end with a semicolon (you'll see the exceptions later). Strings go in double quotes."
     }
   ],
   "exercise": {

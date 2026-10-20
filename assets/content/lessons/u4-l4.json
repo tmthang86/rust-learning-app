@@ -37,7 +37,7 @@
     },
     {
       "type": "note",
-      "text": "Option<T> is generic over T. Many collection methods return it, e.g. Vec::get, Iterator::next, str::find. Combinators like map, and_then and ok_or let you chain transformations without unwrapping.",
+      "text": "Option<T> is generic over T. Many collection methods return it, e.g. get on a Vec (really a slice method), Iterator::next, str::find. Combinators like map, and_then and ok_or let you chain transformations without unwrapping.",
       "track": "fast"
     }
   ],

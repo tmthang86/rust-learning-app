@@ -33,7 +33,7 @@
     },
     {
       "type": "note",
-      "text": "You can add these to your own types with #[derive(Clone, Copy)]. Copy is only allowed when every field is Copy, so a struct containing a String can be Clone but never Copy.",
+      "text": "You can add these to your own types with #[derive(Clone, Copy)]. Copy is only allowed when every field is Copy and the type doesn't implement Drop (Copy also requires Clone, hence both in the derive), so a struct containing a String can be Clone but never Copy.",
       "track": "fast"
     }
   ],

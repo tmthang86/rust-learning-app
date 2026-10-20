@@ -37,7 +37,7 @@
     },
     {
       "type": "note",
-      "text": "No exceptions: Result<T, E> is Rust's error-handling mechanism, and #[must_use] warns if you ignore one. map_err, ok() and and_then convert and chain results.",
+      "text": "No exceptions: Result<T, E> is Rust's mechanism for recoverable errors (panic! covers unrecoverable ones), and #[must_use] warns if you ignore one. map_err, ok() and and_then convert and chain results.",
       "track": "fast"
     }
   ],
