@@ -49,7 +49,7 @@
     },
     {
       "type": "note",
-      "text": "This is like Java Streams, C# LINQ, JavaScript array methods and Python generators, with one big difference: Rust's whole chain of adapters is compiled into a single loop with no intermediate lists, so it is as fast as a hand-written loop. Unlike JS array methods, nothing runs until you consume the iterator, and filter's closure borrows the item (&Item).",
+      "text": "This is like Java Streams, C# LINQ, JavaScript array methods and Python generators, with one big difference: Rust's whole chain of adapters is compiled into a single loop with no intermediate lists, so it is usually as fast as a hand-written loop. Unlike JS array methods, nothing runs until you consume the iterator, and filter's closure borrows the item (&Item).",
       "track": "fast"
     }
   ],

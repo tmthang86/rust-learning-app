@@ -45,11 +45,11 @@
     },
     {
       "type": "text",
-      "text": "A channel can carry any type, here a tuple of two numbers. If you do not want to wait, rx.try_recv() checks for a message and returns an error straight away when there is none. rx.recv() waits for exactly one message."
+      "text": "A channel can carry any type, here a tuple of two numbers. If you do not want to wait, rx.try_recv() checks for a message and returns an error straight away when there is none. rx.recv() waits for one message, or returns an Err once every sender is gone."
     },
     {
       "type": "note",
-      "text": "Coming from Go: this is much like a chan, and Rust's advice is the same: do not communicate by sharing memory, share memory by communicating. Rust's mpsc::channel is unbounded and multi-producer, single-consumer; mpsc::sync_channel(n) is a bounded version where send blocks when the buffer is full. For multiple consumers or select-style code, people usually reach for the crossbeam-channel crate.",
+      "text": "Coming from Go: this is much like a chan, and Rust's advice is the same: do not communicate by sharing memory, share memory by communicating. Rust's mpsc::channel is unbounded and multi-producer, single-consumer; mpsc::sync_channel(n) is a bounded version where send blocks when the buffer is full. Go's make(chan T) is unbuffered, which matches sync_channel(0), and make(chan T, n) matches sync_channel(n). For multiple consumers or select-style code, people usually reach for the crossbeam-channel crate.",
       "track": "fast"
     }
   ],

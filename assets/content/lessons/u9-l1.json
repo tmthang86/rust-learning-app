@@ -20,7 +20,7 @@
     },
     {
       "type": "text",
-      "text": "Every program has a top-level module called the crate root. In a single file, the crate root is the file itself, and main lives there. A path can start from the crate root with crate::, from the current module with self::, or from the parent module with super::."
+      "text": "Every program starts from one file, called the crate root. Its contents form the top-level module, which is named crate. That is why an absolute path starts with crate::. In a single-file program, the crate root is the file itself, and main lives there. A path can start from the top with crate::, from the current module with self::, or from the parent module with super::."
     },
     {
       "type": "code",
@@ -37,7 +37,7 @@
     },
     {
       "type": "note",
-      "text": "Coming from Python, JS or Java: a Rust module is like a namespace, a Python module or a Java package. The difference is that nothing is public unless you say pub. In this lesson the modules are written inline with a block. Later you will see mod garden; with a semicolon, which loads the module from a file.",
+      "text": "Coming from Python, JS or Java: a Rust module is like a namespace, a Python module or a Java package. As with a JS module's export, nothing leaves a Rust module unless you mark it pub. Python, by contrast, only has the _name convention. In this lesson the modules are written inline with a block. Later you will see mod garden; with a semicolon, which loads the module from a file.",
       "track": "fast"
     }
   ],

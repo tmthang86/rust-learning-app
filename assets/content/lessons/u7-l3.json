@@ -4,7 +4,7 @@
   "sections": [
     {
       "type": "text",
-      "text": "A trait describes something a type can do. It lists method signatures, and any type can promise to provide them. You have already met one: Display is the trait for \"can be shown with {}\". Now you will write your own."
+      "text": "A trait describes something a type can do. It mostly lists method signatures (it can also list types; you will meet one with Iterator in Unit 8), and any type can promise to provide them. You have already met one: Display is the trait for \"can be shown with {}\". Now you will write your own."
     },
     {
       "type": "text",
@@ -37,7 +37,7 @@
     },
     {
       "type": "note",
-      "text": "Traits are like interfaces in Java, C# and Go, with default methods. Unlike Go, a type must say impl Trait for Type explicitly. Unlike Java, you can implement your own trait for a type from someone else's crate, such as i32 or String. The orphan rule keeps this safe: you may implement a trait for a type only if the trait or the type is defined in your crate. That is why you can't implement Display for Vec<i32> yourself.",
+      "text": "Traits are like interfaces in Java, C# and Go. Like Java and C# interfaces (and unlike Go's), they can have default methods. Unlike Go, a type must say impl Trait for Type explicitly. Unlike Java, you can implement your own trait for a type from someone else's crate, such as i32 or String. The orphan rule keeps this safe: you may implement a trait for a type only if the trait or the type is defined in your crate. That is why you can't implement Display for Vec<i32> yourself.",
       "track": "fast"
     }
   ],

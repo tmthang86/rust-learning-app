@@ -53,7 +53,7 @@
     },
     {
       "type": "note",
-      "text": "Coming from Python or Java: Rust threads are real operating-system threads, like java.lang.Thread, and there is no GIL as in CPython, so CPU-bound work really runs in parallel. Go's goroutines are lighter, but Rust's std::thread is the closest match to a Java thread. A panic in a spawned thread does not kill main: join() returns Err instead. And data races are caught at compile time, which you will see in the next lessons.",
+      "text": "Coming from Python or Java: Rust threads are real operating-system threads, like a Java platform thread (not a virtual thread), and there is no GIL as in standard CPython builds, so CPU-bound work really runs in parallel. Go's goroutines are lighter, but Rust's std::thread is the closest match to a Java thread. A panic in a spawned thread does not kill main: join() returns Err instead. And data races are caught at compile time, which you will see in the next lessons.",
       "track": "fast"
     }
   ],

@@ -24,7 +24,7 @@
     },
     {
       "type": "text",
-      "text": "Arc<T> is the thread-safe version of Rc<T>. The A stands for \"atomic\": its reference count is updated in a way that is safe across threads. Arc::clone(&x) works like Rc::clone. The usual combination is Arc<Mutex<T>>: Arc lets many threads own the data, and Mutex lets one at a time change it."
+      "text": "Arc<T> is the thread-safe version of Rc<T>. Arc makes the sharing safe, not the data inside: protecting the data is Mutex's job. The A stands for \"atomic\": its reference count is updated in a way that is safe across threads. Arc::clone(&x) works like Rc::clone. The usual combination is Arc<Mutex<T>>: Arc lets many threads own the data, and Mutex lets one at a time change it."
     },
     {
       "type": "code",
@@ -36,7 +36,7 @@
     },
     {
       "type": "text",
-      "text": "How does the compiler know Rc is not allowed? Two marker traits describe what is safe across threads. A type is Send if a value of it can be moved to another thread. A type is Sync if it can be shared between threads by reference. Rust works these out for you: Rc is neither, while Arc<Mutex<T>> is both. thread::spawn only accepts closures whose captured values are Send, which turns possible data races into compile errors."
+      "text": "How does the compiler know Rc is not allowed? Two marker traits describe what is safe across threads. A type is Send if a value of it can be moved to another thread. A type is Sync if it can be shared between threads by reference. Rust works these out for you: Rc is neither. Arc<Mutex<T>> is both, as long as the T inside is Send (so an Arc<Mutex<Rc<i32>>> is still refused). thread::spawn only accepts closures whose captured values are Send, which turns possible data races into compile errors."
     },
     {
       "type": "note",
@@ -57,7 +57,7 @@
     },
     {
       "type": "note",
-      "text": "Unlike Go's or Java's lock objects, Rust's Mutex owns the data it protects, so you cannot touch the data without holding the lock. Poisoning (see above) is optional to handle: lock().unwrap() is the common choice, and you can recover the data with into_inner() on the error. For read-heavy data there is RwLock<T>, and for a single number or flag the atomic types such as AtomicUsize need no lock at all.",
+      "text": "Unlike Go's or Java's lock objects, Rust's Mutex owns the data it protects, so you cannot touch the data without holding the lock. Unlike Java's synchronized or ReentrantLock, it is not reentrant: locking it again in the same thread never succeeds (see above). Poisoning (see above) is optional to handle: lock().unwrap() is the common choice, and you can recover the data with into_inner() on the error. For read-heavy data there is RwLock<T>, and for a single number or flag the atomic types such as AtomicUsize need no lock at all.",
       "track": "fast"
     }
   ],

@@ -12,7 +12,7 @@
     },
     {
       "type": "text",
-      "text": "|x| x + 1 takes one parameter, x, and gives back x + 1. For a single expression you don't need braces. |a: i32, b: i32| -> i32 { a + b } shows the long form with types and a block. || has no parameters. You call a closure with parentheses, just like a function."
+      "text": "|x| x + 1 takes one parameter, x, and gives back x + 1. For a single expression you don't need braces. |a: i32, b: i32| -> i32 { a + b } shows the long form with types and a block. Once you write the return type (-> i32), the braces are required. || has no parameters. You call a closure with parentheses, just like a function."
     },
     {
       "type": "text",
@@ -44,7 +44,7 @@
     },
     {
       "type": "note",
-      "text": "A closure is like a recipe card you can hand to someone else. They decide when to follow it. Here sort_by_key follows it once per word.",
+      "text": "A closure is like a recipe card you can hand to someone else. They decide when to follow it. Here sort_by_key follows it whenever it needs to compare two words, so it may read the same card several times.",
       "track": "starter"
     },
     {

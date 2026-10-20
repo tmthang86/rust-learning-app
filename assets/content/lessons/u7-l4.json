@@ -48,7 +48,7 @@
     },
     {
       "type": "text",
-      "text": "Many traits are so common that Rust can write the impl for you. Put #[derive(...)] above a struct or enum and list the traits. Debug lets you print with {:?}. Clone adds a clone method. PartialEq lets you compare with == and !=. Copy makes values copy instead of move (every field must be Copy too, and the type must also derive Clone, so write both). Default gives a default value, such as 0 for numbers."
+      "text": "Many traits are so common that Rust can write the impl for you. Put #[derive(...)] above a struct or enum and list the traits. Debug lets you print with {:?}. Clone adds a clone method. PartialEq lets you compare with == and !=. Copy makes values copy instead of move (every field must be Copy too, and the type must also implement Clone; deriving both is the easy way). Default gives a default value, such as 0 for numbers."
     },
     {
       "type": "code",

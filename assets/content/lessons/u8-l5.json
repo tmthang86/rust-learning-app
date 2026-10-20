@@ -4,11 +4,11 @@
   "sections": [
     {
       "type": "text",
-      "text": "Adapters build a pipeline, and a consumer runs it. A consuming method keeps calling next until the iterator ends and gives back a result. Which one you choose decides what you get: a collection, a number, an Option or a bool."
+      "text": "Adapters build a pipeline, and a consumer runs it. A consuming method (the Rust Book calls these consuming adapters) keeps calling next until the iterator ends and gives back a result. Which one you choose decides what you get: a collection, a number, an Option or a bool."
     },
     {
       "type": "text",
-      "text": "collect gathers items into a collection. It can build many kinds: a Vec, a String, a HashMap. Rust needs to know which, so you say it with a type annotation on the variable, or with ::<Type> after collect (that odd-looking ::<> is called the turbofish). A _ lets Rust fill in the part it can already work out."
+      "text": "collect gathers items into a collection. It can build many kinds: a Vec, a String, a HashMap. Rust needs to know which, so you say it with a type annotation on the variable, or with ::<Type> after collect (that odd-looking ::<> is called the turbofish). Rust can also see it from where the result goes, such as a function's return type. A _ lets Rust fill in the part it can already work out."
     },
     {
       "type": "code",
@@ -20,7 +20,7 @@
     },
     {
       "type": "text",
-      "text": "min and max return an Option, because an empty iterator has no smallest item. find returns the first item that matches, also as an Option."
+      "text": "min and max return an Option, because an empty iterator has no smallest item. They need items that can be fully ordered (Ord), so they work on integers and strings but not on f64. find returns the first item that matches, also as an Option."
     },
     {
       "type": "text",
@@ -89,9 +89,9 @@
     {
       "question": "How does collect() know whether to build a Vec, a String or a HashMap?",
       "options": [
-        "It always builds a Vec, and you convert it afterwards",
-        "From the type annotation or the turbofish, such as Vec<i32> or ::<String>",
-        "From the type of the first item the iterator produces"
+        "It always builds a Vec first, and you convert it to other types afterwards",
+        "From the type it is asked to return: an annotation, the turbofish, or the surrounding code",
+        "From the type of the first item that the iterator produces when it runs"
       ],
       "answer": 1
     }

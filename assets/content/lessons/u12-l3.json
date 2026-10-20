@@ -37,7 +37,7 @@
     },
     {
       "type": "note",
-      "text": "This is the shape of most web frameworks: parse bytes into a typed request, route on (method, path), return a typed response. Frameworks like axum, actix-web and rocket do the same with extractors and macros. A real parser must also handle HTTP/1.1 details this toy skips: header values that continue over several lines, chunked bodies, Content-Length checks, and limits on request size. Parsing untrusted input with Result instead of panicking is what keeps a server alive.",
+      "text": "This is the shape of most web frameworks: parse bytes into a typed request, route on (method, path), return a typed response. Frameworks like axum, actix-web and rocket do the same with extractors and macros. A real parser must also handle HTTP/1.1 details this toy skips: rejecting obsolete folded header lines, chunked bodies, Content-Length checks, and limits on request size. Parsing untrusted input with Result instead of panicking is what keeps a server alive.",
       "track": "fast"
     }
   ],
@@ -52,7 +52,7 @@
       "question": "What separates the headers of an HTTP request from its body?",
       "options": [
         "A semicolon on a line of its own after the last header",
-        "A blank line, written \\r\\n\\r\\n after the last header",
+        "An empty line: the last header's \\r\\n plus one more \\r\\n",
         "The word BODY followed by a colon at the start of a line"
       ],
       "answer": 1

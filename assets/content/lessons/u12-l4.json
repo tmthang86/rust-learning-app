@@ -8,7 +8,7 @@
     },
     {
       "type": "text",
-      "text": "Streams carry bytes, so as_bytes() turns text into bytes before it is sent. Methods like read_line, read_to_string and write_all come from traits (BufRead, Read, Write), and a trait's methods only work when you import it with use (a rule you meet here for the first time). write! and writeln! are like print! and println!, but they send the text into a stream."
+      "text": "Streams carry bytes, so as_bytes() turns text into bytes before it is sent. Methods like read_line, read_to_string and write_all come from traits (BufRead, Read, Write), and a trait's methods only work when the trait is in scope. Iterator is in the prelude, which is why collect() never needed a use line, but Read, Write and BufRead are not, so we import them. write! and writeln! are like print! and println!, but they send the text into a stream."
     },
     {
       "type": "text",

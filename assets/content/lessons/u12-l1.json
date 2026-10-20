@@ -4,7 +4,7 @@
   "sections": [
     {
       "type": "text",
-      "text": "Welcome to the capstone units. Each lesson builds a complete small program and uses ideas from the whole course. First up is a command-line tool: a program you run with extra words after its name, like a tiny version of the Unix wc command that counts lines, words and characters."
+      "text": "Welcome to the capstone units. Each lesson builds a complete small program and uses ideas from the whole course. First up is a command-line tool: a program you run with extra words after its name, like a tiny version of the Unix wc command that counts lines, words and characters (real wc counts bytes by default)."
     },
     {
       "type": "text",

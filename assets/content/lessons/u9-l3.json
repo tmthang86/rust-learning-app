@@ -20,7 +20,7 @@
     },
     {
       "type": "text",
-      "text": "src/main.rs is the crate root of the binary, and src/lib.rs, if you add it yourself, is the crate root of a library. The crate root is where the compiler starts reading, the same top-level module you met earlier. Cargo.toml looks like this:"
+      "text": "src/main.rs is the crate root of the binary, and src/lib.rs, if you add it yourself, is the crate root of a library. The crate root file is where the compiler starts reading; its contents form the top-level module, crate, that you met earlier. Cargo.toml looks like this:"
     },
     {
       "type": "code",
@@ -69,7 +69,7 @@
     },
     {
       "type": "note",
-      "text": "Coming from Java, Go or C#: a crate is roughly one compilation unit, like a Go package or a .NET assembly (a Cargo package is closer to a Go module). If you know npm or PyPI, then Cargo.toml is like package.json or requirements.txt and crates.io is the registry. A package can have one library crate and many binary crates (extra binaries go in src/bin/). Cargo.lock is committed for applications. Workspaces let several packages share one lock file and one build folder. The older layout garden/mod.rs also works, but garden.rs next to a garden/ folder is the current style.",
+      "text": "Coming from Java, Go or C#: a crate is roughly one compilation unit, like a Go package or a .NET assembly (a Cargo package is closer to a Go module). If you know npm or PyPI, then Cargo.toml is like package.json or requirements.txt and crates.io is the registry. A package can have one library crate and many binary crates (extra binaries go in src/bin/). Cargo.lock is normally committed (cargo new sets this up), for libraries too. Workspaces let several packages share one lock file and one build folder. The older layout garden/mod.rs also works, but garden.rs next to a garden/ folder is the current style.",
       "track": "fast"
     }
   ],

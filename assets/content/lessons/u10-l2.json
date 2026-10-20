@@ -49,7 +49,7 @@
     },
     {
       "type": "note",
-      "text": "Coming from C++: Drop is the destructor, and the reverse-order cleanup is RAII, just as in C++. Java's try-with-resources, C#'s using and Python's with give deterministic cleanup for one block. Rust does it for every value automatically, with no special syntax. Java finalizers, by contrast, run at unpredictable times. Deref also has a sibling, DerefMut, for *x on a mutable value. Fields of a struct are dropped after the struct's own drop, in the order they were declared.",
+      "text": "Coming from C++: Drop is the destructor, and the reverse-order cleanup is RAII, just as in C++. Java's try-with-resources, C#'s using and Python's with give deterministic cleanup for one block. Rust does it for every value automatically, with no special syntax. Java finalizers, by contrast, run at unpredictable times. Deref also has a sibling, DerefMut, for *x on a mutable value. Fields of a struct are dropped after the struct's own drop, in the order they were declared. This is the opposite of C++, which destroys members in reverse order.",
       "track": "fast"
     }
   ],

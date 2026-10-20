@@ -52,7 +52,7 @@
     },
     {
       "type": "note",
-      "text": "Rule of thumb: Fn only looks, FnMut changes, FnOnce uses up. You rarely need to write these traits yourself. The compiler works out which ones a closure has from its body.",
+      "text": "Rule of thumb: Fn only looks, FnMut changes, FnOnce uses up. You name these traits in function signatures, but you never implement them yourself. The compiler works out which ones a closure has from its body.",
       "track": "starter"
     },
     {

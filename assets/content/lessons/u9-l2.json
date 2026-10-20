@@ -24,7 +24,7 @@
     },
     {
       "type": "text",
-      "text": "owner is public, so main can read it. balance is private, so main can only use deposit and balance(). Writing acc.balance from main would fail with E0616: field balance of struct Account is private. Notice that Account::new is also needed: main can't build Account { ... } itself, because it can't name the private field. Enums are different. If an enum is pub, all of its variants are public automatically."
+      "text": "owner is public, so main can read it. balance is private, so main can only use deposit and balance(). Writing acc.balance from main would fail with E0616: field balance of struct Account is private. Notice that Account::new is also needed: main can't build Account { ... } itself, because it can't name the private field. Enums are different. If an enum is pub, all of its variants are public automatically. The same goes for the methods of a pub trait: they are public already, and writing pub on them is an error."
     },
     {
       "type": "text",
@@ -53,7 +53,7 @@
     },
     {
       "type": "note",
-      "text": "use is the same idea as import in Python or JavaScript, and as is like import ... as. The big difference is the default: in Rust the author of a module decides what to share with pub. There are finer levels too. pub(crate) means visible anywhere inside this crate but not to other crates; pub(super) means visible to the parent module. pub use re-exports a name, so users of your library see a tidier path. These come into play once you write libraries.",
+      "text": "use looks like import in Python or JavaScript, but it only creates a shortcut. Any item can be reached by its full path without it, and nothing is loaded or run. as is like import ... as. Unlike Python, where everything can be imported and _name is only a convention, Rust enforces privacy: the module's author decides what to share with pub, much like export in JS. There are finer levels too. pub(crate) means visible anywhere inside this crate but not to other crates; pub(super) means visible to the parent module. pub use re-exports a name, so users of your library see a tidier path. These come into play once you write libraries.",
       "track": "fast"
     }
   ],

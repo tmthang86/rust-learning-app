@@ -16,7 +16,7 @@
     },
     {
       "type": "text",
-      "text": "This is what a for loop does behind the scenes. for x in something calls next again and again until it gets None. Ranges like 0..3 are iterators too, which is why you can loop over them."
+      "text": "This is what a for loop does behind the scenes. for x in something first calls into_iter() on it to get an iterator, then calls next again and again until it gets None. A range like 0..3 already is an iterator. A Vec is not, but into_iter() turns it into one."
     },
     {
       "type": "text",
@@ -49,7 +49,7 @@
     },
     {
       "type": "note",
-      "text": "Rust iterators are lazy and pull-based, like Python generators, Java Iterator/Stream, C# IEnumerable and JS iterators (but there is no separate hasNext: None means done). They compile to the same machine code as a hand-written loop (zero-cost abstraction). The for loop over a Vec you own (into_iter) moves the Vec: that is the main difference from other languages.",
+      "text": "Rust iterators are lazy and pull-based, like Python generators, Java Iterator/Stream, C# IEnumerable and JS iterators (but there is no separate hasNext: None means done). They usually compile to the same machine code as a hand-written loop (a zero-cost abstraction). The for loop over a Vec you own (into_iter) moves the Vec: that is the main difference from other languages.",
       "track": "fast"
     }
   ],

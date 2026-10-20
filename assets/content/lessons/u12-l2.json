@@ -8,7 +8,7 @@
     },
     {
       "type": "text",
-      "text": "The pieces: a Command enum, so the game works with proper values instead of strings. Rooms stored in a HashMap, so we can look one up by name. And a State enum, which makes the game a state machine: it is always in exactly one State, and commands move it from one to another. The Game struct holds the rooms, where you are, what you carry and the state. Its step method takes one Command, changes the game, and returns the text to show. Option<&'static str> means \"maybe some text\"; &'static str is a string literal written straight into the program."
+      "text": "The pieces: a Command enum, so the game works with proper values instead of strings. Rooms stored in a HashMap, so we can look one up by name. And a State enum, which makes the game a state machine: it is always in exactly one State, and commands move it from one to another. The Game struct holds the rooms, where you are, what you carry and the state. Its step method takes one Command, changes the game, and returns the text to show. Option<&'static str> means \"maybe some text\"; &'static str is text that stays valid for the whole program, such as a string literal written straight into the code."
     },
     {
       "type": "code",
