@@ -29,7 +29,7 @@
     },
     {
       "type": "text",
-      "text": "Passing a value to a function moves it too. The parameter becomes the new owner, and the caller can't use the value any more. A function can hand ownership to its caller by returning a value. Here shout returns a brand-new String, and loud owns it:"
+      "text": "Passing a String to a function moves it too (the next lesson shows types that are copied instead). The parameter becomes the new owner, and the caller can't use the value any more. A function can hand ownership to its caller by returning a value. Here shout returns a brand-new String, and loud owns it:"
     },
     {
       "type": "code",
@@ -46,7 +46,7 @@
     },
     {
       "type": "note",
-      "text": "A move is a cheap shallow copy of the pointer, length and capacity; the heap data isn't copied. Because only one owner exists, there's no double free and no need for reference counting. C++ programmers: this is like std::move, but checked by the compiler and the default.",
+      "text": "A move is a cheap shallow copy of the pointer, length and capacity; the heap data isn't copied. Because only one owner exists, there's no double free and no need for reference counting. C++ programmers: a Rust move is the default, the compiler forbids any later use of the old variable, and its destructor doesn't run. A C++ moved-from object stays alive in a valid but unspecified state.",
       "track": "fast"
     }
   ],

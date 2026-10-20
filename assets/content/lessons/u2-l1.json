@@ -45,7 +45,7 @@
     },
     {
       "type": "text",
-      "text": "as never fails, but it can lose information when the value doesn't fit the new type:"
+      "text": "Between number types, as never fails, but it can lose information when the value doesn't fit the new type:"
     },
     {
       "type": "code",
@@ -53,7 +53,7 @@
     },
     {
       "type": "text",
-      "text": "2.9 as i32 is 2, because the fraction is dropped. 300 is too big for a u8, and an integer cast keeps only the bits that fit, so it wraps around to 300 - 256 = 44. (A float is different: 300.0 as u8 gives 255, the biggest u8.) Only use as when you know the value fits."
+      "text": "2.9 as i32 is 2, because the fraction is dropped. 300 is too big for a u8, and an integer cast keeps only the bits that fit, so it wraps around to 300 - 256 = 44. (A float is different: 300.0 as u8 gives 255, the biggest u8.) Only use as when you know the value fits. It doesn't work on text, so use parse() to turn text into a number."
     },
     {
       "type": "note",
@@ -67,7 +67,7 @@
     },
     {
       "type": "note",
-      "text": "Coming from another language: number literals can carry a type suffix, like 5u8 or 2.5f32. usize is as wide as a pointer, so 64 bits on most machines today. A char is 4 bytes, because it holds any Unicode character, not a single byte.",
+      "text": "Coming from another language: number literals can carry a type suffix, like 5u8 or 2.5f32. usize is as wide as a pointer, so 64 bits on most machines today. A char is 4 bytes and holds one Unicode scalar value (a code point). Some things that look like one character, such as flag emoji or accented letters built from two code points, need more than one char.",
       "track": "fast"
     }
   ],

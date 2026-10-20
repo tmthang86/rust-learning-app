@@ -2,7 +2,7 @@
   "id": "u0-l5",
   "title": "Functions",
   "sections": [
-    { "type": "text", "text": "A function is a named block of code you can run whenever you need it. You've already used one: main is the function every Rust program starts in." },
+    { "type": "text", "text": "A function is a named block of code you can run whenever you need it. You've already used one: main is the function every Rust program starts in. Functions can sit in any order in the file; a function's lines run only when it is called." },
     { "type": "text", "text": "Make your own with fn, then call it by writing its name followed by ():" },
     { "type": "code", "code": "fn greet() {\n    println!(\"Hello there!\");\n}\n\nfn main() {\n    greet();\n    greet();\n}" },
     { "type": "text", "text": "Functions can take inputs, called parameters. Each one needs a name and a type. i32 is Rust's everyday whole-number type:" },

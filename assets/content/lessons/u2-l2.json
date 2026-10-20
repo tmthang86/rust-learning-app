@@ -8,7 +8,7 @@
     },
     {
       "type": "text",
-      "text": "A tuple groups a fixed number of values that can have different types. Get at the parts with .0, .1 and so on, or unpack them with let:"
+      "text": "A tuple groups a fixed number of values that can have different types. Get at the parts with .0, .1 and so on, or unpack them with let (this is called destructuring):"
     },
     {
       "type": "code",

@@ -45,7 +45,7 @@
     },
     {
       "type": "note",
-      "text": "Rust strings are always valid UTF-8. len() is instant because it's stored, while chars().count() has to walk the whole string. Use bytes() for raw bytes and char_indices() when you need character positions that are safe to slice at.",
+      "text": "Rust strings are always valid UTF-8. len() is instant because it's stored, while chars().count() has to walk the whole string. Use bytes() for raw bytes and char_indices() when you need character positions that are safe to slice at. A char is a Unicode scalar value, so a letter that looks like one to a reader, such as é typed as e plus an accent, can be several chars; a crate such as unicode-segmentation counts those as one.",
       "track": "fast"
     },
     {

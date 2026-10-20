@@ -12,7 +12,7 @@
     },
     {
       "type": "text",
-      "text": "Without ?, the same function needs a match for each parse. With it, the happy path reads top to bottom. ParseIntError is the error type parse gives back when the text isn't a whole number; the use line at the top brings it in by name."
+      "text": "Without ?, the same function needs a match for each parse. With it, the happy path reads top to bottom. ParseIntError is the error type parse gives back when the text can't become that integer type: it isn't a whole number, it's empty, or it's too big for the type; the use line at the top brings it in by name."
     },
     {
       "type": "text",
