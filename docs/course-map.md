@@ -40,10 +40,11 @@ Sections can be tagged `"track": "fast"` or `"track": "starter"` so one lesson
 can show extra explanation to beginners and a "coming from X" comparison to
 experienced developers.
 
-Code sections are shown as read-only text; only the exercise editor runs code.
-So runnable examples in Units 7–12 end with a `// Output:` comment holding what
-they print (Units 0–6 don't have one yet), and `tool/check_lessons.py` checks
-that comment against the real output.
+Code sections are shown as read-only text; code runs only in the exercise
+editor and the Playground tab. So when the text talks about what an example
+prints, the example ends with a `// Output:` comment holding that output (most
+Unit 7–12 examples have one), and `tool/check_lessons.py` checks the comment
+against the real output.
 
 ## Release scope
 

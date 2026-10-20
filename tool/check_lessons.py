@@ -72,7 +72,12 @@ def check(path):
                 shown = output_comment(section["code"])
                 # Trailing spaces can't be seen, so they don't count.
                 tidy = lambda t: [l.rstrip() for l in t.rstrip().split("\n")]
-                if shown is not None and tidy(shown) != tidy(out):
+                if shown is None and "output:" in section["code"].lower():
+                    problems.append(
+                        f"{lid}: code section {i} mentions Output: but has no trailing "
+                        "// Output: block to check (put it last, one // line per printed line)"
+                    )
+                elif shown is not None and tidy(shown) != tidy(out):
                     problems.append(
                         f"{lid}: code section {i} Output comment doesn't match\n"
                         f"comment: {shown!r}\nprinted: {out!r}"
