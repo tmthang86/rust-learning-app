@@ -36,11 +36,11 @@
     },
     {
       "type": "code",
-      "code": "fn main() {\n    let mut words = vec![\"pear\", \"fig\", \"banana\", \"kiwi\"];\n    words.sort_by_key(|w| w.len());\n    println!(\"{:?}\", words);\n\n    let nickname: Option<String> = None;\n    let shown = nickname.unwrap_or_else(|| String::from(\"guest\"));\n    println!(\"{shown}\");\n}"
+      "code": "fn main() {\n    let mut words = vec![\"pear\", \"fig\", \"banana\", \"kiwi\"];\n    words.sort_by_key(|w| w.len());\n    println!(\"{:?}\", words);\n\n    let nickname: Option<String> = None;\n    let shown = nickname.unwrap_or_else(|| String::from(\"guest\"));\n    println!(\"{shown}\");\n}\n\n// Output:\n// [\"fig\", \"pear\", \"kiwi\", \"banana\"]\n// guest"
     },
     {
       "type": "text",
-      "text": "Here sort_by_key calls the closure on each word to get its length, and orders the words by that number. Words with equal length keep their original order."
+      "text": "Here sort_by_key calls the closure on each word to get its length, and orders the words by that number. Words with equal length keep their original order (pear stays before kiwi in the Output comment)."
     },
     {
       "type": "note",

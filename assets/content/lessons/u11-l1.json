@@ -8,7 +8,7 @@
     },
     {
       "type": "code",
-      "code": "use std::thread;\n\nfn main() {\n    println!(\"main: starting a worker\");\n    let handle = thread::spawn(|| {\n        println!(\"worker: hello from another thread\");\n    });\n    handle.join().unwrap();\n    println!(\"main: the worker has finished\");\n}"
+      "code": "use std::thread;\n\nfn main() {\n    println!(\"main: starting a worker\");\n    let handle = thread::spawn(|| {\n        println!(\"worker: hello from another thread\");\n    });\n    handle.join().unwrap();\n    println!(\"main: the worker has finished\");\n}\n\n// Output:\n// main: starting a worker\n// worker: hello from another thread\n// main: the worker has finished"
     },
     {
       "type": "text",
@@ -20,7 +20,7 @@
     },
     {
       "type": "code",
-      "code": "use std::thread;\n\nfn main() {\n    let handle = thread::spawn(|| {\n        let mut total = 0;\n        for n in 1..=100 {\n            total += n;\n        }\n        total\n    });\n    let total = handle.join().unwrap();\n    println!(\"sum of 1..=100 is {total}\");\n}"
+      "code": "use std::thread;\n\nfn main() {\n    let handle = thread::spawn(|| {\n        let mut total = 0;\n        for n in 1..=100 {\n            total += n;\n        }\n        total\n    });\n    let total = handle.join().unwrap();\n    println!(\"sum of 1..=100 is {total}\");\n}\n\n// Output:\n// sum of 1..=100 is 5050"
     },
     {
       "type": "note",
@@ -41,7 +41,7 @@
     },
     {
       "type": "code",
-      "code": "use std::thread;\n\nfn main() {\n    let words = vec![String::from(\"alpha\"), String::from(\"beta\"), String::from(\"gamma\")];\n    let mut handles = Vec::new();\n    for word in words {\n        let handle = thread::spawn(move || {\n            let letters = word.len();   // len() counts bytes (one per letter here)\n            (word, letters)   // give the word back, together with its length\n        });\n        handles.push(handle);\n    }\n    for handle in handles {\n        let (word, letters) = handle.join().unwrap();\n        println!(\"{word}: {letters} bytes\");\n    }\n}"
+      "code": "use std::thread;\n\nfn main() {\n    let words = vec![String::from(\"alpha\"), String::from(\"beta\"), String::from(\"gamma\")];\n    let mut handles = Vec::new();\n    for word in words {\n        let handle = thread::spawn(move || {\n            let letters = word.len();   // len() counts bytes (one per letter here)\n            (word, letters)   // give the word back, together with its length\n        });\n        handles.push(handle);\n    }\n    for handle in handles {\n        let (word, letters) = handle.join().unwrap();\n        println!(\"{word}: {letters} bytes\");\n    }\n}\n\n// Output:\n// alpha: 5 bytes\n// beta: 4 bytes\n// gamma: 5 bytes"
     },
     {
       "type": "text",
@@ -49,7 +49,7 @@
     },
     {
       "type": "code",
-      "code": "use std::thread;\n\nfn main() {\n    let numbers = vec![1, 2, 3, 4, 5, 6];\n    let (left, right) = numbers.split_at(3);   // two slices of the same Vec, no copying\n    let (a, b) = thread::scope(|s| {\n        let first = s.spawn(|| {\n            let sum: i32 = left.iter().sum();\n            sum\n        });\n        let second = s.spawn(|| {\n            let sum: i32 = right.iter().sum();\n            sum\n        });\n        (first.join().unwrap(), second.join().unwrap())\n    });\n    println!(\"left = {a}, right = {b}\");\n    println!(\"total = {}\", a + b);\n}"
+      "code": "use std::thread;\n\nfn main() {\n    let numbers = vec![1, 2, 3, 4, 5, 6];\n    let (left, right) = numbers.split_at(3);   // two slices of the same Vec, no copying\n    let (a, b) = thread::scope(|s| {\n        let first = s.spawn(|| {\n            let sum: i32 = left.iter().sum();\n            sum\n        });\n        let second = s.spawn(|| {\n            let sum: i32 = right.iter().sum();\n            sum\n        });\n        (first.join().unwrap(), second.join().unwrap())\n    });\n    println!(\"left = {a}, right = {b}\");\n    println!(\"total = {}\", a + b);\n}\n\n// Output:\n// left = 6, right = 15\n// total = 21"
     },
     {
       "type": "note",

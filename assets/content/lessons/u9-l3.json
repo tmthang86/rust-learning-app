@@ -60,7 +60,7 @@
     },
     {
       "type": "code",
-      "code": "// src/main.rs holds mod garden; and main\n// src/garden.rs holds the body of mod garden\nmod garden {\n    // src/garden/vegetables.rs holds the body of mod vegetables\n    pub mod vegetables {\n        pub fn count() -> u32 {\n            3\n        }\n    }\n\n    pub fn plant(name: &str) -> String {\n        format!(\"planted {name}\")\n    }\n}\n\nfn main() {\n    println!(\"{}, {} in the garden\", garden::plant(\"carrot\"), garden::vegetables::count());\n}"
+      "code": "// src/main.rs holds mod garden; and main\n// src/garden.rs holds the body of mod garden\nmod garden {\n    // src/garden/vegetables.rs holds the body of mod vegetables\n    pub mod vegetables {\n        pub fn count() -> u32 {\n            3\n        }\n    }\n\n    pub fn plant(name: &str) -> String {\n        format!(\"planted {name}\")\n    }\n}\n\nfn main() {\n    println!(\"{}, {} in the garden\", garden::plant(\"carrot\"), garden::vegetables::count());\n}\n\n// Output:\n// planted carrot, 3 in the garden"
     },
     {
       "type": "note",

@@ -12,7 +12,7 @@
     },
     {
       "type": "code",
-      "code": "use std::sync::mpsc;\nuse std::thread;\n\nfn main() {\n    let (tx, rx) = mpsc::channel();\n    thread::spawn(move || {\n        for n in 1..=3 {\n            tx.send(n * 10).unwrap();\n        }\n    });   // tx moved into the thread; it is dropped when that thread finishes\n    for value in rx {\n        println!(\"got {value}\");\n    }\n    println!(\"channel closed\");\n}"
+      "code": "use std::sync::mpsc;\nuse std::thread;\n\nfn main() {\n    let (tx, rx) = mpsc::channel();\n    thread::spawn(move || {\n        for n in 1..=3 {\n            tx.send(n * 10).unwrap();\n        }\n    });   // tx moved into the thread; it is dropped when that thread finishes\n    for value in rx {\n        println!(\"got {value}\");\n    }\n    println!(\"channel closed\");\n}\n\n// Output:\n// got 10\n// got 20\n// got 30\n// channel closed"
     },
     {
       "type": "text",
@@ -41,7 +41,7 @@
     },
     {
       "type": "code",
-      "code": "use std::sync::mpsc;\nuse std::thread;\n\nfn main() {\n    let (tx, rx) = mpsc::channel();\n    for id in 1..=3 {\n        let tx = tx.clone();   // each thread gets its own sender\n        thread::spawn(move || {\n            tx.send((id, id * id)).unwrap();\n        });\n    }\n    drop(tx);   // the original sender must go too, or the loop below never ends\n\n    let mut results = Vec::new();\n    for message in rx {\n        results.push(message);\n    }\n    results.sort();\n    for (id, square) in results {\n        println!(\"worker {id} sent {square}\");\n    }\n}"
+      "code": "use std::sync::mpsc;\nuse std::thread;\n\nfn main() {\n    let (tx, rx) = mpsc::channel();\n    for id in 1..=3 {\n        let tx = tx.clone();   // each thread gets its own sender\n        thread::spawn(move || {\n            tx.send((id, id * id)).unwrap();\n        });\n    }\n    drop(tx);   // the original sender must go too, or the loop below never ends\n\n    let mut results = Vec::new();\n    for message in rx {\n        results.push(message);\n    }\n    results.sort();\n    for (id, square) in results {\n        println!(\"worker {id} sent {square}\");\n    }\n}\n\n// Output:\n// worker 1 sent 1\n// worker 2 sent 4\n// worker 3 sent 9"
     },
     {
       "type": "text",

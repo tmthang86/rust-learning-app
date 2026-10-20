@@ -12,7 +12,7 @@
     },
     {
       "type": "code",
-      "code": "use std::rc::Rc;\n\nstruct Owner {\n    name: String,\n}\n\nstruct Gadget {\n    id: u32,\n    owner: Rc<Owner>,\n}\n\nfn main() {\n    let owner = Rc::new(Owner { name: String::from(\"Ada\") });\n    let g1 = Gadget { id: 1, owner: Rc::clone(&owner) };\n    let g2 = Gadget { id: 2, owner: Rc::clone(&owner) };\n\n    println!(\"gadget {} belongs to {}\", g1.id, g1.owner.name);\n    println!(\"gadget {} belongs to {}\", g2.id, g2.owner.name);\n    println!(\"owners: {}\", Rc::strong_count(&owner));\n}"
+      "code": "use std::rc::Rc;\n\nstruct Owner {\n    name: String,\n}\n\nstruct Gadget {\n    id: u32,\n    owner: Rc<Owner>,\n}\n\nfn main() {\n    let owner = Rc::new(Owner { name: String::from(\"Ada\") });\n    let g1 = Gadget { id: 1, owner: Rc::clone(&owner) };\n    let g2 = Gadget { id: 2, owner: Rc::clone(&owner) };\n\n    println!(\"gadget {} belongs to {}\", g1.id, g1.owner.name);\n    println!(\"gadget {} belongs to {}\", g2.id, g2.owner.name);\n    println!(\"owners: {}\", Rc::strong_count(&owner));\n}\n\n// Output:\n// gadget 1 belongs to Ada\n// gadget 2 belongs to Ada\n// owners: 3"
     },
     {
       "type": "text",
@@ -20,11 +20,11 @@
     },
     {
       "type": "text",
-      "text": "The count goes down again when an owner goes out of scope. Watch it change:"
+      "text": "The count goes down again when an owner goes out of scope. The comment at the end shows how it changes:"
     },
     {
       "type": "code",
-      "code": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(String::from(\"shared\"));\n    println!(\"count after creating a = {}\", Rc::strong_count(&a));\n    let b = Rc::clone(&a);\n    println!(\"count after creating b = {}\", Rc::strong_count(&a));\n    {\n        let c = Rc::clone(&a);\n        println!(\"count after creating c = {} ({c})\", Rc::strong_count(&a));\n    }\n    println!(\"count after c goes out of scope = {}\", Rc::strong_count(&a));\n    println!(\"{a} {b}\");\n}"
+      "code": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(String::from(\"shared\"));\n    println!(\"count after creating a = {}\", Rc::strong_count(&a));\n    let b = Rc::clone(&a);\n    println!(\"count after creating b = {}\", Rc::strong_count(&a));\n    {\n        let c = Rc::clone(&a);\n        println!(\"count after creating c = {} ({c})\", Rc::strong_count(&a));\n    }\n    println!(\"count after c goes out of scope = {}\", Rc::strong_count(&a));\n    println!(\"{a} {b}\");\n}\n\n// Output:\n// count after creating a = 1\n// count after creating b = 2\n// count after creating c = 3 (shared)\n// count after c goes out of scope = 2\n// shared shared"
     },
     {
       "type": "text",

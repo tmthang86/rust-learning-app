@@ -52,7 +52,11 @@
     },
     {
       "type": "code",
-      "code": "#[derive(Debug, Clone, Copy, PartialEq, Default)]\nstruct Point {\n    x: i32,\n    y: i32,\n}\n\nfn main() {\n    let a = Point { x: 1, y: 2 };\n    let b = a;   // Copy: a is still usable\n    println!(\"{:?} {:?} equal: {}\", a, b, a == b);\n    let origin = Point::default();\n    println!(\"{:?} equal: {}\", origin, a == origin);\n}"
+      "code": "#[derive(Debug, Clone, Copy, PartialEq, Default)]\nstruct Point {\n    x: i32,\n    y: i32,\n}\n\nfn main() {\n    let a = Point { x: 1, y: 2 };\n    let b = a;   // Copy: a is still usable\n    println!(\"{:?} {:?} equal: {}\", a, b, a == b);\n    let origin = Point::default();\n    println!(\"{:?} equal: {}\", origin, a == origin);\n}\n\n// Output:\n// Point { x: 1, y: 2 } Point { x: 1, y: 2 } equal: true\n// Point { x: 0, y: 0 } equal: false"
+    },
+    {
+      "type": "text",
+      "text": "The Output comment shows that a and b print the same, and that a is still usable after let b = a, because Point is Copy. Point::default() gives x and y their default value, 0, so origin is not equal to a."
     },
     {
       "type": "note",

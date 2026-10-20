@@ -28,7 +28,7 @@
     },
     {
       "type": "code",
-      "code": "fn main() {\n    let nums = vec![4, 8, 15, 16, 23, 42];\n\n    let total: i32 = nums.iter().sum();\n    let how_many = nums.iter().count();\n    let squares_sum = nums.iter().fold(0, |acc, n| acc + n * n);\n    println!(\"sum {total}, count {how_many}, sum of squares {squares_sum}\");\n\n    println!(\"max {:?}, min {:?}\", nums.iter().max(), nums.iter().min());\n\n    let first_big = nums.iter().find(|n| **n > 10);\n    println!(\"first over 10: {:?}\", first_big);\n\n    let any_odd = nums.iter().any(|n| n % 2 == 1);\n    let all_positive = nums.iter().all(|n| *n > 0);\n    println!(\"any odd: {any_odd}, all positive: {all_positive}\");\n}"
+      "code": "fn main() {\n    let nums = vec![4, 8, 15, 16, 23, 42];\n\n    let total: i32 = nums.iter().sum();\n    let how_many = nums.iter().count();\n    let squares_sum = nums.iter().fold(0, |acc, n| acc + n * n);\n    println!(\"sum {total}, count {how_many}, sum of squares {squares_sum}\");\n\n    println!(\"max {:?}, min {:?}\", nums.iter().max(), nums.iter().min());\n\n    let first_big = nums.iter().find(|n| **n > 10);\n    println!(\"first over 10: {:?}\", first_big);\n\n    let any_odd = nums.iter().any(|n| n % 2 == 1);\n    let all_positive = nums.iter().all(|n| *n > 0);\n    println!(\"any odd: {any_odd}, all positive: {all_positive}\");\n}\n\n// Output:\n// sum 108, count 6, sum of squares 2854\n// max Some(42), min Some(4)\n// first over 10: Some(15)\n// any odd: true, all positive: true"
     },
     {
       "type": "text",
@@ -36,7 +36,7 @@
     },
     {
       "type": "text",
-      "text": "sum needs to know what type to add up. That is why total has a type annotation: i32. You can also write nums.iter().sum::<i32>(). max and min give back Option<&i32>, a reference into the Vec. References print like the value they point to, so {:?} shows Some(42)."
+      "text": "sum needs to know what type to add up. That is why total has a type annotation: i32. You can also write nums.iter().sum::<i32>(). max and min give back Option<&i32>, a reference into the Vec. References print like the value they point to, so {:?} shows Some(42), as in the Output comment."
     },
     {
       "type": "text",

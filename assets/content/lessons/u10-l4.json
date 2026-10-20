@@ -12,15 +12,15 @@
     },
     {
       "type": "code",
-      "code": "use std::cell::RefCell;\n\nfn main() {\n    let cell = RefCell::new(vec![1, 2]);   // note: no mut\n    cell.borrow_mut().push(3);\n    println!(\"{:?} has {} items\", cell.borrow(), cell.borrow().len());\n}"
+      "code": "use std::cell::RefCell;\n\nfn main() {\n    let cell = RefCell::new(vec![1, 2]);   // note: no mut\n    cell.borrow_mut().push(3);\n    println!(\"{:?} has {} items\", cell.borrow(), cell.borrow().len());\n}\n\n// Output:\n// [1, 2, 3] has 3 items"
     },
     {
       "type": "text",
-      "text": "Two readers at once are fine. A reader plus a writer, or two writers, are not. If you break the rules, the program doesn't fail to compile. It panics. This program panics on purpose. Run it to see the message."
+      "text": "Two readers at once are fine. A reader plus a writer, or two writers, are not. If you break the rules, the program doesn't fail to compile. It panics. This program panics on purpose. The comment at the end shows the message."
     },
     {
       "type": "code",
-      "code": "use std::cell::RefCell;\n\nfn main() {\n    let c = RefCell::new(5);\n    let a = c.borrow_mut();\n    let b = c.borrow_mut();   // panics: RefCell already borrowed\n    println!(\"{} {}\", a, b);\n}"
+      "code": "use std::cell::RefCell;\n\nfn main() {\n    let c = RefCell::new(5);\n    let a = c.borrow_mut();\n    let b = c.borrow_mut();   // panics: RefCell already borrowed\n    println!(\"{} {}\", a, b);\n}\n\n// What you would see (the program panics):\n// The program stops here with a panic, and prints a message like this\n// (the file name and numbers may differ):\n//   thread 'main' panicked at src/main.rs:6:15:\n//   RefCell already borrowed"
     },
     {
       "type": "text",
@@ -28,7 +28,7 @@
     },
     {
       "type": "code",
-      "code": "use std::cell::RefCell;\n\nfn main() {\n    let c = RefCell::new(5);\n    let reader = c.borrow();\n    println!(\"while reading: {}\", c.try_borrow_mut().is_err());\n    drop(reader);\n    println!(\"after dropping the reader: {}\", c.try_borrow_mut().is_err());\n}"
+      "code": "use std::cell::RefCell;\n\nfn main() {\n    let c = RefCell::new(5);\n    let reader = c.borrow();\n    println!(\"while reading: {}\", c.try_borrow_mut().is_err());\n    drop(reader);\n    println!(\"after dropping the reader: {}\", c.try_borrow_mut().is_err());\n}\n\n// Output:\n// while reading: true\n// after dropping the reader: false"
     },
     {
       "type": "text",
@@ -36,7 +36,7 @@
     },
     {
       "type": "code",
-      "code": "use std::cell::RefCell;\nuse std::rc::Rc;\n\nstruct Account {\n    balance: i64,\n}\n\nfn main() {\n    let account = Rc::new(RefCell::new(Account { balance: 100 }));\n    let shop = Rc::clone(&account);\n    let bank = Rc::clone(&account);\n\n    shop.borrow_mut().balance -= 30;\n    bank.borrow_mut().balance += 5;\n\n    println!(\"balance = {}\", account.borrow().balance);\n}"
+      "code": "use std::cell::RefCell;\nuse std::rc::Rc;\n\nstruct Account {\n    balance: i64,\n}\n\nfn main() {\n    let account = Rc::new(RefCell::new(Account { balance: 100 }));\n    let shop = Rc::clone(&account);\n    let bank = Rc::clone(&account);\n\n    shop.borrow_mut().balance -= 30;\n    bank.borrow_mut().balance += 5;\n\n    println!(\"balance = {}\", account.borrow().balance);\n}\n\n// Output:\n// balance = 75"
     },
     {
       "type": "text",
@@ -44,7 +44,7 @@
     },
     {
       "type": "code",
-      "code": "use std::cell::Cell;\nuse std::rc::Rc;\n\nfn main() {\n    let hits = Cell::new(0);\n    hits.set(hits.get() + 1);\n    hits.set(hits.get() + 1);\n    println!(\"hits = {}\", hits.get());\n\n    let strong = Rc::new(5);\n    let weak = Rc::downgrade(&strong);\n    println!(\"{:?}\", weak.upgrade());\n    drop(strong);\n    println!(\"{:?}\", weak.upgrade());\n}"
+      "code": "use std::cell::Cell;\nuse std::rc::Rc;\n\nfn main() {\n    let hits = Cell::new(0);\n    hits.set(hits.get() + 1);\n    hits.set(hits.get() + 1);\n    println!(\"hits = {}\", hits.get());\n\n    let strong = Rc::new(5);\n    let weak = Rc::downgrade(&strong);\n    println!(\"{:?}\", weak.upgrade());\n    drop(strong);\n    println!(\"{:?}\", weak.upgrade());\n}\n\n// Output:\n// hits = 2\n// Some(5)\n// None"
     },
     {
       "type": "text",

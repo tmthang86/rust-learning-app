@@ -3,7 +3,9 @@
 
 For every lesson in assets/content/lessons/:
 - each code section containing `fn main` must compile and run without
-  compiler warnings,
+  compiler warnings, and if it ends with a `// Output:` comment block, that
+  block must match what the program prints (code sections are shown as text
+  in the app, so this comment is how learners see the output),
 - each exercise's solution must print the expected output, without warnings,
 - each exercise's starter code must NOT already print it,
 - each quiz answer index must point at a real option.
@@ -42,6 +44,18 @@ def run(code):
         return ran.stdout, ran.stderr, built.stderr.strip()
 
 
+def output_comment(code):
+    """The lines of a trailing `// Output:` comment block, or None."""
+    lines = code.rstrip().split("\n")
+    if "// Output:" not in [l.strip() for l in lines]:
+        return None
+    start = max(i for i, l in enumerate(lines) if l.strip() == "// Output:")
+    body = lines[start + 1:]
+    if not all(l.startswith("//") for l in body):
+        return None
+    return "\n".join(l[3:] if l.startswith("// ") else l[2:] for l in body)
+
+
 def check(path):
     problems = []
     lesson = json.load(open(path))
@@ -54,6 +68,15 @@ def check(path):
                 problems.append(f"{lid}: code section {i} doesn't compile\n{err[:500]}")
             elif warnings:
                 problems.append(f"{lid}: code section {i} has compiler warnings\n{warnings[:500]}")
+            else:
+                shown = output_comment(section["code"])
+                # Trailing spaces can't be seen, so they don't count.
+                tidy = lambda t: [l.rstrip() for l in t.rstrip().split("\n")]
+                if shown is not None and tidy(shown) != tidy(out):
+                    problems.append(
+                        f"{lid}: code section {i} Output comment doesn't match\n"
+                        f"comment: {shown!r}\nprinted: {out!r}"
+                    )
 
     exercise = lesson.get("exercise")
     if exercise:

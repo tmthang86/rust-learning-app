@@ -8,7 +8,7 @@
     },
     {
       "type": "code",
-      "code": "mod outer {\n    fn secret() -> u32 {\n        42\n    }\n\n    pub fn reveal() -> u32 {\n        secret()\n    }\n\n    pub mod inner {\n        pub fn peek() -> u32 {\n            // a nested module may use its parent's private items\n            super::secret() + 1\n        }\n    }\n}\n\nfn main() {\n    println!(\"{} {}\", outer::reveal(), outer::inner::peek());\n}"
+      "code": "mod outer {\n    fn secret() -> u32 {\n        42\n    }\n\n    pub fn reveal() -> u32 {\n        secret()\n    }\n\n    pub mod inner {\n        pub fn peek() -> u32 {\n            // a nested module may use its parent's private items\n            super::secret() + 1\n        }\n    }\n}\n\nfn main() {\n    println!(\"{} {}\", outer::reveal(), outer::inner::peek());\n}\n\n// Output:\n// 42 43"
     },
     {
       "type": "text",
@@ -20,7 +20,7 @@
     },
     {
       "type": "code",
-      "code": "mod bank {\n    pub struct Account {\n        pub owner: String,\n        balance: i64,\n    }\n\n    impl Account {\n        pub fn new(owner: &str) -> Account {\n            Account { owner: String::from(owner), balance: 0 }\n        }\n\n        pub fn deposit(&mut self, amount: i64) {\n            self.balance += amount;\n        }\n\n        pub fn balance(&self) -> i64 {\n            self.balance\n        }\n    }\n}\n\nfn main() {\n    let mut acc = bank::Account::new(\"Ada\");\n    acc.deposit(40);\n    println!(\"{} has {}\", acc.owner, acc.balance());\n}"
+      "code": "mod bank {\n    pub struct Account {\n        pub owner: String,\n        balance: i64,\n    }\n\n    impl Account {\n        pub fn new(owner: &str) -> Account {\n            Account { owner: String::from(owner), balance: 0 }\n        }\n\n        pub fn deposit(&mut self, amount: i64) {\n            self.balance += amount;\n        }\n\n        pub fn balance(&self) -> i64 {\n            self.balance\n        }\n    }\n}\n\nfn main() {\n    let mut acc = bank::Account::new(\"Ada\");\n    acc.deposit(40);\n    println!(\"{} has {}\", acc.owner, acc.balance());\n}\n\n// Output:\n// Ada has 40"
     },
     {
       "type": "text",
@@ -32,7 +32,7 @@
     },
     {
       "type": "code",
-      "code": "mod zoo {\n    pub mod animals {\n        pub fn cat() -> String {\n            String::from(\"meow\")\n        }\n    }\n\n    pub mod show {\n        use super::animals;   // a use outside the module does not reach in here\n\n        pub fn line() -> String {\n            format!(\"the cat says {}\", animals::cat())\n        }\n    }\n}\n\nuse zoo::show;\n\nfn main() {\n    println!(\"{}\", show::line());\n}"
+      "code": "mod zoo {\n    pub mod animals {\n        pub fn cat() -> String {\n            String::from(\"meow\")\n        }\n    }\n\n    pub mod show {\n        use super::animals;   // a use outside the module does not reach in here\n\n        pub fn line() -> String {\n            format!(\"the cat says {}\", animals::cat())\n        }\n    }\n}\n\nuse zoo::show;\n\nfn main() {\n    println!(\"{}\", show::line());\n}\n\n// Output:\n// the cat says meow"
     },
     {
       "type": "text",
@@ -44,7 +44,7 @@
     },
     {
       "type": "code",
-      "code": "use std::fmt::Result as FmtResult;\nuse std::io::Result as IoResult;\n\nfn check_fmt() -> FmtResult {\n    Ok(())\n}\n\nfn check_io() -> IoResult<u32> {\n    Ok(7)\n}\n\nfn main() {\n    println!(\"{:?} {:?}\", check_fmt(), check_io());\n}"
+      "code": "use std::fmt::Result as FmtResult;\nuse std::io::Result as IoResult;\n\nfn check_fmt() -> FmtResult {\n    Ok(())\n}\n\nfn check_io() -> IoResult<u32> {\n    Ok(7)\n}\n\nfn main() {\n    println!(\"{:?} {:?}\", check_fmt(), check_io());\n}\n\n// Output:\n// Ok(()) Ok(7)"
     },
     {
       "type": "note",

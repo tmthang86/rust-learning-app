@@ -8,11 +8,11 @@
     },
     {
       "type": "code",
-      "code": "fn main() {\n    let colors = vec![\"red\", \"green\", \"blue\"];\n    let mut it = colors.iter();\n    println!(\"{:?}\", it.next());\n    println!(\"{:?}\", it.next());\n    println!(\"{:?}\", it.next());\n    println!(\"{:?}\", it.next());\n}"
+      "code": "fn main() {\n    let colors = vec![\"red\", \"green\", \"blue\"];\n    let mut it = colors.iter();\n    println!(\"{:?}\", it.next());\n    println!(\"{:?}\", it.next());\n    println!(\"{:?}\", it.next());\n    println!(\"{:?}\", it.next());\n}\n\n// Output:\n// Some(\"red\")\n// Some(\"green\")\n// Some(\"blue\")\n// None"
     },
     {
       "type": "text",
-      "text": "it must be mut, because each call to next changes the iterator's inner position. The items are references to the strings (printed the same way), and the fourth call returns None."
+      "text": "it must be mut, because each call to next changes the iterator's inner position. The Output comment shows what the four calls return: three Some values holding the items (they are references to the strings, which print the same way), and then None."
     },
     {
       "type": "text",
@@ -36,7 +36,7 @@
     },
     {
       "type": "code",
-      "code": "struct Countdown {\n    n: u32,\n}\n\nimpl Iterator for Countdown {\n    type Item = u32;\n\n    fn next(&mut self) -> Option<u32> {\n        if self.n == 0 {\n            None\n        } else {\n            let current = self.n;\n            self.n -= 1;\n            Some(current)\n        }\n    }\n}\n\nfn main() {\n    for x in (Countdown { n: 3 }) {\n        println!(\"{x}\");\n    }\n\n    // writing next gave us more methods for free, such as sum\n    let total: u32 = Countdown { n: 4 }.sum();   // 4 + 3 + 2 + 1\n    println!(\"total {total}\");\n}"
+      "code": "struct Countdown {\n    n: u32,\n}\n\nimpl Iterator for Countdown {\n    type Item = u32;\n\n    fn next(&mut self) -> Option<u32> {\n        if self.n == 0 {\n            None\n        } else {\n            let current = self.n;\n            self.n -= 1;\n            Some(current)\n        }\n    }\n}\n\nfn main() {\n    for x in (Countdown { n: 3 }) {\n        println!(\"{x}\");\n    }\n\n    // writing next gave us more methods for free, such as sum\n    let total: u32 = Countdown { n: 4 }.sum();   // 4 + 3 + 2 + 1\n    println!(\"total {total}\");\n}\n\n// Output:\n// 3\n// 2\n// 1\n// total 10"
     },
     {
       "type": "text",

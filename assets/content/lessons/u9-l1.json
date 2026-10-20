@@ -8,7 +8,7 @@
     },
     {
       "type": "code",
-      "code": "mod greetings {\n    pub fn hello() -> String {\n        String::from(\"Hello\")\n    }\n\n    pub mod formal {\n        pub fn hello(name: &str) -> String {\n            format!(\"Good day, {name}\")\n        }\n    }\n}\n\nfn main() {\n    println!(\"{}\", greetings::hello());\n    println!(\"{}\", greetings::formal::hello(\"Ada\"));\n}"
+      "code": "mod greetings {\n    pub fn hello() -> String {\n        String::from(\"Hello\")\n    }\n\n    pub mod formal {\n        pub fn hello(name: &str) -> String {\n            format!(\"Good day, {name}\")\n        }\n    }\n}\n\nfn main() {\n    println!(\"{}\", greetings::hello());\n    println!(\"{}\", greetings::formal::hello(\"Ada\"));\n}\n\n// Output:\n// Hello\n// Good day, Ada"
     },
     {
       "type": "text",
@@ -24,7 +24,7 @@
     },
     {
       "type": "code",
-      "code": "fn shout(text: &str) -> String {\n    text.to_uppercase()\n}\n\nmod greetings {\n    pub fn hello() -> String {\n        String::from(\"hello\")\n    }\n\n    pub fn loud() -> String {\n        // shout isn't pub, but a child module may use its parent's items (more next lesson)\n        // self:: starts in this module, super:: starts in the parent (the crate root here)\n        super::shout(&self::hello())\n    }\n\n    pub mod formal {\n        pub fn bow() -> String {\n            // crate:: always starts at the top\n            format!(\"{} (bows)\", crate::greetings::loud())\n        }\n    }\n}\n\nfn main() {\n    println!(\"{}\", greetings::loud());\n    println!(\"{}\", greetings::formal::bow());\n}"
+      "code": "fn shout(text: &str) -> String {\n    text.to_uppercase()\n}\n\nmod greetings {\n    pub fn hello() -> String {\n        String::from(\"hello\")\n    }\n\n    pub fn loud() -> String {\n        // shout isn't pub, but a child module may use its parent's items (more next lesson)\n        // self:: starts in this module, super:: starts in the parent (the crate root here)\n        super::shout(&self::hello())\n    }\n\n    pub mod formal {\n        pub fn bow() -> String {\n            // crate:: always starts at the top\n            format!(\"{} (bows)\", crate::greetings::loud())\n        }\n    }\n}\n\nfn main() {\n    println!(\"{}\", greetings::loud());\n    println!(\"{}\", greetings::formal::bow());\n}\n\n// Output:\n// HELLO\n// HELLO (bows)"
     },
     {
       "type": "text",

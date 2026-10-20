@@ -8,7 +8,7 @@
     },
     {
       "type": "code",
-      "code": "fn main() {\n    let b = Box::new(5);\n    println!(\"b = {b}\");\n    let total = *b + 1;   // * reaches the value inside the box\n    println!(\"total = {total}\");\n}"
+      "code": "fn main() {\n    let b = Box::new(5);\n    println!(\"b = {b}\");\n    let total = *b + 1;   // * reaches the value inside the box\n    println!(\"total = {total}\");\n}\n\n// Output:\n// b = 5\n// total = 6"
     },
     {
       "type": "text",
@@ -24,7 +24,7 @@
     },
     {
       "type": "code",
-      "code": "enum List {\n    Cons(i32, Box<List>),\n    Nil,\n}\nuse List::{Cons, Nil};\n\nfn sum(list: &List) -> i32 {\n    match list {\n        Cons(value, rest) => *value + sum(rest),\n        Nil => 0,\n    }\n}\n\nfn main() {\n    let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));\n    println!(\"sum = {}\", sum(&list));\n}"
+      "code": "enum List {\n    Cons(i32, Box<List>),\n    Nil,\n}\nuse List::{Cons, Nil};\n\nfn sum(list: &List) -> i32 {\n    match list {\n        Cons(value, rest) => *value + sum(rest),\n        Nil => 0,\n    }\n}\n\nfn main() {\n    let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));\n    println!(\"sum = {}\", sum(&list));\n}\n\n// Output:\n// sum = 6"
     },
     {
       "type": "text",
@@ -36,7 +36,7 @@
     },
     {
       "type": "code",
-      "code": "use std::f64::consts::PI;   // PI from the standard library\n\ntrait Shape {\n    fn area(&self) -> f64;\n    fn name(&self) -> String;\n}\n\nstruct Circle {\n    radius: f64,\n}\n\nstruct Square {\n    side: f64,\n}\n\nimpl Shape for Circle {\n    fn area(&self) -> f64 {\n        PI * self.radius * self.radius\n    }\n    fn name(&self) -> String {\n        String::from(\"circle\")\n    }\n}\n\nimpl Shape for Square {\n    fn area(&self) -> f64 {\n        self.side * self.side\n    }\n    fn name(&self) -> String {\n        String::from(\"square\")\n    }\n}\n\nfn main() {\n    let shapes: Vec<Box<dyn Shape>> = vec![\n        Box::new(Circle { radius: 1.0 }),\n        Box::new(Square { side: 2.0 }),\n    ];\n    for s in &shapes {\n        println!(\"{}: {:.2}\", s.name(), s.area());   // {:.2} prints 2 digits after the point\n    }\n}"
+      "code": "use std::f64::consts::PI;   // PI from the standard library\n\ntrait Shape {\n    fn area(&self) -> f64;\n    fn name(&self) -> String;\n}\n\nstruct Circle {\n    radius: f64,\n}\n\nstruct Square {\n    side: f64,\n}\n\nimpl Shape for Circle {\n    fn area(&self) -> f64 {\n        PI * self.radius * self.radius\n    }\n    fn name(&self) -> String {\n        String::from(\"circle\")\n    }\n}\n\nimpl Shape for Square {\n    fn area(&self) -> f64 {\n        self.side * self.side\n    }\n    fn name(&self) -> String {\n        String::from(\"square\")\n    }\n}\n\nfn main() {\n    let shapes: Vec<Box<dyn Shape>> = vec![\n        Box::new(Circle { radius: 1.0 }),\n        Box::new(Square { side: 2.0 }),\n    ];\n    for s in &shapes {\n        println!(\"{}: {:.2}\", s.name(), s.area());   // {:.2} prints 2 digits after the point\n    }\n}\n\n// Output:\n// circle: 3.14\n// square: 4.00"
     },
     {
       "type": "text",

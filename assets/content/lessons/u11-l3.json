@@ -12,7 +12,7 @@
     },
     {
       "type": "code",
-      "code": "use std::sync::Mutex;\n\nfn main() {\n    let counter = Mutex::new(0);\n    {\n        let mut guard = counter.lock().unwrap();\n        *guard += 1;\n    }   // the guard is dropped here, so the lock is released\n    println!(\"counter = {}\", *counter.lock().unwrap());\n}"
+      "code": "use std::sync::Mutex;\n\nfn main() {\n    let counter = Mutex::new(0);\n    {\n        let mut guard = counter.lock().unwrap();\n        *guard += 1;\n    }   // the guard is dropped here, so the lock is released\n    println!(\"counter = {}\", *counter.lock().unwrap());\n}\n\n// Output:\n// counter = 1"
     },
     {
       "type": "text",
@@ -28,7 +28,7 @@
     },
     {
       "type": "code",
-      "code": "use std::sync::{Arc, Mutex};\nuse std::thread;\n\nfn main() {\n    let counter = Arc::new(Mutex::new(0));\n    let mut handles = Vec::new();\n    for _ in 0..8 {\n        let counter = Arc::clone(&counter);   // each thread owns one Arc\n        let handle = thread::spawn(move || {\n            for _ in 0..1000 {\n                *counter.lock().unwrap() += 1;   // the guard is dropped at the end of this line\n            }\n        });\n        handles.push(handle);\n    }\n    for handle in handles {\n        handle.join().unwrap();\n    }\n    println!(\"total = {}\", *counter.lock().unwrap());\n}"
+      "code": "use std::sync::{Arc, Mutex};\nuse std::thread;\n\nfn main() {\n    let counter = Arc::new(Mutex::new(0));\n    let mut handles = Vec::new();\n    for _ in 0..8 {\n        let counter = Arc::clone(&counter);   // each thread owns one Arc\n        let handle = thread::spawn(move || {\n            for _ in 0..1000 {\n                *counter.lock().unwrap() += 1;   // the guard is dropped at the end of this line\n            }\n        });\n        handles.push(handle);\n    }\n    for handle in handles {\n        handle.join().unwrap();\n    }\n    println!(\"total = {}\", *counter.lock().unwrap());\n}\n\n// Output:\n// total = 8000"
     },
     {
       "type": "text",

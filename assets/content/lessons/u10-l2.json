@@ -8,7 +8,7 @@
     },
     {
       "type": "code",
-      "code": "fn main() {\n    let x = 5;\n    let y = &x;\n    let b = Box::new(x);\n    println!(\"{} {} {}\", x, *y, *b);\n    assert_eq!(5, *y);   // y is a reference, so *y is the number 5\n}"
+      "code": "fn main() {\n    let x = 5;\n    let y = &x;\n    let b = Box::new(x);\n    println!(\"{} {} {}\", x, *y, *b);\n    assert_eq!(5, *y);   // y is a reference, so *y is the number 5\n}\n\n// Output:\n// 5 5 5"
     },
     {
       "type": "text",
@@ -16,7 +16,7 @@
     },
     {
       "type": "code",
-      "code": "use std::ops::Deref;\n\nstruct MyBox<T>(T);\n\nimpl<T> MyBox<T> {\n    fn new(x: T) -> MyBox<T> {\n        MyBox(x)\n    }\n}\n\nimpl<T> Deref for MyBox<T> {\n    type Target = T;\n\n    fn deref(&self) -> &T {\n        &self.0\n    }\n}\n\nfn hello(name: &str) {\n    println!(\"Hello, {name}!\");\n}\n\nfn main() {\n    let y = MyBox::new(5);\n    println!(\"{}\", *y);   // Rust runs *(y.deref()) behind the scenes\n\n    let name = MyBox::new(String::from(\"Rust\"));\n    hello(&name);         // &MyBox<String> becomes &String, then &str\n}"
+      "code": "use std::ops::Deref;\n\nstruct MyBox<T>(T);\n\nimpl<T> MyBox<T> {\n    fn new(x: T) -> MyBox<T> {\n        MyBox(x)\n    }\n}\n\nimpl<T> Deref for MyBox<T> {\n    type Target = T;\n\n    fn deref(&self) -> &T {\n        &self.0\n    }\n}\n\nfn hello(name: &str) {\n    println!(\"Hello, {name}!\");\n}\n\nfn main() {\n    let y = MyBox::new(5);\n    println!(\"{}\", *y);   // Rust runs *(y.deref()) behind the scenes\n\n    let name = MyBox::new(String::from(\"Rust\"));\n    hello(&name);         // &MyBox<String> becomes &String, then &str\n}\n\n// Output:\n// 5\n// Hello, Rust!"
     },
     {
       "type": "text",
@@ -28,11 +28,11 @@
     },
     {
       "type": "code",
-      "code": "struct Noisy {\n    name: String,\n}\n\nimpl Noisy {\n    fn new(name: &str) -> Noisy {\n        Noisy { name: String::from(name) }\n    }\n}\n\nimpl Drop for Noisy {\n    fn drop(&mut self) {\n        println!(\"dropping {}\", self.name);\n    }\n}\n\nfn main() {\n    let first = Noisy::new(\"first\");\n    let second = Noisy::new(\"second\");\n    println!(\"made {} and {}\", first.name, second.name);\n    {\n        let temp = Noisy::new(\"temp\");\n        println!(\"inside block with {}\", temp.name);\n    }\n    let early = Noisy::new(\"early\");\n    drop(early);   // std's drop function: cleans up right now\n    println!(\"end of main\");\n}"
+      "code": "struct Noisy {\n    name: String,\n}\n\nimpl Noisy {\n    fn new(name: &str) -> Noisy {\n        Noisy { name: String::from(name) }\n    }\n}\n\nimpl Drop for Noisy {\n    fn drop(&mut self) {\n        println!(\"dropping {}\", self.name);\n    }\n}\n\nfn main() {\n    let first = Noisy::new(\"first\");\n    let second = Noisy::new(\"second\");\n    println!(\"made {} and {}\", first.name, second.name);\n    {\n        let temp = Noisy::new(\"temp\");\n        println!(\"inside block with {}\", temp.name);\n    }\n    let early = Noisy::new(\"early\");\n    drop(early);   // std's drop function: cleans up right now\n    println!(\"end of main\");\n}\n\n// Output:\n// made first and second\n// inside block with temp\n// dropping temp\n// dropping early\n// end of main\n// dropping second\n// dropping first"
     },
     {
       "type": "text",
-      "text": "Read the output from the top. temp is dropped at the closing brace of its block. early is dropped by the call to drop(early). At the end of main, the remaining values are dropped in the reverse order of creation: second first, then first. So the last value created is the first one cleaned up."
+      "text": "Read the output, shown in the comment at the end of the code, from the top. temp is dropped at the closing brace of its block. early is dropped by the call to drop(early). At the end of main, the remaining values are dropped in the reverse order of creation: second first, then first. So the last value created is the first one cleaned up."
     },
     {
       "type": "text",

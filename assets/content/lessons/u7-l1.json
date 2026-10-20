@@ -12,11 +12,11 @@
     },
     {
       "type": "code",
-      "code": "fn swap_pair<T>(pair: (T, T)) -> (T, T) {\n    (pair.1, pair.0)\n}\n\nfn main() {\n    let numbers = swap_pair((1, 2));\n    let words = swap_pair((\"left\", \"right\"));\n    let names = swap_pair((String::from(\"Ana\"), String::from(\"Binh\")));\n    println!(\"{:?}\", numbers);\n    println!(\"{:?}\", words);\n    println!(\"{:?}\", names);\n}"
+      "code": "fn swap_pair<T>(pair: (T, T)) -> (T, T) {\n    (pair.1, pair.0)\n}\n\nfn main() {\n    let numbers = swap_pair((1, 2));\n    let words = swap_pair((\"left\", \"right\"));\n    let names = swap_pair((String::from(\"Ana\"), String::from(\"Binh\")));\n    println!(\"{:?}\", numbers);\n    println!(\"{:?}\", words);\n    println!(\"{:?}\", names);\n}\n\n// Output:\n// (2, 1)\n// (\"right\", \"left\")\n// (\"Binh\", \"Ana\")"
     },
     {
       "type": "text",
-      "text": "<T> after the name declares the placeholder. After that, T can be used like any type in the parameters and the return type. (T, T) is a tuple holding two values of the same type, and pair.0 and pair.1 pick its parts. In the first call T becomes i32, in the second &str, in the third String. You never write the real type: Rust works it out from the arguments."
+      "text": "<T> after the name declares the placeholder. After that, T can be used like any type in the parameters and the return type. (T, T) is a tuple holding two values of the same type, and pair.0 and pair.1 pick its parts. In the first call T becomes i32, in the second &str, in the third String. You never write the real type: Rust works it out from the arguments. The Output comment at the end of the code shows the three swapped pairs."
     },
     {
       "type": "note",
