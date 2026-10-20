@@ -4,7 +4,7 @@
   "description": "Checks ../../firestore.rules against the Firestore emulator. Run ./run.sh (needs Node and Java).",
   "type": "module",
   "devDependencies": {
-    "@firebase/rules-unit-testing": "4.0.1",
+    "@firebase/rules-unit-testing": "6.0.0",
     "firebase": "11.10.0",
     "firebase-tools": "15.34.0"
   }
