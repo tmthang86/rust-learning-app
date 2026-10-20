@@ -33,7 +33,7 @@
     },
     {
       "type": "note",
-      "text": "Rust has no classes or inheritance. Data lives in structs, behaviour goes in impl blocks (next lesson), and shared behaviour comes from traits. Tuple structs like struct Meters(f64); give a plain value its own type.",
+      "text": "Rust has no classes or inheritance. Data lives in structs and enums, behaviour goes in impl blocks (next lesson), and shared behaviour comes from traits. Tuple structs like struct Meters(f64); give a plain value its own type.",
       "track": "fast"
     }
   ],

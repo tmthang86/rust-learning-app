@@ -1,0 +1,79 @@
+{
+  "id": "u7-l3",
+  "title": "Traits",
+  "sections": [
+    {
+      "type": "text",
+      "text": "A trait describes something a type can do. It mostly lists method signatures (it can also list types; you will meet one with Iterator in Unit 8), and any type can promise to provide them. You have already met one: Display is the trait for \"can be shown with {}\". Now you will write your own."
+    },
+    {
+      "type": "text",
+      "text": "trait Speak { ... } defines the trait. Inside, a method signature ending in a semicolon is required: every type that wants the trait must write its own body. A method with a body is a default method: types get it for free, and may override it. impl Speak for Dog gives a type the trait."
+    },
+    {
+      "type": "code",
+      "code": "trait Speak {\n    fn name(&self) -> String;\n    fn sound(&self) -> String;\n\n    // default method: built from the required ones\n    fn intro(&self) -> String {\n        format!(\"{} says {}\", self.name(), self.sound())\n    }\n}\n\nstruct Dog {\n    name: String,\n}\n\nstruct Robot {\n    id: u32,\n}\n\nimpl Speak for Dog {\n    fn name(&self) -> String {\n        self.name.clone()\n    }\n    fn sound(&self) -> String {\n        String::from(\"woof\")\n    }\n}\n\nimpl Speak for Robot {\n    fn name(&self) -> String {\n        format!(\"Robot {}\", self.id)\n    }\n    fn sound(&self) -> String {\n        String::from(\"beep\")\n    }\n    // override the default\n    fn intro(&self) -> String {\n        format!(\"[{}] {}\", self.name(), self.sound())\n    }\n}\n\nfn main() {\n    let dog = Dog { name: String::from(\"Rex\") };\n    let robot = Robot { id: 7 };\n    println!(\"{}\", dog.intro());\n    println!(\"{}\", robot.intro());\n}"
+    },
+    {
+      "type": "text",
+      "text": "Dog only wrote name and sound, and got intro for free. Robot wrote its own intro, which replaces the default. Inside a trait, self.name() calls another method of the same trait; this works for every type that implements it. Dog and Robot are unrelated types, but both can Speak."
+    },
+    {
+      "type": "text",
+      "text": "This is the same shape as the impl fmt::Display for LoginError you saw, and the one for ShopError you wrote, in Unit 6. Display is a trait from the standard library. It asks for one method, fmt, and the {} in println! calls it. Here it is again for a new type:"
+    },
+    {
+      "type": "code",
+      "code": "use std::fmt;\n\nstruct Point {\n    x: i32,\n    y: i32,\n}\n\nimpl fmt::Display for Point {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        write!(f, \"({}, {})\", self.x, self.y)\n    }\n}\n\nfn main() {\n    let p = Point { x: 3, y: -1 };\n    println!(\"point is {p}\");\n    let text = p.to_string();   // free, because Point implements Display\n    println!(\"{} bytes\", text.len());\n}"
+    },
+    {
+      "type": "text",
+      "text": "Once a type implements Display, Rust also gives it a to_string method for free. That is the power of traits: implement one small thing and get more."
+    },
+    {
+      "type": "note",
+      "text": "A trait is a promise. impl Speak for Dog is a signed promise that Dog has every method Speak lists. If you forget a required method, the compiler tells you which one.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Traits are like interfaces in Java, C# and Go. Like Java and C# interfaces (and unlike Go's), they can have default methods. Unlike Go, a type must say impl Trait for Type explicitly. Unlike Java, you can implement your own trait for a type from someone else's crate, such as i32 or String. The orphan rule keeps this safe: you may implement a trait for a type only if the trait or the type is defined in your crate. That is why you can't implement Display for Vec<i32> yourself.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "The starter has a Speak trait with a required speak method and a default shout method. Dog already implements it. Make Robot speak too: its speak should return beep followed by a space and its id. Then, at the end of main, create a Robot with id 7 and print its shout. It should print two lines: WOOF, I AM REX and BEEP 7. The compiler warns that Robot is never constructed until you finish; that is expected. Hint: impl Speak for Robot { fn speak(&self) -> String { format!(\"beep {}\", self.id) } }",
+    "starter": "trait Speak {\n    fn speak(&self) -> String;\n\n    fn shout(&self) -> String {\n        self.speak().to_uppercase()\n    }\n}\n\nstruct Dog {\n    name: String,\n}\n\nstruct Robot {\n    id: u32,\n}\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        format!(\"woof, I am {}\", self.name)\n    }\n}\n\nfn main() {\n    let dog = Dog { name: String::from(\"Rex\") };\n    println!(\"{}\", dog.shout());\n}",
+    "expectedOutput": "WOOF, I AM REX\nBEEP 7",
+    "solution": "trait Speak {\n    fn speak(&self) -> String;\n\n    fn shout(&self) -> String {\n        self.speak().to_uppercase()\n    }\n}\n\nstruct Dog {\n    name: String,\n}\n\nstruct Robot {\n    id: u32,\n}\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        format!(\"woof, I am {}\", self.name)\n    }\n}\n\nimpl Speak for Robot {\n    fn speak(&self) -> String {\n        format!(\"beep {}\", self.id)\n    }\n}\n\nfn main() {\n    let dog = Dog { name: String::from(\"Rex\") };\n    println!(\"{}\", dog.shout());\n    let robot = Robot { id: 7 };\n    println!(\"{}\", robot.shout());\n}"
+  },
+  "quiz": [
+    {
+      "question": "In a trait, what is a default method?",
+      "options": [
+        "A method with a body in the trait, which types get for free and may replace",
+        "A method that Rust calls automatically when a value of the type is created",
+        "A method with no body, which every type must write for itself"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Which line gives the type Robot the trait Speak?",
+      "options": [
+        "struct Robot: Speak { ... }",
+        "trait Speak for Robot { ... }",
+        "impl Speak for Robot { ... }"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "After you implement Display for a type, what else can you do with it?",
+      "options": [
+        "Print it with {:?} and compare two values with ==",
+        "Print it with {} and call to_string on it",
+        "Copy it instead of moving it, and print it with {:?}"
+      ],
+      "answer": 1
+    }
+  ]
+}

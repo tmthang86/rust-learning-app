@@ -12,7 +12,7 @@
     },
     {
       "type": "text",
-      "text": "A match must cover every possible case. If you add a variant and forget it somewhere, the program won't compile. Use _ to mean \"anything else\"."
+      "text": "A match must cover every possible case. If you add a variant and forget it somewhere, the program won't compile. Use _ to mean \"anything else\", but a _ arm also catches any variant you add later, so the compiler can't warn you about it."
     },
     {
       "type": "text",

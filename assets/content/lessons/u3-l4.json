@@ -16,11 +16,11 @@
     },
     {
       "type": "code",
-      "code": "fn main() {\n    let mut score = 10;\n    let r = &mut score;\n    *r += 5;              // * follows the reference to the value\n    // let r2 = &score;   // error while r is still in use\n    println!(\"{r}\");\n    let r2 = &score;      // fine: r isn't used any more\n    println!(\"{r2}\");\n}"
+      "code": "fn main() {\n    let mut score = 10;\n    let r = &mut score;\n    *r += 5;              // * dereferences: it follows the reference to the value\n    // let r2 = &score;   // error while r is still in use\n    println!(\"{r}\");\n    let r2 = &score;      // fine: r isn't used any more\n    println!(\"{r2}\");\n}"
     },
     {
       "type": "text",
-      "text": "This rule stops two parts of a program from changing the same data at once, which prevents a whole class of bugs called data races."
+      "text": "This rule stops one part of a program from changing data while another part is reading or changing it, which prevents a whole class of bugs called data races."
     },
     {
       "type": "note",
@@ -59,7 +59,7 @@
       "answer": 1
     },
     {
-      "question": "What does * do in *r += 1?",
+      "question": "What does the dereference operator * do in *r += 1?",
       "options": [
         "Multiplies r",
         "Follows the reference to change the value it points to",

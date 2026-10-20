@@ -16,7 +16,7 @@
     },
     {
       "type": "text",
-      "text": "You can have as many shared references as you like at the same time, because nobody can change the value through them:"
+      "text": "You can have as many shared references (the Book and compiler errors call them immutable references) as you like at the same time, because nobody can change the value through them:"
     },
     {
       "type": "code",

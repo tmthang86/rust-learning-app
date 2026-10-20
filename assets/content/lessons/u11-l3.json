@@ -1,0 +1,99 @@
+{
+  "id": "u11-l3",
+  "title": "Shared state with Arc and Mutex",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Channels pass data from one thread to another. Sometimes threads need to share the same data instead, such as a counter that all of them update. Rust allows this, but it makes you be careful. The main tool is Mutex<T> (short for \"mutual exclusion\"): a lock around a value. Only one thread at a time can hold the lock and touch the value."
+    },
+    {
+      "type": "text",
+      "text": "lock() waits until the lock is free and then returns a Result holding a MutexGuard. The guard acts like a reference to the value inside (you read and write through it with *). When the guard is dropped, the lock is released automatically, so you can never forget to unlock. lock() returns a Result because a Mutex can be \"poisoned\": if a thread panics while holding the lock, the data inside may be half-changed, and later lock() calls return Err. For now we just unwrap()."
+    },
+    {
+      "type": "code",
+      "code": "use std::sync::Mutex;\n\nfn main() {\n    let counter = Mutex::new(0);\n    {\n        let mut guard = counter.lock().unwrap();\n        *guard += 1;\n    }   // the guard is dropped here, so the lock is released\n    println!(\"counter = {}\", *counter.lock().unwrap());\n}\n\n// Output:\n// counter = 1"
+    },
+    {
+      "type": "text",
+      "text": "To share a Mutex between threads, several threads must own it. Rc from Unit 10 would be the natural choice, but Rc updates its counter without any protection, so two threads could corrupt it. Rust refuses to compile that:"
+    },
+    {
+      "type": "code",
+      "code": "use std::rc::Rc;\nuse std::sync::Mutex;\nuse std::thread;\n\n// This does NOT compile: error[E0277]: `Rc<Mutex<i32>>` cannot be sent\n// between threads safely.\nfn broken() {\n    let counter = Rc::new(Mutex::new(0));\n    let handle = thread::spawn(move || {\n        *counter.lock().unwrap() += 1;\n    });\n    handle.join().unwrap();\n}"
+    },
+    {
+      "type": "text",
+      "text": "Arc<T> is the thread-safe version of Rc<T>. Arc makes the sharing safe, not the data inside: protecting the data is Mutex's job. The A stands for \"atomic\": its reference count is updated in a way that is safe across threads. Arc::clone(&x) works like Rc::clone. The usual combination is Arc<Mutex<T>>: Arc lets many threads own the data, and Mutex lets one at a time change it."
+    },
+    {
+      "type": "code",
+      "code": "use std::sync::{Arc, Mutex};\nuse std::thread;\n\nfn main() {\n    let counter = Arc::new(Mutex::new(0));\n    let mut handles = Vec::new();\n    for _ in 0..8 {\n        let counter = Arc::clone(&counter);   // each thread owns one Arc\n        let handle = thread::spawn(move || {\n            for _ in 0..1000 {\n                *counter.lock().unwrap() += 1;   // the guard is dropped at the end of this line\n            }\n        });\n        handles.push(handle);\n    }\n    for handle in handles {\n        handle.join().unwrap();\n    }\n    println!(\"total = {}\", *counter.lock().unwrap());\n}\n\n// Output:\n// total = 8000"
+    },
+    {
+      "type": "text",
+      "text": "Eight threads each add 1000 times, and the answer is always exactly 8000, because the lock lets only one of them change the number at a time."
+    },
+    {
+      "type": "text",
+      "text": "How does the compiler know Rc is not allowed? Two marker traits describe what is safe across threads. A type is Send if a value of it can be moved to another thread. A type is Sync if it can be shared between threads by reference. Rust works these out for you: Rc is neither. Arc<Mutex<T>> is both, as long as the T inside is Send (so an Arc<Mutex<Rc<i32>>> is still refused). thread::spawn only accepts closures whose captured values are Send, which turns possible data races into compile errors."
+    },
+    {
+      "type": "note",
+      "text": "Think of a Mutex as a room with a single key. A thread must take the key to go in, and gives it back on the way out. Everyone else waits outside. Keep the time in the room short, so the others do not wait long.",
+      "track": "starter"
+    },
+    {
+      "type": "text",
+      "text": "One danger remains that the compiler cannot catch: a deadlock, where threads wait on each other forever. The simplest case is locking the same Mutex twice in one thread, because the first guard is still alive:"
+    },
+    {
+      "type": "code",
+      "code": "use std::sync::Mutex;\n\n// Do not run this: the second lock never succeeds (it hangs, or may panic).\nfn deadlock(m: &Mutex<i32>) {\n    let first = m.lock().unwrap();\n    let second = m.lock().unwrap();   // waits for `first`, which is only dropped at the end\n    println!(\"{first} {second}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Two threads that lock two Mutexes in opposite orders can also freeze each other. To avoid deadlocks: hold locks for as short a time as possible, and always take several locks in the same order."
+    },
+    {
+      "type": "note",
+      "text": "Unlike Go's or Java's lock objects, Rust's Mutex owns the data it protects, so you cannot touch the data without holding the lock. Unlike Java's synchronized or ReentrantLock, it is not reentrant: locking it again in the same thread never succeeds (see above). Poisoning (see above) is optional to handle: lock().unwrap() is the common choice, and you can recover the data with into_inner() on the error. For read-heavy data there is RwLock<T>, and for a single number or flag the atomic types such as AtomicUsize need no lock at all.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Each of the 4 threads adds 1 to the counter. Change it so each thread adds 10. The program should print: total: 40",
+    "starter": "use std::sync::{Arc, Mutex};\nuse std::thread;\n\nfn main() {\n    let counter = Arc::new(Mutex::new(0));\n    let mut handles = Vec::new();\n    for _ in 0..4 {\n        let counter = Arc::clone(&counter);\n        handles.push(thread::spawn(move || {\n            *counter.lock().unwrap() += 1;\n        }));\n    }\n    for handle in handles {\n        handle.join().unwrap();\n    }\n    println!(\"total: {}\", *counter.lock().unwrap());\n}",
+    "expectedOutput": "total: 40",
+    "solution": "use std::sync::{Arc, Mutex};\nuse std::thread;\n\nfn main() {\n    let counter = Arc::new(Mutex::new(0));\n    let mut handles = Vec::new();\n    for _ in 0..4 {\n        let counter = Arc::clone(&counter);\n        handles.push(thread::spawn(move || {\n            *counter.lock().unwrap() += 10;\n        }));\n    }\n    for handle in handles {\n        handle.join().unwrap();\n    }\n    println!(\"total: {}\", *counter.lock().unwrap());\n}"
+  },
+  "quiz": [
+    {
+      "question": "When is a Mutex unlocked again?",
+      "options": [
+        "After a fixed timeout, so that other threads waiting for it get their turn",
+        "Only when you call an unlock() method on the Mutex yourself",
+        "When the MutexGuard is dropped, for example at the end of its block"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Why do we use Arc and not Rc to share data between threads?",
+      "options": [
+        "Rc's counter is unsafe across threads, so the compiler rejects Rc there",
+        "Arc is a smaller type than Rc, which is better when threads are involved",
+        "Rc can only hold plain numbers, but Arc can hold values of any type at all"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "What is a deadlock?",
+      "options": [
+        "A panic inside one thread that takes down the whole program with it, including main",
+        "Threads waiting for each other, or for themselves, so none can ever continue",
+        "A thread that finishes before main and so loses its result"
+      ],
+      "answer": 1
+    }
+  ]
+}

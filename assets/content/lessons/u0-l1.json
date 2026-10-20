@@ -2,12 +2,12 @@
   "id": "u0-l1",
   "title": "What is a program?",
   "sections": [
-    { "type": "text", "text": "A program is a list of instructions for a computer. The computer follows them exactly, one after another, from top to bottom." },
+    { "type": "text", "text": "A program is a list of instructions for a computer. The computer follows them exactly, one after another, from top to bottom, unless an instruction tells it to jump somewhere else (you'll see how in the next lessons)." },
     { "type": "text", "text": "Computers are fast but very literal. They do what you wrote, not what you meant. That's why programming languages have strict rules: a missing symbol can stop the whole program." },
     { "type": "text", "text": "Here is a complete Rust program. Don't worry about every symbol yet. Look at the three lines inside the curly braces:" },
     { "type": "code", "code": "fn main() {\n    println!(\"Good morning!\");\n    println!(\"Let's learn Rust.\");\n    println!(\"Ready?\");\n}" },
     { "type": "text", "text": "Each println! line shows one line of text. Because the computer goes top to bottom, the three messages always appear in this order." },
-    { "type": "note", "text": "Before a Rust program runs, a tool called the compiler reads it and checks it for mistakes. If it finds one, it explains the problem instead of running. Compiler errors are normal and helpful, not a sign you're doing badly." }
+    { "type": "note", "text": "Before a Rust program runs, a tool called the compiler translates it into instructions the computer can run. While doing that it checks for mistakes. If it finds one, it explains the problem instead of producing a program. Compiler errors are normal and helpful, not a sign you're doing badly." }
   ],
   "exercise": {
     "prompt": "Swap the lines so the program prints First, then Second, each on its own line.",
@@ -17,13 +17,13 @@
   },
   "quiz": [
     {
-      "question": "In what order does a computer run the lines of a program?",
+      "question": "In what order does a computer run the lines inside main, when nothing tells it to jump?",
       "options": ["Random order", "Top to bottom", "Bottom to top"],
       "answer": 1
     },
     {
       "question": "What does the compiler do?",
-      "options": ["Checks the program for mistakes before it runs", "Makes the screen brighter", "Writes the program for you"],
+      "options": ["Turns your code into a runnable program, checking it for mistakes first", "Saves your code to a file and keeps a backup copy of it", "Writes the program for you from a plain-English description"],
       "answer": 0
     }
   ]

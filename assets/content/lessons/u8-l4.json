@@ -1,0 +1,91 @@
+{
+  "id": "u8-l4",
+  "title": "Iterator adapters",
+  "sections": [
+    {
+      "type": "text",
+      "text": "An adapter takes an iterator and gives you a new iterator that changes the items in some way. You chain adapters with dots, like a pipeline. The most common ones are map (change each item), filter (keep only some items), enumerate (add a counter), zip (pair two iterators), take and skip (limit the number of items), chain (join two iterators) and rev (go backwards)."
+    },
+    {
+      "type": "text",
+      "text": "Adapters are lazy. Calling map doesn't run your closure, it only builds a new iterator that will run it later, when someone asks for items. Here nothing happens until the for loop pulls the values out:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let numbers = vec![1, 2, 3];\n    let doubled = numbers.iter().map(|n| {\n        println!(\"doubling {n}\");\n        n * 2\n    });\n    println!(\"nothing has been doubled yet\");\n    for d in doubled {\n        println!(\"got {d}\");\n    }\n}\n\n// Output:\n// nothing has been doubled yet\n// doubling 1\n// got 2\n// doubling 2\n// got 4\n// doubling 3\n// got 6"
+    },
+    {
+      "type": "text",
+      "text": "Look at the Output comment. The first line comes before any doubling, and then \"doubling\" and \"got\" alternate: each loop turn asks for one item, and only then does the closure run. Rust even warns you if you build an adapter and never use it."
+    },
+    {
+      "type": "text",
+      "text": "A for loop is not the only way to use up an iterator. collect() gathers the items into a collection. The type annotation, here Vec<i32>, tells collect what to build. The next lesson covers collect and other ways to finish. Now a pipeline of three adapters:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let result: Vec<i32> = (1..=10)\n        .filter(|n| n % 2 == 0)   // keep 2, 4, 6, 8, 10\n        .map(|n| n * n)           // square them\n        .take(3)                  // stop after three\n        .collect();\n    println!(\"{:?}\", result);\n}"
+    },
+    {
+      "type": "text",
+      "text": "(1..=10) is a range of the numbers 1 to 10 (including 10), and ranges are iterators. filter calls its closure with a reference to each item (a &i32 here), and keeps the item when the closure returns true. n % 2 works on the reference as well, but when you compare the value itself you need to write *n, for example *n > 5. map receives the item itself and returns a new one."
+    },
+    {
+      "type": "text",
+      "text": "The other adapters, one by one:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let names = [\"Ana\", \"Binh\", \"Chi\"];\n    let scores = [90, 75, 82];\n\n    // enumerate pairs each item with its index, starting at 0\n    for (i, name) in names.iter().enumerate() {\n        println!(\"{i}: {name}\");\n    }\n\n    // zip walks two iterators together and pairs their items up\n    for (name, score) in names.iter().zip(scores.iter()) {\n        println!(\"{name} scored {score}\");\n    }\n\n    // chain joins one iterator after another; skip drops items from the front\n    let joined: Vec<i32> = (1..=3).chain(10..=11).skip(1).collect();\n    println!(\"{:?}\", joined);\n\n    // rev goes backwards\n    for n in (1..=3).rev() {\n        println!(\"countdown {n}\");\n    }\n}\n\n// Output:\n// 0: Ana\n// 1: Binh\n// 2: Chi\n// Ana scored 90\n// Binh scored 75\n// Chi scored 82\n// [2, 3, 10, 11]\n// countdown 3\n// countdown 2\n// countdown 1"
+    },
+    {
+      "type": "text",
+      "text": "enumerate and zip give you tuples, which a for loop can take apart right in the pattern, as in for (i, name). zip stops as soon as the shorter iterator runs out."
+    },
+    {
+      "type": "note",
+      "text": "Think of an assembly line. Each adapter is a station that looks at an item, changes it or throws it away, and passes it on. Nothing moves until someone at the end asks for the product.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "This is like Java Streams, C# LINQ, JavaScript array methods and Python generators, with one big difference: Rust's whole chain of adapters is compiled into a single loop with no intermediate lists, so it is usually as fast as a hand-written loop. Unlike JS array methods, nothing runs until you consume the iterator, and filter's closure borrows the item (&Item).",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "The starter prints every word. Change the loop so it goes through an iterator pipeline instead: keep only the words longer than 3 letters, and turn each one into uppercase before it is printed. It should print three lines: APPLE, BANANA and KIWI. Hint: words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase())",
+    "starter": "fn main() {\n    let words = [\"apple\", \"fig\", \"banana\", \"kiwi\"];\n    for w in words.iter() {\n        println!(\"{w}\");\n    }\n}",
+    "expectedOutput": "APPLE\nBANANA\nKIWI",
+    "solution": "fn main() {\n    let words = [\"apple\", \"fig\", \"banana\", \"kiwi\"];\n    for w in words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase()) {\n        println!(\"{w}\");\n    }\n}"
+  },
+  "quiz": [
+    {
+      "question": "What happens when you write let d = v.iter().map(|x| x * 2); and never use d?",
+      "options": [
+        "Every item is doubled right away and the results are stored inside d",
+        "The program panics, because d is never used",
+        "Nothing: map is lazy, so the closure never runs unless something consumes d"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "What does zip do?",
+      "options": [
+        "Joins two iterators end to end into one longer iterator",
+        "Pairs up the items of two iterators as tuples",
+        "Removes the items that appear in both iterators"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What does enumerate give for each item?",
+      "options": [
+        "A tuple of (index, item), counting from 0",
+        "Only the index, as a usize, and the item is dropped",
+        "A tuple of (item, item) from two neighbouring positions"
+      ],
+      "answer": 0
+    }
+  ]
+}

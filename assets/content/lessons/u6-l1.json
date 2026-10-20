@@ -37,7 +37,7 @@
     },
     {
       "type": "note",
-      "text": "A panic unwinds the stack by default, running destructors. Set RUST_BACKTRACE=1 to see where it came from. Library code should almost never panic on bad input.",
+      "text": "A panic unwinds the stack by default, running destructors. Set RUST_BACKTRACE=1 to see where it came from. Library code should return Result for failures callers can expect, like malformed input. Panic is for broken contracts, meaning bugs in the caller; say in the function's docs when it can panic.",
       "track": "fast"
     }
   ],
