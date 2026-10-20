@@ -26,10 +26,22 @@ service cloud.firestore {
           && data.updatedAt == request.time;
     }
 
+    // When an account is deleted, the Cloud Function in functions/ writes
+    // deletedUsers/{uid}. A device that is still signed in keeps a valid ID
+    // token for up to an hour, so without this check its next sync would
+    // recreate users/{uid} for an account that no longer exists. Clients
+    // can't touch deletedUsers (the catch-all below closes it; the Admin
+    // SDK bypasses rules). A new account gets a new random UID, so a
+    // tombstone never blocks a real new account.
+    function isNotDeleted(uid) {
+      return !exists(/databases/$(database)/documents/deletedUsers/$(uid));
+    }
+
     // Each learner can read and write only their own progress document.
     match /users/{uid} {
       allow read: if isOwner(uid);
-      allow create, update: if isOwner(uid) && isValidProgress(request.resource.data);
+      allow create, update: if isOwner(uid) && isNotDeleted(uid)
+          && isValidProgress(request.resource.data);
       // In-app account deletion removes the document.
       allow delete: if isOwner(uid);
     }

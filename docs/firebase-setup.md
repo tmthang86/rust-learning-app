@@ -32,12 +32,8 @@ Google account and an Apple developer account.
      needs, so someone who deletes their account on the web can remove the
      app from Settings → Apple ID → Sign in with Apple on their device.
 4. **Create the database**: Firestore Database → Create database
-   (production mode), then deploy the rules from this repo:
-   ```sh
-   npm install -g firebase-tools
-   firebase login
-   firebase deploy --only firestore:rules
-   ```
+   (production mode). The rules and the cleanup function are deployed
+   together in step 7.
 5. **Add your web domain** to Authentication → Settings → Authorized domains
    once the web app has a real address.
 6. **Google Play account deletion URL.** Play Console → App content → Data
@@ -46,6 +42,40 @@ Google account and an Apple developer account.
    `https://<your web domain>/#/delete-account` (the app uses hash URLs on
    the web). It explains what is deleted and lets a signed-in person delete
    their account with the same steps as the app.
+
+7. **Deploy the rules and the cleanup function.** The function removes an
+   account's data when the account is deleted (see "Other signed-in
+   devices" below). The rules depend on it, so deploy both together.
+   - Upgrade the project to the Blaze (pay-as-you-go) plan; Cloud
+     Functions need it. This usually costs nothing at this size, but
+     Blaze also bills Cloud Build and Artifact Registry, so set a budget
+     alert in the Google Cloud console.
+   - Then, in this repository:
+     ```sh
+     npm install -g firebase-tools
+     firebase login
+     firebase use --add          # pick your project; writes .firebaserc
+     (cd functions && npm ci)
+     firebase deploy --only functions,firestore:rules
+     ```
+     Commit `.firebaserc`; it only holds the project id. The first
+     functions deploy asks how many days to keep container images; accept
+     the default. `firebase.json` in the repository root already points at
+     `firestore.rules` and `functions/`. `flutterfire configure` adds its
+     own `flutter` key to the same file; leave both parts in place.
+   - Optional: let Firestore remove old tombstones by itself. Either run
+     ```sh
+     gcloud firestore fields ttls update expireAt \
+       --collection-group=deletedUsers --enable-ttl \
+       --project=<project-id>
+     ```
+     or turn it on in the console: Firestore Database → Time-to-live →
+     Create policy, collection group `deletedUsers`, field `expireAt`.
+     Deletion usually happens within 24 hours after the time in `expireAt`.
+     Without it the tombstones just stay; each is a tiny document.
+   - Google lists Node.js 22 as deprecated from 2027-04-30. Raise
+     `engines.node` in `functions/package.json` (and the Node version in
+     `.github/workflows/ci.yml`) before then.
 
 ## How sync works
 
@@ -133,35 +163,44 @@ fails).
   delete it again. If the server still can't be asked, nothing is written
   and the next check asks again. This survives restarting the app.
 
-### Known limitation: other signed-in devices (must be fixed before launch)
+### Other signed-in devices
 
 Deleting an account removes `users/{uid}` and the Auth user, but another
 device that is still signed in to that account keeps a valid ID token for
 up to an hour (Firebase ID tokens last that long and the rules only check
 the token). If that device syncs in that time (it finishes a lesson, or the
-app starts), its write recreates `users/{uid}`. Nobody can delete that
-document afterwards from the app, because the account no longer exists, so
-it breaks the promise that deletion removes everything.
+app starts), its write would recreate `users/{uid}`, and nobody could delete
+it afterwards because the account no longer exists.
 
-Before launch, add a server-side cleanup (not built yet):
+Two parts prevent this:
 
-- A Cloud Function triggered when an Auth user is deleted. Use the stable
-  first generation trigger: import it with
-  `const functions = require('firebase-functions/v1')` and use
-  `functions.auth.user().onDelete(...)`. From firebase-functions v6 on, the
-  plain `require('firebase-functions')` gives the second generation API,
-  whose `onUserDeleted` (in `firebase-functions/identity`) is still a beta
-  preview, not meant for production.
-- The function deletes `users/{uid}` with the Admin SDK, then re-checks
-  after a delay longer than the token lifetime (for example a Cloud Tasks
-  job about 65 minutes later) and deletes the document again if it has
-  reappeared.
-- Deploying functions needs the Blaze (pay-as-you-go) plan.
-- Bulk deletion with the Admin SDK (`admin.auth().deleteUsers()`) doesn't
-  fire `onDelete`, so any admin script that deletes users in bulk must also
-  delete their `users/{uid}` documents.
-- Alternative that blocks recreation outright: `onDelete` writes a
-  tombstone `deletedUsers/{uid}` (server-only), and `firestore.rules` refuses
-  writes to `users/{uid}` while it exists, e.g.
-  `&& !exists(/databases/$(database)/documents/deletedUsers/$(uid))`. This
-  costs one extra document read per write.
+- **A Cloud Function** (`functions/index.js`, `cleanUpDeletedUser`) runs
+  whenever an Auth user is deleted. In one atomic batch it deletes
+  `users/{uid}` and writes `deletedUsers/{uid}` with `deletedAt` and an
+  `expireAt` 24 hours ahead. Running it twice gives the same result, so
+  retries are safe. It logs only the uid. It uses the first generation
+  trigger (`auth.user().onDelete`), because the second generation
+  `onUserDeleted` is still a beta preview.
+- **The rules** refuse `create` and `update` on `users/{uid}` while
+  `deletedUsers/{uid}` exists. Reading and deleting stay allowed. Clients
+  can't read or write `deletedUsers` at all (the catch-all rule closes it;
+  the Admin SDK ignores rules). The check costs one extra document read per
+  write.
+
+On the other device, its syncs are refused. The Progress screen shows
+"Couldn't sync your progress right now." with **Try syncing again**, and
+signing out asks "Sign out anyway?". This lasts until its sign-in expires,
+within an hour.
+
+A new account always gets a new random UID, so a tombstone never blocks a
+real new account.
+
+Things to know:
+
+- The function must be deployed for this to work (step 7). Until then the
+  rules still allow the recreation.
+- Deleting users in bulk with the Admin SDK (`admin.auth().deleteUsers()`)
+  doesn't fire `onDelete`. An admin script that does this must delete the
+  `users/{uid}` documents and write the tombstones itself.
+- `cd functions && npm ci && npm test` checks the function against the Auth,
+  Firestore and Functions emulators (needs Node 22 and Java).
