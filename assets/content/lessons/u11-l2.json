@@ -12,11 +12,11 @@
     },
     {
       "type": "code",
-      "code": "use std::sync::mpsc;\nuse std::thread;\n\nfn main() {\n    let (tx, rx) = mpsc::channel();\n    thread::spawn(move || {\n        for n in 1..=3 {\n            tx.send(n * 10).unwrap();\n        }\n    });   // tx is dropped here, when the thread ends\n    for value in rx {\n        println!(\"got {value}\");\n    }\n    println!(\"channel closed\");\n}"
+      "code": "use std::sync::mpsc;\nuse std::thread;\n\nfn main() {\n    let (tx, rx) = mpsc::channel();\n    thread::spawn(move || {\n        for n in 1..=3 {\n            tx.send(n * 10).unwrap();\n        }\n    });   // tx moved into the thread; it is dropped when that thread finishes\n    for value in rx {\n        println!(\"got {value}\");\n    }\n    println!(\"channel closed\");\n}"
     },
     {
       "type": "text",
-      "text": "The loop ends because tx moved into the thread and was dropped when the thread finished. Messages from one sender always arrive in the order they were sent. send() returns a Result (it fails if the receiver is gone), so we unwrap it."
+      "text": "The loop ends because tx moved into the thread and was dropped when the thread finished. (We never join this thread. That is fine here, because main waits in the loop until the channel closes.) Messages from one sender always arrive in the order they were sent. send() returns a Result (it fails if the receiver is gone), so we unwrap it."
     },
     {
       "type": "text",
@@ -63,29 +63,29 @@
     {
       "question": "When does a for loop over a Receiver stop?",
       "options": [
-        "After the first message",
-        "When every Sender has been dropped",
-        "After one second"
+        "After the first message has arrived from any sender",
+        "After one second passes without any new message arriving at the receiver end",
+        "When every Sender has been dropped, so no more messages can come"
       ],
-      "answer": 1
+      "answer": 2
     },
     {
-      "question": "How do you give several threads the ability to send into the same channel?",
+      "question": "How do you let several threads send into the same channel?",
       "options": [
-        "Clone the sender with tx.clone()",
-        "Clone the receiver",
-        "Pass the same tx to every thread without cloning"
+        "Clone the sender with tx.clone() and give each thread one copy",
+        "Clone the receiver with rx.clone() and give each thread one copy",
+        "Pass the same tx into every thread, because a Sender can be shared freely"
       ],
       "answer": 0
     },
     {
       "question": "What happens to a String after you send it with tx.send(text)?",
       "options": [
-        "Both threads can use it",
-        "It is copied automatically",
-        "It is moved into the channel, so the sending thread can't use it any more"
+        "Both threads can still use it, as it is shared between them",
+        "It is moved into the channel, so the sending thread can't use it",
+        "It is copied automatically, so each thread keeps its own independent version"
       ],
-      "answer": 2
+      "answer": 1
     }
   ]
 }

@@ -32,11 +32,11 @@
     },
     {
       "type": "text",
-      "text": "There is a catch. An Rc only gives shared, read-only access. If several owners could change the value at once, that would break the borrowing rules. This code does not compile. Rust reports E0594: cannot assign to data in an `Rc`. The next lesson shows how to get shared and mutable. Also, Rc is for one thread only. Unit 11 introduces Arc, its thread-safe sibling."
+      "text": "There is a catch. An Rc only gives shared, read-only access. If several owners could change the value at once, that would break the borrowing rules. This code does not compile. Rust reports E0594: cannot assign to data in an Rc. The next lesson shows how to get shared and mutable. Also, Rc is for one thread only. Unit 11 introduces Arc, its thread-safe sibling."
     },
     {
       "type": "code",
-      "code": "// This does NOT compile: E0594, cannot assign to data in an `Rc`.\nuse std::rc::Rc;\n\nfn bump() {\n    let a = Rc::new(5);\n    *a += 1;\n}"
+      "code": "// This does NOT compile: E0594, cannot assign to data in an Rc.\nuse std::rc::Rc;\n\nfn bump() {\n    let a = Rc::new(5);\n    *a += 1;\n}"
     },
     {
       "type": "note",
@@ -45,12 +45,12 @@
     },
     {
       "type": "note",
-      "text": "Coming from Java, C# or Python: those languages share objects freely and use a garbage collector. Rc is closer to Python's reference counting, or C++'s std::shared_ptr (non-atomic). It is opt-in in Rust, and the count is not atomic, which is why the compiler refuses to send an Rc to another thread. Cycles (A points to B, B points back to A) are never freed, so use Weak for back-pointers, as the next lesson shows.",
+      "text": "Coming from Java, C# or Python: those languages share objects freely and use a garbage collector. Rc is closer to Python's reference counting, or to a C++ std::shared_ptr whose count is not atomic (Arc is the atomic one). It is opt-in in Rust, and the count is not atomic, which is why the compiler refuses to send an Rc to another thread. Cycles (A points to B, B points back to A) are never freed, so use Weak for back-pointers, as the next lesson shows.",
       "track": "fast"
     }
   ],
   "exercise": {
-    "prompt": "Make a second owner: write let b = Rc::clone(&a); Then print the count with println!(\"count = {}\", Rc::strong_count(&a)); and change the last println! so it prints both a and b separated by a space. It should print two lines: count = 2 and hello hello",
+    "prompt": "Make a second owner b of the same string (share it, don't copy it). Then print how many owners there are, and change the last println! so it prints a and b separated by a space. It should print two lines: count = 2 and hello hello. Hint: let b = Rc::clone(&a); and println!(\"count = {}\", Rc::strong_count(&a));",
     "starter": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(String::from(\"hello\"));\n    // add b and the count line here\n    println!(\"{a}\");\n}",
     "expectedOutput": "count = 2\nhello hello",
     "solution": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(String::from(\"hello\"));\n    let b = Rc::clone(&a);\n    println!(\"count = {}\", Rc::strong_count(&a));\n    println!(\"{a} {b}\");\n}"
@@ -59,9 +59,9 @@
     {
       "question": "What does Rc::clone(&a) do?",
       "options": [
-        "Makes a deep copy of the data",
-        "Adds an owner and increases the count; the data is not copied",
-        "Moves the value out of a"
+        "Makes a deep copy of the data and gives it a new owner",
+        "Adds another owner and increases the count, without copying the data",
+        "Moves the value out of a, so a can no longer be used"
       ],
       "answer": 1
     },
@@ -69,7 +69,7 @@
       "question": "When is the value inside an Rc dropped?",
       "options": [
         "When the first owner goes out of scope",
-        "When the program ends",
+        "When the program ends, whichever owners remain",
         "When the last owner is gone and the count reaches 0"
       ],
       "answer": 2
@@ -77,9 +77,9 @@
     {
       "question": "Can you change the data inside an Rc<i32> using only the Rc?",
       "options": [
-        "No, an Rc only gives shared, read-only access",
-        "Yes, with *a += 1",
-        "Yes, but only in main"
+        "No, an Rc only gives shared, read-only access to the data",
+        "Yes, by writing *a += 1 on the Rc directly",
+        "Yes, but only when the Rc is declared inside main"
       ],
       "answer": 0
     }

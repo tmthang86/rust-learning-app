@@ -48,7 +48,7 @@
     },
     {
       "type": "text",
-      "text": "Many traits are so common that Rust can write the impl for you. Put #[derive(...)] above a struct or enum and list the traits. Debug lets you print with {:?}. Clone adds a clone method. PartialEq lets you compare with == and !=. Copy makes values copy instead of move (every field must be Copy too). Default gives a default value, such as 0 for numbers."
+      "text": "Many traits are so common that Rust can write the impl for you. Put #[derive(...)] above a struct or enum and list the traits. Debug lets you print with {:?}. Clone adds a clone method. PartialEq lets you compare with == and !=. Copy makes values copy instead of move (every field must be Copy too, and the type must also derive Clone, so write both). Default gives a default value, such as 0 for numbers."
     },
     {
       "type": "code",
@@ -66,7 +66,7 @@
     }
   ],
   "exercise": {
-    "prompt": "show takes only an i32. Make it work for any type that can be printed: add use std::fmt::Display; at the top, and change the signature to fn show<T: Display>(item: T). Then add show(\"hi\"); at the end of main. It should print two lines: <5> and <hi>.",
+    "prompt": "show takes only an i32. Make it work for any type that can be printed with {}, and add a call with a string at the end of main. It should print two lines: <5> and <hi>. Hint: add use std::fmt::Display; at the top, and write fn show<T: Display>(item: T).",
     "starter": "fn show(item: i32) {\n    println!(\"<{item}>\");\n}\n\nfn main() {\n    show(5);\n}",
     "expectedOutput": "<5>\n<hi>",
     "solution": "use std::fmt::Display;\n\nfn show<T: Display>(item: T) {\n    println!(\"<{item}>\");\n}\n\nfn main() {\n    show(5);\n    show(\"hi\");\n}"
@@ -75,29 +75,29 @@
     {
       "question": "What does fn f<T: Display + Clone>(x: T) require of T?",
       "options": [
-        "T must implement both Display and Clone",
-        "T must implement Display or Clone",
-        "T must be a number"
+        "T must implement Display or Clone, whichever the caller prefers",
+        "T must implement Display, while Clone is only a suggestion",
+        "T must implement both Display and Clone"
       ],
-      "answer": 0
+      "answer": 2
     },
     {
       "question": "What does #[derive(Debug)] do?",
       "options": [
-        "It turns on debug mode for the program",
-        "It asks the compiler to write the Debug impl, so {:?} works",
-        "It prints the struct when it is created"
+        "It switches the program into debug mode, so extra checks run at run time",
+        "It asks the compiler to write the Debug impl, so {:?} works on the type",
+        "It prints the struct to the screen every time a value is created"
       ],
       "answer": 1
     },
     {
       "question": "Can fn make() -> impl Speak return a Dog in one branch and a Robot in another?",
       "options": [
-        "Yes, any type with Speak is allowed",
-        "Yes, but only inside an if",
-        "No, it must always return one concrete type"
+        "No, it must always return one concrete type",
+        "Yes, any type that implements Speak may be returned from different branches",
+        "Yes, as long as both types have the same number of fields"
       ],
-      "answer": 2
+      "answer": 0
     }
   ]
 }

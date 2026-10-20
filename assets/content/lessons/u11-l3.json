@@ -8,7 +8,7 @@
     },
     {
       "type": "text",
-      "text": "lock() waits until the lock is free and then returns a Result holding a MutexGuard. The guard acts like a reference to the value inside (you read and write through it with *). When the guard is dropped, the lock is released automatically, so you can never forget to unlock."
+      "text": "lock() waits until the lock is free and then returns a Result holding a MutexGuard. The guard acts like a reference to the value inside (you read and write through it with *). When the guard is dropped, the lock is released automatically, so you can never forget to unlock. lock() returns a Result because a Mutex can be \"poisoned\": if a thread panics while holding the lock, the data inside may be half-changed, and later lock() calls return Err. For now we just unwrap()."
     },
     {
       "type": "code",
@@ -49,7 +49,7 @@
     },
     {
       "type": "code",
-      "code": "use std::sync::Mutex;\n\n// Do not run this: it hangs forever (a deadlock).\nfn deadlock(m: &Mutex<i32>) {\n    let first = m.lock().unwrap();\n    let second = m.lock().unwrap();   // waits for `first`, which is only dropped at the end\n    println!(\"{first} {second}\");\n}"
+      "code": "use std::sync::Mutex;\n\n// Do not run this: the second lock never succeeds (it hangs, or may panic).\nfn deadlock(m: &Mutex<i32>) {\n    let first = m.lock().unwrap();\n    let second = m.lock().unwrap();   // waits for `first`, which is only dropped at the end\n    println!(\"{first} {second}\");\n}"
     },
     {
       "type": "text",
@@ -57,7 +57,7 @@
     },
     {
       "type": "note",
-      "text": "Unlike Go's or Java's lock objects, Rust's Mutex owns the data it protects, so you cannot touch the data without holding the lock. If a thread panics while holding the lock, the Mutex is \"poisoned\" and later lock() calls return Err (that is the reason for the unwrap). For read-heavy data there is RwLock<T>, and for a single number or flag the atomic types such as AtomicUsize need no lock at all.",
+      "text": "Unlike Go's or Java's lock objects, Rust's Mutex owns the data it protects, so you cannot touch the data without holding the lock. Poisoning (see above) is optional to handle: lock().unwrap() is the common choice, and you can recover the data with into_inner() on the error. For read-heavy data there is RwLock<T>, and for a single number or flag the atomic types such as AtomicUsize need no lock at all.",
       "track": "fast"
     }
   ],
@@ -71,29 +71,29 @@
     {
       "question": "When is a Mutex unlocked again?",
       "options": [
-        "When the MutexGuard is dropped",
-        "After one second",
-        "Only when you call unlock()"
+        "After a fixed timeout, so that other threads waiting for it get their turn",
+        "Only when you call an unlock() method on the Mutex yourself",
+        "When the MutexGuard is dropped, for example at the end of its block"
       ],
-      "answer": 0
+      "answer": 2
     },
     {
       "question": "Why do we use Arc and not Rc to share data between threads?",
       "options": [
-        "Arc is smaller than Rc",
-        "Rc's counter is not safe to update from several threads, so the compiler rejects it",
-        "Rc can only hold numbers"
+        "Rc's counter is unsafe across threads, so the compiler rejects Rc there",
+        "Arc is a smaller type than Rc, which is better when threads are involved",
+        "Rc can only hold plain numbers, but Arc can hold values of any type at all"
       ],
-      "answer": 1
+      "answer": 0
     },
     {
       "question": "What is a deadlock?",
       "options": [
-        "A panic inside a thread",
-        "A thread that finishes too early",
-        "Threads waiting for each other (or for themselves) forever"
+        "A panic inside one thread that takes down the whole program with it, including main",
+        "Threads waiting for each other, or for themselves, so none can ever continue",
+        "A thread that finishes before main and so loses its result"
       ],
-      "answer": 2
+      "answer": 1
     }
   ]
 }

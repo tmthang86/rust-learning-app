@@ -66,7 +66,7 @@
     }
   ],
   "exercise": {
-    "prompt": "longest is already written. Add a function shorter with the same lifetime pattern that returns the shorter of two &str (return x if x.len() <= y.len(), otherwise y). Then add println!(\"{}\", shorter(\"tree\", \"forest\")); at the end of main. It should print two lines: forest and tree.",
+    "prompt": "longest is already written. Add a function shorter that returns the shorter of two &str values (the first one if they are the same length). Then, at the end of main, print what shorter gives for tree and forest. It should print two lines: forest and tree. Hint: shorter needs the same lifetime annotations as longest.",
     "starter": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\n// add shorter here\n\nfn main() {\n    println!(\"{}\", longest(\"tree\", \"forest\"));\n}",
     "expectedOutput": "forest\ntree",
     "solution": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\nfn shorter<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() <= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\nfn main() {\n    println!(\"{}\", longest(\"tree\", \"forest\"));\n    println!(\"{}\", shorter(\"tree\", \"forest\"));\n}"
@@ -75,29 +75,29 @@
     {
       "question": "What does 'a in fn longest<'a>(x: &'a str, y: &'a str) -> &'a str tell the compiler?",
       "options": [
+        "The result lives for the whole program, whatever happens to x and y",
         "The result stays valid only as long as both x and y do",
-        "The result lives forever",
-        "The function runs for 'a seconds"
-      ],
-      "answer": 0
-    },
-    {
-      "question": "Why does fn first_word(s: &str) -> &str need no lifetime annotations?",
-      "options": [
-        "Because &str is always valid",
-        "Elision rules: with one input reference, the output gets its lifetime",
-        "Because it returns a copy of the text"
+        "x and y must have exactly the same length, so the result can be either one"
       ],
       "answer": 1
     },
     {
-      "question": "What is the type of a string literal like \"hello\"?",
+      "question": "Why does fn first_word(s: &str) -> &str need no lifetime annotations?",
       "options": [
-        "String, owned and heap-allocated",
-        "&'a str, tied to the nearest block",
-        "&'static str, valid for the whole program"
+        "Functions that return &str are exempt from lifetime checking",
+        "Because &str values are copied, so nothing can ever dangle",
+        "Elision rules: with exactly one input reference, the output gets its lifetime"
       ],
       "answer": 2
+    },
+    {
+      "question": "What is the type of a string literal like \"hello\"?",
+      "options": [
+        "&'static str, valid for the whole run of the program",
+        "String, an owned value that is dropped at the end of its block",
+        "&'a str, valid only until the end of the nearest block"
+      ],
+      "answer": 0
     }
   ]
 }

@@ -20,7 +20,7 @@
     },
     {
       "type": "text",
-      "text": "This is the same shape as the impl fmt::Display for LoginError you wrote in Unit 6. Display is a trait from the standard library. It asks for one method, fmt, and the {} in println! calls it. Here it is again for a new type:"
+      "text": "This is the same shape as the impl fmt::Display for LoginError you saw, and the one for ShopError you wrote, in Unit 6. Display is a trait from the standard library. It asks for one method, fmt, and the {} in println! calls it. Here it is again for a new type:"
     },
     {
       "type": "code",
@@ -42,7 +42,7 @@
     }
   ],
   "exercise": {
-    "prompt": "The starter has a Speak trait with a required speak method and a default shout method. Dog already implements it. Add impl Speak for Robot, where speak returns format!(\"beep {}\", self.id). Then, at the end of main, create a Robot with id 7 and print robot.shout(). It should print two lines: WOOF, I AM REX and BEEP 7. The compiler warns that Robot is never constructed until you finish; that is expected.",
+    "prompt": "The starter has a Speak trait with a required speak method and a default shout method. Dog already implements it. Make Robot speak too: its speak should return beep followed by a space and its id. Then, at the end of main, create a Robot with id 7 and print its shout. It should print two lines: WOOF, I AM REX and BEEP 7. The compiler warns that Robot is never constructed until you finish; that is expected. Hint: impl Speak for Robot { fn speak(&self) -> String { format!(\"beep {}\", self.id) } }",
     "starter": "trait Speak {\n    fn speak(&self) -> String;\n\n    fn shout(&self) -> String {\n        self.speak().to_uppercase()\n    }\n}\n\nstruct Dog {\n    name: String,\n}\n\nstruct Robot {\n    id: u32,\n}\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        format!(\"woof, I am {}\", self.name)\n    }\n}\n\nfn main() {\n    let dog = Dog { name: String::from(\"Rex\") };\n    println!(\"{}\", dog.shout());\n}",
     "expectedOutput": "WOOF, I AM REX\nBEEP 7",
     "solution": "trait Speak {\n    fn speak(&self) -> String;\n\n    fn shout(&self) -> String {\n        self.speak().to_uppercase()\n    }\n}\n\nstruct Dog {\n    name: String,\n}\n\nstruct Robot {\n    id: u32,\n}\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        format!(\"woof, I am {}\", self.name)\n    }\n}\n\nimpl Speak for Robot {\n    fn speak(&self) -> String {\n        format!(\"beep {}\", self.id)\n    }\n}\n\nfn main() {\n    let dog = Dog { name: String::from(\"Rex\") };\n    println!(\"{}\", dog.shout());\n    let robot = Robot { id: 7 };\n    println!(\"{}\", robot.shout());\n}"
@@ -51,29 +51,29 @@
     {
       "question": "In a trait, what is a default method?",
       "options": [
-        "A method every type must write itself",
-        "A method with a body that implementing types get for free and may override",
-        "A method that cannot be called"
-      ],
-      "answer": 1
-    },
-    {
-      "question": "Which line gives the type Robot the trait Speak?",
-      "options": [
-        "impl Speak for Robot { ... }",
-        "struct Robot: Speak { ... }",
-        "trait Robot for Speak { ... }"
+        "A method with a body in the trait, which types get for free and may replace",
+        "A method that Rust calls automatically when a value of the type is created",
+        "A method with no body, which every type must write for itself"
       ],
       "answer": 0
     },
     {
-      "question": "After you implement Display for a type, what else can you do with it?",
+      "question": "Which line gives the type Robot the trait Speak?",
       "options": [
-        "Compare it with ==",
-        "Copy it without moving",
-        "Print it with {} and call to_string on it"
+        "struct Robot: Speak { ... }",
+        "trait Speak for Robot { ... }",
+        "impl Speak for Robot { ... }"
       ],
       "answer": 2
+    },
+    {
+      "question": "After you implement Display for a type, what else can you do with it?",
+      "options": [
+        "Print it with {:?} and compare two values with ==",
+        "Print it with {} and call to_string on it",
+        "Copy it instead of moving it, and print it with {:?}"
+      ],
+      "answer": 1
     }
   ]
 }

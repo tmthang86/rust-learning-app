@@ -12,11 +12,23 @@
     },
     {
       "type": "code",
-      "code": "use std::collections::HashMap;\n\nfn main() {\n    // into a Vec\n    let squares: Vec<i32> = (1..=4).map(|n| n * n).collect();\n    println!(\"{:?}\", squares);\n\n    // into a String: chars() is an iterator over the characters of a &str\n    let shout: String = \"hello\".chars().map(|c| c.to_ascii_uppercase()).collect();\n    let reversed = \"hello\".chars().rev().collect::<String>();\n    println!(\"{shout} {reversed}\");\n\n    // into a HashMap: the items must be (key, value) tuples\n    let words = [\"fig\", \"pear\", \"banana\"];\n    let lengths: HashMap<&str, usize> = words.iter().map(|w| (*w, w.len())).collect();\n    println!(\"pear has {} letters\", lengths[\"pear\"]);\n    println!(\"{} entries\", lengths.len());\n}"
+      "code": "use std::collections::HashMap;\n\nfn main() {\n    // into a Vec\n    let squares: Vec<i32> = (1..=4).map(|n| n * n).collect();\n    println!(\"{:?}\", squares);\n\n    // _ lets Rust fill in the item type itself (i32 here)\n    let cubes: Vec<_> = (1..4).map(|n| n * n * n).collect();\n    println!(\"{:?}\", cubes);\n\n    // into a String: chars() is an iterator over the characters of a &str\n    let shout: String = \"hello\".chars().map(|c| c.to_ascii_uppercase()).collect();\n    let reversed = \"hello\".chars().rev().collect::<String>();\n    println!(\"{shout} {reversed}\");\n\n    // into a HashMap: the items must be (key, value) tuples\n    // iter() gives &&str items; *w turns each one into the &str used as the key\n    let words = [\"fig\", \"pear\", \"banana\"];\n    let lengths: HashMap<&str, usize> = words.iter().map(|w| (*w, w.len())).collect();\n    println!(\"pear has {} letters\", lengths[\"pear\"]);\n    println!(\"{} entries\", lengths.len());\n}"
     },
     {
       "type": "text",
-      "text": "Other consumers turn the whole sequence into one value. sum adds the items up and count says how many there are. fold is the general one: you give it a starting value and a closure that takes the running total (acc) and the next item, and returns the new total. min and max return an Option, because an empty iterator has no smallest item. find returns the first item that matches, also as an Option. any and all answer yes or no."
+      "text": "Other consumers turn the whole sequence into one value:"
+    },
+    {
+      "type": "text",
+      "text": "sum adds the items up, and count says how many there are. fold is the general one: you give it a starting value and a closure that takes the running total (acc) and the next item, and returns the new total."
+    },
+    {
+      "type": "text",
+      "text": "min and max return an Option, because an empty iterator has no smallest item. find returns the first item that matches, also as an Option."
+    },
+    {
+      "type": "text",
+      "text": "any and all answer yes or no: does at least one item match, or do all of them?"
     },
     {
       "type": "code",
@@ -28,7 +40,7 @@
     },
     {
       "type": "text",
-      "text": "sum needs to know what type to add up. That is why total has a type annotation: i32. You can also write nums.iter().sum::<i32>(). max and min give back Option<&i32>, a reference into the Vec, which is why {:?} prints Some(42)."
+      "text": "sum needs to know what type to add up. That is why total has a type annotation: i32. You can also write nums.iter().sum::<i32>(). max and min give back Option<&i32>, a reference into the Vec. References print like the value they point to, so {:?} shows Some(42)."
     },
     {
       "type": "text",
@@ -54,7 +66,7 @@
     }
   ],
   "exercise": {
-    "prompt": "The starter adds up word lengths with a for loop and prints 9. Replace the loop with one line: let total: usize = words.iter().map(|w| w.len()).sum(); and keep the println! for it. Then add let long = words.iter().filter(|w| w.len() > 2).count(); and print long on a new line. It should print two lines: 9 and 2.",
+    "prompt": "The starter adds up word lengths with a for loop and prints 9. Replace the loop with an iterator pipeline that maps each word to its length and sums them, keeping the printed total. Then, on a new line, print how many of the words are longer than 2 bytes, counted with filter and count. It should print two lines: 9 and 2. Hint: the total needs a type, so write let total: usize = ... and end the pipeline with .sum().",
     "starter": "fn main() {\n    let words = [\"rust\", \"is\", \"fun\"];\n    let mut total = 0;\n    for w in words {\n        total += w.len();\n    }\n    println!(\"{total}\");\n}",
     "expectedOutput": "9\n2",
     "solution": "fn main() {\n    let words = [\"rust\", \"is\", \"fun\"];\n    let total: usize = words.iter().map(|w| w.len()).sum();\n    println!(\"{total}\");\n    let long = words.iter().filter(|w| w.len() > 2).count();\n    println!(\"{long}\");\n}"
@@ -63,29 +75,29 @@
     {
       "question": "Which of these is a consuming method, not an adapter?",
       "options": [
-        "map",
-        "sum",
-        "filter"
-      ],
-      "answer": 1
-    },
-    {
-      "question": "Why does max() return an Option?",
-      "options": [
-        "An empty iterator has no largest item",
-        "Because max can fail to compare numbers",
-        "Because it needs a closure"
+        "sum, because it runs the whole iterator and returns one value",
+        "map, because it applies the closure to every item in the pipeline",
+        "filter, because it decides which items stay in the pipeline"
       ],
       "answer": 0
     },
     {
-      "question": "How does collect() know whether to build a Vec, a String or a HashMap?",
+      "question": "Why does max() return an Option?",
       "options": [
-        "It always builds a Vec",
-        "From the first item it sees",
-        "From the type annotation or the ::<Type> turbofish"
+        "max can fail to compare two numbers, for example when one is negative",
+        "max needs a closure, and the closure might not give a result",
+        "An empty iterator has no largest item, so there may be nothing to return"
       ],
       "answer": 2
+    },
+    {
+      "question": "How does collect() know whether to build a Vec, a String or a HashMap?",
+      "options": [
+        "It always builds a Vec, and you convert it afterwards",
+        "From the type annotation or the turbofish, such as Vec<i32> or ::<String>",
+        "From the type of the first item the iterator produces"
+      ],
+      "answer": 1
     }
   ]
 }

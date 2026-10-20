@@ -24,7 +24,7 @@
     },
     {
       "type": "code",
-      "code": "fn shout(text: &str) -> String {\n    text.to_uppercase()\n}\n\nmod greetings {\n    pub fn hello() -> String {\n        String::from(\"hello\")\n    }\n\n    pub fn loud() -> String {\n        // self:: starts in this module, super:: starts in the parent (the crate root here)\n        super::shout(&self::hello())\n    }\n\n    pub mod formal {\n        pub fn bow() -> String {\n            // crate:: always starts at the top\n            format!(\"{} (bows)\", crate::greetings::loud())\n        }\n    }\n}\n\nfn main() {\n    println!(\"{}\", greetings::loud());\n    println!(\"{}\", greetings::formal::bow());\n}"
+      "code": "fn shout(text: &str) -> String {\n    text.to_uppercase()\n}\n\nmod greetings {\n    pub fn hello() -> String {\n        String::from(\"hello\")\n    }\n\n    pub fn loud() -> String {\n        // shout isn't pub, but a child module may use its parent's items (more next lesson)\n        // self:: starts in this module, super:: starts in the parent (the crate root here)\n        super::shout(&self::hello())\n    }\n\n    pub mod formal {\n        pub fn bow() -> String {\n            // crate:: always starts at the top\n            format!(\"{} (bows)\", crate::greetings::loud())\n        }\n    }\n}\n\nfn main() {\n    println!(\"{}\", greetings::loud());\n    println!(\"{}\", greetings::formal::bow());\n}"
     },
     {
       "type": "text",
@@ -51,29 +51,29 @@
     {
       "question": "What does super:: refer to in a path?",
       "options": [
-        "The crate root, always",
-        "The parent of the current module",
-        "The module you are in now"
+        "The crate root, whatever module you are in",
+        "The parent of the module where the path is written",
+        "The module where the path is written, as a shortcut"
       ],
       "answer": 1
     },
     {
-      "question": "From main at the crate root, which path calls hello in the nested module formal, inside greetings?",
+      "question": "From main at the crate root, which absolute path names the hello function inside formal, inside greetings?",
       "options": [
-        "crate::greetings::formal::hello()",
-        "greetings::hello::formal()",
-        "formal::greetings::hello()"
+        "crate::formal::greetings::hello",
+        "crate::greetings::hello::formal",
+        "crate::greetings::formal::hello"
       ],
-      "answer": 0
+      "answer": 2
     },
     {
       "question": "What is the crate root when your whole program is one file?",
       "options": [
-        "The first module in the file",
-        "The file itself",
-        "The function main only"
+        "The file itself, with main living in it",
+        "The first mod block written in the file",
+        "The function main and everything it calls"
       ],
-      "answer": 1
+      "answer": 0
     }
   ]
 }

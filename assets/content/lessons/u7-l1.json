@@ -50,7 +50,7 @@
     }
   ],
   "exercise": {
-    "prompt": "last_item only works on slices of i32. Make it generic: change its signature to fn last_item<T>(items: &[T]) -> &T. Then, at the end of main, add a slice of words with let words = [\"red\", \"green\", \"blue\"]; and print last_item(&words) with println!. It should print two lines: 15 and blue.",
+    "prompt": "last_item only works on slices of i32. Make it work for slices of any type, so it also works on a list of words. Then, at the end of main, make an array of three words (red, green and blue) and print its last item. It should print two lines: 15 and blue. Hint: fn last_item<T>(items: &[T]) -> &T, and let words = [\"red\", \"green\", \"blue\"];",
     "starter": "fn last_item(items: &[i32]) -> &i32 {\n    &items[items.len() - 1]\n}\n\nfn main() {\n    let numbers = [4, 8, 15];\n    println!(\"{}\", last_item(&numbers));\n}",
     "expectedOutput": "15\nblue",
     "solution": "fn last_item<T>(items: &[T]) -> &T {\n    &items[items.len() - 1]\n}\n\nfn main() {\n    let numbers = [4, 8, 15];\n    println!(\"{}\", last_item(&numbers));\n    let words = [\"red\", \"green\", \"blue\"];\n    println!(\"{}\", last_item(&words));\n}"
@@ -59,29 +59,29 @@
     {
       "question": "What does the <T> in fn swap_pair<T>(...) do?",
       "options": [
-        "Makes the function run faster",
-        "Declares T as a placeholder for any type",
-        "Sets the return type to T only"
+        "Declares T as a new struct that the function builds every time it runs",
+        "Declares T as a constant whose value is fixed when the program starts",
+        "Declares T as a placeholder that stands for a real type, chosen at each call"
       ],
-      "answer": 1
+      "answer": 2
     },
     {
       "question": "Why does largest need T: PartialOrd?",
       "options": [
-        "Because > only works on types that can be compared",
-        "Because slices must be sorted",
-        "Because T must be a number"
+        "Because > only works on types that can be ordered, and a bare T promises nothing",
+        "Because slices must be sorted before you can search them for the largest item",
+        "Because the function returns a reference, and references need PartialOrd"
       ],
       "answer": 0
     },
     {
       "question": "How does Rust decide which type T is when you call swap_pair((\"a\", \"b\"))?",
       "options": [
-        "You must always write the type in the call",
-        "T is always i32 by default",
-        "It works T out from the arguments you pass"
+        "It uses i32 unless you write another type in angle brackets at the call",
+        "It works T out from the types of the arguments you pass",
+        "It decides at run time, after looking at the values"
       ],
-      "answer": 2
+      "answer": 1
     }
   ]
 }

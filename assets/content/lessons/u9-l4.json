@@ -12,7 +12,7 @@
     },
     {
       "type": "text",
-      "text": "By convention, tests go in a module at the bottom of the same file, named tests. It is marked #[cfg(test)], which tells Rust to compile that module only when running tests, not in a normal build. Inside it, use super::*; brings everything from the parent module into scope so the tests can call your functions."
+      "text": "By convention, tests go in a module at the bottom of the same file, named tests. It is marked #[cfg(test)], which tells Rust to compile that module only when running tests, not in a normal build. Inside it, use super::*; brings everything from the parent module into scope so the tests can call your functions. A * import is rare elsewhere, but here it is the usual habit."
     },
     {
       "type": "code",
@@ -24,11 +24,11 @@
     },
     {
       "type": "text",
-      "text": "Pressing Run in this app compiles the program without the tests, so it just prints 5 5. On your own computer, cargo test builds the tests and runs every #[test] function. You would see something like this (the order can differ, because tests run in parallel):"
+      "text": "The code sections in this lesson can't be run, but if you paste this program into the editor below and press Run, the app compiles it without the tests, so it just prints 5 5. On your own computer, cargo test builds the tests and runs every #[test] function. You would see something like this (the order can differ, because tests run in parallel):"
     },
     {
       "type": "code",
-      "code": "running 4 tests\ntest tests::add_opposites ... ok\ntest tests::divide_works ... ok\ntest tests::add_works ... ok\ntest tests::divide_by_zero_panics - should panic ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out"
+      "code": "     Running unittests src/main.rs (target/debug/deps/my_app-1a2b3c4d5e6f)\n\nrunning 4 tests\ntest tests::add_opposites ... ok\ntest tests::divide_works ... ok\ntest tests::add_works ... ok\ntest tests::divide_by_zero_panics - should panic ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
     },
     {
       "type": "text",
@@ -45,7 +45,7 @@
     },
     {
       "type": "note",
-      "text": "Coming from pytest, JUnit or Go's testing package: there is no test framework to install. Tests can live in the same file as the code, so they can also test private functions. Larger integration tests go in a tests/ folder next to src/, where they can only use your public API. Test functions can return Result<(), E> and use ? instead of panicking. cargo test also runs the code examples in doc comments (doctests).",
+      "text": "Coming from pytest, JUnit or Go's testing package: there is no test framework to install. Tests can live in the same file as the code, so they can also test private functions. Larger integration tests go in a tests/ folder next to src/, where they can only use your public API. Test functions can return Result<(), E> and use ? instead of panicking. In library crates, cargo test also runs the code examples in doc comments (doctests).",
       "track": "fast"
     }
   ],
@@ -59,27 +59,27 @@
     {
       "question": "What makes a Rust test fail?",
       "options": [
-        "It returns false",
-        "It panics",
-        "It prints nothing"
+        "The function returns false at the end",
+        "The function panics while it runs",
+        "The function prints nothing to the screen"
       ],
       "answer": 1
     },
     {
       "question": "Why is the tests module marked #[cfg(test)]?",
       "options": [
-        "So the module is only compiled when running tests",
-        "So cargo build runs the tests too",
-        "So the tests can see private fields of other crates"
+        "So the module is compiled only when running tests, not in a normal build",
+        "So cargo build runs the tests as well as compiling the code",
+        "So the tests may call private functions that live in other crates"
       ],
       "answer": 0
     },
     {
       "question": "Which attribute marks a function as a test?",
       "options": [
-        "#[check]",
-        "#[assert]",
-        "#[test]"
+        "#[check], placed above the function",
+        "#[assert], placed above the function",
+        "#[test], placed above the function"
       ],
       "answer": 2
     }

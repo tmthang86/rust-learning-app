@@ -12,19 +12,11 @@
     },
     {
       "type": "text",
-      "text": "main can call reveal and peek because they are pub. It cannot call secret directly. The rule of thumb: children can see their parents' private items, but parents and neighbours can't see a child's private items. This lets a module hide its inner workings and show only a small, safe set of functions."
+      "text": "main can call reveal and peek because they are pub. It cannot call secret directly: writing outer::secret() in main fails with E0603, function secret is private. The rule of thumb: children can see their parents' private items, but parents and neighbours can't see a child's private items. This lets a module hide its inner workings."
     },
     {
       "type": "text",
-      "text": "This code does not compile. Rust reports E0603: function `audit` is private."
-    },
-    {
-      "type": "code",
-      "code": "// This does NOT compile: E0603, function `audit` is private.\nmod bank {\n    fn audit() {}\n}\n\nfn run() {\n    bank::audit();\n}"
-    },
-    {
-      "type": "text",
-      "text": "pub also works on structs, but a struct has two levels. pub struct makes the type public. Each field is still private unless it has its own pub. That is useful: the module can keep a field private and only let outsiders change it through methods that check the rules."
+      "text": "pub also works on structs, but a struct has two levels. pub struct makes the type public. Each field is still private unless it has its own pub. So a module can keep a field private and let outsiders change it only through methods."
     },
     {
       "type": "code",
@@ -32,7 +24,7 @@
     },
     {
       "type": "text",
-      "text": "owner is public, so main can read it. balance is private, so main can only use deposit and balance(). Writing acc.balance from main would fail with E0616: field `balance` is private. Notice that Account::new is also needed: main can't build Account { ... } itself, because it can't name the private field. Enums are different. If an enum is pub, all of its variants are public automatically."
+      "text": "owner is public, so main can read it. balance is private, so main can only use deposit and balance(). Writing acc.balance from main would fail with E0616: field balance of struct Account is private. Notice that Account::new is also needed: main can't build Account { ... } itself, because it can't name the private field. Enums are different. If an enum is pub, all of its variants are public automatically."
     },
     {
       "type": "text",
@@ -40,24 +32,28 @@
     },
     {
       "type": "code",
-      "code": "use std::collections::HashMap;\nuse std::fmt::Result as FmtResult;\nuse std::io::Result as IoResult;\n\nmod zoo {\n    pub mod animals {\n        pub enum Animal {\n            Cat,\n            Dog,\n        }\n\n        pub fn name(a: &Animal) -> String {\n            match a {\n                Animal::Cat => String::from(\"cat\"),\n                Animal::Dog => String::from(\"dog\"),\n            }\n        }\n    }\n\n    pub mod show {\n        use super::animals;\n        use super::animals::Animal;\n\n        pub fn line(a: Animal) -> String {\n            format!(\"a {}\", animals::name(&a))\n        }\n    }\n}\n\nuse zoo::animals::Animal;\nuse zoo::show;\n\nfn check_fmt() -> FmtResult {\n    Ok(())\n}\n\nfn check_io() -> IoResult<u32> {\n    Ok(7)\n}\n\nfn main() {\n    println!(\"{}\", show::line(Animal::Cat));\n    println!(\"{}\", show::line(Animal::Dog));\n\n    let mut stock: HashMap<&str, u32> = HashMap::new();\n    stock.insert(\"apple\", 3);\n    println!(\"{} {:?} {:?}\", stock[\"apple\"], check_fmt(), check_io());\n}"
+      "code": "mod zoo {\n    pub mod animals {\n        pub fn cat() -> String {\n            String::from(\"meow\")\n        }\n    }\n\n    pub mod show {\n        use super::animals;   // a use outside the module does not reach in here\n\n        pub fn line() -> String {\n            format!(\"the cat says {}\", animals::cat())\n        }\n    }\n}\n\nuse zoo::show;\n\nfn main() {\n    println!(\"{}\", show::line());\n}"
     },
     {
       "type": "text",
-      "text": "Two details. First, as gives an item a new name. std::fmt::Result and std::io::Result are two different types with the same name, so use ... as FmtResult and as IoResult keeps them apart. Second, there is a common habit: bring in types directly (use zoo::animals::Animal), but bring in the parent module for functions (use zoo::show, then show::line). That way a call like show::line shows where the function comes from."
+      "text": "There is a common habit: bring in types directly (use std::collections::HashMap;), but bring in the parent module for functions (use zoo::show, then show::line). That way a call like show::line shows where the function comes from. Braces group names from one path: use std::collections::{HashMap, HashSet};. A * (use std::collections::*;) imports everything public, but hides where names come from, so it is rare."
     },
     {
       "type": "text",
-      "text": "You can group several names from one path with braces: use std::collections::{HashMap, HashSet};. A * (use std::collections::*;) brings in everything public, but it makes it hard to see where a name came from, so it is rare in real code."
+      "text": "The word as gives an imported item a new name. std::fmt::Result and std::io::Result are two different types with the same name, so as keeps them apart:"
+    },
+    {
+      "type": "code",
+      "code": "use std::fmt::Result as FmtResult;\nuse std::io::Result as IoResult;\n\nfn check_fmt() -> FmtResult {\n    Ok(())\n}\n\nfn check_io() -> IoResult<u32> {\n    Ok(7)\n}\n\nfn main() {\n    println!(\"{:?} {:?}\", check_fmt(), check_io());\n}"
     },
     {
       "type": "note",
-      "text": "If you have used import in Python or JavaScript, use is the same idea. as is like import ... as. The big difference is the default: in Rust the author of a module decides what to share with pub, and everything else stays hidden.",
+      "text": "Think of a module as a room with a front desk. Anything marked pub is on the desk for visitors. Everything else stays in the back room. use is like writing a short nickname on a sticky note so you don't have to say the full address every time. as lets you pick the nickname.",
       "track": "starter"
     },
     {
       "type": "note",
-      "text": "There are finer levels of pub. pub(crate) means visible anywhere inside this crate but not to other crates; pub(super) means visible to the parent module. pub use re-exports a name, so users of your library see a tidier path. These come into play once you write libraries.",
+      "text": "use is the same idea as import in Python or JavaScript, and as is like import ... as. The big difference is the default: in Rust the author of a module decides what to share with pub. There are finer levels too. pub(crate) means visible anywhere inside this crate but not to other crates; pub(super) means visible to the parent module. pub use re-exports a name, so users of your library see a tidier path. These come into play once you write libraries.",
       "track": "fast"
     }
   ],
@@ -71,29 +67,29 @@
     {
       "question": "If you write an item in a module with no pub, who can use it?",
       "options": [
-        "Only code in that module and the modules nested inside it",
-        "Everyone in the program",
-        "Nobody, not even the module itself"
+        "Only code in that exact module, not in modules nested inside it",
+        "Every module in the program, but only inside the same file",
+        "Only code in that module and in the modules nested inside it"
       ],
-      "answer": 0
+      "answer": 2
     },
     {
       "question": "A module has pub struct Account { pub owner: String, balance: i64 }. What can code outside the module do with an Account value?",
       "options": [
-        "Read and change both fields",
-        "Read owner, but not touch balance directly",
-        "Read balance, but not owner"
+        "It can read owner, but cannot touch balance directly",
+        "It can read and change both fields, since the struct is pub",
+        "It can read balance, but cannot touch owner directly"
       ],
-      "answer": 1
+      "answer": 0
     },
     {
       "question": "What does the as in use std::io::Result as IoResult; do?",
       "options": [
-        "Gives the imported item a new name",
-        "Makes the item public",
-        "Converts the type to another type"
+        "Makes the imported item public to other modules",
+        "Gives the imported item a new local name",
+        "Converts the imported type into a different type"
       ],
-      "answer": 0
+      "answer": 1
     }
   ]
 }

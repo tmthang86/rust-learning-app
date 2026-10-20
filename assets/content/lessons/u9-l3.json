@@ -16,11 +16,11 @@
     },
     {
       "type": "code",
-      "code": "my_app/\n    Cargo.toml        <- describes the package\n    src/\n        main.rs       <- the root of the binary crate\n        lib.rs        <- (optional) the root of a library crate"
+      "code": "my_app/\n    Cargo.toml        <- describes the package\n    src/\n        main.rs       <- the root of the binary crate\n        lib.rs        <- optional: cargo new does not make it; you add it for a library crate"
     },
     {
       "type": "text",
-      "text": "src/main.rs is the crate root of the binary, and src/lib.rs, if you add it, is the crate root of a library. The crate root is where the compiler starts reading, the same top-level module you met earlier. Cargo.toml looks like this:"
+      "text": "src/main.rs is the crate root of the binary, and src/lib.rs, if you add it yourself, is the crate root of a library. The crate root is where the compiler starts reading, the same top-level module you met earlier. Cargo.toml looks like this:"
     },
     {
       "type": "code",
@@ -28,7 +28,11 @@
     },
     {
       "type": "text",
-      "text": "The [package] part gives the name, the version and the Rust edition. The [dependencies] part lists the other crates you want. Here we ask for rand, a popular crate that makes random numbers. \"0.10\" means any compatible 0.10.x version. When you build, Cargo downloads rand from crates.io, the public place where people share crates, and builds it too. Then your code can write use rand::...; to use it. Cargo also writes a Cargo.lock file that records the exact versions, so everyone builds with the same ones."
+      "text": "The [package] part gives the name, the version and the Rust edition. The [dependencies] part lists the other crates you want. Here we ask for rand, a popular crate that makes random numbers. \"0.10\" means any compatible 0.10.x version."
+    },
+    {
+      "type": "text",
+      "text": "When you build, Cargo downloads rand from crates.io, the public place where people share crates, and builds it too. Then your code can write use rand::...; to use it. Cargo also writes a Cargo.lock file that records the exact versions, so everyone builds with the same ones."
     },
     {
       "type": "text",
@@ -56,52 +60,52 @@
     },
     {
       "type": "code",
-      "code": "// src/main.rs holds `mod garden;` and main\n// src/garden.rs holds the body of `mod garden`\nmod garden {\n    // src/garden/vegetables.rs holds the body of `mod vegetables`\n    pub mod vegetables {\n        pub fn count() -> u32 {\n            3\n        }\n    }\n\n    pub fn plant(name: &str) -> String {\n        format!(\"planted {name}\")\n    }\n}\n\nfn main() {\n    println!(\"{}, {} in the garden\", garden::plant(\"carrot\"), garden::vegetables::count());\n}"
+      "code": "// src/main.rs holds mod garden; and main\n// src/garden.rs holds the body of mod garden\nmod garden {\n    // src/garden/vegetables.rs holds the body of mod vegetables\n    pub mod vegetables {\n        pub fn count() -> u32 {\n            3\n        }\n    }\n\n    pub fn plant(name: &str) -> String {\n        format!(\"planted {name}\")\n    }\n}\n\nfn main() {\n    println!(\"{}, {} in the garden\", garden::plant(\"carrot\"), garden::vegetables::count());\n}"
     },
     {
       "type": "note",
-      "text": "A package is like a project folder with a manifest file: Cargo.toml plays the role of package.json (npm) or requirements.txt plus setup (Python). crates.io is Rust's npm or PyPI. The crates you depend on are downloaded and compiled together with your code.",
+      "text": "A package is like a recipe folder. Cargo.toml is the shopping list on the first page: it names the dish and the ingredients (crates) you need from the shop (crates.io). Cargo goes shopping for you and then cooks everything together with your own code.",
       "track": "starter"
     },
     {
       "type": "note",
-      "text": "Coming from Java, Go or C#: a crate is roughly one compilation unit, like a Go module or a .NET assembly. A package can have one library crate and many binary crates (extra binaries go in src/bin/). Cargo.lock is committed for applications. Workspaces let several packages share one lock file and one build folder. The older layout garden/mod.rs also works, but garden.rs next to a garden/ folder is the current style.",
+      "text": "Coming from Java, Go or C#: a crate is roughly one compilation unit, like a Go package or a .NET assembly (a Cargo package is closer to a Go module). If you know npm or PyPI, then Cargo.toml is like package.json or requirements.txt and crates.io is the registry. A package can have one library crate and many binary crates (extra binaries go in src/bin/). Cargo.lock is committed for applications. Workspaces let several packages share one lock file and one build folder. The older layout garden/mod.rs also works, but garden.rs next to a garden/ folder is the current style.",
       "track": "fast"
     }
   ],
   "exercise": {
-    "prompt": "Pretend the nested module is the file src/garden/vegetables.rs. Inside mod garden, add pub mod vegetables with a function pub fn count() -> u32 that returns 3. Then replace the 0 in main with garden::vegetables::count(). It should print: planted carrot, 3 in the garden",
-    "starter": "mod garden {\n    pub fn plant(name: &str) -> String {\n        format!(\"planted {name}\")\n    }\n\n    // add pub mod vegetables here\n}\n\nfn main() {\n    let count = 0;   // replace 0 with garden::vegetables::count()\n    println!(\"{}, {} in the garden\", garden::plant(\"carrot\"), count);\n}",
-    "expectedOutput": "planted carrot, 3 in the garden",
-    "solution": "mod garden {\n    pub fn plant(name: &str) -> String {\n        format!(\"planted {name}\")\n    }\n\n    pub mod vegetables {\n        pub fn count() -> u32 {\n            3\n        }\n    }\n}\n\nfn main() {\n    let count = garden::vegetables::count();\n    println!(\"{}, {} in the garden\", garden::plant(\"carrot\"), count);\n}"
+    "prompt": "Pretend the nested module is the file src/shop/fruits.rs. Inside mod shop, add pub mod fruits with a function pub fn count() -> u32 that returns 5. Then replace the 0 in main with shop::fruits::count(). It should print: shop is open, 5 kinds of fruit",
+    "starter": "mod shop {\n    pub fn open() -> String {\n        String::from(\"shop is open\")\n    }\n\n    // add pub mod fruits here\n}\n\nfn main() {\n    let count = 0;   // replace 0 with shop::fruits::count()\n    println!(\"{}, {} kinds of fruit\", shop::open(), count);\n}",
+    "expectedOutput": "shop is open, 5 kinds of fruit",
+    "solution": "mod shop {\n    pub fn open() -> String {\n        String::from(\"shop is open\")\n    }\n\n    pub mod fruits {\n        pub fn count() -> u32 {\n            5\n        }\n    }\n}\n\nfn main() {\n    let count = shop::fruits::count();\n    println!(\"{}, {} kinds of fruit\", shop::open(), count);\n}"
   },
   "quiz": [
     {
       "question": "Which file is the root of a binary crate in a package made by cargo new?",
       "options": [
-        "Cargo.toml",
-        "src/lib.rs",
-        "src/main.rs"
+        "Cargo.toml, the file that describes the package",
+        "src/lib.rs, the file that holds the library code",
+        "src/main.rs, the file that holds main"
       ],
       "answer": 2
     },
     {
       "question": "What does the [dependencies] section of Cargo.toml do?",
       "options": [
-        "Lists the crates your package needs, which Cargo downloads and builds",
-        "Lists the functions your package exports",
-        "Lists the files that the compiler should skip"
+        "It lists the crates the package needs, which Cargo downloads and builds",
+        "It lists the functions the package makes public to other crates",
+        "It lists the source files that the compiler should include in the build"
       ],
       "answer": 0
     },
     {
       "question": "In src/main.rs you write mod garden; with a semicolon. Where does Rust look for the body of that module?",
       "options": [
-        "In src/garden.rs",
-        "In Cargo.toml",
-        "In src/main.rs, further down"
+        "In src/main.rs, further down below the mod line",
+        "In a file named garden.rs inside the src folder",
+        "In Cargo.toml, under the [package] heading"
       ],
-      "answer": 0
+      "answer": 1
     }
   ]
 }

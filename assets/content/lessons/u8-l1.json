@@ -20,7 +20,7 @@
     },
     {
       "type": "text",
-      "text": "Closures can be passed to functions. The parameter type impl Fn(i32) -> i32 means \"any closure or function that takes an i32 and returns an i32\". Plain functions can be passed too:"
+      "text": "Closures can be passed to functions. The parameter type impl Fn(i32) -> i32 means \"any closure or function that takes an i32 and returns an i32\". Plain functions can be passed too. (Fn is a trait; the next lesson explains it, together with FnMut and FnOnce.)"
     },
     {
       "type": "code",
@@ -54,7 +54,7 @@
     }
   ],
   "exercise": {
-    "prompt": "apply calls a closure on a number. The starter passes it a doubling closure. Below that, define let minus_five = |x| x - 5; and print apply(minus_five, 50) with println!. It should print two lines: 42 and 45.",
+    "prompt": "apply calls a closure on a number. The starter passes it a doubling closure. Below that, make a closure that subtracts 5 from its argument, pass it to apply together with 50, and print the result. It should print two lines: 42 and 45. Hint: let minus_five = |x| x - 5;",
     "starter": "fn apply(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(value)\n}\n\nfn main() {\n    let doubled = apply(|x| x * 2, 21);\n    println!(\"{doubled}\");\n}",
     "expectedOutput": "42\n45",
     "solution": "fn apply(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(value)\n}\n\nfn main() {\n    let doubled = apply(|x| x * 2, 21);\n    println!(\"{doubled}\");\n    let minus_five = |x| x - 5;\n    println!(\"{}\", apply(minus_five, 50));\n}"
@@ -64,28 +64,28 @@
       "question": "Which is a closure that adds 1 to its parameter?",
       "options": [
         "|x| x + 1",
-        "fn(x) x + 1",
-        "(x) -> x + 1"
+        "(x) => x + 1",
+        "fn |x| x + 1"
       ],
       "answer": 0
     },
     {
       "question": "A closure is first called with a String, then with an i32. What happens?",
       "options": [
-        "It works, and the closure adapts each time",
-        "A compile error, because its parameter type was fixed by the first use",
-        "A panic at run time"
+        "It works, because a closure picks a fresh parameter type for each call",
+        "It compiles, but the second call panics at run time",
+        "A compile error, because the first call fixes the closure's parameter type"
       ],
-      "answer": 1
+      "answer": 2
     },
     {
       "question": "What does the parameter type impl Fn(i32) -> i32 accept?",
       "options": [
-        "Only closures written with |x|",
-        "Only functions with the name Fn",
-        "Any closure or function that takes an i32 and returns an i32"
+        "Only closures that capture an i32 variable from their surroundings",
+        "Any closure or function that takes an i32 and returns an i32",
+        "Any closure that takes an i32, whatever type it returns"
       ],
-      "answer": 2
+      "answer": 1
     }
   ]
 }

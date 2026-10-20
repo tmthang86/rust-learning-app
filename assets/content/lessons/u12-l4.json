@@ -4,11 +4,15 @@
   "sections": [
     {
       "type": "text",
-      "text": "Last lesson we wrote pure functions that turn request text into response text. Now we connect them to the network. The standard library has everything needed: TcpListener waits for connections, and TcpStream is one open connection that you can read from and write to, like a file."
+      "text": "Last lesson we wrote pure functions that turn request text into response text. Now we connect them to the network. The standard library has everything needed: TcpListener waits for connections, and TcpStream is one open connection that you can read from and write to."
     },
     {
       "type": "text",
       "text": "A server starts like this: TcpListener::bind(\"127.0.0.1:0\"). 127.0.0.1 is the loopback address, which only reaches your own computer, and it is the only kind of address the sandbox in this app allows. The 0 after the colon means \"pick any free port for me\". local_addr() tells you which one was chosen. Then listener.accept() waits for one client to connect, and listener.incoming() gives you each new connection in turn."
+    },
+    {
+      "type": "text",
+      "text": "The code uses some parts of std::io that are new. A stream carries bytes, so as_bytes() turns text into bytes before it is sent. Methods like read_to_string, write_all and read_line come from traits (Read, Write and BufRead), and a trait's methods only work when you import it with use, as in Unit 7. The write! and writeln! macros work like print! and println!, but send the text into a stream instead of the screen. BufReader::new(&stream) wraps a stream so you can read it one line at a time. read_line adds one line, including its \\r\\n, to a String and returns how many bytes it read; 0 means the other side has closed the connection. A SocketAddr is a value that holds an IP address and a port."
     },
     {
       "type": "text",
@@ -29,13 +33,13 @@
     },
     {
       "type": "note",
-      "text": "This is the thread-per-connection model, the same as a classic blocking Java or C server. It is simple and handles hundreds of clients well; for tens of thousands of mostly idle connections, async code (previous unit) with tokio is the usual choice. For real HTTP you would use hyper, axum or actix-web, which handle keep-alive, chunked bodies, TLS and more. Also note the deliberate Connection: close and the drop of the stream: without closing, a client reading to the end would wait forever.",
+      "text": "This is the thread-per-connection model, the same as a classic blocking Java or C server. It is simple and handles hundreds of clients well; for tens of thousands of mostly idle connections, async code (previous unit) with tokio is the usual choice. For real HTTP you would use hyper, axum or actix-web, which handle keep-alive, chunked bodies, TLS and more. Note that the Connection: close header only tells a real client not to wait for more; closing the stream (the drop at the end of handle) is what ends our client's read_to_string.",
       "track": "fast"
     }
   ],
   "exercise": {
-    "prompt": "The server replies with the line it received. Change it so it replies with the line in upper case, using .to_uppercase() on line.trim(). The program should print: HELLO",
-    "starter": "use std::io::{BufRead, BufReader, Write};\nuse std::net::{TcpListener, TcpStream};\nuse std::thread;\n\nfn main() {\n    let listener = TcpListener::bind(\"127.0.0.1:0\").unwrap();\n    let addr = listener.local_addr().unwrap();\n\n    let server = thread::spawn(move || {\n        let (mut stream, _) = listener.accept().unwrap();\n        let mut line = String::new();\n        BufReader::new(&stream).read_line(&mut line).unwrap();\n        let reply = line.trim().to_string();\n        writeln!(stream, \"{reply}\").unwrap();\n    });\n\n    let mut client = TcpStream::connect(addr).unwrap();\n    writeln!(client, \"hello\").unwrap();\n    let mut reply = String::new();\n    BufReader::new(&client).read_line(&mut reply).unwrap();\n    println!(\"{}\", reply.trim());\n    server.join().unwrap();\n}",
+    "prompt": "This echo server sends the client's line straight back. Change it so the server shouts: it should reply with the same line in upper case. The program should print: HELLO. Hint: build the reply with line.trim().to_uppercase().",
+    "starter": "use std::io::{BufRead, BufReader, Write};\nuse std::net::{TcpListener, TcpStream};\nuse std::thread;\n\nfn main() {\n    let listener = TcpListener::bind(\"127.0.0.1:0\").unwrap();\n    let addr = listener.local_addr().unwrap();\n\n    let server = thread::spawn(move || {\n        // accept gives back the stream and the client's address; we ignore the address\n        let (mut stream, _) = listener.accept().unwrap();\n        let mut line = String::new();\n        BufReader::new(&stream).read_line(&mut line).unwrap();\n        let reply = line.trim().to_string();\n        writeln!(stream, \"{reply}\").unwrap();\n    });\n\n    let mut client = TcpStream::connect(addr).unwrap();\n    writeln!(client, \"hello\").unwrap();\n    let mut reply = String::new();\n    BufReader::new(&client).read_line(&mut reply).unwrap();\n    println!(\"{}\", reply.trim());\n    server.join().unwrap();\n}",
     "expectedOutput": "HELLO",
     "solution": "use std::io::{BufRead, BufReader, Write};\nuse std::net::{TcpListener, TcpStream};\nuse std::thread;\n\nfn main() {\n    let listener = TcpListener::bind(\"127.0.0.1:0\").unwrap();\n    let addr = listener.local_addr().unwrap();\n\n    let server = thread::spawn(move || {\n        let (mut stream, _) = listener.accept().unwrap();\n        let mut line = String::new();\n        BufReader::new(&stream).read_line(&mut line).unwrap();\n        let reply = line.trim().to_uppercase();\n        writeln!(stream, \"{reply}\").unwrap();\n    });\n\n    let mut client = TcpStream::connect(addr).unwrap();\n    writeln!(client, \"hello\").unwrap();\n    let mut reply = String::new();\n    BufReader::new(&client).read_line(&mut reply).unwrap();\n    println!(\"{}\", reply.trim());\n    server.join().unwrap();\n}"
   },
@@ -43,9 +47,9 @@
     {
       "question": "What does binding to \"127.0.0.1:0\" do?",
       "options": [
-        "Listens on every computer on the internet",
-        "Uses port 0 as a real port number",
-        "Listens only on this computer, on a free port chosen by the operating system"
+        "Listens on every computer connected to the internet at once, on any free port",
+        "Uses 0 as a real port number that clients must connect to",
+        "Listens only on this computer, on a free port the operating system picks"
       ],
       "answer": 2
     },
@@ -53,17 +57,17 @@
       "question": "Why does our client's read_to_string finish?",
       "options": [
         "The server closes the connection when its TcpStream is dropped",
-        "It waits exactly one second",
-        "read_to_string never waits"
+        "It gives up after waiting one second for more data to arrive",
+        "It stops as soon as the first line of the reply has been received"
       ],
       "answer": 0
     },
     {
       "question": "Why does the server handle each connection in its own thread?",
       "options": [
-        "Rust requires a thread for every TcpStream",
-        "A slow client then can't block the others",
-        "Threads make the response shorter"
+        "Rust requires a separate thread for every TcpStream you create",
+        "A slow client then can't block the other clients from being served",
+        "Threads make each response shorter, so it travels faster over the connection"
       ],
       "answer": 1
     }

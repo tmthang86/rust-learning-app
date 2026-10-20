@@ -12,7 +12,7 @@
     },
     {
       "type": "code",
-      "code": "use std::cell::RefCell;\n\nfn main() {\n    let cell = RefCell::new(vec![1, 2]);   // note: no `mut`\n    cell.borrow_mut().push(3);\n    println!(\"{:?} has {} items\", cell.borrow(), cell.borrow().len());\n}"
+      "code": "use std::cell::RefCell;\n\nfn main() {\n    let cell = RefCell::new(vec![1, 2]);   // note: no mut\n    cell.borrow_mut().push(3);\n    println!(\"{:?} has {} items\", cell.borrow(), cell.borrow().len());\n}"
     },
     {
       "type": "text",
@@ -57,12 +57,12 @@
     },
     {
       "type": "note",
-      "text": "RefCell<T> is single-threaded: it is not Sync. Its multi-threaded counterparts are Mutex<T> and RwLock<T> (Unit 11). Rc<RefCell<T>> is the Rust version of a shared, mutable object in Java or Python, but with the rules enforced and panics instead of silent data races. Use try_borrow and try_borrow_mut when a borrow failure is a normal case rather than a bug.",
+      "text": "RefCell<T> is single-threaded: it is not Sync. Its multi-threaded counterparts are Mutex<T> and RwLock<T> (Unit 11). Rc<RefCell<T>> is the Rust version of a shared, mutable object in Java or Python, but with the rules enforced, and with panics instead of silent aliasing bugs (such as changing a list while you loop over it). Use try_borrow and try_borrow_mut when a borrow failure is a normal case rather than a bug.",
       "track": "fast"
     }
   ],
   "exercise": {
-    "prompt": "other is another owner of the same counter. After the line that adds 5 through other, add a line that adds 10 through counter: *counter.borrow_mut() += 10; (borrow_mut gives a guard; the * reaches the number inside it). It should print: counter = 15",
+    "prompt": "other and counter share one number. The program already adds 5 through other. Add a line that adds 10 through counter, so the program prints: counter = 15. Hint: borrow_mut() gives a guard, and the * reaches the number inside it, so write *counter.borrow_mut() += 10;",
     "starter": "use std::cell::RefCell;\nuse std::rc::Rc;\n\nfn main() {\n    let counter = Rc::new(RefCell::new(0));\n    let other = Rc::clone(&counter);\n    *other.borrow_mut() += 5;\n    // add the line for counter here\n    println!(\"counter = {}\", counter.borrow());\n}",
     "expectedOutput": "counter = 15",
     "solution": "use std::cell::RefCell;\nuse std::rc::Rc;\n\nfn main() {\n    let counter = Rc::new(RefCell::new(0));\n    let other = Rc::clone(&counter);\n    *other.borrow_mut() += 5;\n    *counter.borrow_mut() += 10;\n    println!(\"counter = {}\", counter.borrow());\n}"
@@ -71,27 +71,27 @@
     {
       "question": "When does RefCell check the borrowing rules?",
       "options": [
-        "While the program runs",
-        "While the code compiles",
-        "Never; it turns the rules off"
+        "While the program runs, each time borrow or borrow_mut is called",
+        "While the code compiles, before the program starts",
+        "Never, because RefCell turns the borrowing rules off"
       ],
       "answer": 0
     },
     {
       "question": "What happens if you call borrow_mut() twice and keep both guards alive?",
       "options": [
-        "The second call waits",
-        "The program panics",
-        "It compiles with a warning and works"
+        "The second call waits until the first guard is dropped",
+        "It compiles with a warning and both guards work",
+        "The program panics with a message that it is already borrowed"
       ],
-      "answer": 1
+      "answer": 2
     },
     {
       "question": "What does Rc<RefCell<T>> give you?",
       "options": [
-        "A value stored on the stack",
-        "Several owners that can each change the value",
-        "A value that can be sent to other threads"
+        "A value stored on the stack with no heap allocation",
+        "Several owners that can each change the shared value",
+        "A value that can be safely sent to other threads"
       ],
       "answer": 1
     }

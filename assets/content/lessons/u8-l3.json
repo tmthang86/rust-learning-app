@@ -20,7 +20,11 @@
     },
     {
       "type": "text",
-      "text": "A collection can give you its items in three ways: iter() borrows each item (you get &T), iter_mut() borrows each item mutably (you get &mut T), and into_iter() takes ownership of the collection and gives you the items themselves (T). The for loops you already know are shorthand: for x in &v is v.iter(), for x in &mut v is v.iter_mut(), and for x in v is v.into_iter()."
+      "text": "A collection can give you its items in three ways. iter() borrows each item (you get &T). iter_mut() borrows each item mutably (you get &mut T). into_iter() takes ownership of the collection and gives you the items themselves (T)."
+    },
+    {
+      "type": "text",
+      "text": "The for loops you already know are shorthand for these: for x in &v is v.iter(), for x in &mut v is v.iter_mut(), and for x in v is v.into_iter()."
     },
     {
       "type": "code",
@@ -50,7 +54,7 @@
     }
   ],
   "exercise": {
-    "prompt": "Counter should give out the numbers from 1 up to max. Fill in next: if self.current is greater than self.max, return None. Otherwise remember the current value, add 1 to self.current, and return Some(value). It should print 1, 2, 3 and 4 on four lines. The starter shows warnings that current and max are never read; they go away when you write next.",
+    "prompt": "Counter should give out the numbers from 1 up to max. Fill in next so that it returns None once current is greater than max. Until then it returns Some of the current value, and moves current up by 1 for the next call. It should print 1, 2, 3 and 4 on four lines. The starter shows warnings that current and max are never read; they go away when you write next. Hint: save self.current in a variable, add 1 to self.current, then return Some(that variable).",
     "starter": "struct Counter {\n    current: u32,\n    max: u32,\n}\n\nimpl Iterator for Counter {\n    type Item = u32;\n\n    fn next(&mut self) -> Option<u32> {\n        // write the logic here; for now it always says \"no more items\"\n        None\n    }\n}\n\nfn main() {\n    let counter = Counter { current: 1, max: 4 };\n    for n in counter {\n        println!(\"{n}\");\n    }\n}",
     "expectedOutput": "1\n2\n3\n4",
     "solution": "struct Counter {\n    current: u32,\n    max: u32,\n}\n\nimpl Iterator for Counter {\n    type Item = u32;\n\n    fn next(&mut self) -> Option<u32> {\n        if self.current > self.max {\n            None\n        } else {\n            let value = self.current;\n            self.current += 1;\n            Some(value)\n        }\n    }\n}\n\nfn main() {\n    let counter = Counter { current: 1, max: 4 };\n    for n in counter {\n        println!(\"{n}\");\n    }\n}"
@@ -59,29 +63,29 @@
     {
       "question": "What does an iterator's next method return when there are no items left?",
       "options": [
-        "None",
-        "Some(0)",
-        "An error"
+        "Some with the default value of the item type, such as 0",
+        "None, which a for loop takes as the signal to stop",
+        "An Err value that the for loop turns into a panic"
       ],
-      "answer": 0
+      "answer": 1
     },
     {
       "question": "Which method takes ownership of a Vec and gives you its items by value?",
       "options": [
-        "iter()",
-        "iter_mut()",
-        "into_iter()"
+        "iter(), which yields owned items and leaves the Vec empty",
+        "iter_mut(), which hands over the items and consumes the Vec",
+        "into_iter(), which consumes the Vec and yields owned items"
       ],
       "answer": 2
     },
     {
       "question": "What must you write to implement Iterator for your own struct?",
       "options": [
-        "A for loop and a Vec",
-        "type Item and the next method",
-        "Only the name of the iterator"
+        "Set type Item and write the next method",
+        "Write a for loop and store the items in a Vec field",
+        "Write next and also a len method that says how many items are left"
       ],
-      "answer": 1
+      "answer": 0
     }
   ]
 }

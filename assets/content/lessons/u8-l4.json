@@ -49,12 +49,12 @@
     },
     {
       "type": "note",
-      "text": "This is like Java Streams, C# LINQ, JavaScript array methods and Python generators, with one big difference: Rust's chain is compiled into a single loop with no intermediate lists, so it is as fast as a hand-written loop. Unlike JS array methods, nothing runs until you consume the iterator, and filter's closure borrows the item (&Item).",
+      "text": "This is like Java Streams, C# LINQ, JavaScript array methods and Python generators, with one big difference: Rust's whole chain of adapters is compiled into a single loop with no intermediate lists, so it is as fast as a hand-written loop. Unlike JS array methods, nothing runs until you consume the iterator, and filter's closure borrows the item (&Item).",
       "track": "fast"
     }
   ],
   "exercise": {
-    "prompt": "The starter prints every word. Change the loop to use words.iter().filter(...).map(...) as the thing it loops over: filter should keep only words whose length is greater than 3 (w.len() > 3), and map should turn each remaining word into uppercase with w.to_uppercase(). It should print three lines: APPLE, BANANA and KIWI.",
+    "prompt": "The starter prints every word. Change the loop so it goes through an iterator pipeline instead: keep only the words longer than 3 letters, and turn each one into uppercase before it is printed. It should print three lines: APPLE, BANANA and KIWI. Hint: words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase())",
     "starter": "fn main() {\n    let words = [\"apple\", \"fig\", \"banana\", \"kiwi\"];\n    for w in words.iter() {\n        println!(\"{w}\");\n    }\n}",
     "expectedOutput": "APPLE\nBANANA\nKIWI",
     "solution": "fn main() {\n    let words = [\"apple\", \"fig\", \"banana\", \"kiwi\"];\n    for w in words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase()) {\n        println!(\"{w}\");\n    }\n}"
@@ -63,29 +63,29 @@
     {
       "question": "What happens when you write let d = v.iter().map(|x| x * 2); and never use d?",
       "options": [
-        "Nothing: adapters are lazy and do no work until the iterator is consumed",
-        "Every item is doubled right away",
-        "The program panics"
+        "Every item is doubled right away and the results are stored inside d",
+        "The program panics, because d is never used",
+        "Nothing: map is lazy, so the closure never runs unless something consumes d"
       ],
-      "answer": 0
+      "answer": 2
     },
     {
       "question": "What does zip do?",
       "options": [
-        "Joins two iterators end to end",
+        "Joins two iterators end to end into one longer iterator",
         "Pairs up the items of two iterators as tuples",
-        "Removes duplicate items"
+        "Removes the items that appear in both iterators"
       ],
       "answer": 1
     },
     {
       "question": "What does enumerate give for each item?",
       "options": [
-        "Only the index",
-        "The item twice",
-        "A tuple of (index, item)"
+        "A tuple of (index, item), counting from 0",
+        "Only the index, as a usize, and the item is dropped",
+        "A tuple of (item, item) from two neighbouring positions"
       ],
-      "answer": 2
+      "answer": 0
     }
   ]
 }

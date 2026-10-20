@@ -16,7 +16,7 @@
     },
     {
       "type": "text",
-      "text": "join() returns a Result. It is Err if the thread panicked, which is why we call unwrap(). A thread can also hand back a value: whatever the closure returns comes out of join()."
+      "text": "join() returns a Result. It is Err if the thread panicked, which is why we call unwrap(). A thread can also hand back a value: whatever the closure returns comes out of join(). Join the threads you care about: when main returns, the whole program ends and any thread still running is stopped."
     },
     {
       "type": "code",
@@ -41,11 +41,11 @@
     },
     {
       "type": "code",
-      "code": "use std::thread;\n\nfn main() {\n    let words = vec![String::from(\"alpha\"), String::from(\"beta\"), String::from(\"gamma\")];\n    let mut handles = Vec::new();\n    for word in words {\n        let handle = thread::spawn(move || {\n            let letters = word.len();\n            (word, letters)   // give the word back, together with its length\n        });\n        handles.push(handle);\n    }\n    for handle in handles {\n        let (word, letters) = handle.join().unwrap();\n        println!(\"{word}: {letters} letters\");\n    }\n}"
+      "code": "use std::thread;\n\nfn main() {\n    let words = vec![String::from(\"alpha\"), String::from(\"beta\"), String::from(\"gamma\")];\n    let mut handles = Vec::new();\n    for word in words {\n        let handle = thread::spawn(move || {\n            let letters = word.len();   // len() counts bytes (one per letter here)\n            (word, letters)   // give the word back, together with its length\n        });\n        handles.push(handle);\n    }\n    for handle in handles {\n        let (word, letters) = handle.join().unwrap();\n        println!(\"{word}: {letters} bytes\");\n    }\n}"
     },
     {
       "type": "text",
-      "text": "Sometimes you do want threads to borrow local data. thread::scope makes that safe: every thread started inside the scope is joined before the scope ends, so nothing can outlive the data it borrows. No move is needed."
+      "text": "Sometimes you do want threads to borrow local data. thread::scope makes that safe: every thread started inside the scope is joined before the scope ends, so nothing can outlive the data it borrows. No move is needed. The closure you give scope receives s, the scope handle, and you start threads with s.spawn(...). Whatever that closure returns, here a tuple, is what thread::scope returns."
     },
     {
       "type": "code",
@@ -67,9 +67,9 @@
     {
       "question": "What does handle.join() do?",
       "options": [
-        "Starts the thread",
-        "Waits for the thread to finish and returns its result",
-        "Stops the thread at once"
+        "Starts the thread and returns to main right away",
+        "Waits for the thread to finish and gives back its result",
+        "Stops the thread immediately and discards what it computed"
       ],
       "answer": 1
     },
@@ -77,19 +77,19 @@
       "question": "Why does a closure passed to thread::spawn usually need move?",
       "options": [
         "The thread may outlive the function, so it must own the data it uses",
-        "move makes the thread run faster",
-        "Threads can only use numbers"
+        "move copies the data, so the thread runs faster than it would with a plain borrow",
+        "Rust only lets threads use data that was copied to the heap first"
       ],
       "answer": 0
     },
     {
       "question": "What is special about thread::scope?",
       "options": [
-        "It makes threads run in order",
-        "Threads started inside it may borrow local variables, because they are all joined before the scope ends",
-        "It lets you skip join() and unwrap()"
+        "It runs the threads one after another, so that they can never overlap in time on any core",
+        "It lets threads outlive main, because the scope keeps them alive after it",
+        "Its threads can borrow local variables, because all are joined before it ends"
       ],
-      "answer": 1
+      "answer": 2
     }
   ]
 }
