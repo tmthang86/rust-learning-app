@@ -1,0 +1,9 @@
+// Installed as /etc/apt/apt.conf.d/52unattended-upgrades-runner
+// Ubuntu security updates only (the default origins in
+// 50unattended-upgrades). Docker, containerd, runsc and Caddy come from
+// other repositories and are never upgraded automatically.
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+Unattended-Upgrade::Automatic-Reboot "true";
+// The VM clock is UTC. 20:00 UTC is 03:00 in Vietnam (UTC+7).
+Unattended-Upgrade::Automatic-Reboot-Time "20:00";

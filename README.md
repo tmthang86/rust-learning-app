@@ -39,3 +39,7 @@ flutter test
 
 Without `RUNNER_URL` the app works but the Run button explains that running
 code isn't set up. See [runner/README.md](runner/README.md) to start the runner.
+To put the runner online and build the app against it, follow
+[runner/deploy/README.md](runner/deploy/README.md). A production runner needs a
+Firebase App Check token, which the app sends once Firebase is set up
+(see [docs/firebase-setup.md](docs/firebase-setup.md)).

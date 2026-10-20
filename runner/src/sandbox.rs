@@ -42,6 +42,29 @@ pub struct RunOutput {
     /// Compiler warnings, when compiling succeeded.
     pub warnings: String,
     pub duration_ms: u64,
+    /// The job was stopped for using too much memory. Not sent to clients.
+    #[serde(skip)]
+    pub mem_limit: bool,
+    /// The sandbox gave a real compiler verdict (the program started, or the
+    /// compiler reported errors), which proves it is working. Server health
+    /// counts only these. Not sent to clients.
+    #[serde(skip)]
+    pub compiler_verdict: bool,
+}
+
+impl RunOutput {
+    fn new(success: bool, stage: Stage, duration_ms: u64) -> Self {
+        Self {
+            success,
+            stage,
+            stdout: String::new(),
+            stderr: String::new(),
+            warnings: String::new(),
+            duration_ms,
+            mem_limit: false,
+            compiler_verdict: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -55,9 +78,19 @@ pub struct Limits {
     /// Maximum bytes kept from each of stdout, stderr and warnings.
     pub max_output: usize,
     pub memory_mb: u32,
+    /// Size of the writable `/tmp` tmpfs. Its pages count toward the
+    /// container's memory, so it also shrinks the program's address-space cap.
+    pub tmpfs_mb: u32,
     pub cpus: f32,
     pub max_pids: u32,
 }
+
+/// Slack kept between the program's address-space cap and the container's
+/// memory limit, on top of a full tmpfs (sandbox overhead). See
+/// [`Limits::program_vmem_kb`].
+const SANDBOX_OVERHEAD_MB: u32 = 64;
+/// The smallest address space a learner program may get.
+const MIN_PROGRAM_MB: u32 = 128;
 
 impl Default for Limits {
     fn default() -> Self {
@@ -67,6 +100,7 @@ impl Default for Limits {
             job_timeout: Duration::from_secs(20),
             max_output: 64 * 1024,
             memory_mb: 512,
+            tmpfs_mb: 128,
             cpus: 1.0,
             max_pids: 64,
         }
@@ -89,10 +123,29 @@ impl Limits {
                 "job timeout must exceed compile + run timeouts by at least 2 seconds".into(),
             );
         }
-        if self.max_output == 0 || self.memory_mb < 64 || self.max_pids < 8 || self.cpus <= 0.0 {
-            return Err("output, memory (>= 64 MB), pids (>= 8) and cpus must be positive".into());
+        if self.max_output == 0 || self.max_pids < 8 || self.cpus <= 0.0 || self.tmpfs_mb < 8 {
+            return Err("output, tmpfs (>= 8 MB), pids (>= 8) and cpus must be positive".into());
+        }
+        let floor = self.tmpfs_mb + SANDBOX_OVERHEAD_MB + MIN_PROGRAM_MB;
+        if self.memory_mb < floor {
+            return Err(format!(
+                "memory must be at least {floor} MB (tmpfs {} MB + {SANDBOX_OVERHEAD_MB} MB overhead + {MIN_PROGRAM_MB} MB for the program)",
+                self.tmpfs_mb
+            ));
         }
         Ok(())
+    }
+
+    /// Address-space cap for the learner's program, in KB (for `ulimit -v`):
+    /// `memory - tmpfs - 64 MB`. Pages in the `/tmp` tmpfs count toward the
+    /// sandbox's memory but not toward the program's address space, so the
+    /// cap leaves room for a full tmpfs plus sandbox overhead. 320 MB at the
+    /// defaults. Only the program is capped, never rustc.
+    pub fn program_vmem_kb(&self) -> u64 {
+        let mb = self
+            .memory_mb
+            .saturating_sub(self.tmpfs_mb + SANDBOX_OVERHEAD_MB);
+        u64::from(mb) * 1024
     }
 }
 
@@ -102,25 +155,44 @@ const COMPILE_KILLED: i32 = 202;
 const TIMED_OUT: i32 = 124;
 /// 128 + SIGKILL: out of memory, or the program ignored the polite stop.
 const KILLED: i32 = 137;
+/// 128 + SIGABRT: the program aborted, e.g. after a failed allocation.
+const ABORTED: i32 = 134;
+/// What Rust's allocator prints before aborting when an allocation fails.
+const ALLOC_FAILED: &str = "memory allocation of";
 /// 128 + SIGXCPU: the program used up its CPU-time limit.
 const CPU_LIMIT: i32 = 152;
 /// Most compiler output kept before the program starts (warnings are capped
 /// again when reported); past this the job counts as a compile failure.
 const MAX_COMPILER_OUTPUT: usize = 4 * 1024 * 1024;
 
+/// Written to stdout right before `rustc` starts. Learner code can't print
+/// before it, so its presence proves the job script itself got going. A job
+/// without it never started (docker CLI killed, daemon restart, ...) and is a
+/// server error, not the learner's.
+const COMPILE_MARKER: &[u8] = b"\x01RR-COMPILE\n";
+
 /// Written to stdout and stderr once compiling succeeds, right before the
 /// learner's program starts. The program can't take back what was written
-/// before it ran, so its presence on stdout proves the compile step passed,
-/// and on stderr it separates compiler warnings from the program's output.
-const MARKER: &[u8] = b"\x01RR-RUN\n";
+/// before it ran, so its presence on stdout (right after the compile marker)
+/// proves the compile step passed, and on stderr it separates compiler
+/// warnings from the program's output.
+const RUN_MARKER: &[u8] = b"\x01RR-RUN\n";
+
+/// What successful stdout starts with.
+fn both_markers() -> Vec<u8> {
+    [COMPILE_MARKER, RUN_MARKER].concat()
+}
 
 /// Shell script run for every job. The source code arrives on stdin.
 /// `$1` is the compile timeout, `$2` the run timeout (seconds), `$3` a
-/// writable work dir. The program replaces the shell with `exec`, so the
-/// job's exit code is the program's (or `timeout`'s) own.
+/// writable work dir, `$4` the program's address-space cap in KB. The program
+/// replaces the shell with `exec`, so the job's exit code is the program's
+/// (or `timeout`'s) own. The cap is set after compiling, so rustc is bound
+/// only by the container's memory limit.
 const JOB_SCRIPT: &str = r#"
-csecs="$1"; secs="$2"; work="$3"
+csecs="$1"; secs="$2"; work="$3"; vmem="$4"
 cat > "$work/main.rs"
+printf '\001RR-COMPILE\n'
 timeout --signal=KILL "$csecs" rustc --edition 2024 -C opt-level=1 -C overflow-checks=on \
   -o "$work/prog" "$work/main.rs" 1>&2
 rc=$?
@@ -134,6 +206,9 @@ printf '\001RR-RUN\n' >&2
 # The soft limit sends SIGXCPU; the hard limit a second later sends SIGKILL.
 ulimit -t "$((secs + 2))"
 ulimit -S -t "$((secs + 1))"
+# Cap the program's address space (KB). Under gVisor the container's memory
+# limit alone kills nondeterministically; this makes allocation fail cleanly.
+ulimit -v "$vmem"
 exec timeout --signal=TERM --kill-after=1 "$secs" "$work/prog" </dev/null
 "#;
 
@@ -155,10 +230,20 @@ pub struct DockerSandbox {
 impl Sandbox {
     pub fn docker(image: impl Into<String>, runtime: Option<String>) -> Self {
         let id = uuid::Uuid::new_v4().simple().to_string();
+        Self::docker_with_prefix(image, runtime, format!("rr-{}-", &id[..8]))
+    }
+
+    /// Like [`Sandbox::docker`] with an explicit container name prefix, so a
+    /// test run can check for leftovers of its own containers only.
+    pub fn docker_with_prefix(
+        image: impl Into<String>,
+        runtime: Option<String>,
+        prefix: impl Into<String>,
+    ) -> Self {
         Sandbox::Docker(DockerSandbox {
             image: image.into(),
             runtime,
-            prefix: format!("rr-{}-", &id[..8]),
+            prefix: prefix.into(),
             live: Arc::default(),
         })
     }
@@ -205,15 +290,11 @@ impl Sandbox {
                 let _ = child.start_kill();
                 guard.remove_now().await;
                 return Ok(RunOutput {
-                    success: false,
-                    stage: Stage::Timeout,
-                    stdout: String::new(),
                     stderr: format!(
                         "Time limit exceeded: the job took longer than {} seconds.",
                         limits.job_timeout.as_secs()
                     ),
-                    warnings: String::new(),
-                    duration_ms,
+                    ..RunOutput::new(false, Stage::Timeout, duration_ms)
                 });
             }
         };
@@ -270,6 +351,32 @@ async fn docker_quiet(args: &[&str]) -> Option<Vec<u8>> {
         Ok(Ok(out)) if out.status.success() => Some(out.stdout),
         _ => None,
     }
+}
+
+/// Names of the container runtimes the Docker daemon has registered, from
+/// `docker info`. Used to insist on gVisor (`runsc`) in production.
+pub async fn docker_runtimes() -> Result<Vec<String>, String> {
+    let out = docker_quiet(&["info", "--format", "{{json .Runtimes}}"])
+        .await
+        .ok_or("could not run `docker info`; is the Docker daemon reachable?")?;
+    let value: serde_json::Value = serde_json::from_slice(&out)
+        .map_err(|e| format!("could not read the runtimes from `docker info`: {e}"))?;
+    Ok(value
+        .as_object()
+        .map(|o| o.keys().cloned().collect())
+        .unwrap_or_default())
+}
+
+/// The Docker server version, for the startup log. Best effort.
+pub async fn docker_server_version() -> Option<String> {
+    let out = docker_quiet(&["version", "--format", "{{.Server.Version}}"]).await?;
+    Some(String::from_utf8_lossy(&out).trim().to_string())
+}
+
+/// The sandbox image's ID (its content digest), for the startup log. Best effort.
+pub async fn docker_image_id(image: &str) -> Option<String> {
+    let out = docker_quiet(&["image", "inspect", "--format", "{{.Id}}", image]).await?;
+    Some(String::from_utf8_lossy(&out).trim().to_string())
 }
 
 /// Removes every job container left by any earlier run of the server.
@@ -331,7 +438,11 @@ impl DockerSandbox {
             .args(["--cpus", &limits.cpus.to_string()])
             .args(["--pids-limit", &limits.max_pids.to_string()])
             .args(["--ulimit", "core=0"])
-            .args(["--read-only", "--tmpfs", "/tmp:rw,exec,size=128m,mode=1777"])
+            .args([
+                "--read-only",
+                "--tmpfs",
+                &format!("/tmp:rw,exec,size={}m,mode=1777", limits.tmpfs_mb),
+            ])
             .args(["--cap-drop", "ALL", "--security-opt", "no-new-privileges"])
             .args(["--user", "65534:65534"]);
         if let Some(runtime) = &self.runtime {
@@ -341,7 +452,8 @@ impl DockerSandbox {
             .args(["bash", "-c", JOB_SCRIPT, "job"])
             .arg(limits.compile_timeout.as_secs().to_string())
             .arg(limits.run_timeout.as_secs().to_string())
-            .arg("/tmp");
+            .arg("/tmp")
+            .arg(limits.program_vmem_kb().to_string());
         self.live.lock().unwrap().insert(name.clone());
         (
             cmd,
@@ -359,7 +471,8 @@ fn local_command(dir: &std::path::Path, limits: &Limits) -> Command {
     cmd.args(["-c", JOB_SCRIPT, "job"])
         .arg(limits.compile_timeout.as_secs().to_string())
         .arg(limits.run_timeout.as_secs().to_string())
-        .arg(dir);
+        .arg(dir)
+        .arg(limits.program_vmem_kb().to_string());
     // Own process group, so the whole job can be killed at once.
     #[cfg(unix)]
     cmd.process_group(0);
@@ -484,8 +597,10 @@ async fn collect(
         let _ = stdin.shutdown().await;
     });
 
-    // stderr carries compiler warnings and the program's stderr.
-    let out_cap = limits.max_output + MARKER.len();
+    // stdout starts with both markers; stderr carries compiler warnings and
+    // the program's stderr.
+    let prefix = both_markers();
+    let out_cap = limits.max_output + prefix.len();
 
     // The run timer starts when the program does (the marker on stdout). It
     // backs up the in-container `timeout`, which the program could freeze.
@@ -502,7 +617,7 @@ async fn collect(
     let mut out_task: ReadTask = Some(tokio::spawn(read_capped(
         child.stdout.take().expect("stdout"),
         out_cap,
-        Some(started_tx),
+        Some((prefix, started_tx)),
     )));
     let mut err_task: ReadTask = Some(tokio::spawn(read_stderr(
         child.stderr.take().expect("stderr"),
@@ -581,7 +696,7 @@ async fn finish(task: &mut ReadTask) -> Vec<u8> {
 async fn read_capped<R: AsyncRead + Unpin>(
     mut reader: R,
     cap: usize,
-    mut started: Option<tokio::sync::oneshot::Sender<()>>,
+    mut started: Option<(Vec<u8>, tokio::sync::oneshot::Sender<()>)>,
 ) -> std::io::Result<(Vec<u8>, bool)> {
     let mut buf = Vec::new();
     let mut chunk = [0u8; 8192];
@@ -591,11 +706,15 @@ async fn read_capped<R: AsyncRead + Unpin>(
             return Ok((buf, false));
         }
         buf.extend_from_slice(&chunk[..n]);
-        if buf.len() >= MARKER.len()
-            && let Some(tx) = started.take()
-            && buf.starts_with(MARKER)
+        // Once enough has arrived to tell, the run timer starts only if
+        // stdout begins with both markers (the program is about to run).
+        if let Some((prefix, _)) = &started
+            && buf.len() >= prefix.len()
         {
-            let _ = tx.send(());
+            let (prefix, tx) = started.take().expect("checked above");
+            if buf.starts_with(&prefix) {
+                let _ = tx.send(());
+            }
         }
         if buf.len() > cap {
             buf.truncate(cap);
@@ -622,9 +741,9 @@ async fn read_stderr<R: AsyncRead + Unpin>(
         }
         buf.extend_from_slice(&chunk[..n]);
         if program_start.is_none() {
-            let from = searched.saturating_sub(MARKER.len() - 1);
-            if let Some(i) = find(&buf[from..], MARKER) {
-                program_start = Some(from + i + MARKER.len());
+            let from = searched.saturating_sub(RUN_MARKER.len() - 1);
+            if let Some(i) = find(&buf[from..], RUN_MARKER) {
+                program_start = Some(from + i + RUN_MARKER.len());
             } else {
                 searched = buf.len();
                 if buf.len() > MAX_COMPILER_OUTPUT {
@@ -642,48 +761,73 @@ async fn read_stderr<R: AsyncRead + Unpin>(
     }
 }
 
+/// Turns what the job script produced into a result. Returns `Err` when the
+/// job never got going (a server problem, not the learner's).
 fn interpret(c: Collected, limits: &Limits, duration_ms: u64) -> std::io::Result<RunOutput> {
     let max = limits.max_output;
-    let compiled = c.stdout.starts_with(MARKER);
 
-    if !compiled {
-        let stderr = text(&c.stderr, max, c.overflow);
-        let (stage, stderr) = match c.code {
-            _ if c.overflow => (Stage::Compile, stderr),
-            Some(COMPILE_FAILED) => (Stage::Compile, stderr),
-            Some(COMPILE_KILLED) => (
-                Stage::Timeout,
-                format!(
-                    "{stderr}\nCompiling was stopped: it took longer than {} seconds or used too much memory.",
-                    limits.compile_timeout.as_secs()
-                ),
-            ),
-            // Anything else (Docker's own 125-127 included) means the job
-            // never got going: a server problem, not the learner's.
-            other => {
-                return Err(std::io::Error::other(format!(
-                    "job failed before compiling (exit {other:?}): {}",
-                    String::from_utf8_lossy(&c.stderr[..c.stderr.len().min(500)])
-                )));
-            }
-        };
-        return Ok(RunOutput {
-            success: false,
-            stage,
-            stdout: String::new(),
-            stderr: stderr.trim().to_string(),
-            warnings: String::new(),
-            duration_ms,
-        });
+    // Without the compile-start marker the script never ran: the docker CLI
+    // was killed, dockerd restarted, the container was swept, the sentry
+    // crashed, or Docker itself failed (125-127). Never the learner's fault,
+    // whatever the exit code (137 included).
+    if !c.stdout.starts_with(COMPILE_MARKER) {
+        // Compiler output can echo learner code, so only the exit code is in
+        // the error; a few bytes of stderr are for debugging at `debug` only.
+        tracing::debug!(
+            "failed job stderr (first 200 bytes): {}",
+            String::from_utf8_lossy(&c.stderr[..c.stderr.len().min(200)])
+        );
+        return Err(std::io::Error::other(format!(
+            "job failed before compiling (exit {:?})",
+            c.code
+        )));
     }
 
-    let stdout = &c.stdout[MARKER.len()..];
-    let (warnings, program_err) = match find(&c.stderr, MARKER) {
-        Some(i) => (&c.stderr[..i], &c.stderr[i + MARKER.len()..]),
+    let after_compile = &c.stdout[COMPILE_MARKER.len()..];
+    if !after_compile.starts_with(RUN_MARKER) {
+        // Compiling did not succeed (or the container died while it ran).
+        let stderr = text(&c.stderr, max, c.overflow);
+        let mut out = RunOutput::new(false, Stage::Compile, duration_ms);
+        match c.code {
+            _ if c.overflow => out.stderr = stderr,
+            Some(COMPILE_FAILED) => {
+                out.stderr = stderr;
+                out.compiler_verdict = true;
+            }
+            Some(COMPILE_KILLED) => {
+                out.stage = Stage::Timeout;
+                out.stderr = format!(
+                    "{stderr}\nCompiling was stopped: it took longer than {} seconds or used too much memory.",
+                    limits.compile_timeout.as_secs()
+                );
+            }
+            // The whole container was killed while compiling: out of memory.
+            Some(KILLED) => {
+                out.mem_limit = true;
+                out.stderr = format!("{stderr}\nCompiling was stopped: it used too much memory.");
+            }
+            other => {
+                tracing::debug!(
+                    "failed compile stderr (first 200 bytes): {}",
+                    String::from_utf8_lossy(&c.stderr[..c.stderr.len().min(200)])
+                );
+                return Err(std::io::Error::other(format!(
+                    "job failed while compiling (exit {other:?})"
+                )));
+            }
+        }
+        out.stderr = out.stderr.trim().to_string();
+        return Ok(out);
+    }
+
+    let stdout = &after_compile[RUN_MARKER.len()..];
+    let (warnings, program_err) = match find(&c.stderr, RUN_MARKER) {
+        Some(i) => (&c.stderr[..i], &c.stderr[i + RUN_MARKER.len()..]),
         None => (&c.stderr[..], &[][..]),
     };
     let stdout = text(stdout, max, c.overflow && stdout.len() >= max);
     let mut stderr = text(program_err, max, c.overflow && program_err.len() >= max);
+    let mut mem_limit = false;
 
     let (success, stage) = if c.timed_out {
         stderr.push_str(&format!(
@@ -704,7 +848,15 @@ fn interpret(c: Collected, limits: &Limits, duration_ms: u64) -> std::io::Result
                 ));
                 (false, Stage::Timeout)
             }
+            // The address-space cap made an allocation fail: Rust prints
+            // "memory allocation of N bytes failed" and aborts (SIGABRT).
+            Some(ABORTED) if find(program_err, ALLOC_FAILED.as_bytes()).is_some() => {
+                mem_limit = true;
+                stderr.push_str("\nThe program was stopped: it used too much memory.");
+                (false, Stage::Run)
+            }
             Some(KILLED) => {
+                mem_limit = true;
                 stderr.push_str(
                     "\nThe program was stopped: it used too much memory or didn't stop at the time limit.",
                 );
@@ -721,6 +873,8 @@ fn interpret(c: Collected, limits: &Limits, duration_ms: u64) -> std::io::Result
         stderr: stderr.trim_start().to_string(),
         warnings: text(warnings, max, false).trim().to_string(),
         duration_ms,
+        mem_limit,
+        compiler_verdict: true,
     })
 }
 
@@ -735,4 +889,193 @@ fn text(bytes: &[u8], max: usize, truncated: bool) -> String {
         s.push_str("\n[output truncated]");
     }
     s
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn collected(stdout: &[u8], stderr: &[u8], code: Option<i32>) -> Collected {
+        Collected {
+            stdout: stdout.to_vec(),
+            stderr: stderr.to_vec(),
+            overflow: false,
+            timed_out: false,
+            code,
+        }
+    }
+
+    fn interp(c: Collected) -> std::io::Result<RunOutput> {
+        interpret(c, &Limits::default(), 5)
+    }
+
+    #[test]
+    fn no_markers_is_a_server_error_even_for_137() {
+        for code in [Some(137), Some(0), Some(125), Some(201), None] {
+            let c = collected(b"", b"docker: something", code);
+            assert!(interp(c).is_err(), "exit {code:?}");
+        }
+    }
+
+    #[test]
+    fn run_marker_without_compile_marker_cannot_fake_a_stage() {
+        // Learner code that prints the run marker by itself must not count.
+        let c = collected(RUN_MARKER, b"", Some(0));
+        assert!(interp(c).is_err());
+        let c = collected(b"x\x01RR-COMPILE\n", b"", Some(0));
+        assert!(interp(c).is_err());
+    }
+
+    #[test]
+    fn error_does_not_leak_stderr() {
+        let c = collected(b"", b"secret learner code fn main()", Some(137));
+        let msg = interp(c).unwrap_err().to_string();
+        assert!(msg.contains("137"), "{msg}");
+        assert!(!msg.contains("secret"), "{msg}");
+    }
+
+    #[test]
+    fn compile_marker_and_137_is_a_compile_memory_stop() {
+        let c = collected(COMPILE_MARKER, b"partial compiler output", Some(137));
+        let out = interp(c).unwrap();
+        assert!(!out.success);
+        assert_eq!(out.stage, Stage::Compile);
+        assert!(
+            out.stderr.starts_with("partial compiler output"),
+            "{}",
+            out.stderr
+        );
+        assert!(
+            out.stderr
+                .contains("Compiling was stopped: it used too much memory.")
+        );
+        assert!(out.mem_limit);
+        assert!(
+            !out.compiler_verdict,
+            "a host-looking kill must not refresh liveness"
+        );
+    }
+
+    #[test]
+    fn compile_error_counts_for_liveness() {
+        let c = collected(COMPILE_MARKER, b"error[E0308]: mismatched types", Some(201));
+        let out = interp(c).unwrap();
+        assert_eq!(out.stage, Stage::Compile);
+        assert!(!out.success && !out.mem_limit);
+        assert!(out.stderr.contains("mismatched types"));
+        assert!(out.compiler_verdict);
+    }
+
+    #[test]
+    fn compile_timeout_does_not_count_for_liveness() {
+        let c = collected(COMPILE_MARKER, b"", Some(202));
+        let out = interp(c).unwrap();
+        assert_eq!(out.stage, Stage::Timeout);
+        assert!(!out.compiler_verdict && !out.mem_limit);
+    }
+
+    #[test]
+    fn compile_marker_and_other_exit_is_a_server_error() {
+        for code in [Some(0), Some(1), Some(125), Some(139), None] {
+            let c = collected(COMPILE_MARKER, b"", code);
+            assert!(interp(c).is_err(), "exit {code:?}");
+        }
+    }
+
+    #[test]
+    fn failed_allocation_is_a_memory_stop() {
+        let stdout = both_markers();
+        let c = collected(
+            &stdout,
+            b"\x01RR-RUN\nmemory allocation of 1 bytes failed\n",
+            Some(134),
+        );
+        let out = interp(c).unwrap();
+        assert!(!out.success);
+        assert_eq!(out.stage, Stage::Run);
+        assert!(
+            out.stderr
+                .contains("The program was stopped: it used too much memory.")
+        );
+        assert!(out.mem_limit);
+        assert!(out.compiler_verdict);
+    }
+
+    #[test]
+    fn plain_abort_is_a_normal_failed_run() {
+        let stdout = both_markers();
+        let c = collected(&stdout, b"\x01RR-RUN\nsome other abort\n", Some(134));
+        let out = interp(c).unwrap();
+        assert!(!out.success);
+        assert_eq!(out.stage, Stage::Run);
+        assert!(!out.stderr.contains("too much memory"));
+        assert!(!out.mem_limit);
+        assert!(out.compiler_verdict);
+    }
+
+    #[test]
+    fn successful_run_strips_both_markers() {
+        let mut stdout = both_markers();
+        stdout.extend_from_slice(b"hello\n");
+        let c = collected(&stdout, b"warning: x\n\x01RR-RUN\n", Some(0));
+        let out = interp(c).unwrap();
+        assert!(out.success);
+        assert_eq!(out.stage, Stage::Run);
+        assert_eq!(out.stdout, "hello\n");
+        assert_eq!(out.warnings, "warning: x");
+        assert!(out.compiler_verdict && !out.mem_limit);
+    }
+
+    #[test]
+    fn killed_program_is_reported_as_memory() {
+        let stdout = both_markers();
+        let c = collected(&stdout, b"\x01RR-RUN\n", Some(137));
+        let out = interp(c).unwrap();
+        assert_eq!(out.stage, Stage::Run);
+        assert!(out.stderr.contains("too much memory"));
+        assert!(out.mem_limit);
+    }
+
+    #[test]
+    fn program_timeout_and_cpu_limit() {
+        let stdout = both_markers();
+        for code in [124, 152] {
+            let c = collected(&stdout, b"\x01RR-RUN\n", Some(code));
+            let out = interp(c).unwrap();
+            assert_eq!(out.stage, Stage::Timeout, "exit {code}");
+            assert!(out.compiler_verdict && !out.mem_limit);
+        }
+    }
+
+    #[test]
+    fn program_memory_cap_follows_the_formula() {
+        let l = Limits::default();
+        assert_eq!(l.program_vmem_kb(), 320 * 1024);
+        let l = Limits {
+            memory_mb: 1024,
+            tmpfs_mb: 256,
+            ..Limits::default()
+        };
+        assert_eq!(l.program_vmem_kb(), (1024 - 256 - 64) * 1024);
+    }
+
+    #[test]
+    fn memory_floor_follows_tmpfs() {
+        assert!(Limits::default().validate().is_ok());
+        let at_floor = Limits {
+            memory_mb: 128 + 64 + 128,
+            ..Limits::default()
+        };
+        assert!(at_floor.validate().is_ok());
+        let below = Limits {
+            memory_mb: 128 + 64 + 127,
+            ..Limits::default()
+        };
+        assert!(below.validate().is_err());
+        let big_tmpfs = Limits {
+            tmpfs_mb: 384,
+            ..Limits::default()
+        };
+        assert!(big_tmpfs.validate().is_err());
+    }
 }

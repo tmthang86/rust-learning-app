@@ -47,6 +47,13 @@ Google account and an Apple developer account.
    the web). It explains what is deleted and lets a signed-in person delete
    their account with the same steps as the app.
 
+7. **App Check for the code runner (only if you run your own runner).** The
+   production runner accepts requests only from your genuine app, proved with
+   Firebase App Check. Register each app and its debug tokens as described in
+   [runner/deploy/README.md](../runner/deploy/README.md) (steps 4 to 6).
+   Without Firebase the app still works, but it sends no token, so only a
+   development runner accepts its code runs.
+
 ## How sync works
 
 - Data lives in `users/{uid}`: `track`, `completedLessons`, `updatedAt`.
