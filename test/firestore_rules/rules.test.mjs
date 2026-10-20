@@ -39,6 +39,12 @@ const merge = { merge: true };
 const seed = (data) =>
   env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'users', 'u1'), data));
 
+/** Writes the tombstone the Cloud Function leaves when an account is deleted. */
+const tombstone = () =>
+  env.withSecurityRulesDisabled((ctx) =>
+    setDoc(doc(ctx.firestore(), 'deletedUsers', 'u1'), { deletedAt: new Date(), expireAt: new Date() }));
+const tomb = (db = me) => doc(db, 'deletedUsers', 'u1');
+
 const cases = [
   ['owner sets track', true, () => setDoc(mine(), { track: 'fast', updatedAt: now }, merge)],
   ['owner adds lessons', true, () =>
@@ -87,11 +93,49 @@ const cases = [
     await seed({ legacy: true, completedLessons: ['a'] });
     return setDoc(mine(), { completedLessons: ['a'], updatedAt: now });
   }],
+
+  // Tombstone: the account was deleted but a device still holds a token.
+  ['tombstone blocks owner create', false, async () => {
+    await tombstone();
+    return setDoc(mine(), { track: 'fast', updatedAt: now });
+  }],
+  ['tombstone blocks owner update', false, async () => {
+    await seed({ completedLessons: ['a'] });
+    await tombstone();
+    return setDoc(mine(), { completedLessons: arrayUnion('b'), updatedAt: now }, merge);
+  }],
+  ['tombstone still lets owner delete', true, async () => {
+    await seed({ completedLessons: ['a'] });
+    await tombstone();
+    return deleteDoc(mine());
+  }],
+  ['tombstone still lets owner read', true, async () => {
+    await seed({ completedLessons: ['a'] });
+    await tombstone();
+    return getDoc(mine());
+  }],
+  ["another user's tombstone does not block this one", true, async () => {
+    await env.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), 'deletedUsers', 'u2'), { expireAt: new Date() }));
+    return setDoc(mine(), { track: 'fast', updatedAt: now });
+  }],
+  ['client writes a tombstone', false, () => setDoc(tomb(), { deletedAt: now })],
+  ['client reads a tombstone', false, async () => {
+    await tombstone();
+    return getDoc(tomb());
+  }],
+  ['client deletes a tombstone', false, async () => {
+    await tombstone();
+    return deleteDoc(tomb());
+  }],
 ];
 
 let failed = 0;
 for (const [name, allowed, run] of cases) {
   try {
+    // Each case starts from an empty database, so a seeded tombstone or
+    // document can't leak into the next one.
+    await env.clearFirestore();
     await (allowed ? assertSucceeds(run()) : assertFails(run()));
     console.log(`ok    ${allowed ? 'allows' : 'denies'}: ${name}`);
   } catch (e) {

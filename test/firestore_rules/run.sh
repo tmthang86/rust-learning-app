@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # Tests firestore.rules against the Firestore emulator.
-# Needs Node 18+ and Java 11+. The first run downloads the emulator.
+# Needs Node 22 and Java 21. The first run downloads the emulator.
 #
 # npm packages are installed in a cache folder outside the repository, so
 # node_modules never lands in the Dart project (flutter analyze would scan
