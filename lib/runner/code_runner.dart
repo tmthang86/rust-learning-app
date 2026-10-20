@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 /// How far a run got.
@@ -162,14 +163,25 @@ class HttpCodeRunner implements CodeRunner {
   /// answers errors with JSON `{"error": "...", "code": "..."}`, but
   /// proxies and load balancers in front of it may answer with plain text
   /// or HTML.
-  static String errorMessage(http.Response response) {
+  ///
+  /// The 401 text depends on where the app runs: a debug build, the web and
+  /// each store need different advice. [debug], [web] and [platform] default
+  /// to the real environment; tests pass them.
+  static String errorMessage(
+    http.Response response, {
+    bool debug = kDebugMode,
+    bool web = kIsWeb,
+    TargetPlatform? platform,
+  }) {
     final status = response.statusCode;
     final wait = _retryAfterSeconds(response);
     switch (status) {
       case 401:
-        return "This copy of the app couldn't be verified, so code can't run "
-            'right now. Make sure the app is up to date (from the App Store '
-            'or Google Play) and try again.';
+        return _unverifiedMessage(
+          debug: debug,
+          web: web,
+          platform: platform ?? defaultTargetPlatform,
+        );
       case 403:
         return "This version of the app can't run code. Please update the app.";
       case 413:
@@ -192,6 +204,31 @@ class HttpCodeRunner implements CodeRunner {
     if (fromServer != null) return fromServer;
     if (status == 408) return 'The code runner took too long to answer.';
     return 'The code runner had a problem (error $status). Please try again.';
+  }
+
+  static String _unverifiedMessage({
+    required bool debug,
+    required bool web,
+    required TargetPlatform platform,
+  }) {
+    const start = "This copy of the app couldn't be verified, so code can't "
+        'run right now. ';
+    if (debug) {
+      return '${start}This is a debug build: add its App Check debug token in '
+          'the Firebase console (App Check, Apps, Manage debug tokens) and '
+          'try again.';
+    }
+    if (web) return '${start}Reload the page and try again.';
+    switch (platform) {
+      case TargetPlatform.iOS:
+        return '${start}Make sure the app is up to date (from the App Store) '
+            'and try again.';
+      case TargetPlatform.android:
+        return '${start}Make sure the app is up to date (from Google Play) '
+            'and try again.';
+      default:
+        return '${start}Make sure the app is up to date and try again.';
+    }
   }
 
   static String _busyMessage(int? wait) => wait != null

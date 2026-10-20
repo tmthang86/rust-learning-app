@@ -1,7 +1,12 @@
 // Installed as /etc/apt/apt.conf.d/52unattended-upgrades-runner
-// Ubuntu security updates only (the default origins in
-// 50unattended-upgrades). Docker, containerd, runsc and Caddy come from
-// other repositories and are never upgraded automatically.
+// Ubuntu security updates (the default origins in 50unattended-upgrades)
+// plus Caddy from its own repository. Caddy faces the internet and often
+// ships patch releases; upgrading it restarts it for about a second.
+// Docker, containerd and runsc are pinned and held: they are only changed by
+// `push.sh --upgrade-packages`.
+Unattended-Upgrade::Origins-Pattern {
+	"site=dl.cloudsmith.io";
+};
 APT::Periodic::Update-Package-Lists "1";
 APT::Periodic::Unattended-Upgrade "1";
 Unattended-Upgrade::Automatic-Reboot "true";

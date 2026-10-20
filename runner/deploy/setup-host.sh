@@ -6,8 +6,10 @@
 #
 # It installs the pinned Docker and gVisor packages, the Docker daemon
 # settings, Caddy, the service user, journald and unattended-upgrades
-# settings and the systemd unit. It does not start the runner: that happens
-# in install.sh once there is a release. It ends with `smoke.sh --host-only`.
+# settings and the systemd unit. On Oracle Cloud it also opens ports 80/443 in
+# the VM's firewall, blocks the metadata service for the runner's user and
+# turns off SSH passwords. It does not start the runner: that happens in
+# install.sh once there is a release. It ends with `smoke.sh --host-only`.
 set -euo pipefail
 
 DEPLOY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,26 +19,35 @@ DEPLOY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$DEPLOY_DIR/lib.sh"
 
 require_root
+take_lock
 
-[[ "$(uname -m)" == x86_64 ]] || die "this setup is for x86_64 machines"
 # shellcheck disable=SC1091
 . /etc/os-release
 [[ ${ID:-} == ubuntu && ${VERSION_CODENAME:-} == noble ]] \
   || die "this setup is for Ubuntu 24.04 (noble), found ${PRETTY_NAME:-unknown}"
 
-log "== 1/9 Base packages"
+log "== Host: $HOST_PROVIDER, CPU $ARCH"
+
+log "== 1/10 Base packages"
 apt_get update
 apt_get install --no-install-recommends \
   ca-certificates curl gnupg binutils jq unattended-upgrades
+if [[ $HOST_PROVIDER == oracle ]]; then
+  # Answer the "save current rules?" question before the package asks it:
+  # saved rules would include Docker's chains.
+  echo 'iptables-persistent iptables-persistent/autosave_v4 boolean false' | debconf-set-selections
+  echo 'iptables-persistent iptables-persistent/autosave_v6 boolean false' | debconf-set-selections
+  apt_get install --no-install-recommends iptables iptables-persistent
+fi
 
-log "== 2/9 Docker $DOCKER_SEMVER (pinned, held)"
+log "== 2/10 Docker $DOCKER_SEMVER (pinned, held)"
 docker_repo_setup
 install_docker_packages
 
-log "== 3/9 Docker daemon settings"
+log "== 3/10 Docker daemon settings"
 write_daemon_json
 
-log "== 4/9 gVisor runsc $RUNSC_VERSION (pinned, held)"
+log "== 4/10 gVisor runsc $RUNSC_VERSION (pinned, held)"
 # The .deb's postinst runs `runsc install --clobber=false` because
 # daemon.json exists now. That keeps our entry. deploy/daemon.json is written
 # in the exact format runsc writes, so the file stays byte-identical.
@@ -45,7 +56,7 @@ assert_daemon_json
 systemctl enable docker
 systemctl restart docker
 
-log "== 5/9 Caddy"
+log "== 5/10 Caddy"
 caddy_repo_setup
 apt_get update
 apt_get install --no-install-recommends caddy
@@ -57,7 +68,7 @@ fi
 systemctl enable --now caddy
 systemctl reload caddy
 
-log "== 6/9 Service user and directories"
+log "== 6/10 Service user and directories"
 if ! id rust-runner > /dev/null 2>&1; then
   useradd --system --user-group --no-create-home \
     --home-dir /nonexistent --shell /usr/sbin/nologin rust-runner
@@ -65,19 +76,29 @@ fi
 install -d -m 0755 "$BASE_DIR" "$RELEASES_DIR" "$CACHE_DIR"
 sync_tools_dir
 
-log "== 7/9 Journal and automatic security updates"
+log "== 7/10 Provider settings ($HOST_PROVIDER)"
+case $HOST_PROVIDER in
+  oracle)
+    oracle_firewall
+    oracle_ssh_hardening
+    ;;
+  gce) log "  nothing to do: the firewall is the VPC rule, the VM has no service account" ;;
+  *) log "  unknown cloud: open ports 80 and 443 yourself and keep the metadata service away from the runner" ;;
+esac
+
+log "== 8/10 Journal and automatic security updates"
 install -d -m 0755 /etc/systemd/journald.conf.d
 install -m 0644 "$DEPLOY_DIR/journald-runner.conf" /etc/systemd/journald.conf.d/runner.conf
 systemctl restart systemd-journald
 install -m 0644 "$DEPLOY_DIR/52unattended-upgrades-runner" \
   /etc/apt/apt.conf.d/52unattended-upgrades-runner
 
-log "== 8/9 systemd unit"
+log "== 9/10 systemd unit"
 install -m 0644 "$DEPLOY_DIR/rust-runner.service" /etc/systemd/system/rust-runner.service
 systemctl daemon-reload
 systemctl enable rust-runner
 
-log "== 9/9 Checks"
+log "== 10/10 Checks"
 "$DEPLOY_DIR/smoke.sh" --host-only
 
 log

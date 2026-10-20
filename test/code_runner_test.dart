@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -282,7 +283,72 @@ void main() {
       expect(auth.refreshFlags, [false, true]);
       expect(result.stage, RunStage.unavailable);
       expect(result.stderr, contains("couldn't be verified"));
-      expect(result.stderr, contains('up to date'));
+    });
+
+    group('the 401 message fits where the app runs', () {
+      String message({
+        bool debug = false,
+        bool web = false,
+        TargetPlatform platform = TargetPlatform.android,
+      }) => HttpCodeRunner.errorMessage(
+        http.Response(errorBody('app_check_invalid'), 401),
+        debug: debug,
+        web: web,
+        platform: platform,
+      );
+
+      const start = "This copy of the app couldn't be verified, so code can't "
+          'run right now. ';
+
+      test('every variant starts the same way', () {
+        for (final text in [
+          message(debug: true),
+          message(web: true),
+          message(platform: TargetPlatform.iOS),
+          message(platform: TargetPlatform.android),
+          message(platform: TargetPlatform.macOS),
+        ]) {
+          expect(text, startsWith(start));
+        }
+      });
+
+      test('a debug build is told about the debug token, not a store', () {
+        final text = message(debug: true, platform: TargetPlatform.iOS);
+        expect(text, contains('debug token'));
+        expect(text, contains('Firebase console'));
+        expect(text, isNot(contains('App Store')));
+        expect(text, isNot(contains('Google Play')));
+      });
+
+      test('the web is told to reload', () {
+        final text = message(web: true);
+        expect(text, contains('Reload the page'));
+        expect(text, isNot(contains('App Store')));
+        expect(text, isNot(contains('Google Play')));
+      });
+
+      test('iOS names the App Store and Android names Google Play', () {
+        final ios = message(platform: TargetPlatform.iOS);
+        expect(ios, contains('App Store'));
+        expect(ios, isNot(contains('Google Play')));
+        final android = message(platform: TargetPlatform.android);
+        expect(android, contains('Google Play'));
+        expect(android, isNot(contains('App Store')));
+      });
+
+      test('other platforms get store-neutral advice', () {
+        final text = message(platform: TargetPlatform.linux);
+        expect(text, contains('up to date'));
+        expect(text, isNot(contains('App Store')));
+        expect(text, isNot(contains('Google Play')));
+      });
+
+      test('the default follows the real environment (a debug build here)', () {
+        final text = HttpCodeRunner.errorMessage(
+          http.Response(errorBody('app_check_invalid'), 401),
+        );
+        expect(text, contains(kDebugMode ? 'debug token' : 'up to date'));
+      });
     });
 
     test('403 and 401 without a known code are not retried', () async {

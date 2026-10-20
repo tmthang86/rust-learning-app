@@ -47,6 +47,7 @@ trap 'rm -rf "$TMPD"' EXIT
 FAILS=0
 pass() { printf 'PASS  %s\n' "$1"; }
 skip() { printf 'SKIP  %s\n' "$1"; }
+note() { printf 'NOTE  %s\n' "$1"; }
 fail() {
   printf 'FAIL  %s\n' "$1"
   FAILS=$((FAILS + 1))
@@ -124,19 +125,60 @@ else
   fail "dmesg in a runsc container does not look like gVisor: $(head -c 200 <<< "$dmesg_out" | tr '\n' ' ')"
 fi
 
-# 6. No cloud credentials on the host
-meta_code="$(curl -s --noproxy '*' --max-time 3 -o "$TMPD"/metadata -w '%{http_code}' \
-  -H 'Metadata-Flavor: Google' \
-  http://169.254.169.254/computeMetadata/v1/instance/service-accounts/ 2> /dev/null || true)"
-meta_body="$(tr -d '[:space:]' < "$TMPD"/metadata 2> /dev/null || true)"
-rm -f "$TMPD"/metadata
-if [[ $meta_code == 000 || -z $meta_code ]]; then
-  skip "metadata server not reachable (not a Compute Engine VM?)"
-elif [[ $meta_code == 404 || ( $meta_code == 200 && -z $meta_body ) ]]; then
-  pass "the VM has no service accounts"
-else
-  fail "metadata server lists service accounts (HTTP $meta_code): $meta_body"
-fi
+# 6. The runner must not be able to reach cloud credentials
+echo "     cloud: $HOST_PROVIDER, CPU: $ARCH"
+case $HOST_PROVIDER in
+  oracle)
+    # a. Oracle's own firewall file and the live rules let web traffic in.
+    for port in 80 443; do
+      if grep -q "dport $port .*rust-runner" "${RULES_V4}" 2> /dev/null \
+        && iptables -S INPUT 2> /dev/null | grep -q -- "--dport $port .*-j ACCEPT"; then
+        pass "iptables accepts new connections on port $port (file and live)"
+      else
+        fail "iptables does not accept port $port in both $RULES_V4 and the live rules: run setup-host.sh again"
+      fi
+    done
+    # b. The runner's user cannot reach the instance metadata service. Root
+    #    can: that is what proves the test would notice an open door.
+    imds_url="http://$IMDS_ADDR/opc/v2/instance/"
+    root_code="$(curl -s --noproxy '*' --max-time 3 -o /dev/null -w '%{http_code}' \
+      -H 'Authorization: Bearer Oracle' "$imds_url" 2> /dev/null || true)"
+    user_code="$(runuser -u rust-runner -- curl -s --noproxy '*' --max-time 3 -o /dev/null -w '%{http_code}' \
+      -H 'Authorization: Bearer Oracle' "$imds_url" 2> /dev/null || true)"
+    if [[ $user_code == 000 || -z $user_code ]]; then
+      pass "the rust-runner user cannot reach the metadata service ($IMDS_ADDR)"
+    else
+      fail "the rust-runner user reached the metadata service (HTTP $user_code)"
+    fi
+    if [[ $root_code == 000 || -z $root_code ]]; then
+      note "root cannot reach the metadata service either, so the check above proves little"
+    else
+      note "root reaches the metadata service (HTTP $root_code); only the rust-runner user is blocked"
+    fi
+    legacy_code="$(curl -s --noproxy '*' --max-time 3 -o /dev/null -w '%{http_code}' \
+      "http://$IMDS_ADDR/opc/v1/instance/" 2> /dev/null || true)"
+    if [[ $legacy_code == 200 ]]; then
+      note "the old metadata endpoint (/opc/v1) still answers: create the instance with areLegacyImdsEndpointsDisabled (README, step 6)"
+    fi
+    ;;
+  gce)
+    meta_code="$(curl -s --noproxy '*' --max-time 3 -o "$TMPD"/metadata -w '%{http_code}' \
+      -H 'Metadata-Flavor: Google' \
+      http://169.254.169.254/computeMetadata/v1/instance/service-accounts/ 2> /dev/null || true)"
+    meta_body="$(tr -d '[:space:]' < "$TMPD"/metadata 2> /dev/null || true)"
+    rm -f "$TMPD"/metadata
+    if [[ $meta_code == 000 || -z $meta_code ]]; then
+      skip "metadata server not reachable"
+    elif [[ $meta_code == 404 || ( $meta_code == 200 && -z $meta_body ) ]]; then
+      pass "the VM has no service accounts"
+    else
+      fail "metadata server lists service accounts (HTTP $meta_code): $meta_body"
+    fi
+    ;;
+  *)
+    skip "unknown cloud: the metadata check is only done on Oracle and Compute Engine"
+    ;;
+esac
 
 if ((HOST_ONLY)); then
   echo

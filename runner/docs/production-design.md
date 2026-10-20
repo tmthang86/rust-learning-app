@@ -30,7 +30,7 @@ are marked *(reviewer-verified)*.
 | 1 | Hosting | One dedicated **GCE e2-medium** VM (2 shared vCPU, 4 GB, Ubuntu 24.04 LTS) in **`asia-southeast1` (Singapore)**, with the region kept as a variable. **No service account.** SSH only through IAP. 20 GB pd-balanced disk. About **US$36–40/month** (**Unverified** for Singapore). gVisor's `systrap` platform needs no nested virtualization (verified in the gVisor docs). Grow by resizing the VM first, then by adding VMs. **Cloud Run is rejected** for running rustc directly. |
 | 2 | Sandbox fix (blocker) | Under runsc, Docker's `--memory` OOM kill is nondeterministic. Add `ulimit -v` for the learner's **program only**: memory − tmpfs − 64 MB, which is 320 MB at the defaults. Add a **compile-start marker**. A kill (rc 137) after that marker and before the run marker counts as "compiling used too much memory". A 137 with no start marker stays a server error. Map rc 134 "allocation failed" to the too-much-memory message. Run the full ignored Docker suite under runsc on the VM. |
 | 3 | Auth on `/run` | **Firebase App Check is required in production.** The token arrives in the `X-Firebase-AppCheck` header and is verified in Rust: RS256, keys from `https://firebaseappcheck.googleapis.com/v1/jwks`, issuer `https://firebaseappcheck.googleapis.com/<PROJECT_NUMBER>`, audience containing `projects/<PROJECT_NUMBER>`, and `sub` in an allowlist of app IDs. **No ID tokens at launch** ([DECIDED]): `Authorization` is ignored. **No replay protection.** JWT crate: `jsonwebtoken` 11.1 (`aws_lc_rs`). |
-| 4 | Threat model | App Check **raises the cost** of abuse: an attacker needs a genuine device or browser and a fresh attestation about every hour. It is **not a hard gate**. A rooted device, a farm of real phones, or reCAPTCHA solvers get through. The real bounds are the per-IP limit, the per-token limit and the fixed capacity of one VM (2 jobs at a time, queue of 16). The worst case is "runs are slow for everyone", never a bigger bill or a host compromise. |
+| 4 | Threat model | App Check **raises the cost** of abuse: an attacker needs a genuine device or browser and a fresh attestation about every hour. It is **not a hard gate**. A rooted device, a farm of real phones, or reCAPTCHA solvers get through. The real bounds are the per-IP limit, the per-token limit and the fixed capacity of one VM (2 jobs at a time, queue of 16). The worst case is "runs are slow for everyone", never a bigger VM or a host compromise. (Network traffic out is the one cost that follows use: Oracle's free allowance is large, Google bills it, so the budget alert stays required. Responses are size-capped.) |
 | 5 | Fail-closed config | `RUNNER_ENV` defaults to `production`. In production the server refuses to start unless App Check is configured, the runtime is gVisor, CORS origins are explicit, rate limits are on, and the listen address is loopback. `RUNNER_APP_CHECK` defaults to `required` in production and `off` in development. |
 | 6 | Rate limits | In-process **`governor` 0.10** keyed token buckets. **Per App Check token** (= per device for the token's ~1 h life): 20/min with burst 10, plus 300/hour. **Per IP:** 120/min with burst 60, plus 3000/hour. Each limiter holds at most 50,000 keys. Global protection is the job semaphore plus a queue cap. Over a limit, the server answers 429 with `Retry-After`. The client IP is the rightmost `X-Forwarded-For` entry, and only when the TCP peer is Caddy (loopback). There is no per-app bucket ([DECIDED]). |
 | 7 | Edge | **Caddy** (official apt repo) on the VM. It handles automatic TLS (using the Let's Encrypt **staging** CA while testing setup), HTTP/1.1 and HTTP/2, header/body/write/idle timeouts and a 256 KB body cap, and exposes only `/run` and `/health`. **No Cloudflare and no nftables connection cap at launch.** CORS stays in the runner, with an explicit origin list, and `Retry-After` is exposed to the browser. |
@@ -41,6 +41,55 @@ are marked *(reviewer-verified)*.
 ---
 
 ## 2. Hosting
+
+### Owner decision 2026-10-20: Oracle A1 primary, GCE fallback
+
+Thang decided: the runner runs first on an **Oracle Cloud Always Free
+Ampere A1** VM (arm64). The GCE e2-medium design below stays as a **working
+fallback**. The deploy kit supports both: `PROVIDER=oracle|gce` in
+`runner/deploy/vars.sh` (or `local.env`), and the VM works out its own cloud
+and CPU. Where §1 and §7 say "GCE", "x86_64" or "IAP", read this addendum
+first. The owner guide `runner/deploy/README.md` follows it (Oracle is the
+main path, GCE an appendix).
+
+Facts the decision rests on (from the 2026-10-20 research note, with its
+own verified/unverified marks):
+
+- The A1 free quota is now **2 OCPU / 12 GB** (halved in 2026). So
+  `RUNNER_MAX_JOBS=2` and `RUNNER_MAX_QUEUED=16` stay as they are.
+- Oracle can stop an Always Free VM that is idle for 7 days (p95 CPU,
+  network and, on A1, memory all under 20 %). A runner with little traffic
+  looks idle. **Upgrade the account to Pay As You Go**: the reclaim rule
+  then does not apply, and A1 inside the free limits is still $0. Oracle
+  may refuse prepaid cards at the upgrade.
+- The **home region is permanent**. Singapore (`ap-singapore-1`) is nearest
+  to Vietnam, has a single availability domain, and A1 often reports "Out
+  of capacity" there. `oracle-launch.sh` retries.
+- Oracle can cut the free tier without notice. That is the reason for the
+  fallback.
+
+What changes:
+
+| Part | Change |
+|---|---|
+| Build | `push.sh` passes `RUST_TARGET` (`aarch64-unknown-linux-gnu` for Oracle, `x86_64-unknown-linux-gnu` for GCE) to `Dockerfile.build`; same cargo-zigbuild 0.23.4, zig 0.15.2, glibc baseline 2.36. `aws-lc-sys` builds under zig for aarch64. |
+| Packages | arm64 gVisor `.deb` pinned by its own sha256 (`RUNSC_DEB_SHA256_arm64`). `docker-ce`, `docker-ce-cli` and `containerd.io` use the same version strings on both CPUs; the apt line takes the VM's `dpkg` architecture. The sandbox image digest is a multi-arch index. |
+| `install.sh` | The glibc check uses `readelf` (any CPU), and a machine check rejects a binary built for the other CPU. |
+| Access | OCI has no IAP. The VM is reached by key-only SSH (`ubuntu@host`); the VCN security list allows port 22 **only from the owner's IP**. `setup-host.sh` turns off SSH passwords. OCI Bastion was considered and is not scripted. |
+| Firewall | Oracle's Ubuntu image ships `/etc/iptables/rules.v4` that rejects everything but SSH. `setup-host.sh` adds ACCEPT for 80/443 before the final REJECT in that file and live, leaves Oracle's own rules alone, and never saves or flushes Docker's chains. 80/443 are also opened in the VCN security list. |
+| Metadata service | Jobs run with `--network none`. An iptables OUTPUT rule by user id also rejects the runner's user to `169.254.169.254`. The instance is created with the legacy metadata endpoint off. `smoke.sh` checks both. On GCE the "no service account" check stays. |
+| Updates | Caddy (from its own repository) is now in `unattended-upgrades` (`site=dl.cloudsmith.io`), because it faces the internet. Docker, containerd and runsc stay pinned and held. |
+| Rollback | Each release directory now holds its `rust-runner.service` and `Caddyfile.template`; rollback restores them. Only a release that passed its checks can become `previous`. A failed first deploy stops the service. |
+| Safety | One lock (`flock`) per VM for setup, deploy, rollback and upgrade. A failed `--upgrade-packages` puts the old packages back by itself, and tells the owner to `git revert` the version bump. A staging-to-production certificate change restarts Caddy. |
+| Cost | Oracle: $0 inside the free limits. GCE: unchanged, ≈ $36–40. |
+
+**Unverified** (needs a real Oracle VM): the real contents of the Ubuntu
+image's `rules.v4`; that the metadata block works as designed; gVisor
+(`systrap`) on Ampere A1; the arm64 runner binary running (it is
+cross-built and checked with `file` and `readelf`, not executed); the
+`site=` pattern that lets unattended-upgrades see the Caddy repository;
+console menu names in the guide; the 10 TB free-egress figure; whether a
+reserved IP is free.
 
 ### Options considered
 
@@ -256,8 +305,10 @@ So App Check is the first filter, and these bound the damage:
 - **per-token** limits (one token ≈ one device-hour);
 - **fixed capacity**: one VM, 2 concurrent jobs, a queue of 16 and a 10 s
   queue timeout. Abuse can make the runner slow or busy for others. It
-  cannot raise the bill (fixed-price VM) or reach other systems (gVisor, no
-  network, no credentials on the host).
+  cannot make the VM bigger (fixed capacity) or reach other systems (gVisor,
+  no network, no credentials on the host). Egress is billed on Google Cloud
+  and not free without limit on Oracle either, so the budget alert is the
+  net for that; the runner caps the size of its answers.
 
 reCAPTCHA Enterprise score threshold: App Check's reCAPTCHA Enterprise
 provider has a configurable minimum score in the Firebase console. Keep the
@@ -1226,7 +1277,7 @@ account.
 | M10 | Cloud Monitoring uptime check on `https://runner.<domain>/health` every 5 min, content match `"status":"ok"`, email alert. **Unverified:** that this stays within the free allotment. |
 | M11 | Release builds with `RUNNER_URL` (and `APP_CHECK_WEB_SITE_KEY` on web). Review the store privacy forms for App Check / Play Integrity (**Unverified** what is required). |
 | M12 | **Monthly:** bump the pinned runsc, Docker and containerd versions and the sandbox image digest, then `push.sh --upgrade-packages` and a deploy. The smoke test gates both. |
-| M13 | **Weekly (10 min):** `gcloud compute ssh rust-runner --tunnel-through-iap -- 'journalctl -u rust-runner --since -7d -o cat \| jq -c "select(.event==\"summary\")" \| tail -50'`. Look at the 429/401/`internal` counts, queue max and disk free. Also skim `journalctl -p warning --since -7d`. |
+| M13 | **Weekly (10 min):** `ssh rust-runner 'sudo journalctl -u rust-runner --since -7d -o cat \| jq -c "select(.event==\"summary\")" \| tail -50'` (on the GCE fallback: `gcloud compute ssh rust-runner --tunnel-through-iap -- '<the same command>'`). Look at the 429/401/`internal` counts, queue max and disk free. Also skim `sudo journalctl -p warning --since -7d`. The journal needs `sudo`. |
 
 ---
 

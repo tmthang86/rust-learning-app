@@ -1,23 +1,29 @@
-# Cross-build for the serving VM (Ubuntu 24.04, x86_64, glibc 2.39).
+# Cross-build for the serving VM (Ubuntu 24.04, glibc 2.39). The CPU is a
+# build argument: aarch64-unknown-linux-gnu for Oracle Ampere A1 (the default
+# provider), x86_64-unknown-linux-gnu for Compute Engine. push.sh passes
+# --build-arg RUST_TARGET=... from PROVIDER in vars.sh.
 #
 # Nothing here is compiled on the VM. This file is the one build recipe for
 # the laptop and for a later CI job. `push.sh` runs it like this:
 #
 #   git archive --format=tar HEAD runner | \
-#     docker buildx build -f runner/deploy/Dockerfile.build --target export -o type=local,dest=dist -
+#     docker buildx build -f runner/deploy/Dockerfile.build --target export \
+#       --build-arg RUST_TARGET=aarch64-unknown-linux-gnu -o type=local,dest=dist -
 #
 # The build context is the tar of `runner/`, so paths below start with
 # `runner/`.
 #
 # The build stage runs natively on the machine that builds (`$BUILDPLATFORM`:
 # arm64 on Apple Silicon, x86_64 elsewhere), so there is no QEMU. Only the
-# target is x86_64. cargo-zigbuild uses `zig cc` as C compiler and linker.
+# target differs. cargo-zigbuild uses `zig cc` as C compiler and linker.
 # The `.2.36` suffix links against glibc 2.36 symbol versions, which any
 # glibc >= 2.36 (Ubuntu 24.04 has 2.39) provides.
 #
 # Base image: rust:1.99.1-slim-bookworm from Google's Docker Hub mirror,
-# pinned by digest (the multi-arch index). Zig comes from the official
-# `ziglang` wheel on PyPI, pinned by version and sha256 per CPU. It is the
+# pinned by digest (the multi-arch index). It must be the same digest as
+# runner/sandbox.Dockerfile and RUNNER_IMAGE in production.env: push.sh checks.
+#
+# Zig comes from the official `ziglang` wheel on PyPI, pinned by version and sha256 per CPU. It is the
 # same Zig that ziglang.org ships. The wheel is used because PyPI is easier
 # to reach than ziglang.org from locked-down networks.
 

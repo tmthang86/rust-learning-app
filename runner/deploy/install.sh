@@ -44,19 +44,54 @@ while (($#)); do
 done
 
 require_root
+take_lock
 command -v jq > /dev/null || die "jq is missing: run setup-host.sh first"
 id rust-runner > /dev/null 2>&1 || die "user rust-runner is missing: run setup-host.sh first"
 
 WORK="$(mktemp -d)"
 chmod 0755 "$WORK"
-trap 'rm -rf "$WORK"' EXIT
+UPGRADE_ACTIVE=0
+
+# Runs on every exit. Removes the work directory. When a package upgrade
+# stopped half-way (apt failed, Docker did not restart, ...), puts the old
+# packages back.
+on_exit() {
+  local rc=$?
+  trap - EXIT
+  set +e
+  if [[ $UPGRADE_ACTIVE == 1 && $rc -ne 0 ]]; then
+    UPGRADE_ACTIVE=0
+    log
+    log "!! The upgrade stopped half-way. Putting the old packages back."
+    (
+      set -e
+      restore_packages
+    ) || log "!! Could not put the old packages back. Look at $PACKAGES_PREV and at: dpkg -l runsc docker-ce containerd.io"
+    print_revert_hint
+  fi
+  rm -rf "$WORK"
+  exit "$rc"
+}
+trap on_exit EXIT
 
 # ---- Helpers ---------------------------------------------------------------
 
-# The newest glibc symbol version a binary needs.
+# The newest glibc symbol version a binary needs. readelf reads ELF files of
+# any CPU, so the same check works for amd64 and arm64.
 max_glibc() {
-  { objdump -T "$1" 2> /dev/null || true; } | grep -o 'GLIBC_[0-9.]*' \
+  { readelf --dyn-syms -W "$1" 2> /dev/null || true; } | grep -o 'GLIBC_[0-9.]*' \
     | sed 's/^GLIBC_//' | sort -uV | tail -n 1
+}
+
+# Stops early when a binary was built for the wrong CPU.
+check_machine() {
+  local want
+  case $ARCH in
+    arm64) want='AArch64' ;;
+    amd64) want='X86-64' ;;
+  esac
+  readelf -h "$1" 2> /dev/null | grep -m 1 'Machine:' | grep -q "$want" \
+    || die "$(basename "$1") is not built for this VM's CPU ($ARCH, $want): build it with the right PROVIDER in vars.sh"
 }
 
 check_glibc() {
@@ -79,19 +114,32 @@ set_previous() {
   mv -T "$PREVIOUS_LINK.new" "$PREVIOUS_LINK"
 }
 
-# Makes the systemd unit match this directory's copy.
+# Makes the systemd unit match the copy stored in a release directory, so
+# rolling back to a release also brings back its unit file.
 install_unit() {
-  if ! cmp -s "$DEPLOY_DIR/rust-runner.service" /etc/systemd/system/rust-runner.service; then
-    install -m 0644 "$DEPLOY_DIR/rust-runner.service" /etc/systemd/system/rust-runner.service
+  local src
+  src="$(release_file "$1" rust-runner.service)"
+  if ! cmp -s "$src" /etc/systemd/system/rust-runner.service; then
+    install -m 0644 "$src" /etc/systemd/system/rust-runner.service
     systemctl daemon-reload
   fi
+}
+
+print_revert_hint() {
+  log
+  log "WHAT YOU DO NEXT: vars.sh in git still names the new versions, but the VM"
+  log "has the old ones. Undo the bump before you deploy anything:"
+  log "    git revert <the commit that changed vars.sh>"
+  log "and commit. Until then a normal deploy fails its smoke test (wrong"
+  log "runsc or docker version) and is rolled back."
 }
 
 # Starts the release `current` points to: Caddy config from its env file,
 # then the runner, then waits until it is healthy.
 activate_current() {
   local acme=$1
-  render_caddyfile "$CURRENT_LINK/env" "$WORK/Caddyfile.active" "$acme"
+  render_caddyfile "$CURRENT_LINK/env" "$(release_file "$CURRENT_LINK" Caddyfile.template)" \
+    "$WORK/Caddyfile.active" "$acme"
   systemctl restart rust-runner || return 1
   install_caddyfile "$WORK/Caddyfile.active" || return 1
   wait_for_health 120
@@ -147,10 +195,13 @@ do_rollback() {
   target="$(readlink -f "$PREVIOUS_LINK")"
   now="$(readlink -f "$CURRENT_LINK" 2> /dev/null || true)"
   log "Rolling back to $(basename "$target")"
-  install_unit
+  install_unit "$target"
   assert_daemon_json
   switch_current "$target"
-  [[ -n $now ]] && set_previous "$now"
+  # Only a release that passed its smoke test may become `previous`.
+  if [[ -n $now && -f $now/passed ]]; then
+    set_previous "$now"
+  fi
   activate_current "$(caddy_acme_mode)" || die "the previous release did not become healthy; look at: journalctl -u rust-runner -n 50"
   log "Rolled back. Now running: $(basename "$target")"
 }
@@ -172,7 +223,7 @@ restore_packages() {
   . "$PACKAGES_PREV"
   log "Restoring runsc $PREV_RUNSC, docker $PREV_DOCKER, containerd $PREV_CONTAINERD"
   apt-mark unhold runsc docker-ce docker-ce-cli containerd.io > /dev/null 2>&1 || true
-  local deb="$CACHE_DIR/runsc_${PREV_RUNSC}_amd64.deb"
+  local deb="$CACHE_DIR/runsc_${PREV_RUNSC}_${ARCH}.deb"
   if [[ -f $deb ]]; then
     apt_get install --allow-downgrades "$deb"
   else
@@ -192,6 +243,8 @@ restore_packages() {
 do_upgrade() {
   log "Upgrading to runsc $RUNSC_VERSION, docker $DOCKER_SEMVER (containerd.io $CONTAINERD_VERSION)"
   record_packages
+  # From here on, any failure puts the old packages back (see on_exit).
+  UPGRADE_ACTIVE=1
   docker_repo_setup
   write_daemon_json
   install_docker_packages
@@ -212,9 +265,12 @@ do_upgrade() {
   fi
   if ((!ok)); then
     log "The smoke test failed after the upgrade."
+    UPGRADE_ACTIVE=0
     restore_packages
+    print_revert_hint
     die "upgrade rolled back to the previous packages"
   fi
+  UPGRADE_ACTIVE=0
   sync_tools_dir
   log "Packages upgraded. Previous versions are in $PACKAGES_PREV."
 }
@@ -243,15 +299,18 @@ do_deploy() {
   (cd "$incoming" && sha256sum --check --quiet SHA256SUMS) || die "SHA256SUMS does not match: the upload is damaged"
   log "  SHA256SUMS ok (this only guards the upload, not where the build came from)"
   local version
+  check_machine "$incoming/rust-runner"
+  check_machine "$incoming/rust-runner-tests"
   version="$(env -i "$incoming/rust-runner" --version)" \
-    || die "rust-runner --version failed: this binary does not start on this VM"
+    || die "rust-runner --version failed: this binary does not start on this VM (built for another CPU than $ARCH?)"
   log "  rust-runner --version: $version"
   env -i "$incoming/rust-runner-tests" --list > /dev/null \
     || die "rust-runner-tests does not start on this VM"
   check_glibc "$incoming/rust-runner"
   check_glibc "$incoming/rust-runner-tests"
 
-  render_caddyfile "$env_src" "$WORK/Caddyfile.new" "$([[ $ACME_STAGING == 1 ]] && echo staging || echo production)"
+  render_caddyfile "$env_src" "$DEPLOY_DIR/Caddyfile.template" "$WORK/Caddyfile.new" \
+    "$([[ $ACME_STAGING == 1 ]] && echo staging || echo production)"
   validate_caddyfile "$WORK/Caddyfile.new"
   assert_daemon_json
   if ! docker image inspect "$image" > /dev/null 2>&1; then
@@ -265,6 +324,9 @@ do_deploy() {
   install -d -m 0755 "$stage"
   install -m 0755 "$incoming/rust-runner" "$incoming/rust-runner-tests" "$stage/"
   install -m 0644 "$env_src" "$stage/env"
+  # The unit and the Caddyfile template travel with the release, so a
+  # rollback brings back the versions that release was tested with.
+  install -m 0644 "$DEPLOY_DIR/rust-runner.service" "$DEPLOY_DIR/Caddyfile.template" "$stage/"
   install -m 0644 "$incoming/SHA256SUMS" "$stage/SHA256SUMS"
   printf '%s\n' "$image" > "$stage/image"
   chmod 0644 "$stage/image"
@@ -282,7 +344,7 @@ do_deploy() {
   mv "$stage" "$final"
 
   log "== Switching to $RELEASE_ID"
-  install_unit
+  install_unit "$final"
   switch_current "$final"
   local ok=1 acme
   acme="$([[ $ACME_STAGING == 1 ]] && echo staging || echo production)"
@@ -303,6 +365,7 @@ do_deploy() {
         mv "$final.old" "$final"
         old_dir="$final"
       fi
+      install_unit "$old_dir"
       switch_current "$old_dir"
       [[ $old_dir == "$final" ]] || rm -rf "${RELEASES_DIR:?}/$RELEASE_ID"
       if activate_current "$(caddy_acme_mode)"; then
@@ -310,9 +373,20 @@ do_deploy() {
       fi
       die "release $RELEASE_ID failed and the previous release is not healthy either. See: journalctl -u rust-runner -n 100"
     fi
-    die "release $RELEASE_ID failed and there is no earlier release to go back to. See: journalctl -u rust-runner -n 100"
+    # First deploy: nothing to go back to. Do not leave a broken release
+    # running (and never let it become `previous` later).
+    systemctl stop rust-runner || true
+    rm -f "$CURRENT_LINK"
+    rm -rf "$final"
+    if [[ -e $final.old ]]; then
+      mv "$final.old" "$final"
+    fi
+    die "release $RELEASE_ID failed and there is no earlier release to go back to. The runner is stopped. See: journalctl -u rust-runner -n 100"
   fi
 
+  # It passed: only now may it be rolled back to later.
+  touch "$final/passed"
+  chmod 0644 "$final/passed"
   if [[ -n $old_dir && -d $old_dir && $old_dir != "$final" && $old_dir != "$final.old" ]]; then
     set_previous "$old_dir"
   fi

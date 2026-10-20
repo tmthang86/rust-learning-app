@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:rust_learn/runner/code_runner.dart';
 import 'package:rust_learn/runner/firebase_runner_auth.dart';
 
 void main() {
@@ -31,6 +32,18 @@ void main() {
     expect(
       await FirebaseRunnerAuth(fetch: (_) async => '').appCheckToken(),
       isNull,
+    );
+  });
+
+  test('the default wait leaves room for a retry inside one run', () {
+    // Two token waits (the second after a 401) plus the server's longest
+    // answer (about 10 s in the queue and 20 s for the job) must stay under
+    // the whole-run limit, or the app's own message never shows.
+    final wait = FirebaseRunnerAuth().timeout;
+    expect(wait, const Duration(seconds: 5));
+    expect(
+      wait * 2 + const Duration(seconds: 30),
+      lessThan(HttpCodeRunner.requestTimeout),
     );
   });
 

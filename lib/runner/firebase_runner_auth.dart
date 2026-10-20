@@ -14,13 +14,16 @@ class FirebaseRunnerAuth implements RunnerAuth {
   /// [fetch] replaces the call to Firebase in tests.
   FirebaseRunnerAuth({
     Future<String?> Function(bool forceRefresh)? fetch,
-    this.timeout = const Duration(seconds: 10),
+    this.timeout = const Duration(seconds: 5),
   }) : _fetch =
            fetch ?? ((refresh) => FirebaseAppCheck.instance.getToken(refresh));
 
   final Future<String?> Function(bool forceRefresh) _fetch;
 
   /// How long to wait for a token before sending the request without one.
+  /// Kept short: one run can wait for two tokens (the second after a 401) and
+  /// the server's own limit, and all of it has to fit in
+  /// [HttpCodeRunner.requestTimeout].
   final Duration timeout;
 
   @override
