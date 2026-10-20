@@ -1,0 +1,99 @@
+{
+  "id": "u9-l2",
+  "title": "Visibility and use",
+  "sections": [
+    {
+      "type": "text",
+      "text": "In Rust, everything inside a module is private by default. Private means: only code in that module, and in the modules nested inside it, can use the item. To let the outside world in, you add pub."
+    },
+    {
+      "type": "code",
+      "code": "mod outer {\n    fn secret() -> u32 {\n        42\n    }\n\n    pub fn reveal() -> u32 {\n        secret()\n    }\n\n    pub mod inner {\n        pub fn peek() -> u32 {\n            // a nested module may use its parent's private items\n            super::secret() + 1\n        }\n    }\n}\n\nfn main() {\n    println!(\"{} {}\", outer::reveal(), outer::inner::peek());\n}"
+    },
+    {
+      "type": "text",
+      "text": "main can call reveal and peek because they are pub. It cannot call secret directly. The rule of thumb: children can see their parents' private items, but parents and neighbours can't see a child's private items. This lets a module hide its inner workings and show only a small, safe set of functions."
+    },
+    {
+      "type": "text",
+      "text": "This code does not compile. Rust reports E0603: function `audit` is private."
+    },
+    {
+      "type": "code",
+      "code": "// This does NOT compile: E0603, function `audit` is private.\nmod bank {\n    fn audit() {}\n}\n\nfn run() {\n    bank::audit();\n}"
+    },
+    {
+      "type": "text",
+      "text": "pub also works on structs, but a struct has two levels. pub struct makes the type public. Each field is still private unless it has its own pub. That is useful: the module can keep a field private and only let outsiders change it through methods that check the rules."
+    },
+    {
+      "type": "code",
+      "code": "mod bank {\n    pub struct Account {\n        pub owner: String,\n        balance: i64,\n    }\n\n    impl Account {\n        pub fn new(owner: &str) -> Account {\n            Account { owner: String::from(owner), balance: 0 }\n        }\n\n        pub fn deposit(&mut self, amount: i64) {\n            self.balance += amount;\n        }\n\n        pub fn balance(&self) -> i64 {\n            self.balance\n        }\n    }\n}\n\nfn main() {\n    let mut acc = bank::Account::new(\"Ada\");\n    acc.deposit(40);\n    println!(\"{} has {}\", acc.owner, acc.balance());\n}"
+    },
+    {
+      "type": "text",
+      "text": "owner is public, so main can read it. balance is private, so main can only use deposit and balance(). Writing acc.balance from main would fail with E0616: field `balance` is private. Notice that Account::new is also needed: main can't build Account { ... } itself, because it can't name the private field. Enums are different. If an enum is pub, all of its variants are public automatically."
+    },
+    {
+      "type": "text",
+      "text": "Writing long paths gets tiring. The use keyword brings a name into scope so you can use the short form. use only affects the module it is written in, so a nested module needs its own use lines."
+    },
+    {
+      "type": "code",
+      "code": "use std::collections::HashMap;\nuse std::fmt::Result as FmtResult;\nuse std::io::Result as IoResult;\n\nmod zoo {\n    pub mod animals {\n        pub enum Animal {\n            Cat,\n            Dog,\n        }\n\n        pub fn name(a: &Animal) -> String {\n            match a {\n                Animal::Cat => String::from(\"cat\"),\n                Animal::Dog => String::from(\"dog\"),\n            }\n        }\n    }\n\n    pub mod show {\n        use super::animals;\n        use super::animals::Animal;\n\n        pub fn line(a: Animal) -> String {\n            format!(\"a {}\", animals::name(&a))\n        }\n    }\n}\n\nuse zoo::animals::Animal;\nuse zoo::show;\n\nfn check_fmt() -> FmtResult {\n    Ok(())\n}\n\nfn check_io() -> IoResult<u32> {\n    Ok(7)\n}\n\nfn main() {\n    println!(\"{}\", show::line(Animal::Cat));\n    println!(\"{}\", show::line(Animal::Dog));\n\n    let mut stock: HashMap<&str, u32> = HashMap::new();\n    stock.insert(\"apple\", 3);\n    println!(\"{} {:?} {:?}\", stock[\"apple\"], check_fmt(), check_io());\n}"
+    },
+    {
+      "type": "text",
+      "text": "Two details. First, as gives an item a new name. std::fmt::Result and std::io::Result are two different types with the same name, so use ... as FmtResult and as IoResult keeps them apart. Second, there is a common habit: bring in types directly (use zoo::animals::Animal), but bring in the parent module for functions (use zoo::show, then show::line). That way a call like show::line shows where the function comes from."
+    },
+    {
+      "type": "text",
+      "text": "You can group several names from one path with braces: use std::collections::{HashMap, HashSet};. A * (use std::collections::*;) brings in everything public, but it makes it hard to see where a name came from, so it is rare in real code."
+    },
+    {
+      "type": "note",
+      "text": "If you have used import in Python or JavaScript, use is the same idea. as is like import ... as. The big difference is the default: in Rust the author of a module decides what to share with pub, and everything else stays hidden.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "There are finer levels of pub. pub(crate) means visible anywhere inside this crate but not to other crates; pub(super) means visible to the parent module. pub use re-exports a name, so users of your library see a tidier path. These come into play once you write libraries.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Make three changes. 1) Add a method pub fn withdraw(&mut self, amount: i64) to Account that subtracts the amount from the balance. 2) Add the line use bank::Account; above main and write Account::new(\"Ada\") instead of bank::Account::new(\"Ada\"). 3) In main, call acc.withdraw(10) right after the deposit. It should print: Ada: 30",
+    "starter": "mod bank {\n    pub struct Account {\n        pub owner: String,\n        balance: i64,\n    }\n\n    impl Account {\n        pub fn new(owner: &str) -> Account {\n            Account { owner: String::from(owner), balance: 0 }\n        }\n\n        pub fn deposit(&mut self, amount: i64) {\n            self.balance += amount;\n        }\n\n        pub fn balance(&self) -> i64 {\n            self.balance\n        }\n\n        // add pub fn withdraw here\n    }\n}\n\nfn main() {\n    let mut acc = bank::Account::new(\"Ada\");\n    acc.deposit(40);\n    println!(\"{}: {}\", acc.owner, acc.balance());\n}",
+    "expectedOutput": "Ada: 30",
+    "solution": "mod bank {\n    pub struct Account {\n        pub owner: String,\n        balance: i64,\n    }\n\n    impl Account {\n        pub fn new(owner: &str) -> Account {\n            Account { owner: String::from(owner), balance: 0 }\n        }\n\n        pub fn deposit(&mut self, amount: i64) {\n            self.balance += amount;\n        }\n\n        pub fn balance(&self) -> i64 {\n            self.balance\n        }\n\n        pub fn withdraw(&mut self, amount: i64) {\n            self.balance -= amount;\n        }\n    }\n}\n\nuse bank::Account;\n\nfn main() {\n    let mut acc = Account::new(\"Ada\");\n    acc.deposit(40);\n    acc.withdraw(10);\n    println!(\"{}: {}\", acc.owner, acc.balance());\n}"
+  },
+  "quiz": [
+    {
+      "question": "If you write an item in a module with no pub, who can use it?",
+      "options": [
+        "Only code in that module and the modules nested inside it",
+        "Everyone in the program",
+        "Nobody, not even the module itself"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "A module has pub struct Account { pub owner: String, balance: i64 }. What can code outside the module do with an Account value?",
+      "options": [
+        "Read and change both fields",
+        "Read owner, but not touch balance directly",
+        "Read balance, but not owner"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What does the as in use std::io::Result as IoResult; do?",
+      "options": [
+        "Gives the imported item a new name",
+        "Makes the item public",
+        "Converts the type to another type"
+      ],
+      "answer": 0
+    }
+  ]
+}

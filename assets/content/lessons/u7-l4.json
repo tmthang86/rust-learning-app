@@ -1,0 +1,103 @@
+{
+  "id": "u7-l4",
+  "title": "Trait bounds",
+  "sections": [
+    {
+      "type": "text",
+      "text": "A trait bound limits a generic type to types that have a certain trait. You write it after the type parameter: T: Display means \"any type T that implements Display\". Inside the function you can then use everything Display gives you, such as {} in println!."
+    },
+    {
+      "type": "code",
+      "code": "use std::fmt::Display;\n\nfn show_twice<T: Display>(value: T) {\n    println!(\"{value} {value}\");\n}\n\nfn main() {\n    show_twice(7);\n    show_twice(\"hello\");\n    show_twice(2.5);\n}"
+    },
+    {
+      "type": "text",
+      "text": "use std::fmt::Display; brings the name Display into scope, the same way use std::collections::HashMap; did for HashMap. Without the bound, println! with {value} would not compile, because Rust cannot know that every T can be shown. If you call the function with a type that has no Display, the call fails with error E0277 (the trait bound is not satisfied)."
+    },
+    {
+      "type": "text",
+      "text": "Use + to require several traits at once. This function needs T to be comparable and printable:"
+    },
+    {
+      "type": "code",
+      "code": "use std::fmt::Display;\n\nfn print_larger<T: PartialOrd + Display>(a: T, b: T) {\n    if a > b {\n        println!(\"{a} is larger than {b}\");\n    } else {\n        println!(\"{b} is at least as large as {a}\");\n    }\n}\n\nfn main() {\n    print_larger(3, 9);\n    print_larger(\"pear\", \"apple\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "When there are many bounds, the signature gets crowded. A where clause moves them after the signature, with the same meaning:"
+    },
+    {
+      "type": "code",
+      "code": "use std::fmt::{Debug, Display};\n\nfn report<T, U>(label: T, data: U) -> String\nwhere\n    T: Display,\n    U: Debug + Clone,\n{\n    let copy = data.clone();\n    format!(\"{label}: {:?}\", copy)\n}\n\nfn main() {\n    println!(\"{}\", report(\"scores\", vec![90, 85]));\n}"
+    },
+    {
+      "type": "text",
+      "text": "(use std::fmt::{Debug, Display}; imports two names in one line.) Debug is the trait behind {:?}, and Clone is the trait with the clone method."
+    },
+    {
+      "type": "text",
+      "text": "There are two shortcuts for traits. In an argument, impl Trait means \"some type that has this trait\". It is shorthand for a generic with a bound. In a return type, it says \"I return some type with this trait\" without naming it. The function still returns one concrete type:"
+    },
+    {
+      "type": "code",
+      "code": "trait Speak {\n    fn speak(&self) -> String;\n}\n\nstruct Dog;\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        String::from(\"woof\")\n    }\n}\n\nfn announce(item: &impl Speak) {\n    println!(\"it says {}\", item.speak());\n}\n\nfn make_pet() -> impl Speak {\n    Dog\n}\n\nfn main() {\n    let pet = make_pet();\n    announce(&pet);\n}"
+    },
+    {
+      "type": "text",
+      "text": "(struct Dog; is a struct with no fields at all. You create one by just writing Dog.) A function returning impl Speak cannot return a Dog in one branch and a Robot in another: the compiler needs one real type (error E0308 otherwise). Mixing types in one collection is solved with Box<dyn Trait> in Unit 10."
+    },
+    {
+      "type": "text",
+      "text": "Many traits are so common that Rust can write the impl for you. Put #[derive(...)] above a struct or enum and list the traits. Debug lets you print with {:?}. Clone adds a clone method. PartialEq lets you compare with == and !=. Copy makes values copy instead of move (every field must be Copy too). Default gives a default value, such as 0 for numbers."
+    },
+    {
+      "type": "code",
+      "code": "#[derive(Debug, Clone, Copy, PartialEq, Default)]\nstruct Point {\n    x: i32,\n    y: i32,\n}\n\nfn main() {\n    let a = Point { x: 1, y: 2 };\n    let b = a;   // Copy: a is still usable\n    println!(\"{:?} {:?} equal: {}\", a, b, a == b);\n    let origin = Point::default();\n    println!(\"{:?} equal: {}\", origin, a == origin);\n}"
+    },
+    {
+      "type": "note",
+      "text": "A bound is like a requirement in a job listing: \"anyone who can do X and Y may apply\". The compiler checks that every type you pass meets it, so mistakes show up as compile errors, not crashes.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "T: Trait is Java's <T extends Comparable<T>>, C++20's concepts, or a Go constraint. impl Trait in an argument position is generic sugar: you can't name the type, so use <T: Trait> when two arguments must be the same type (a: T, b: T). Note that derive(PartialEq) compares field by field, like a Java record's equals.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "show takes only an i32. Make it work for any type that can be printed: add use std::fmt::Display; at the top, and change the signature to fn show<T: Display>(item: T). Then add show(\"hi\"); at the end of main. It should print two lines: <5> and <hi>.",
+    "starter": "fn show(item: i32) {\n    println!(\"<{item}>\");\n}\n\nfn main() {\n    show(5);\n}",
+    "expectedOutput": "<5>\n<hi>",
+    "solution": "use std::fmt::Display;\n\nfn show<T: Display>(item: T) {\n    println!(\"<{item}>\");\n}\n\nfn main() {\n    show(5);\n    show(\"hi\");\n}"
+  },
+  "quiz": [
+    {
+      "question": "What does fn f<T: Display + Clone>(x: T) require of T?",
+      "options": [
+        "T must implement both Display and Clone",
+        "T must implement Display or Clone",
+        "T must be a number"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "What does #[derive(Debug)] do?",
+      "options": [
+        "It turns on debug mode for the program",
+        "It asks the compiler to write the Debug impl, so {:?} works",
+        "It prints the struct when it is created"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Can fn make() -> impl Speak return a Dog in one branch and a Robot in another?",
+      "options": [
+        "Yes, any type with Speak is allowed",
+        "Yes, but only inside an if",
+        "No, it must always return one concrete type"
+      ],
+      "answer": 2
+    }
+  ]
+}

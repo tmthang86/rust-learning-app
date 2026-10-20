@@ -1,0 +1,91 @@
+{
+  "id": "u11-l2",
+  "title": "Channels",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Threads often need to talk to each other. A channel is a one-way pipe: one end sends values in, the other end takes them out. Rust's standard channel lives in std::sync::mpsc. mpsc stands for \"multiple producer, single consumer\": many threads can send, but only one place receives."
+    },
+    {
+      "type": "text",
+      "text": "mpsc::channel() gives back two ends at once, a Sender and a Receiver. We write let (tx, rx) = ... to split that pair into two variables: tx (transmit) and rx (receive). tx.send(value) puts a value in. A for loop over rx takes values out one by one, waiting when none has arrived yet, and it stops when every sender is gone."
+    },
+    {
+      "type": "code",
+      "code": "use std::sync::mpsc;\nuse std::thread;\n\nfn main() {\n    let (tx, rx) = mpsc::channel();\n    thread::spawn(move || {\n        for n in 1..=3 {\n            tx.send(n * 10).unwrap();\n        }\n    });   // tx is dropped here, when the thread ends\n    for value in rx {\n        println!(\"got {value}\");\n    }\n    println!(\"channel closed\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "The loop ends because tx moved into the thread and was dropped when the thread finished. Messages from one sender always arrive in the order they were sent. send() returns a Result (it fails if the receiver is gone), so we unwrap it."
+    },
+    {
+      "type": "text",
+      "text": "Sending a value moves it into the channel, so the sending thread can no longer use it. This is the same ownership rule as everywhere else in Rust, and it is what keeps channels safe:"
+    },
+    {
+      "type": "code",
+      "code": "use std::sync::mpsc;\nuse std::thread;\n\n// This does NOT compile: error[E0382]: borrow of moved value: `text`.\n// send() took ownership of `text`, so we cannot print it afterwards.\nfn broken() {\n    let (tx, rx) = mpsc::channel();\n    thread::spawn(move || {\n        let text = String::from(\"hi\");\n        tx.send(text).unwrap();\n        println!(\"{text}\");\n    });\n    let _ = rx;\n}"
+    },
+    {
+      "type": "note",
+      "text": "A channel is like a conveyor belt between two workers. One puts boxes on the belt (send) and the other takes boxes off (receive). Once a box is on the belt, the first worker no longer has it.",
+      "track": "starter"
+    },
+    {
+      "type": "text",
+      "text": "To have several producers, give each thread its own copy of the sender with tx.clone(). All the clones feed the same receiver. There is one catch: the receiving loop only ends when every sender is gone, including the original tx in main. So we drop(tx) after making the clones. Without that line this program would wait forever."
+    },
+    {
+      "type": "text",
+      "text": "Messages from different threads can arrive in any order. To keep our output the same every time, we collect the messages in a Vec, sort it, and only then print."
+    },
+    {
+      "type": "code",
+      "code": "use std::sync::mpsc;\nuse std::thread;\n\nfn main() {\n    let (tx, rx) = mpsc::channel();\n    for id in 1..=3 {\n        let tx = tx.clone();   // each thread gets its own sender\n        thread::spawn(move || {\n            tx.send((id, id * id)).unwrap();\n        });\n    }\n    drop(tx);   // the original sender must go too, or the loop below never ends\n\n    let mut results = Vec::new();\n    for message in rx {\n        results.push(message);\n    }\n    results.sort();\n    for (id, square) in results {\n        println!(\"worker {id} sent {square}\");\n    }\n}"
+    },
+    {
+      "type": "text",
+      "text": "A channel can carry any type, here a tuple of two numbers. If you do not want to wait, rx.try_recv() checks for a message and returns an error straight away when there is none. rx.recv() waits for exactly one message."
+    },
+    {
+      "type": "note",
+      "text": "Coming from Go: this is much like a chan, and Rust's advice is the same: do not communicate by sharing memory, share memory by communicating. Rust's mpsc::channel is unbounded and multi-producer, single-consumer; mpsc::sync_channel(n) is a bounded version where send blocks when the buffer is full. For multiple consumers or select-style code, people usually reach for the crossbeam-channel crate.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Each thread sends i. Change it so each thread sends i * 10 instead. The program should print: total: 60",
+    "starter": "use std::sync::mpsc;\nuse std::thread;\n\nfn main() {\n    let (tx, rx) = mpsc::channel();\n    for i in 1..=3 {\n        let tx = tx.clone();\n        thread::spawn(move || {\n            tx.send(i).unwrap();\n        });\n    }\n    drop(tx);\n    let mut total = 0;\n    for value in rx {\n        total += value;\n    }\n    println!(\"total: {total}\");\n}",
+    "expectedOutput": "total: 60",
+    "solution": "use std::sync::mpsc;\nuse std::thread;\n\nfn main() {\n    let (tx, rx) = mpsc::channel();\n    for i in 1..=3 {\n        let tx = tx.clone();\n        thread::spawn(move || {\n            tx.send(i * 10).unwrap();\n        });\n    }\n    drop(tx);\n    let mut total = 0;\n    for value in rx {\n        total += value;\n    }\n    println!(\"total: {total}\");\n}"
+  },
+  "quiz": [
+    {
+      "question": "When does a for loop over a Receiver stop?",
+      "options": [
+        "After the first message",
+        "When every Sender has been dropped",
+        "After one second"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "How do you give several threads the ability to send into the same channel?",
+      "options": [
+        "Clone the sender with tx.clone()",
+        "Clone the receiver",
+        "Pass the same tx to every thread without cloning"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "What happens to a String after you send it with tx.send(text)?",
+      "options": [
+        "Both threads can use it",
+        "It is copied automatically",
+        "It is moved into the channel, so the sending thread can't use it any more"
+      ],
+      "answer": 2
+    }
+  ]
+}

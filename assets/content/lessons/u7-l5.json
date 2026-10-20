@@ -1,0 +1,103 @@
+{
+  "id": "u7-l5",
+  "title": "Lifetimes",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Every reference points at a value that lives somewhere, and a reference must never outlive that value. The time a reference is valid is its lifetime. Most of the time Rust works lifetimes out by itself, and you have been relying on that all along. This lesson shows the cases where Rust asks for your help."
+    },
+    {
+      "type": "text",
+      "text": "Here is a function that returns the longer of two string slices. It does not compile:"
+    },
+    {
+      "type": "code",
+      "code": "// This does NOT compile. Error E0106: missing lifetime specifier.\nfn longest(x: &str, y: &str) -> &str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}"
+    },
+    {
+      "type": "text",
+      "text": "The result is a reference, but it borrows from either x or y, and Rust can't tell which. It needs to know how long the result stays valid. A lifetime annotation says it. A lifetime name is an apostrophe and a short name, usually 'a. You declare it in angle brackets, like a type parameter, then write it after the & of each reference:"
+    },
+    {
+      "type": "code",
+      "code": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\nfn main() {\n    let a = String::from(\"lifetimes\");\n    let b = String::from(\"are fine\");\n    let result = longest(&a, &b);   // &String turns into &str here\n    println!(\"longest: {result}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Read it as: \"x, y and the result all share the lifetime 'a. The result is valid only as long as both x and y are.\" The annotation does not make anything live longer. It only describes how the lifetimes of the inputs and the output relate, so the compiler can check every caller."
+    },
+    {
+      "type": "text",
+      "text": "That check catches real bugs. Here result is used after second has been dropped at the end of the inner block. The compiler refuses:"
+    },
+    {
+      "type": "code",
+      "code": "// This does NOT compile (longest is the function above).\n// Error E0597: `second` does not live long enough.\nfn demo() {\n    let first = String::from(\"long string\");\n    let result;\n    {\n        let second = String::from(\"short\");\n        result = longest(first.as_str(), second.as_str());\n    }\n    println!(\"{result}\");   // result may point at second, which is gone\n}"
+    },
+    {
+      "type": "text",
+      "text": "Why did you never write lifetimes for functions like first_word(s: &str) -> &str? Rust fills them in using three elision rules. In plain words: (1) each reference parameter gets its own lifetime. (2) If there is exactly one input lifetime, the output gets it too. (3) If a method has &self or &mut self, the output gets the lifetime of self. When these rules leave the output unknown, as with longest (two inputs), you must write it yourself."
+    },
+    {
+      "type": "text",
+      "text": "A struct that holds a reference needs a lifetime too, so Rust knows the struct can't outlive what it borrows:"
+    },
+    {
+      "type": "code",
+      "code": "struct Excerpt<'a> {\n    part: &'a str,\n}\n\nimpl<'a> Excerpt<'a> {\n    fn first_word(&self) -> &str {\n        match self.part.find(' ') {\n            Some(i) => &self.part[..i],\n            None => self.part,\n        }\n    }\n}\n\nfn main() {\n    let novel = String::from(\"Call me Ishmael. Some years ago...\");\n    let end = novel.find('.').unwrap_or(novel.len());\n    let e = Excerpt { part: &novel[..end] };\n    println!(\"excerpt: {}\", e.part);\n    println!(\"first word: {}\", e.first_word());\n}"
+    },
+    {
+      "type": "text",
+      "text": "Excerpt<'a> means \"an Excerpt that borrows for 'a\". It is declared after the name and used in the field. impl<'a> Excerpt<'a> repeats it, like impl<T> did for generics. first_word needs no annotation, because rule 3 applies. Because e borrows from novel, novel must stay alive as long as e is used."
+    },
+    {
+      "type": "text",
+      "text": "There is one special lifetime, 'static. It means \"valid for the whole run of the program\". Every string literal has this type, &'static str, because the text is stored inside the program itself. Don't add 'static just to silence a compiler error. It usually hides a real problem."
+    },
+    {
+      "type": "note",
+      "text": "If a lifetime error confuses you, ask: \"who owns the data, and does the owner live long enough?\" The owner is usually a String or Vec in some block. A reference to it can't outlive that block.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "This is the check C and C++ leave to you (a returned pointer to a dead local is a dangling pointer). Garbage-collected languages avoid it by keeping objects alive. In Rust, lifetimes are erased after the check, so they cost nothing at run time. Labels like 'a only exist for the compiler.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "longest is already written. Add a function shorter with the same lifetime pattern that returns the shorter of two &str (return x if x.len() <= y.len(), otherwise y). Then add println!(\"{}\", shorter(\"tree\", \"forest\")); at the end of main. It should print two lines: forest and tree.",
+    "starter": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\n// add shorter here\n\nfn main() {\n    println!(\"{}\", longest(\"tree\", \"forest\"));\n}",
+    "expectedOutput": "forest\ntree",
+    "solution": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\nfn shorter<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() <= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\nfn main() {\n    println!(\"{}\", longest(\"tree\", \"forest\"));\n    println!(\"{}\", shorter(\"tree\", \"forest\"));\n}"
+  },
+  "quiz": [
+    {
+      "question": "What does 'a in fn longest<'a>(x: &'a str, y: &'a str) -> &'a str tell the compiler?",
+      "options": [
+        "The result stays valid only as long as both x and y do",
+        "The result lives forever",
+        "The function runs for 'a seconds"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Why does fn first_word(s: &str) -> &str need no lifetime annotations?",
+      "options": [
+        "Because &str is always valid",
+        "Elision rules: with one input reference, the output gets its lifetime",
+        "Because it returns a copy of the text"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What is the type of a string literal like \"hello\"?",
+      "options": [
+        "String, owned and heap-allocated",
+        "&'a str, tied to the nearest block",
+        "&'static str, valid for the whole program"
+      ],
+      "answer": 2
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "id": "u11-l1",
+  "title": "Threads",
+  "sections": [
+    {
+      "type": "text",
+      "text": "So far, every program did one thing at a time. A thread lets a program do several things at once. Each thread runs its own code, and the operating system shares the processor between them. thread::spawn starts a new thread. You give it a closure (the code to run, written || { ... }), and it gives back a JoinHandle. Calling join() on the handle waits until that thread has finished."
+    },
+    {
+      "type": "code",
+      "code": "use std::thread;\n\nfn main() {\n    println!(\"main: starting a worker\");\n    let handle = thread::spawn(|| {\n        println!(\"worker: hello from another thread\");\n    });\n    handle.join().unwrap();\n    println!(\"main: the worker has finished\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Threads run at the same time, so if main and the worker both printed while running, the order could change from run to run. Here main waits at join() before it prints again, so the output is always the same. Every example in this unit is built that way: wait for the threads, then print."
+    },
+    {
+      "type": "text",
+      "text": "join() returns a Result. It is Err if the thread panicked, which is why we call unwrap(). A thread can also hand back a value: whatever the closure returns comes out of join()."
+    },
+    {
+      "type": "code",
+      "code": "use std::thread;\n\nfn main() {\n    let handle = thread::spawn(|| {\n        let mut total = 0;\n        for n in 1..=100 {\n            total += n;\n        }\n        total\n    });\n    let total = handle.join().unwrap();\n    println!(\"sum of 1..=100 is {total}\");\n}"
+    },
+    {
+      "type": "note",
+      "text": "A thread is like a second worker in the kitchen. The two of you cook at the same time, and join() is you waiting at the door until the other worker says \"done\". If you never wait, you might finish and leave before they do.",
+      "track": "starter"
+    },
+    {
+      "type": "text",
+      "text": "A spawned thread might keep running after the function that started it has returned. So it cannot simply borrow your local variables: they might be gone by then. The compiler checks this for you. The fix is to write move before the closure, which hands the closure ownership of the variables it uses."
+    },
+    {
+      "type": "code",
+      "code": "use std::thread;\n\n// This does NOT compile: error[E0373]: closure may outlive the current\n// function, but it borrows `numbers`. Fix it by writing `move ||`.\nfn broken() {\n    let numbers = vec![1, 2, 3];\n    let handle = thread::spawn(|| {\n        println!(\"{numbers:?}\");\n    });\n    handle.join().unwrap();\n}"
+    },
+    {
+      "type": "text",
+      "text": "Here is the usual pattern: start several threads in a loop, keep the handles in a Vec, then join them in order. Each thread owns its own String because the closure is move. Since we join in the same order we started, the output is always the same."
+    },
+    {
+      "type": "code",
+      "code": "use std::thread;\n\nfn main() {\n    let words = vec![String::from(\"alpha\"), String::from(\"beta\"), String::from(\"gamma\")];\n    let mut handles = Vec::new();\n    for word in words {\n        let handle = thread::spawn(move || {\n            let letters = word.len();\n            (word, letters)   // give the word back, together with its length\n        });\n        handles.push(handle);\n    }\n    for handle in handles {\n        let (word, letters) = handle.join().unwrap();\n        println!(\"{word}: {letters} letters\");\n    }\n}"
+    },
+    {
+      "type": "text",
+      "text": "Sometimes you do want threads to borrow local data. thread::scope makes that safe: every thread started inside the scope is joined before the scope ends, so nothing can outlive the data it borrows. No move is needed."
+    },
+    {
+      "type": "code",
+      "code": "use std::thread;\n\nfn main() {\n    let numbers = vec![1, 2, 3, 4, 5, 6];\n    let (left, right) = numbers.split_at(3);   // two slices of the same Vec, no copying\n    let (a, b) = thread::scope(|s| {\n        let first = s.spawn(|| {\n            let sum: i32 = left.iter().sum();\n            sum\n        });\n        let second = s.spawn(|| {\n            let sum: i32 = right.iter().sum();\n            sum\n        });\n        (first.join().unwrap(), second.join().unwrap())\n    });\n    println!(\"left = {a}, right = {b}\");\n    println!(\"total = {}\", a + b);\n}"
+    },
+    {
+      "type": "note",
+      "text": "Coming from Python or Java: Rust threads are real operating-system threads, like java.lang.Thread, and there is no GIL as in CPython, so CPU-bound work really runs in parallel. Go's goroutines are lighter, but Rust's std::thread is the closest match to a Java thread. A panic in a spawned thread does not kill main: join() returns Err instead. And data races are caught at compile time, which you will see in the next lessons.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Each thread currently returns n. Change the closure so it returns n * n. The program should print: [1, 4, 9]",
+    "starter": "use std::thread;\n\nfn main() {\n    let mut handles = Vec::new();\n    for n in 1..=3 {\n        handles.push(thread::spawn(move || n));\n    }\n    let mut results = Vec::new();\n    for handle in handles {\n        results.push(handle.join().unwrap());\n    }\n    println!(\"{:?}\", results);\n}",
+    "expectedOutput": "[1, 4, 9]",
+    "solution": "use std::thread;\n\nfn main() {\n    let mut handles = Vec::new();\n    for n in 1..=3 {\n        handles.push(thread::spawn(move || n * n));\n    }\n    let mut results = Vec::new();\n    for handle in handles {\n        results.push(handle.join().unwrap());\n    }\n    println!(\"{:?}\", results);\n}"
+  },
+  "quiz": [
+    {
+      "question": "What does handle.join() do?",
+      "options": [
+        "Starts the thread",
+        "Waits for the thread to finish and returns its result",
+        "Stops the thread at once"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Why does a closure passed to thread::spawn usually need move?",
+      "options": [
+        "The thread may outlive the function, so it must own the data it uses",
+        "move makes the thread run faster",
+        "Threads can only use numbers"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "What is special about thread::scope?",
+      "options": [
+        "It makes threads run in order",
+        "Threads started inside it may borrow local variables, because they are all joined before the scope ends",
+        "It lets you skip join() and unwrap()"
+      ],
+      "answer": 1
+    }
+  ]
+}

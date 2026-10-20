@@ -1,0 +1,91 @@
+{
+  "id": "u8-l1",
+  "title": "Closures",
+  "sections": [
+    {
+      "type": "text",
+      "text": "A closure is a small function without a name that you can store in a variable or pass to another function. You write the parameters between two vertical bars, then the body."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let add_one = |x| x + 1;\n    let add = |a: i32, b: i32| -> i32 { a + b };\n    let greet = || println!(\"hello from a closure\");\n\n    println!(\"{}\", add_one(5));\n    println!(\"{}\", add(2, 3));\n    greet();\n}"
+    },
+    {
+      "type": "text",
+      "text": "|x| x + 1 takes one parameter, x, and gives back x + 1. For a single expression you don't need braces. |a: i32, b: i32| -> i32 { a + b } shows the long form with types and a block. || has no parameters. You call a closure with parentheses, just like a function."
+    },
+    {
+      "type": "text",
+      "text": "Unlike functions, closures usually don't need type annotations. Rust looks at how the closure is used and works the types out. But a closure has only one type for each parameter. Once Rust sees add_one(5), x is an i32, and calling add_one(\"hi\") afterwards is a type error (E0308)."
+    },
+    {
+      "type": "text",
+      "text": "Closures can be passed to functions. The parameter type impl Fn(i32) -> i32 means \"any closure or function that takes an i32 and returns an i32\". Plain functions can be passed too:"
+    },
+    {
+      "type": "code",
+      "code": "fn apply_twice(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(f(value))\n}\n\nfn double(x: i32) -> i32 {\n    x * 2\n}\n\nfn main() {\n    let add_ten = |x| x + 10;\n    println!(\"{}\", apply_twice(add_ten, 1));\n    println!(\"{}\", apply_twice(double, 3));\n    println!(\"{}\", apply_twice(|x| x * x, 3));\n}"
+    },
+    {
+      "type": "text",
+      "text": "apply_twice calls f on the value, then calls f again on the result. With add_ten, 1 becomes 11 and then 21. The last call writes the closure right in the argument list, which is how closures are most often used."
+    },
+    {
+      "type": "text",
+      "text": "The standard library is full of methods that take closures. sort_by_key sorts a Vec by whatever key the closure returns. unwrap_or_else on an Option runs its closure only if the value is None, so the default is created only when needed:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let mut words = vec![\"pear\", \"fig\", \"banana\", \"kiwi\"];\n    words.sort_by_key(|w| w.len());\n    println!(\"{:?}\", words);\n\n    let nickname: Option<String> = None;\n    let shown = nickname.unwrap_or_else(|| String::from(\"guest\"));\n    println!(\"{shown}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Here sort_by_key calls the closure on each word to get its length, and orders the words by that number. Words with equal length keep their original order."
+    },
+    {
+      "type": "note",
+      "text": "A closure is like a recipe card you can hand to someone else. They decide when to follow it. Here sort_by_key follows it once per word.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Closures are Rust's lambdas: Python's lambda x: x + 1, JavaScript's x => x + 1, Java's x -> x + 1, C#'s x => x + 1, C++'s [](int x) { return x + 1; }. Unlike Python lambdas, a Rust closure body can be a full block with several statements. Each closure has its own unique, unnameable type, which is why you accept them with impl Fn(...) or a generic F: Fn(...) and not a concrete type.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "apply calls a closure on a number. The starter passes it a doubling closure. Below that, define let minus_five = |x| x - 5; and print apply(minus_five, 50) with println!. It should print two lines: 42 and 45.",
+    "starter": "fn apply(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(value)\n}\n\nfn main() {\n    let doubled = apply(|x| x * 2, 21);\n    println!(\"{doubled}\");\n}",
+    "expectedOutput": "42\n45",
+    "solution": "fn apply(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(value)\n}\n\nfn main() {\n    let doubled = apply(|x| x * 2, 21);\n    println!(\"{doubled}\");\n    let minus_five = |x| x - 5;\n    println!(\"{}\", apply(minus_five, 50));\n}"
+  },
+  "quiz": [
+    {
+      "question": "Which is a closure that adds 1 to its parameter?",
+      "options": [
+        "|x| x + 1",
+        "fn(x) x + 1",
+        "(x) -> x + 1"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "A closure is first called with a String, then with an i32. What happens?",
+      "options": [
+        "It works, and the closure adapts each time",
+        "A compile error, because its parameter type was fixed by the first use",
+        "A panic at run time"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What does the parameter type impl Fn(i32) -> i32 accept?",
+      "options": [
+        "Only closures written with |x|",
+        "Only functions with the name Fn",
+        "Any closure or function that takes an i32 and returns an i32"
+      ],
+      "answer": 2
+    }
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "id": "u10-l1",
+  "title": "Box<T>",
+  "sections": [
+    {
+      "type": "text",
+      "text": "A smart pointer is a value that points to data stored somewhere else, and also does extra work for you. The simplest one is Box<T>. It puts a value on the heap, the big area of memory for data whose size can change or isn't known up front. The Box itself is small and sits where any other variable would. It owns the heap data, and when the Box goes out of scope, the data is freed."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let b = Box::new(5);\n    println!(\"b = {b}\");\n    let total = *b + 1;   // * reaches the value inside the box\n    println!(\"total = {total}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "For a plain number you would never bother with a Box. It becomes useful in three situations. The first is a type that contains itself. Imagine a list where each item holds a number and the rest of the list. Here is a first try. This code does not compile. Rust reports E0072: recursive type `List` has infinite size."
+    },
+    {
+      "type": "code",
+      "code": "// This does NOT compile: E0072, recursive type `List` has infinite size.\nenum List {\n    Cons(i32, List),\n    Nil,\n}"
+    },
+    {
+      "type": "text",
+      "text": "Rust must know how many bytes a List takes. A Cons holds a List, which holds a Cons, and so on forever. The fix is to store the rest of the list behind a Box. A Box always has the same size (it is just a pointer), so the size is known."
+    },
+    {
+      "type": "code",
+      "code": "enum List {\n    Cons(i32, Box<List>),\n    Nil,\n}\nuse List::{Cons, Nil};\n\nfn sum(list: &List) -> i32 {\n    match list {\n        Cons(value, rest) => value + sum(rest),\n        Nil => 0,\n    }\n}\n\nfn main() {\n    let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));\n    println!(\"sum = {}\", sum(&list));\n}"
+    },
+    {
+      "type": "text",
+      "text": "Cons and Nil are the two variants of the enum. A Cons holds a number and a Box with the rest of the list; Nil marks the end. The line use List::{Cons, Nil}; lets us write Cons instead of List::Cons. In sum, rest is a reference to a Box<List>, and Rust lets us pass it where a &List is expected. The next lesson explains why."
+    },
+    {
+      "type": "text",
+      "text": "The second situation is mixing different types in one collection. A Vec holds one type, but sometimes you want a Vec of things that only share some behavior. Suppose Shape is a trait, and Circle and Square both implement it. The type dyn Shape means \"some value of any type that implements Shape\". It is called a trait object. Rust only decides which area method to call when the program runs. A dyn Shape can be any size, so it must sit behind a pointer such as Box. Box<dyn Shape> is a box holding any Shape."
+    },
+    {
+      "type": "code",
+      "code": "use std::f64::consts::PI;\n\ntrait Shape {\n    fn area(&self) -> f64;\n    fn name(&self) -> String;\n}\n\nstruct Circle {\n    radius: f64,\n}\n\nstruct Square {\n    side: f64,\n}\n\nimpl Shape for Circle {\n    fn area(&self) -> f64 {\n        PI * self.radius * self.radius\n    }\n    fn name(&self) -> String {\n        String::from(\"circle\")\n    }\n}\n\nimpl Shape for Square {\n    fn area(&self) -> f64 {\n        self.side * self.side\n    }\n    fn name(&self) -> String {\n        String::from(\"square\")\n    }\n}\n\nfn main() {\n    let shapes: Vec<Box<dyn Shape>> = vec![\n        Box::new(Circle { radius: 1.0 }),\n        Box::new(Square { side: 2.0 }),\n    ];\n    for s in &shapes {\n        println!(\"{}: {:.2}\", s.name(), s.area());\n    }\n}"
+    },
+    {
+      "type": "text",
+      "text": "The third situation is moving a large value around without copying it. Moving a Box only copies the pointer, not all the data behind it. This matters less often, so it is enough to know it exists."
+    },
+    {
+      "type": "note",
+      "text": "Memory has two main areas. The stack is fast and tidy, for values whose size is known when the program is compiled, such as numbers. The heap is for data that can grow or has an unknown size, such as the text inside a String. You've used the heap already: String and Vec keep their contents there. A Box is the plain, do-nothing-else way to put one value on the heap.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Coming from C++: Box<T> is like std::unique_ptr<T>. It has one owner and frees its data automatically. There is no garbage collector and no manual delete. Box<dyn Trait> is like a base-class pointer with virtual methods (dynamic dispatch through a vtable). With generics, in contrast, Rust generates a separate copy of the code for each type (static dispatch). Use Box<dyn Trait> when you need different types in one place at run time.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Add a function length(list: &List) -> u32 that counts the items: a Cons counts as 1 plus the length of the rest, and Nil is 0. Follow the shape of sum. Then change the println! in main so it prints both: sum = 6, length = 3",
+    "starter": "enum List {\n    Cons(i32, Box<List>),\n    Nil,\n}\nuse List::{Cons, Nil};\n\nfn sum(list: &List) -> i32 {\n    match list {\n        Cons(value, rest) => value + sum(rest),\n        Nil => 0,\n    }\n}\n\n// add fn length here\n\nfn main() {\n    let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));\n    println!(\"sum = {}\", sum(&list));\n}",
+    "expectedOutput": "sum = 6, length = 3",
+    "solution": "enum List {\n    Cons(i32, Box<List>),\n    Nil,\n}\nuse List::{Cons, Nil};\n\nfn sum(list: &List) -> i32 {\n    match list {\n        Cons(value, rest) => value + sum(rest),\n        Nil => 0,\n    }\n}\n\nfn length(list: &List) -> u32 {\n    match list {\n        Cons(_, rest) => 1 + length(rest),\n        Nil => 0,\n    }\n}\n\nfn main() {\n    let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));\n    println!(\"sum = {}, length = {}\", sum(&list), length(&list));\n}"
+  },
+  "quiz": [
+    {
+      "question": "Why does enum List { Cons(i32, List), Nil } fail to compile?",
+      "options": [
+        "A Cons would contain a List that contains a Cons, so its size is infinite",
+        "Enums can't have two variants",
+        "i32 can't be used inside an enum"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Where does a Box<T> keep the value of type T?",
+      "options": [
+        "On the stack, next to the Box",
+        "In a file",
+        "On the heap"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "What does Vec<Box<dyn Shape>> let you do?",
+      "options": [
+        "Store values of different types that all implement Shape",
+        "Store only Circles",
+        "Skip writing the Shape trait"
+      ],
+      "answer": 0
+    }
+  ]
+}

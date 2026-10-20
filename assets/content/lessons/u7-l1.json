@@ -1,0 +1,87 @@
+{
+  "id": "u7-l1",
+  "title": "Generic functions",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Sometimes the same logic works for many types. Swapping two values does not care whether they are numbers or words. Writing one copy of the function for every type would be a lot of repeated code. A generic function is written once and works for many types."
+    },
+    {
+      "type": "text",
+      "text": "You make a function generic by adding a type parameter in angle brackets after its name. By convention it is called T, short for \"type\". T is a placeholder: each time you call the function, Rust fills it in with a real type."
+    },
+    {
+      "type": "code",
+      "code": "fn swap_pair<T>(pair: (T, T)) -> (T, T) {\n    (pair.1, pair.0)\n}\n\nfn main() {\n    let numbers = swap_pair((1, 2));\n    let words = swap_pair((\"left\", \"right\"));\n    let names = swap_pair((String::from(\"Ana\"), String::from(\"Binh\")));\n    println!(\"{:?}\", numbers);\n    println!(\"{:?}\", words);\n    println!(\"{:?}\", names);\n}"
+    },
+    {
+      "type": "text",
+      "text": "<T> after the name declares the placeholder. After that, T can be used like any type in the parameters and the return type. (T, T) is a tuple holding two values of the same type, and pair.0 and pair.1 pick its parts. In the first call T becomes i32, in the second &str, in the third String. You never write the real type: Rust works it out from the arguments."
+    },
+    {
+      "type": "note",
+      "text": "Think of T as a blank in a form. The function says \"give me two things of the same kind, whatever kind that is\". Each call fills in the blank. The name T is only a habit; you could call it Item or anything else.",
+      "track": "starter"
+    },
+    {
+      "type": "text",
+      "text": "A generic function can only do what it is sure every possible T can do. swap_pair only moves values around, which works for every type. Comparing two values with > does not work for every type (what would it mean to compare two files?). So this does not compile:"
+    },
+    {
+      "type": "code",
+      "code": "// This does NOT compile. Error E0369: binary operation `>` cannot be applied to type `&T`\nfn largest<T>(items: &[T]) -> &T {\n    let mut biggest = &items[0];\n    for item in items {\n        if item > biggest {\n            biggest = item;\n        }\n    }\n    biggest\n}"
+    },
+    {
+      "type": "text",
+      "text": "The fix is to tell Rust that T must be a type that can be compared. You do that by writing T: PartialOrd. PartialOrd is a trait (a named ability) that types with < and > have. Read T: PartialOrd as \"any type T, as long as it can be ordered\". The next lessons explain traits and these bounds properly; for now just copy the pattern."
+    },
+    {
+      "type": "code",
+      "code": "fn largest<T: PartialOrd>(items: &[T]) -> &T {\n    let mut biggest = &items[0];\n    for item in items {\n        if item > biggest {\n            biggest = item;\n        }\n    }\n    biggest\n}\n\nfn main() {\n    let numbers = [34, 50, 25, 100, 65];\n    let letters = ['y', 'm', 'a', 'q'];\n    println!(\"largest number: {}\", largest(&numbers));\n    println!(\"largest letter: {}\", largest(&letters));\n}"
+    },
+    {
+      "type": "text",
+      "text": "&[T] is a slice of any type T. Looping over a reference to a slice gives a reference to each item, just like looping over &prices did with a Vec. The function returns a reference to the biggest item, so it never copies or moves anything. It panics on an empty slice, because items[0] does not exist."
+    },
+    {
+      "type": "note",
+      "text": "Generics have no run-time cost. The compiler makes a separate copy of the function for each type you really use (this is called monomorphization), so largest::<i32> runs as fast as a hand-written i32 version. This is closer to C++ templates than to Java generics, which erase the types. Rust checks the function body once, using the bounds, instead of when each use is expanded like C++ templates.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "last_item only works on slices of i32. Make it generic: change its signature to fn last_item<T>(items: &[T]) -> &T. Then, at the end of main, add a slice of words with let words = [\"red\", \"green\", \"blue\"]; and print last_item(&words) with println!. It should print two lines: 15 and blue.",
+    "starter": "fn last_item(items: &[i32]) -> &i32 {\n    &items[items.len() - 1]\n}\n\nfn main() {\n    let numbers = [4, 8, 15];\n    println!(\"{}\", last_item(&numbers));\n}",
+    "expectedOutput": "15\nblue",
+    "solution": "fn last_item<T>(items: &[T]) -> &T {\n    &items[items.len() - 1]\n}\n\nfn main() {\n    let numbers = [4, 8, 15];\n    println!(\"{}\", last_item(&numbers));\n    let words = [\"red\", \"green\", \"blue\"];\n    println!(\"{}\", last_item(&words));\n}"
+  },
+  "quiz": [
+    {
+      "question": "What does the <T> in fn swap_pair<T>(...) do?",
+      "options": [
+        "Makes the function run faster",
+        "Declares T as a placeholder for any type",
+        "Sets the return type to T only"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Why does largest need T: PartialOrd?",
+      "options": [
+        "Because > only works on types that can be compared",
+        "Because slices must be sorted",
+        "Because T must be a number"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "How does Rust decide which type T is when you call swap_pair((\"a\", \"b\"))?",
+      "options": [
+        "You must always write the type in the call",
+        "T is always i32 by default",
+        "It works T out from the arguments you pass"
+      ],
+      "answer": 2
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "id": "u9-l3",
+  "title": "Packages, crates and Cargo",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Two words you will meet a lot. A crate is the smallest unit of code the compiler builds at once. A package is a folder that Cargo manages; it holds one or more crates, plus a file called Cargo.toml that describes them."
+    },
+    {
+      "type": "text",
+      "text": "There are two kinds of crate. A binary crate compiles to a program you can run, and it has a main function. A library crate has no main; it offers code for other crates to use. Every program in this course so far was a binary crate in a single file."
+    },
+    {
+      "type": "text",
+      "text": "Run cargo new my_app and Cargo makes this package for you:"
+    },
+    {
+      "type": "code",
+      "code": "my_app/\n    Cargo.toml        <- describes the package\n    src/\n        main.rs       <- the root of the binary crate\n        lib.rs        <- (optional) the root of a library crate"
+    },
+    {
+      "type": "text",
+      "text": "src/main.rs is the crate root of the binary, and src/lib.rs, if you add it, is the crate root of a library. The crate root is where the compiler starts reading, the same top-level module you met earlier. Cargo.toml looks like this:"
+    },
+    {
+      "type": "code",
+      "code": "[package]\nname = \"my_app\"\nversion = \"0.1.0\"\nedition = \"2024\"\n\n[dependencies]\nrand = \"0.10\""
+    },
+    {
+      "type": "text",
+      "text": "The [package] part gives the name, the version and the Rust edition. The [dependencies] part lists the other crates you want. Here we ask for rand, a popular crate that makes random numbers. \"0.10\" means any compatible 0.10.x version. When you build, Cargo downloads rand from crates.io, the public place where people share crates, and builds it too. Then your code can write use rand::...; to use it. Cargo also writes a Cargo.lock file that records the exact versions, so everyone builds with the same ones."
+    },
+    {
+      "type": "text",
+      "text": "Important: the editor in this app cannot download crates, and it compiles a single file with plain rustc, so there is no Cargo.toml here. Anything with a [dependencies] section is shown, not run. The standard library, std, is a crate that comes with Rust, so use std::... always works."
+    },
+    {
+      "type": "text",
+      "text": "These are the Cargo commands you will use every day. Run them in a terminal, inside your package folder:"
+    },
+    {
+      "type": "code",
+      "code": "cargo new my_app      # make a new package\ncargo build           # compile it\ncargo run             # compile and run\ncargo check           # check for errors, faster than build\ncargo test            # run the tests (next lesson)\ncargo add rand        # add a dependency to Cargo.toml\ncargo build --release # compile with full optimizations"
+    },
+    {
+      "type": "text",
+      "text": "Now back to modules. When a module grows, you move it to its own file. In src/main.rs, write mod garden; with a semicolon instead of a block. Rust then loads the module body from src/garden.rs. A module nested inside it, declared with pub mod vegetables; inside garden.rs, lives in src/garden/vegetables.rs."
+    },
+    {
+      "type": "code",
+      "code": "my_app/\n    src/\n        main.rs               <- has: mod garden;\n        garden.rs             <- has: pub mod vegetables;\n        garden/\n            vegetables.rs     <- the body of garden::vegetables"
+    },
+    {
+      "type": "text",
+      "text": "The module tree is the same as if you had written everything inline. The paths in your code (garden::vegetables::count()) do not change, only where the text is stored. Here is the inline version, with comments showing where each part would live in files. It prints the same thing as the file version:"
+    },
+    {
+      "type": "code",
+      "code": "// src/main.rs holds `mod garden;` and main\n// src/garden.rs holds the body of `mod garden`\nmod garden {\n    // src/garden/vegetables.rs holds the body of `mod vegetables`\n    pub mod vegetables {\n        pub fn count() -> u32 {\n            3\n        }\n    }\n\n    pub fn plant(name: &str) -> String {\n        format!(\"planted {name}\")\n    }\n}\n\nfn main() {\n    println!(\"{}, {} in the garden\", garden::plant(\"carrot\"), garden::vegetables::count());\n}"
+    },
+    {
+      "type": "note",
+      "text": "A package is like a project folder with a manifest file: Cargo.toml plays the role of package.json (npm) or requirements.txt plus setup (Python). crates.io is Rust's npm or PyPI. The crates you depend on are downloaded and compiled together with your code.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Coming from Java, Go or C#: a crate is roughly one compilation unit, like a Go module or a .NET assembly. A package can have one library crate and many binary crates (extra binaries go in src/bin/). Cargo.lock is committed for applications. Workspaces let several packages share one lock file and one build folder. The older layout garden/mod.rs also works, but garden.rs next to a garden/ folder is the current style.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Pretend the nested module is the file src/garden/vegetables.rs. Inside mod garden, add pub mod vegetables with a function pub fn count() -> u32 that returns 3. Then replace the 0 in main with garden::vegetables::count(). It should print: planted carrot, 3 in the garden",
+    "starter": "mod garden {\n    pub fn plant(name: &str) -> String {\n        format!(\"planted {name}\")\n    }\n\n    // add pub mod vegetables here\n}\n\nfn main() {\n    let count = 0;   // replace 0 with garden::vegetables::count()\n    println!(\"{}, {} in the garden\", garden::plant(\"carrot\"), count);\n}",
+    "expectedOutput": "planted carrot, 3 in the garden",
+    "solution": "mod garden {\n    pub fn plant(name: &str) -> String {\n        format!(\"planted {name}\")\n    }\n\n    pub mod vegetables {\n        pub fn count() -> u32 {\n            3\n        }\n    }\n}\n\nfn main() {\n    let count = garden::vegetables::count();\n    println!(\"{}, {} in the garden\", garden::plant(\"carrot\"), count);\n}"
+  },
+  "quiz": [
+    {
+      "question": "Which file is the root of a binary crate in a package made by cargo new?",
+      "options": [
+        "Cargo.toml",
+        "src/lib.rs",
+        "src/main.rs"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "What does the [dependencies] section of Cargo.toml do?",
+      "options": [
+        "Lists the crates your package needs, which Cargo downloads and builds",
+        "Lists the functions your package exports",
+        "Lists the files that the compiler should skip"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "In src/main.rs you write mod garden; with a semicolon. Where does Rust look for the body of that module?",
+      "options": [
+        "In src/garden.rs",
+        "In Cargo.toml",
+        "In src/main.rs, further down"
+      ],
+      "answer": 0
+    }
+  ]
+}

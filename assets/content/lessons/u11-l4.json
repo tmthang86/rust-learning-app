@@ -1,0 +1,83 @@
+{
+  "id": "u11-l4",
+  "title": "Intro to async",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Threads are one way to wait for several things at once. Async is another. It suits programs that spend most of their time waiting, such as a web server with thousands of connections. An async fn does not run when you call it. It gives back a future: a value that stands for work that is not finished yet. Nothing happens until something drives the future to completion."
+    },
+    {
+      "type": "text",
+      "text": "Inside an async fn you write .await after another future. It means: \"wait here until this finishes, and let other work run in the meantime\". You can only use .await inside async code. Futures are lazy: if you never await or run one, its code never runs."
+    },
+    {
+      "type": "text",
+      "text": "Rust's standard library defines what a future is (the Future trait) but includes no runtime to run them. Real programs add a crate like tokio for that. This app can't use crates, so the program below carries a tiny runner called block_on, built only from std. It asks the future \"are you done?\" (that is called polling). If the answer is \"not yet\", it parks the thread until the future says it is ready to be asked again. Read the helper only if you are curious."
+    },
+    {
+      "type": "code",
+      "code": "use std::future::Future;\nuse std::pin::pin;\nuse std::sync::Arc;\nuse std::task::{Context, Poll, Wake, Waker};\nuse std::thread::{self, Thread};\n\n// ---- You don't need to understand this helper. ----\n// Rust's standard library has no runtime, so this tiny one runs a future\n// to the end by polling it. Real programs use a crate such as tokio.\nstruct ThreadWaker(Thread);\n\nimpl Wake for ThreadWaker {\n    fn wake(self: Arc<Self>) {\n        self.0.unpark();\n    }\n}\n\nfn block_on<F: Future>(future: F) -> F::Output {\n    let mut future = pin!(future);\n    let waker = Waker::from(Arc::new(ThreadWaker(thread::current())));\n    let mut cx = Context::from_waker(&waker);\n    loop {\n        match future.as_mut().poll(&mut cx) {\n            Poll::Ready(value) => return value,\n            Poll::Pending => thread::park(),\n        }\n    }\n}\n// ---- End of helper. ----\n\nuse std::pin::Pin;\n\nstruct PauseOnce {\n    paused: bool,\n}\n\nimpl Future for PauseOnce {\n    type Output = ();\n\n    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {\n        if self.paused {\n            Poll::Ready(())\n        } else {\n            self.paused = true;\n            cx.waker().wake_by_ref();   // \"ask me again right away\"\n            Poll::Pending\n        }\n    }\n}\n\nasync fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\nasync fn greet(name: &str) -> String {\n    println!(\"greet: before the pause\");\n    PauseOnce { paused: false }.await;\n    println!(\"greet: after the pause\");\n    let sum = add(2, 3).await;\n    format!(\"Hello, {name}! 2 + 3 = {sum}\")\n}\n\nfn main() {\n    println!(\"1: calling greet\");\n    let future = greet(\"Ada\");\n    println!(\"2: we have a future, but nothing has run yet\");\n    let message = block_on(future);\n    println!(\"3: {message}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Look at the order of the output. Calling greet(\"Ada\") printed nothing. All the work happened inside block_on. PauseOnce is a small future that says \"pending\" the first time it is polled, so you can see an .await actually pausing and then continuing. add(2, 3).await finished at once, so it needed no pause."
+    },
+    {
+      "type": "note",
+      "text": "You can read async fn as a function that returns a future. async fn add(a: i32, b: i32) -> i32 gives back something that will produce an i32 once it has run. .await is how you get that i32 out. If you forget .await, you hold the unfinished work, not the number.",
+      "track": "starter"
+    },
+    {
+      "type": "text",
+      "text": "A runtime like tokio can run thousands of futures on a few threads: when one future waits, the runtime switches to another. With tokio you write #[tokio::main] above an async fn main, start tasks with tokio::spawn, and run futures side by side with tokio::join!. It looks like this (shown only, because it needs the tokio crate):"
+    },
+    {
+      "type": "code",
+      "code": "// Needs the tokio crate (Cargo.toml: tokio = { version = \"1\", features = [\"full\"] }),\n// so it can't run in this app.\nasync fn fetch_two_pages() {\n    let (a, b) = tokio::join!(fetch(\"page-a\"), fetch(\"page-b\"));\n    println!(\"{a} and {b}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "When should you use async and when threads? Threads are simple and good for heavy computation. Async is for programs with many tasks that mostly wait, especially network code. Many projects use both."
+    },
+    {
+      "type": "note",
+      "text": "Coming from JavaScript or C#: a JavaScript Promise or a C# Task starts running as soon as you create it. A Rust future does not: it is lazy and does nothing until awaited or polled. Rust also ships no executor, so you choose one (tokio is the most common; smol is a small alternative). If you know Python's asyncio, async fn is like async def, and block_on plays the role of asyncio.run.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "run() calls add_one once. Make it call add_one a second time on the result, with .await, and return that. The program should print: 3",
+    "starter": "use std::future::Future;\nuse std::pin::pin;\nuse std::sync::Arc;\nuse std::task::{Context, Poll, Wake, Waker};\nuse std::thread::{self, Thread};\n\n// ---- You don't need to understand this helper. ----\n// Rust's standard library has no runtime, so this tiny one runs a future\n// to the end by polling it. Real programs use a crate such as tokio.\nstruct ThreadWaker(Thread);\n\nimpl Wake for ThreadWaker {\n    fn wake(self: Arc<Self>) {\n        self.0.unpark();\n    }\n}\n\nfn block_on<F: Future>(future: F) -> F::Output {\n    let mut future = pin!(future);\n    let waker = Waker::from(Arc::new(ThreadWaker(thread::current())));\n    let mut cx = Context::from_waker(&waker);\n    loop {\n        match future.as_mut().poll(&mut cx) {\n            Poll::Ready(value) => return value,\n            Poll::Pending => thread::park(),\n        }\n    }\n}\n// ---- End of helper. ----\n\nasync fn add_one(x: i32) -> i32 {\n    x + 1\n}\n\nasync fn run() -> i32 {\n    let first = add_one(1).await;\n    first\n}\n\nfn main() {\n    println!(\"{}\", block_on(run()));\n}",
+    "expectedOutput": "3",
+    "solution": "use std::future::Future;\nuse std::pin::pin;\nuse std::sync::Arc;\nuse std::task::{Context, Poll, Wake, Waker};\nuse std::thread::{self, Thread};\n\n// ---- You don't need to understand this helper. ----\n// Rust's standard library has no runtime, so this tiny one runs a future\n// to the end by polling it. Real programs use a crate such as tokio.\nstruct ThreadWaker(Thread);\n\nimpl Wake for ThreadWaker {\n    fn wake(self: Arc<Self>) {\n        self.0.unpark();\n    }\n}\n\nfn block_on<F: Future>(future: F) -> F::Output {\n    let mut future = pin!(future);\n    let waker = Waker::from(Arc::new(ThreadWaker(thread::current())));\n    let mut cx = Context::from_waker(&waker);\n    loop {\n        match future.as_mut().poll(&mut cx) {\n            Poll::Ready(value) => return value,\n            Poll::Pending => thread::park(),\n        }\n    }\n}\n// ---- End of helper. ----\n\nasync fn add_one(x: i32) -> i32 {\n    x + 1\n}\n\nasync fn run() -> i32 {\n    let first = add_one(1).await;\n    let second = add_one(first).await;\n    second\n}\n\nfn main() {\n    println!(\"{}\", block_on(run()));\n}"
+  },
+  "quiz": [
+    {
+      "question": "What does calling an async fn give you?",
+      "options": [
+        "The final result straight away",
+        "A future: work that has not run yet",
+        "A new thread"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What does .await do?",
+      "options": [
+        "Waits until that future is finished, letting other work run meanwhile",
+        "Starts a new operating-system thread",
+        "Turns a number into a string"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Why do real async programs add a crate like tokio?",
+      "options": [
+        "Rust has no async keyword",
+        "async code can't use println!",
+        "The standard library defines futures but has no runtime to run them"
+      ],
+      "answer": 2
+    }
+  ]
+}
