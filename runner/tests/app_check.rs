@@ -201,6 +201,83 @@ async fn bad_tokens_do_not_use_up_a_tokens_allowance() {
     assert_eq!(status, StatusCode::BAD_REQUEST);
 }
 
+// --- /grade goes through the same gate ---
+
+/// A `/grade` body that stops at test validation: fast, and proves a request
+/// got past the gate.
+fn grade_stops_early(headers: &[(&str, &str)]) -> Request<Body> {
+    grade_request_with("fn main() {}", serde_json::json!([]), headers)
+}
+
+#[tokio::test]
+async fn grade_needs_app_check_like_run() {
+    let st = Arc::new(secured_state().await);
+    let (status, _, body) = send(router(st.clone(), "127.0.0.1"), grade_stops_early(&[])).await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    assert_eq!(body["code"], "app_check_missing");
+    let (status, _, body) = send(
+        router(st.clone(), "127.0.0.1"),
+        grade_stops_early(&[("x-firebase-appcheck", "garbage")]),
+    )
+    .await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    assert_eq!(body["code"], "app_check_invalid");
+    let token = valid_token();
+    let (status, _, body) = send(
+        router(st, "127.0.0.1"),
+        grade_stops_early(&[("x-firebase-appcheck", &token)]),
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "past the gate");
+    assert_eq!(body["code"], "tests_invalid");
+}
+
+#[tokio::test]
+async fn run_and_grade_drain_one_token_bucket_and_one_ip_bucket() {
+    // Per token.
+    let mut st = secured_state().await;
+    st.rate = rate(bucket(2, 2, 100), BucketConfig::OFF);
+    let st = Arc::new(st);
+    let a = valid_token();
+    let (s1, _, _) = send(router(st.clone(), "127.0.0.1"), with_token(EMPTY, &a)).await;
+    let (s2, _, _) = send(
+        router(st.clone(), "127.0.0.1"),
+        grade_stops_early(&[("x-firebase-appcheck", &a)]),
+    )
+    .await;
+    assert_eq!((s1, s2), (StatusCode::BAD_REQUEST, StatusCode::BAD_REQUEST));
+    let (s3, _, body) = send(router(st.clone(), "127.0.0.1"), with_token(EMPTY, &a)).await;
+    assert_eq!(
+        s3,
+        StatusCode::TOO_MANY_REQUESTS,
+        "one bucket: run, grade, then run again"
+    );
+    assert_eq!(body["code"], "rate_limited");
+    let (s4, headers, _) = send(
+        router(st, "127.0.0.1"),
+        grade_stops_early(&[("x-firebase-appcheck", &a)]),
+    )
+    .await;
+    assert_eq!(s4, StatusCode::TOO_MANY_REQUESTS);
+    assert!(headers.contains_key("retry-after"));
+
+    // Per IP.
+    let mut st = AppState::for_tests(Sandbox::Local, limits());
+    st.rate = rate(BucketConfig::OFF, bucket(2, 2, 100));
+    let st = Arc::new(st);
+    let (a, _, _) = send(router(st.clone(), "127.0.0.1"), run_request(EMPTY)).await;
+    let (b, _, _) = send(router(st.clone(), "127.0.0.1"), grade_stops_early(&[])).await;
+    let (c, _, _) = send(router(st, "127.0.0.1"), grade_stops_early(&[])).await;
+    assert_eq!(
+        (a, b, c),
+        (
+            StatusCode::BAD_REQUEST,
+            StatusCode::BAD_REQUEST,
+            StatusCode::TOO_MANY_REQUESTS
+        )
+    );
+}
+
 fn xff(ip: &str) -> Request<Body> {
     run_request_with(EMPTY, &[("x-forwarded-for", ip)])
 }

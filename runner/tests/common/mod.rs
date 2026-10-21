@@ -45,6 +45,22 @@ pub fn run_request_with(code: &str, headers: &[(&str, &str)]) -> Request<Body> {
         .unwrap()
 }
 
+/// A `POST /grade` request. `tests` is the JSON array of tests.
+pub fn grade_request(code: &str, tests: Value) -> Request<Body> {
+    grade_request_with(code, tests, &[])
+}
+
+pub fn grade_request_with(code: &str, tests: Value, headers: &[(&str, &str)]) -> Request<Body> {
+    let mut req = Request::post("/grade").header("content-type", "application/json");
+    for (k, v) in headers {
+        req = req.header(*k, *v);
+    }
+    req.body(Body::from(
+        json!({ "code": code, "tests": tests }).to_string(),
+    ))
+    .unwrap()
+}
+
 pub async fn send(app: Router, req: Request<Body>) -> (StatusCode, HeaderMap, Value) {
     let res = app.oneshot(req).await.unwrap();
     let status = res.status();

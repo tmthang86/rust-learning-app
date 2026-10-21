@@ -33,7 +33,7 @@ are marked *(reviewer-verified)*.
 | 4 | Threat model | App Check **raises the cost** of abuse: an attacker needs a genuine device or browser and a fresh attestation about every hour. It is **not a hard gate**. A rooted device, a farm of real phones, or reCAPTCHA solvers get through. The real bounds are the per-IP limit, the per-token limit and the fixed capacity of one VM (2 jobs at a time, queue of 16). The worst case is "runs are slow for everyone", never a bigger VM or a host compromise. (Network traffic out is the one cost that follows use: Oracle's free allowance is large, Google bills it, so the budget alert stays required. Responses are size-capped.) |
 | 5 | Fail-closed config | `RUNNER_ENV` defaults to `production`. In production the server refuses to start unless App Check is configured, the runtime is gVisor, CORS origins are explicit, rate limits are on, and the listen address is loopback. `RUNNER_APP_CHECK` defaults to `required` in production and `off` in development. |
 | 6 | Rate limits | In-process **`governor` 0.10** keyed token buckets. **Per App Check token** (= per device for the token's ~1 h life): 20/min with burst 10, plus 300/hour. **Per IP:** 120/min with burst 60, plus 3000/hour. Each limiter holds at most 50,000 keys. Global protection is the job semaphore plus a queue cap. Over a limit, the server answers 429 with `Retry-After`. The client IP is the rightmost `X-Forwarded-For` entry, and only when the TCP peer is Caddy (loopback). There is no per-app bucket ([DECIDED]). |
-| 7 | Edge | **Caddy** (official apt repo) on the VM. It handles automatic TLS (using the Let's Encrypt **staging** CA while testing setup), HTTP/1.1 and HTTP/2, header/body/write/idle timeouts and a 256 KB body cap, and exposes only `/run` and `/health`. **No Cloudflare and no nftables connection cap at launch.** CORS stays in the runner, with an explicit origin list, and `Retry-After` is exposed to the browser. |
+| 7 | Edge | **Caddy** (official apt repo) on the VM. It handles automatic TLS (using the Let's Encrypt **staging** CA while testing setup), HTTP/1.1 and HTTP/2, header/body/write/idle timeouts and a 256 KB body cap, and exposes only `/run`, `/grade` and `/health`. **No Cloudflare and no nftables connection cap at launch.** CORS stays in the runner, with an explicit origin list, and `Retry-After` is exposed to the browser. |
 | 8 | Host and deploy | The runner runs as a **hardened systemd service** under a `rust-runner` user in the `docker` group. That is root-equivalent, which is accepted on a dedicated VM with no cloud credentials. Docker CE uses `default-runtime: runsc`. **`runsc`, `docker-ce`, `docker-ce-cli` and `containerd.io` are pinned and held**, and upgraded monthly via `install.sh` plus the smoke test. Unattended upgrades cover Ubuntu security only, with reboots at 03:00 Vietnam time. **No userns-remap.** The sandbox image is pulled **by digest from `mirror.gcr.io`**. The binary is **built on Thang's laptop** with Docker and **cargo-zigbuild** in a native `$BUILDPLATFORM` stage (no QEMU), targeting `x86_64-unknown-linux-gnu.2.36`. It is built from `git archive HEAD` and shipped with its sha256. `install.sh` checks that the binary runs and that its glibc requirement is ≤ 2.39 before switching. **Nothing is compiled on the serving VM.** Each release is a directory (binary, env, image digest), so rollback restores all three. |
 | 9 | App client | Add `firebase_app_check: ^0.5.0` (compatible with `firebase_core ^5.0.0`). Providers: Play Integrity, App Attest with DeviceCheck fallback, and reCAPTCHA Enterprise, with debug providers in debug builds. iOS needs a **new `Runner.entitlements`** with the App Attest environment. `HttpCodeRunner` gets a `RunnerAuth` that adds the header. On a 401 for a bad token it retries once with a fresh token. 401, 403 and 429 get their own messages. With no Firebase, it sends no header. |
 | 10 | Observability | JSON logs go to journald, one line per request. They include the request ID, outcome, stage, timings, code size, platform and a hashed client key. **Never logged:** code, output, tokens, full IP. Every 60 s a summary line is written. `/health` returns JSON (status, last good job, disk free, counters), which the uptime check content-matches. A **required** billing budget alert and a weekly log review. No Prometheus. |
@@ -483,7 +483,7 @@ Caddy comes from its official apt repository (stable). The version is
 | Header size | `max_header_size 16KB` |
 | Body | `request_body { max_size 256KB }` |
 | Protocols | `protocols h1 h2` (TCP 443 only) |
-| Paths | `/run`, `/health` → `reverse_proxy 127.0.0.1:8080 { transport http { dial_timeout 2s response_header_timeout 50s } }`; everything else → `respond 404` |
+| Paths | `/run`, `/grade`, `/health` → `reverse_proxy 127.0.0.1:8080 { transport http { dial_timeout 2s response_header_timeout 50s } }`; everything else → `respond 404` |
 | Headers | `Strict-Transport-Security "max-age=31536000"`, `X-Content-Type-Options nosniff`, `-Server` |
 | Logs | no `log` directive (Caddy's access log is off unless configured) |
 | ACME testing | when `install.sh --acme-staging` is used, the global option `acme_ca https://acme-staging-v02.api.letsencrypt.org/directory` is rendered. Use it until the first full setup works, then rerun without it, to stay clear of Let's Encrypt production rate limits. |
@@ -1013,6 +1013,38 @@ RUNNER_DOMAIN=runner.REPLACE
 401 messages are generic ("This app couldn't be verified."). The specific
 reason goes only to logs (`auth_error`).
 
+**`POST /grade`** (exercises with several tests; design in
+`docs/exercise-tests-design.md`)
+
+- Same gate as `/run`: IP buckets, then App Check, then token buckets, **one
+  request = one token**. Same slots and queue, same container, same limits.
+  `/run` is unchanged.
+- Body: `{"code": "...", "tests": [{"id": "a", "code": "check_eq!(f(1), 2);"},
+  {"id": "b", "code": "...", "panics": "text"}, {"id": "c", "output": "expected stdout"}]}`.
+  Labels and `hidden` are not sent. Limits: 1-50 tests, unique ids matching
+  `^[a-z0-9][a-z0-9-]{0,39}$`, exactly one of `code`/`output` per test,
+  `panics` only with `code` (at most 200 bytes), `code` at most 4 KB,
+  `output` at most 8 KB, all test fields together at most 32 KB. The body
+  limit is 193 KB (under Caddy's 256 KB). A bad list is `400 tests_invalid`.
+- Answer 200: the `/run` fields plus `compileErrorsIn` (`"code"`, `"tests"` or
+  null), `reason` (a machine code or null) and `tests`, one entry per
+  requested id in request order: `{id, status, expr?, expected?, actual?,
+  output?, message?, line?, reason?}` with `status` one of `pass`, `fail`,
+  `panic`, `nopanic`, `error`, `timeout`, `crashed`, `not_run`. `stdout` is
+  what `main` printed; `stderr` is the whole run's stderr. `success` means the
+  process exited 0 and `main` did not panic; clients decide "solved" from the
+  test statuses only.
+- Reason codes: `mem_limit`, `output_limit`, `stack_overflow`, `exit:<n>`,
+  `no_main`, `tests_dont_fit`, `harness`. The server sends codes, never
+  English prose (compiler diagnostics and program output excepted).
+- The learner's code and a generated harness are compiled once with
+  `rustc --test`; the program runs once with `RUST_MIN_STACK=8 MiB`. When the
+  compile fails, the job script compiles the learner's code alone
+  (`--emit=mir`, the flags of `/run`) to decide whose error it is; that check
+  runs only after a failed compile, within the run timeout.
+- Logs: `endpoint: "grade"`, `tests_total`, `tests_passed`. Never code, test
+  code, ids or output.
+
 **`GET /health`:** JSON (§7). No auth, no rate limit.
 
 ### Module layout (`runner/src/`)
@@ -1022,7 +1054,7 @@ lib.rs        router, AppState (+ for_tests), `/run` handler
 main.rs       Config → state → background tasks → serve with ConnectInfo; `--self-check` runs check_sandbox once (exit 0/1)
 config.rs     Config, from_env_map, production rules
 errors.rs     ApiError { status, code, message, retry_after } + IntoResponse
-gate.rs       `/run` middleware: client IP → IP buckets → App Check → token buckets; puts `Caller { app_id, platform, token_key }` in extensions
+gate.rs       `/run` and `/grade` middleware: client IP → IP buckets → App Check → token buckets; puts `Caller { app_id, platform, token_key }` in extensions
 client_ip.rs  TrustedProxies, client_ip(peer, headers)
 app_check.rs  KeyCache (trait KeySource; HttpKeySource via reqwest; StaticKeySource for tests; refresh task; kid-miss refresh) + verify()
 ratelimit.rs  RateLimits (ip_short, ip_long, token_short, token_long) over governor, key cap, cleanup task

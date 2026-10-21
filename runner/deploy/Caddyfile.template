@@ -21,7 +21,7 @@
 		-Server
 	}
 
-	@runner path /run /health
+	@runner path /run /grade /health
 	handle @runner {
 		request_body {
 			max_size 256KB

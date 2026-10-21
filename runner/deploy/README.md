@@ -553,6 +553,20 @@ curl -i -X POST "https://$DOMAIN/run" \
 The answer must be `401` with `"code":"app_check_missing"`. A runner that
 runs code for anyone is a bug.
 
+`/grade` (exercises with tests) goes through the same gate, so it must answer
+the same way. A `404` here means Caddy does not know the path, so the app's
+Run button would fail on every exercise:
+
+```sh
+curl -i -X POST "https://$DOMAIN/grade" \
+  -H 'content-type: application/json' \
+  -d '{"code":"fn main() {}","tests":[{"id":"a","output":""}]}'
+```
+
+`smoke.sh` checks both. Deploy the runner (and so the Caddyfile) before an app
+release that uses `/grade`; an older runner answers `404` and the app then
+shows "The code runner needs an update".
+
 Also check that Caddy updates itself (it faces the internet, so security
 releases matter). This lists the update sources the VM will use; Caddy's must
 be among them:
@@ -821,7 +835,7 @@ Then remove the DNS record. For Google Cloud see the Appendix.
 | Caddy cannot get a certificate | Check `dig +short $DOMAIN` (step 7), that the security list allows ports 80 and 443 (step 5), that the VM firewall does (`ssh rust-runner 'sudo iptables -S INPUT'` shows `--dport 80` and `--dport 443`), and `sudo journalctl -u caddy -n 50`. |
 | The checks fail on the TLS certificate after the real deploy (step 13c), "the previous release is running again" | Caddy is fetching the real certificate. Wait two or three minutes, check `sudo journalctl -u caddy -n 30`, then run `runner/deploy/push.sh` again. |
 | The certificate is still the test one after a few minutes | On the VM run `sudo systemctl restart caddy`. If that is not enough, run `sudo rm -r /var/lib/caddy/.local/share/caddy/certificates`, restart Caddy again, and then run `runner/deploy/push.sh` again. |
-| `FAIL POST https://.../run without an App Check header ...` | The runner is up but answered something else. Run `curl -i` as in step 14 and read the answer. |
+| `FAIL POST https://.../run without an App Check header ...` (or `.../grade ...`) | The runner is up but answered something else. Run `curl -i` as in step 14 and read the answer. A `404` on `/grade` means the Caddyfile on the VM lacks the path: run `push.sh` again. |
 | `/health did not report ok` | `sudo journalctl -u rust-runner -n 100 -o cat`. A bad setting is listed there, all problems at once. |
 | The first deploy failed and the runner is stopped | That is on purpose. Fix the problem (the log tells you), then run `push.sh` again. |
 | `another setup, deploy, rollback or upgrade is running` | Two scripts ran at once. Wait for the first to end, then run yours again. The lock is released when a script ends, even if it failed. |

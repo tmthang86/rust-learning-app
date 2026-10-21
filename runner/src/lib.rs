@@ -41,6 +41,10 @@ use telemetry::{Outcome, RunInfo, Telemetry};
 /// Largest source file accepted, in bytes.
 pub const MAX_CODE_BYTES: usize = 64 * 1024;
 
+/// Largest request body of `/grade`: JSON escaping can double the size of
+/// the code and of the test fields, which are capped on their decoded size.
+pub const MAX_GRADE_BODY_BYTES: usize = 2 * (MAX_CODE_BYTES + rr_grade::MAX_TESTS_BYTES) + 1024;
+
 pub struct AppState {
     pub sandbox: Sandbox,
     pub limits: Limits,
@@ -131,6 +135,12 @@ pub struct RunRequest {
     pub code: String,
 }
 
+#[derive(Deserialize)]
+pub struct GradeRequest {
+    pub code: String,
+    pub tests: Vec<rr_grade::TestSpec>,
+}
+
 pub fn app(state: Arc<AppState>) -> Router {
     let any = state.allowed_origins.is_empty() || state.allowed_origins.iter().any(|o| o == "*");
     let origins = if any {
@@ -157,12 +167,19 @@ pub fn app(state: Arc<AppState>) -> Router {
     // Upper bound for a whole request: waiting for a slot plus running the job.
     let request_timeout = state.queue_timeout + state.limits.job_timeout + Duration::from_secs(5);
 
-    // `/run` goes through the gate (IP limits, App Check, token limits).
+    // `/run` and `/grade` go through the gate (IP limits, App Check, token
+    // limits), one request costing one token on either.
     let run_routes = Router::new()
-        .route("/run", post(run))
         // JSON escaping can double the size of code; the real limit is
         // checked on the decoded code below.
-        .layer(DefaultBodyLimit::max(2 * MAX_CODE_BYTES + 1024))
+        .route(
+            "/run",
+            post(run).layer(DefaultBodyLimit::max(2 * MAX_CODE_BYTES + 1024)),
+        )
+        .route(
+            "/grade",
+            post(grade).layer(DefaultBodyLimit::max(MAX_GRADE_BODY_BYTES)),
+        )
         .layer(TimeoutLayer::with_status_code(
             StatusCode::REQUEST_TIMEOUT,
             request_timeout,
@@ -211,25 +228,7 @@ async fn run(
         return Err(sized(ApiError::code_too_long()));
     }
 
-    // Take a slot at once if one is free; otherwise queue, within the cap.
-    let queued_at = Instant::now();
-    let _permit = match state.slots.try_acquire() {
-        Ok(permit) => permit,
-        Err(TryAcquireError::Closed) => return Err(sized(ApiError::shutting_down())),
-        Err(TryAcquireError::NoPermits) => {
-            if state.waiting.fetch_add(1, Ordering::SeqCst) >= state.max_queued {
-                state.waiting.fetch_sub(1, Ordering::SeqCst);
-                return Err(sized(ApiError::busy()));
-            }
-            let _waiting = Waiting(&state.waiting);
-            match tokio::time::timeout(state.queue_timeout, state.slots.acquire()).await {
-                Ok(Ok(permit)) => permit,
-                Ok(Err(_)) => return Err(sized(ApiError::shutting_down())),
-                Err(_) => return Err(sized(ApiError::busy())),
-            }
-        }
-    };
-    let queue_ms = queued_at.elapsed().as_millis() as u64;
+    let (_permit, queue_ms) = acquire_slot(&state).await.map_err(sized)?;
 
     match state.sandbox.run(&req.code, &state.limits).await {
         Ok(output) => {
@@ -237,6 +236,101 @@ async fn run(
                 state.health.mark_good();
             }
             let info = run_info(&output, code_bytes, queue_ms);
+            let mut res = Json(output).into_response();
+            res.extensions_mut().insert(info);
+            Ok(res)
+        }
+        Err(e) => {
+            tracing::error!("sandbox failed: {e}");
+            Err(sized(ApiError::internal()).with_info(|i| i.queue_ms = Some(queue_ms)))
+        }
+    }
+}
+
+/// Takes a job slot at once if one is free; otherwise queues, within the
+/// cap. Returns the permit and how long the request waited, in milliseconds.
+async fn acquire_slot(
+    state: &AppState,
+) -> Result<(tokio::sync::SemaphorePermit<'_>, u64), ApiError> {
+    let queued_at = Instant::now();
+    let permit = match state.slots.try_acquire() {
+        Ok(permit) => permit,
+        Err(TryAcquireError::Closed) => return Err(ApiError::shutting_down()),
+        Err(TryAcquireError::NoPermits) => {
+            if state.waiting.fetch_add(1, Ordering::SeqCst) >= state.max_queued {
+                state.waiting.fetch_sub(1, Ordering::SeqCst);
+                return Err(ApiError::busy());
+            }
+            let _waiting = Waiting(&state.waiting);
+            match tokio::time::timeout(state.queue_timeout, state.slots.acquire()).await {
+                Ok(Ok(permit)) => permit,
+                Ok(Err(_)) => return Err(ApiError::shutting_down()),
+                Err(_) => return Err(ApiError::busy()),
+            }
+        }
+    };
+    Ok((permit, queued_at.elapsed().as_millis() as u64))
+}
+
+/// `POST /grade {code, tests}`: like `/run`, but the code is compiled
+/// together with the tests and the answer holds one result per test.
+async fn grade(
+    State(state): State<Arc<AppState>>,
+    payload: Result<Json<GradeRequest>, JsonRejection>,
+) -> Result<Response, ApiError> {
+    let req = match payload {
+        Ok(Json(req)) => req,
+        Err(rejection) => {
+            let status = rejection.status();
+            return Err(if status == StatusCode::PAYLOAD_TOO_LARGE {
+                ApiError::code_too_long()
+            } else {
+                ApiError::bad_request(status, rejection.body_text())
+            });
+        }
+    };
+    let code_bytes = req.code.len();
+    let sized = |e: ApiError| {
+        e.with_info(|i| {
+            i.code_bytes = Some(code_bytes);
+            i.endpoint = Some("grade");
+        })
+    };
+    if req.code.trim().is_empty() {
+        return Err(sized(ApiError::code_empty()));
+    }
+    if code_bytes > MAX_CODE_BYTES {
+        return Err(sized(ApiError::code_too_long()));
+    }
+    if let Err(message) = rr_grade::validate(&req.tests) {
+        return Err(sized(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            "tests_invalid",
+            message,
+        )));
+    }
+
+    let (_permit, queue_ms) = acquire_slot(&state).await.map_err(sized)?;
+
+    match state
+        .sandbox
+        .grade(&req.code, &req.tests, &state.limits)
+        .await
+    {
+        Ok(output) => {
+            if output.run.compiler_verdict {
+                state.health.mark_good();
+            }
+            let mut info = run_info(&output.run, code_bytes, queue_ms);
+            info.endpoint = Some("grade");
+            info.tests_total = Some(output.tests.len());
+            info.tests_passed = Some(
+                output
+                    .tests
+                    .iter()
+                    .filter(|t| t.status == rr_grade::Status::Pass)
+                    .count(),
+            );
             let mut res = Json(output).into_response();
             res.extensions_mut().insert(info);
             Ok(res)
