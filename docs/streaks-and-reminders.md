@@ -101,7 +101,7 @@ The birth year from the age screen decides (`AgeGroup`; unknown = none yet).
 | Reminders on by default | no | no | no | no |
 | One-time "Want a daily reminder?" card | **never** | yes | yes | **never** |
 | Switch reminders on in Progress | yes, themselves | yes | yes | yes |
-| Calm "finish a lesson today" line on Home | no | yes | yes | yes |
+| Calm "finish a lesson today" line on Home | no | yes | yes | no |
 
 - Reminders are **off for everyone** until the learner switches them on.
 - An under-13 never sees an in-app prompt or card suggesting reminders (the
@@ -152,8 +152,10 @@ reminders off, cancels them and says why.
 
 **Sign-out.** Signing out (or deleting an adult's account) clears the device
 for the next person, so it also resets the reminders: they are switched
-off, cancelled, the time goes back to 19:00 and the one-time card can be
-shown again to whoever uses the device next. The system's notification
+off, cancelled and the time goes back to 19:00. Whether the one-time card was
+answered is kept: it is never offered again on this device. The goal also
+goes back to its default. Clearing the account keys does not wait for the
+notification plugin. The system's notification
 permission is the system's and stays as it is. A child who deletes their
 account keeps their settings, like their progress.
 
@@ -172,7 +174,8 @@ strings.
   and the plugin's `ScheduledNotificationReceiver` and
   `ScheduledNotificationBootReceiver`. The plugin adds POST_NOTIFICATIONS
   itself. A `res/raw/keep.xml` stops resource shrinking from removing the
-  launcher icon the notification uses. **No** `SCHEDULE_EXACT_ALARM` or
+  `ic_stat_reminder` (a white bell on transparent, the notification's small
+  icon) that the plugin looks up by name. **No** `SCHEDULE_EXACT_ALARM` or
   `USE_EXACT_ALARM`: reminders use `AndroidScheduleMode.inexactAllowWhileIdle`.
   A study reminder does not need the exact second, Android 14 denies the
   exact-alarm permission to new installs by default, and Google's advice is
@@ -208,8 +211,14 @@ an unconfirmed deletion). Under-13s keep everything on the device.
   larger device's share is kept). A later write of a lower value for a day
   can lower it in the cloud until the next merge restores the device's
   larger value; this is accepted.
-- Days where the device is ahead of the cloud are uploaded after the merge;
-  XP earned while a merge runs is uploaded when it ends.
+- Days where the device is ahead of the cloud are uploaded by the merge. XP
+  earned while a merge runs is remembered (as days still to send) and sent
+  when the merge ends, and signing out waits for a merge in progress and for
+  those days, so earned XP is not dropped by a slow or failed merge.
+  While the device still holds another account's XP, the amounts earned are
+  kept apart and added on top of the cloud's days once the merge succeeds
+  (also after a failed merge and its retry); nothing of the other account
+  is written in the meantime.
 - Everything that applies to completed lessons applies to XP: a foreign
   account's XP left on the device is dropped (never uploaded) and the cloud's
   is loaded; XP earned during that merge is this account's and is added on

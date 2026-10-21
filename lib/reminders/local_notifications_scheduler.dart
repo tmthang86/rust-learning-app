@@ -24,9 +24,11 @@ class LocalNotificationsScheduler implements ReminderScheduler {
 
   static const _channelId = 'study_reminders';
 
-  /// The launcher icon (kept from resource shrinking by
-  /// android/app/src/main/res/raw/keep.xml).
-  static const _androidIcon = '@mipmap/ic_launcher';
+  /// A white, transparent-background drawable (Android draws the small
+  /// notification icon as a silhouette; a coloured launcher icon would show
+  /// as a plain blob). Kept from resource shrinking by
+  /// android/app/src/main/res/raw/keep.xml.
+  static const _androidIcon = 'ic_stat_reminder';
 
   static bool get _platformSupported =>
       !kIsWeb &&

@@ -38,6 +38,8 @@ class StreakStrings {
 
   // Lesson feedback
   String xpEarned(int xp) => '+$xp XP';
+  String xpEarnedWithGoal(int xp) =>
+      '${xpEarned(xp)}. $dailyGoalReachedMessage';
   String get dailyGoalReachedMessage =>
       "Daily goal reached. Nice work, that's enough for today!";
 
@@ -74,6 +76,7 @@ class StreakStrings {
   String get goalRegular => 'Regular';
   String get goalSerious => 'Serious';
   String goalOption(String name, int xp) => '$name, $xp XP';
+  String goalSegmentLabel(int xp) => '${goalName(xp)}\n$xp XP';
   String goalName(int xp) => switch (xp) {
     20 => goalCasual,
     40 => goalRegular,

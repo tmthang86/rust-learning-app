@@ -244,12 +244,36 @@ class FakeSync implements ProgressSync {
     doc(uid).completed.addAll(ids);
   }
 
+  /// When set, `setDailyXp` waits for it before taking effect (a slow
+  /// write). Each call waits on the same gate.
+  Completer<void>? xpGate;
+
+  /// Runs at the start of every `setDailyXp` call, with the call number
+  /// (from 1); a test can hold individual calls here.
+  Future<void> Function(int call)? onXpWrite;
+  int _xpCalls = 0;
+  Future<void>? _xpChain;
+
+  /// Like Firestore, writes take effect in the order they were made, even
+  /// when an earlier one is slow.
   @override
   Future<void> setDailyXp(String uid, Map<String, int> days) async {
-    _write(uid);
-    xpWrites.add({...days});
-    // Like a Firestore merge write: only these days change.
-    doc(uid).dailyXp.addAll(days);
+    final call = ++_xpCalls;
+    final previous = _xpChain;
+    final done = Completer<void>();
+    _xpChain = done.future;
+    try {
+      if (previous != null) await previous;
+      await onXpWrite?.call(call);
+      final g = xpGate;
+      if (g != null) await g.future;
+      _write(uid);
+      xpWrites.add({...days});
+      // Like a Firestore merge write: only these days change.
+      doc(uid).dailyXp.addAll(days);
+    } finally {
+      done.complete();
+    }
   }
 
   @override
@@ -340,9 +364,15 @@ class FakeReminderScheduler implements ReminderScheduler {
     scheduled = [...reminders];
   }
 
+  /// When set, [cancelAll] waits for it (a plugin call that hangs).
+  Completer<void>? cancelGate;
+
   @override
   Future<void> cancelAll() async {
     cancels++;
+    scheduled = [];
+    final g = cancelGate;
+    if (g != null) await g.future;
     scheduled = [];
   }
 }

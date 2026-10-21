@@ -329,6 +329,199 @@ void main() {
       expect(sync.dailyXp, {'2026-03-17': 20, today: 20});
     });
 
+    test('XP earned during a foreign-account merge that fails is kept '
+        'when the merge is retried', () async {
+      mockPrefs({'dailyXp': '{"2026-03-18": 100}', 'syncedUid': 'u1'});
+      final accounts = FakeAccounts();
+      final sync = FakeSync();
+      sync.doc('u2').dailyXp['2026-03-16'] = 20;
+      final gate = Completer<void>();
+      sync.gate = gate;
+      final state = await signedOut(sync, accounts);
+
+      accounts.signInAs('u2');
+      await settle();
+      expect((await state.markCompleted('new')).xp, 20);
+      sync.failLoads = true; // the load fails once it is released
+      gate.complete();
+      await settle();
+      await state.syncing;
+      expect(state.syncFailed, isTrue);
+
+      sync.failLoads = false;
+      sync.gate = null;
+      state.retrySync();
+      await state.syncing;
+
+      expect(state.syncFailed, isFalse);
+      expect(state.dailyXp, {'2026-03-16': 20, today: 20});
+      expect(sync.doc('u2').dailyXp, {'2026-03-16': 20, today: 20});
+      expect(sync.xpWrites, isNotEmpty);
+    });
+
+    test('XP earned between the failed merge and its retry is also kept, '
+        'and is not mixed with the old data', () async {
+      mockPrefs({'dailyXp': '{"2026-03-18": 100}', 'syncedUid': 'u1'});
+      final accounts = FakeAccounts();
+      final sync = FakeSync();
+      sync.failLoads = true;
+      final state = await signedOut(sync, accounts);
+
+      accounts.signInAs('u2');
+      await settle();
+      await state.syncing;
+      expect(state.syncFailed, isTrue);
+      await state.markCompleted('new');
+      await settle();
+      expect(sync.xpWrites, isEmpty, reason: 'nothing of the old 100 XP');
+
+      sync.failLoads = false;
+      state.retrySync();
+      await state.syncing;
+
+      expect(state.dailyXp, {today: 20});
+      expect(sync.doc('u2').dailyXp, {today: 20});
+    });
+
+    test('the merge finishing while markCompleted waits for the device '
+        'storage does not lose the award', () async {
+      mockPrefs({'dailyXp': '{"2026-03-18": 100}', 'syncedUid': 'u1'});
+      final accounts = FakeAccounts();
+      final sync = FakeSync();
+      final gate = Completer<void>();
+      sync.gate = gate;
+      final state = await signedOut(sync, accounts);
+
+      accounts.signInAs('u2');
+      await settle();
+      gate.complete();
+      final award = state.markCompleted('new'); // the load resumes meanwhile
+      expect((await award).xp, 20);
+      await settle();
+      await state.syncing;
+
+      expect(state.dailyXp, {today: 20});
+      expect(sync.doc('u2').dailyXp, {today: 20});
+    });
+
+    test('XP earned while the merge is still writing is sent when it ends, '
+        'and signing out does not lose it', () async {
+      mockPrefs({'dailyXp': '{"2026-03-17": 20}'});
+      final accounts = FakeAccounts();
+      final sync = FakeSync();
+      final gate = Completer<void>();
+      sync.xpGate = gate; // the merge's own XP write is slow
+      final state = await signedOut(sync, accounts);
+
+      accounts.signInAs('u1');
+      await settle();
+      await settle();
+      await state.markCompleted('l1'); // while that write is pending
+      await settle();
+      gate.complete();
+      await settle();
+      await state.syncing;
+      await settle();
+
+      expect(sync.dailyXp, {'2026-03-17': 20, today: 20});
+      expect(await state.signOut(), isTrue);
+      await settle();
+      expect(state.dailyXp, isEmpty);
+      expect(sync.dailyXp, {'2026-03-17': 20, today: 20});
+    });
+
+    test('XP earned while the last write of a merge is pending is not '
+        'lost, and signing out waits for it', () async {
+      mockPrefs({'dailyXp': '{"2026-03-17": 20}'});
+      final accounts = FakeAccounts();
+      final sync = FakeSync();
+      final gates = {1: Completer<void>(), 2: Completer<void>()};
+      sync.onXpWrite = (call) => gates[call]?.future ?? Future.value();
+      final state = await signedOut(sync, accounts);
+
+      accounts.signInAs('u1');
+      await settle();
+      await settle();
+      await state.markCompleted('l1'); // during the merge's first write
+      gates[1]!.complete();
+      await settle();
+      await settle();
+      await state.markCompleted('l2'); // during the next one
+      await settle();
+      gates[2]!.complete();
+      await settle();
+      await state.syncing;
+      await settle();
+      await settle();
+
+      expect(sync.dailyXp, {'2026-03-17': 20, today: 40});
+      expect(await state.signOut(), isTrue);
+      await settle();
+      expect(state.dailyXp, isEmpty);
+      expect(sync.dailyXp, {'2026-03-17': 20, today: 40});
+    });
+
+    test('XP earned after the merge but before a slow write is acknowledged '
+        'is still sent', () async {
+      mockPrefs({});
+      final accounts = FakeAccounts();
+      final sync = FakeSync();
+      final state = await signedOut(sync, accounts);
+      await signInAndSync(accounts, state, 'u1');
+      final gate = Completer<void>();
+      sync.xpGate = gate;
+
+      await state.markCompleted('l1');
+      await state.markCompleted('l2');
+      gate.complete();
+      await settle();
+
+      expect(sync.dailyXp, {today: 40});
+    });
+
+    test('signing out right after earning XP while a merge runs asks '
+        'instead of dropping it', () async {
+      mockPrefs({'dailyXp': '{"2026-03-17": 20}', 'syncedUid': 'u1'});
+      final accounts = FakeAccounts(
+        initialUser: const AccountUser(uid: 'u1', displayName: 'Ferris'),
+      );
+      final sync = FakeSync();
+      final gate = Completer<void>();
+      sync.gate = gate;
+      final state = await signedOut(sync, accounts);
+      await state.markCompleted('l1');
+
+      final out = state.signOut();
+      gate.complete();
+      final signedOutNow = await out;
+      await settle();
+      await state.syncing;
+
+      // Either it waited for the merge and everything reached the cloud, or
+      // it refused. It must never clear the device with XP only here.
+      if (signedOutNow) {
+        expect(sync.dailyXp[today], 20);
+      } else {
+        expect(state.dailyXp[today], 20);
+      }
+    });
+
+    test('midnight between earning and sending does not crash', () async {
+      mockPrefs({});
+      final accounts = FakeAccounts();
+      final sync = FakeSync();
+      final state = await signedOut(sync, accounts);
+      await signInAndSync(accounts, state, 'u1');
+
+      final f = state.markCompleted('l1');
+      now = DateTime(2026, 3, 19, 0, 0, 1); // the day changes mid-write
+      final award = await f;
+      await settle();
+
+      expect(award.xp, 20);
+      expect(sync.dailyXp, {today: 20});
+    });
+
     test('a document with a wrong type for dailyXp is repaired with one '
         'rewrite that keeps the merged days', () async {
       mockPrefs({'dailyXp': '{"2026-03-17": 20}'});

@@ -23,9 +23,14 @@ class StreakCard extends StatelessWidget {
     final summary = state.summary;
     final goal = state.dailyGoal;
     final met = summary.goalMet(goal);
-    final under13 = state.age.group == AgeGroup.under13;
+    // Only for people known to be 13 or older: not for a possible under-13
+    // (which includes an age not given yet).
+    final group = state.age.group;
     final showHint =
-        !under13 && !met && summary.todayXp == 0 && summary.currentStreak > 0;
+        (group == AgeGroup.teen || group == AgeGroup.adult) &&
+        !met &&
+        summary.todayXp == 0 &&
+        summary.currentStreak > 0;
     final progress = (summary.todayXp / goal).clamp(0.0, 1.0);
 
     return Card(
@@ -266,7 +271,7 @@ class DailyGoalPicker extends StatelessWidget {
               ButtonSegment(
                 value: xp,
                 label: Text(
-                  '${s.goalName(xp)}\n$xp XP',
+                  s.goalSegmentLabel(xp),
                   textAlign: TextAlign.center,
                 ),
                 tooltip: s.goalOption(s.goalName(xp), xp),
@@ -390,9 +395,7 @@ void showXpSnackBar(ScaffoldMessengerState messenger, XpAward award) {
   messenger.showSnackBar(
     SnackBar(
       content: Text(
-        award.goalReached
-            ? '${s.xpEarned(award.xp)}. ${s.dailyGoalReachedMessage}'
-            : s.xpEarned(award.xp),
+        award.goalReached ? s.xpEarnedWithGoal(award.xp) : s.xpEarned(award.xp),
       ),
     ),
   );

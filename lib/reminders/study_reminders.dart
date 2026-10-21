@@ -98,6 +98,8 @@ class StudyReminders extends ChangeNotifier {
       _changed();
       return;
     }
+    // Switched off (or reset) while waiting for the plugin.
+    if (!_enabled) return;
     await scheduler.replaceAll(
       planReminders(
         now: clock(),
@@ -168,20 +170,22 @@ class StudyReminders extends ChangeNotifier {
   }
 
   /// Back to a fresh device (sign-out clears the device): reminders off and
-  /// cancelled, default time, the one-time card available again for
-  /// whoever uses the device next.
-  Future<void> reset() => _enqueue(() async {
+  /// cancelled, default time. Whether the one-time card was answered is kept:
+  /// it is about this device's offer, and "never again" means never.
+  ///
+  /// The settings are reset first and do not depend on the notification
+  /// plugin; only the cancelling is queued (and not awaited), so a plugin
+  /// call that hangs cannot hold anything up.
+  Future<void> reset() async {
     _enabled = false;
     _minutes = defaultReminderMinutes;
-    _promptSeen = false;
     _permissionDenied = false;
     _revokedBySystem = false;
+    _changed();
     await prefs.remove(enabledKey);
     await prefs.remove(minutesKey);
-    await prefs.remove(promptSeenKey);
-    _changed();
-    if (supported) await scheduler.cancelAll();
-  });
+    if (supported) unawaited(_enqueue(scheduler.cancelAll));
+  }
 
   Future<void> _enqueue(Future<void> Function() job) {
     final done = Completer<void>();

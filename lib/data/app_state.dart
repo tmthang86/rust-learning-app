@@ -134,11 +134,30 @@ class AppState extends ChangeNotifier {
   /// device copy with the cloud's keeps them.
   final Set<String> _finishedDuringMerge = {};
 
-  /// XP earned while a merge is running, by day. It is not sent until the
-  /// merge ends: the device's XP may still be another account's, so a write
-  /// of "today's total" now could put that account's XP into this one.
+  /// XP earned while the device's XP still belongs to another account (see
+  /// [_foreignDevice]), by day. A write of "today's total" now would put that
+  /// account's XP into this one, so the amounts are kept here until the merge
+  /// has added them on top of the cloud's days. They survive a failed merge
+  /// and its retry.
   final Map<String, int> _xpDuringMerge = {};
+
+  /// Days whose XP changed here and has not been sent yet because a merge was
+  /// running (or the device was not yet known to match the cloud). The merge
+  /// sends them when it ends; signing out waits for them.
+  final Set<String> _xpDirty = {};
+
+  /// Set while a merge has replaced the device's XP with this account's, but
+  /// before the stored owner says so.
+  String? _adoptedUid;
   bool _merging = false;
+
+  /// Whether the XP on the device may still belong to another account.
+  bool get _foreignDevice {
+    final u = _user;
+    if (u == null) return false;
+    final owner = prefs.getString(_syncedUidKey);
+    return owner != null && owner != u.uid && _adoptedUid != u.uid;
+  }
 
   /// True while the account is being deleted: no background writes, so
   /// nothing recreates the deleted cloud document.
@@ -376,7 +395,9 @@ class AppState extends ChangeNotifier {
     // merge hasn't said yet whether this account had finished it.)
     final duringMerge = _user != null && _merging;
     if (duringMerge) _finishedDuringMerge.add(lessonId);
-    final award = _award(lessonId, first: added);
+    // Everything about the XP is decided here, before the first await, so a
+    // merge that finishes while the device storage is written sees it.
+    final (award, day) = _award(lessonId, first: added);
     if (!added && !duringMerge && award.xp == 0) return award;
     // Written together, so the stored copy never has one without the other.
     await Future.wait([
@@ -389,24 +410,19 @@ class AppState extends ChangeNotifier {
       _push((s, uid) => s.addCompleted(uid, [lessonId]));
     }
     if (award.xp > 0) {
-      final day = dayKey(now());
-      if (duringMerge) {
-        _xpDuringMerge[day] = (_xpDuringMerge[day] ?? 0) + award.xp;
-      } else {
-        final total = _dailyXp[day]!;
-        _push((s, uid) => s.setDailyXp(uid, {day: total}));
-      }
+      _pushDirtyXp();
       unawaited(reminders.refresh());
     }
     return award;
   }
 
   /// Adds the XP for finishing [lessonId] to today, unless it already earned
-  /// XP today. Changes memory only; the caller saves.
-  XpAward _award(String lessonId, {required bool first}) {
+  /// XP today, and notes how it must reach the cloud. Changes memory only
+  /// (the caller saves) and returns the day it used.
+  (XpAward, String) _award(String lessonId, {required bool first}) {
     final day = dayKey(now());
     final awarded = _readAwarded(day);
-    if (awarded.contains(lessonId)) return XpAward.none;
+    if (awarded.contains(lessonId)) return (XpAward.none, day);
     final xp = first ? xpFirstCompletion : xpReview;
     final before = _dailyXp[day] ?? 0;
     final after = before + xp;
@@ -414,8 +430,32 @@ class AppState extends ChangeNotifier {
     _summary = null;
     _awardedDay = day;
     _awardedLessons = {...awarded, lessonId};
+    if (_user != null && accountsAllowed) {
+      if (_foreignDevice) {
+        _xpDuringMerge[day] = (_xpDuringMerge[day] ?? 0) + xp;
+      } else {
+        _xpDirty.add(day);
+      }
+    }
     final goal = dailyGoal;
-    return XpAward(xp: xp, goalReached: before < goal && after >= goal);
+    return (XpAward(xp: xp, goalReached: before < goal && after >= goal), day);
+  }
+
+  /// Sends the days in [_xpDirty] as their totals, unless that has to wait:
+  /// a merge is running (it sends them when it ends), the device's XP is
+  /// another account's, or the cloud copy was never merged (the merge sends
+  /// every day the device is ahead on).
+  void _pushDirtyXp() {
+    final u = _user;
+    if (u == null || _merging || _foreignDevice || _xpDirty.isEmpty) return;
+    if (prefs.getString(_syncedUidKey) != u.uid) return;
+    final days = {
+      for (final d in _xpDirty)
+        if (_dailyXp[d] != null) d: _dailyXp[d]!,
+    };
+    _xpDirty.clear();
+    if (days.isEmpty) return;
+    _push((s, uid) => s.setDailyXp(uid, days));
   }
 
   String? _awardedDay;
@@ -486,10 +526,20 @@ class AppState extends ChangeNotifier {
         } on TimeoutException {
           // Treated as not saved below.
         }
+      } else if (_merging) {
+        // Its result decides what is saved; XP earned meanwhile is sent when
+        // it ends.
+        try {
+          await syncing.timeout(const Duration(seconds: 10));
+        } on TimeoutException {
+          // Treated as not saved below.
+        }
       }
       final saved =
           prefs.getString(_syncedUidKey) == u.uid &&
           !_syncFailed &&
+          !_merging &&
+          _xpDirty.isEmpty &&
           await s.flush(const Duration(seconds: 5));
       if (!saved) return false;
     }
@@ -502,6 +552,11 @@ class AppState extends ChangeNotifier {
     _sawAuthEvent = true;
     final previous = _user;
     _user = user;
+    if (user?.uid != previous?.uid) {
+      _xpDuringMerge.clear();
+      _xpDirty.clear();
+      _adoptedUid = null;
+    }
 
     if (user == null && _keepLocalOnSignOut) {
       _keepLocalOnSignOut = false;
@@ -547,6 +602,8 @@ class AppState extends ChangeNotifier {
     _awardedDay = '';
     _awardedLessons = {};
     _xpDuringMerge.clear();
+    _xpDirty.clear();
+    _adoptedUid = null;
     _syncFailed = false;
     notifyListeners();
     await prefs.remove(_trackKey);
@@ -554,13 +611,13 @@ class AppState extends ChangeNotifier {
     await prefs.remove(_dailyXpKey);
     await prefs.remove(_dailyGoalKey);
     await prefs.remove(_xpAwardedKey);
-    // The next person on this device starts with reminders off and no
-    // notification of the last one's left waiting.
-    await reminders.reset();
     await prefs.remove(_syncedUidKey);
     await prefs.remove(_trackDirtyKey);
     await prefs.remove(_unconfirmedKey);
     await prefs.remove(_childAccountKey);
+    // Last, and it can't wait for the notification plugin: the account keys
+    // above are already cleared.
+    await reminders.reset();
   }
 
   /// True while deleting the signed-in account is unconfirmed; see
@@ -610,7 +667,8 @@ class AppState extends ChangeNotifier {
       }
     }
     _finishedDuringMerge.clear();
-    _xpDuringMerge.clear();
+    // _xpDuringMerge is not cleared: after a failed merge its amounts are
+    // still waiting to be added on top of the cloud's days.
     _merging = true;
 
     try {
@@ -619,36 +677,37 @@ class AppState extends ChangeNotifier {
 
       final owner = prefs.getString(_syncedUidKey);
       final Track? finalTrack;
-
-      // The days the cloud is known to hold after this merge. XP earned
-      // while the merge runs is sent afterwards if it went beyond that.
-      Map<String, int> sentXp;
-      if (owner != null && owner != user.uid) {
+      if (owner != null && owner != user.uid && _adoptedUid != user.uid) {
         // Left over from another account: never upload it, take the cloud's.
         // Lessons finished since this sign-in are this account's (they were
         // already sent to it), so they stay.
         _completed = {...remote.completed, ..._finishedDuringMerge};
         // XP earned since this sign-in is this account's and was not sent
-        // yet, so it is added on top of the cloud's days.
+        // yet, so it is added on top of the cloud's days. All of this
+        // happens before any await, so XP earned meanwhile lands in
+        // [_xpDirty] (the device is this account's from here on).
+        final earned = {..._xpDuringMerge};
+        _xpDuringMerge.clear();
         _dailyXp = {...remote.dailyXp};
-        _xpDuringMerge.forEach(
-          (day, xp) => _dailyXp[day] = (_dailyXp[day] ?? 0) + xp,
-        );
+        earned.forEach((day, xp) => _dailyXp[day] = (_dailyXp[day] ?? 0) + xp);
+        _adoptedUid = user.uid;
+        _xpDirty.clear();
         _summary = null;
         final xpAhead = daysAhead(_dailyXp, remote.dailyXp);
-        sentXp = remote.needsRepair
-            ? {..._dailyXp}
-            : {...remote.dailyXp, ...xpAhead};
         _track = finalTrack = remote.track;
         await _saveLocal();
         if (stale()) return;
+        // From now on the device copy is this account's, also if this merge
+        // fails and is retried (the retry must not drop it again).
+        await prefs.setString(_syncedUidKey, user.uid);
         if (remote.needsRepair) {
           await s.replace(
             user.uid,
             track: finalTrack,
             completed: {..._completed},
-            dailyXp: sentXp,
+            dailyXp: {..._dailyXp},
           );
+          _xpDirty.clear();
         } else if (xpAhead.isNotEmpty) {
           await s.setDailyXp(user.uid, xpAhead);
         }
@@ -661,13 +720,12 @@ class AppState extends ChangeNotifier {
 
         _completed.addAll(remote.completed);
         // Per day the larger value, never the sum; days where the device is
-        // ahead of the cloud are sent.
+        // ahead of the cloud are sent. XP earned from here on is in
+        // [_xpDirty] and sent when the merge ends.
         _dailyXp = mergeDailyXp(_dailyXp, remote.dailyXp);
+        _xpDirty.clear();
         _summary = null;
         final xpAhead = daysAhead(_dailyXp, remote.dailyXp);
-        sentXp = remote.needsRepair
-            ? {..._dailyXp}
-            : {...remote.dailyXp, ...xpAhead};
         _track = finalTrack;
         await _saveLocal();
         if (stale()) return;
@@ -678,8 +736,9 @@ class AppState extends ChangeNotifier {
             user.uid,
             track: finalTrack,
             completed: {..._completed},
-            dailyXp: sentXp,
+            dailyXp: {..._dailyXp},
           );
+          _xpDirty.clear();
         } else {
           if (localOnly.isNotEmpty) await s.addCompleted(user.uid, localOnly);
           if (stale()) return;
@@ -691,13 +750,14 @@ class AppState extends ChangeNotifier {
         }
       }
       if (stale()) return;
-      final lateXp = daysAhead(_dailyXp, sentXp);
-      if (lateXp.isNotEmpty) await s.setDailyXp(user.uid, lateXp);
-      if (stale()) return;
       if (_track == finalTrack) await prefs.setBool(_trackDirtyKey, false);
       await prefs.setString(_syncedUidKey, user.uid);
       _syncFailed = false;
       notifyListeners();
+      // XP earned while the merge ran goes out now; from here on every
+      // award sends itself.
+      _merging = false;
+      _pushDirtyXp();
       unawaited(reminders.refresh());
     } catch (e) {
       // Offline or misconfigured: keep working from the device copy.

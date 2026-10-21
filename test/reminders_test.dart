@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rust_learn/account/account_service.dart';
@@ -5,6 +7,7 @@ import 'package:rust_learn/data/age.dart';
 import 'package:rust_learn/data/app_state.dart';
 import 'package:rust_learn/data/streaks.dart';
 import 'package:rust_learn/l10n/streak_strings.dart';
+import 'package:rust_learn/features/streak/streak_widgets.dart';
 import 'package:rust_learn/main.dart';
 import 'package:rust_learn/reminders/reminder_plan.dart';
 import 'package:rust_learn/reminders/reminder_scheduler.dart';
@@ -315,17 +318,29 @@ void main() {
       expect(other.promptSeen, isTrue);
     });
 
-    test('reset turns everything back to a fresh device', () async {
+    test('reset turns the settings back, but the one-time card stays '
+        'answered', () async {
       final r = await make(prefs: {'reminderEnabled': true});
       await r.setMinutes(600);
       await r.dismissPrompt();
       await r.reset();
       expect(r.enabled, isFalse);
       expect(r.minutesOfDay, defaultReminderMinutes);
-      expect(r.promptSeen, isFalse);
+      expect(r.promptSeen, isTrue);
       expect(scheduler.scheduled, isEmpty);
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getKeys().where((k) => k.startsWith('reminder')), isEmpty);
+      expect(prefs.getBool('reminderEnabled'), isNull);
+      expect(prefs.getInt('reminderMinutes'), isNull);
+      expect(prefs.getBool('reminderPromptSeen'), isTrue);
+    });
+
+    test('reset does not wait for a plugin call that hangs', () async {
+      final r = await make(prefs: {'reminderEnabled': true});
+      await r.refresh();
+      scheduler.cancelGate = Completer<void>();
+      await r.reset().timeout(const Duration(seconds: 2));
+      expect(r.enabled, isFalse);
+      scheduler.cancelGate!.complete();
     });
 
     test('jobs run one at a time, in order', () async {
@@ -436,6 +451,35 @@ void main() {
       expect(state.reminders.minutesOfDay, defaultReminderMinutes);
       expect(scheduler.scheduled, isEmpty);
     });
+
+    test(
+      'signing out clears the account keys even if the plugin hangs',
+      () async {
+        final scheduler = FakeReminderScheduler();
+        mockPrefs({'reminderEnabled': true, 'syncedUid': 'u1'});
+        final accounts = FakeAccounts();
+        final state = await makeState(
+          accounts,
+          FakeSync(),
+          clock: clock,
+          reminderScheduler: scheduler,
+        );
+        accounts.signInAs('u1');
+        await settle();
+        await state.syncing;
+        await state.reminders.refresh();
+        scheduler.cancelGate = Completer<void>();
+
+        await accounts.signOut();
+        await settle();
+        await state.syncing.timeout(const Duration(seconds: 2));
+
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getString('syncedUid'), isNull);
+        expect(state.reminders.enabled, isFalse);
+        scheduler.cancelGate!.complete();
+      },
+    );
 
     test('a child deleting their account keeps reminder settings', () async {
       final scheduler = FakeReminderScheduler();
@@ -705,6 +749,38 @@ void main() {
       expect(find.text('Want a daily reminder?'), findsNothing);
       expect(find.text(strings.keepItGoing), findsNothing);
       expect(find.text('1 day'), findsOneWidget);
+    });
+
+    testWidgets('the streak card gives an unknown age no hint about today', (
+      tester,
+    ) async {
+      mockPrefs({'dailyXp': '{"2026-03-17": 20}'}, ageKnown: false);
+      final unknown = (await tester.runAsync(() async {
+        return AppState(
+          repository: fakeCourse(),
+          runner: const PlaceholderCodeRunner(),
+          prefs: await SharedPreferences.getInstance(),
+          clock: clock,
+        );
+      }))!;
+      Future<void> show() async {
+        await tester.pumpWidget(
+          AppScope(
+            state: unknown,
+            child: const MaterialApp(home: Scaffold(body: StreakCard())),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      await show();
+      expect(unknown.age.group, isNull);
+      expect(find.text('1 day'), findsOneWidget);
+      expect(find.text(strings.keepItGoing), findsNothing);
+
+      await tester.runAsync(() => unknown.age.setBirthYear(1990));
+      await show();
+      expect(find.text(strings.keepItGoing), findsOneWidget);
     });
 
     testWidgets('Home: an adult with a streak and nothing yet today gets a '
