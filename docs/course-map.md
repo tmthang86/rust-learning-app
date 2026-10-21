@@ -52,8 +52,9 @@ against the real output.
 An exercise is graded by `exercise.tests`, a list of 1 to 50 tests that run in
 order on the runner's `POST /grade` (design: `exercise-tests-design.md`). The
 exercise is solved when every test passes, hidden ones included. Lessons not
-yet migrated keep `expectedOutput`, which the app and the checker read as one
-output test (`tests` and `expectedOutput` are never both present).
+yet migrated keep `expectedOutput`: the checker reads it as one output test,
+and the app runs it with plain `/run` and compares the output itself, showing
+one test (`tests` and `expectedOutput` are never both present).
 
 | Field | Meaning |
 |---|---|

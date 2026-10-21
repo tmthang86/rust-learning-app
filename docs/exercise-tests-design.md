@@ -17,12 +17,12 @@ Nothing here needs nightly.
 | # | Topic | Decision |
 |---|---|---|
 | 1 | Test model | **Two kinds of test in one list.** A **code test** is a few Rust statements that call the learner's code and use `check_eq!` / `check!` / `check_near!`. An **output test** compares what the learner's `main` prints with an expected string. Print-only beginner exercises use one output test. Function exercises use code tests, visible and hidden. |
-| 2 | One compile | Learner code + a generated harness are compiled **once** with `rustc --test`, and the binary runs **once**, with `RUST_MIN_STACK=8 MiB` so the stack matches `/run`. Tests run in order in one process, each isolated with `catch_unwind`. `main` runs last. **Only when the compile fails**, a quick `--emit=mir` check of the learner code alone (same flags as `/run`) decides whose error it is (§6.1). |
+| 2 | One compile | Learner code + a generated harness are compiled **once** with `rustc --test`, and the binary runs **once**. The build uses `-C opt-level=0` (round 3: it cuts the cost of a graded job from about 2.2× to about 1.4× of a plain run). All tests and `main` run on **one thread with a 16 MiB stack** (no `RUST_MIN_STACK`), each test isolated with `catch_unwind`. `main` runs last. **Only when the compile fails**, a quick `--emit=mir` check of the learner code alone (same flags as `/run`) decides whose error it is (§6.1). |
 | 3 | Results | The harness writes its own **result records** to stdout, each tagged with a random **per-job nonce**. libtest's output is ignored, and so is its JSON (`--format json` is nightly-only). Learner prints can never be mistaken for results by accident. |
 | 4 | Runner API | New **`POST /grade {code, tests}`**. It goes through the same gate as `/run` (IP limits, App Check, token limits), costs **one** rate-limit token, takes one job slot, and uses the same container, limits and caps. It is added to the Caddy route matcher. `/run` is unchanged. The server returns **machine codes, never English prose** (compiler diagnostics excepted). |
 | 5 | Where verdicts are made | **On the server**, by a small pure crate `runner/grade`. The lesson checker uses the same crate through the `rr-grade` CLI, with CI pinned to the sandbox's Rust version. |
 | 6 | Hidden tests | They **ship in the app bundle** and are hidden **in the UI only, not secret**. This is acceptable because progress is self-reported and unranked, and the reference `solution` is bundled already (§3.5). |
-| 7 | Schema | Additive: `exercise.tests: [...]`. `expectedOutput` keeps its name and meaning; an exercise without `tests` is graded as one output test made from it. Per test: `id`, `label` (prose: required and translated on visible tests, optional and untranslated on hidden ones), `hidden`, and either `code` (with optional `panics`) or `output`. |
+| 7 | Schema | Additive: `exercise.tests: [...]`. `expectedOutput` keeps its name and meaning; an exercise without `tests` is shown as one output test made from it, but (round 3) it is run with plain `/run` and compared in the app, so it costs one ordinary run and needs no new runner. Per test: `id`, `label` (prose: required and translated on visible tests, optional and untranslated on hidden ones), `hidden`, and either `code` (with optional `panics`) or `output`. |
 | 8 | Solved | An exercise is solved when **every** test, visible and hidden, has status `pass`. It is never solved when the runner can't be reached. |
 | 9 | Migration | PR 1: the harness, plus 3 exemplar lessons. PR 2: the other 55, in three groups (P 13 / F 23 / R 22, §9). After PR 2, the checker's strict mode requires `tests` on every exercise. |
 
@@ -36,7 +36,7 @@ Nothing here needs nightly.
 | Is libtest `--format json` stable? | No. The rustc book: "unstable, and requires the `-Z unstable-options` flag". rust-lang/rust#49359 is still open. Locally: `error: The "json" format is only accepted on the nightly compiler`. | Verified [R1][R2], local |
 | `rustc --test` | It builds a binary linked with libtest, sets `cfg(test)`, and generates its own `main`, which "will replace any existing `main` … though the existing `main` will still be compiled". Locally, the learner `main` stays callable as `super::main()` and gets no dead-code warning. | Verified [R1], local |
 | libtest flags | `--exact` matches the full test path. `--test-threads N`. `--no-capture` (`--nocapture` is a deprecated alias). `#[should_panic]` exists. Tests run on a thread named after the test. | Verified [R1], local |
-| Stack of the test thread | It is smaller than the main thread's: deep recursion that works in a plain binary overflows inside a `#[test]` (local: depth 20 000 with 256-byte frames). It passes with `RUST_MIN_STACK=8388608`. | Verified, local (reviewer reproduced it too) |
+| Stack of the test thread | It is smaller than the main thread's: deep recursion that works in a plain binary overflows inside a `#[test]` (local: depth 20 000 with 256-byte frames). It passes with `RUST_MIN_STACK=8388608`. Round 3: that variable applies to **every** thread the learner starts, so 20 spawned threads failed under the 320 MB address-space cap; the harness now runs the tests on one thread it spawns itself with a 16 MiB stack, and learner threads keep the default stack. | Verified, local (reviewer reproduced it too); round 3, Docker |
 | Panic isolation | `catch_unwind` catches unwinding panics (the default). The panic hook runs first. Aborts (stack overflow) are not caught. | Verified [R3] |
 | `main() -> Result` | `std::process::Termination::report` has been stable since 1.61. For `Err(e)` it prints `Error: {e:?}`. | Verified (stability) [R4]; Inferred (Err text, std source via [R4]); test G8 |
 | Private items from tests | `use super::*` in a child module sees the parent's private items and private `use` imports. Items private to a nested learner module stay private (E0603). | Verified, local |
@@ -71,7 +71,7 @@ accepted because printing is the skill being taught there (open question 3).
 - Tests run in JSON order, one at a time, in one process. Each is wrapped
   in `catch_unwind`. `main` runs **last**, once; its stdout is the
   response's `stdout` and the input to every output test.
-- The stack is 8 MiB (`RUST_MIN_STACK`), the same as `/run`'s main thread.
+- The tests and `main` run on one thread named `main` with a 16 MiB stack: `/run`'s main thread has 8 MiB, but the unoptimised build has larger frames. 16 MiB is the most that leaves room for a learner's 20 threads under the 320 MB cap (24 MiB did not). Threads the learner starts have the default stack, as in `/run`.
 - Tests share the process, so statics and thread-locals carry over from
   one test to the next. Authors must not rely on that (§10).
 - Something that ends the process (the run timeout, a stack overflow,
@@ -248,7 +248,7 @@ check_eq!(check_age(15), Err(String::from("too young")));
     There is no safe stable way to capture fd 1, and E0453 was verified
     locally. Authors avoid `output_of` in lessons that teach
     `forbid(unsafe_code)`.
-- The run command is `RUST_MIN_STACK=8388608 ./prog --exact
+- The run command is `./prog --exact
   __rr_tests::__rr_grade --no-capture --test-threads=1 -q --color never`.
   `--exact` skips any `#[test]` the learner wrote.
 - Compile uses `--remap-path-prefix` so paths and panic locations read
@@ -405,7 +405,7 @@ It is logged at `warn` (without code).
      combined file).
   2. Compile (compile timeout, as today):
      ```
-     rustc --edition 2024 -C opt-level=1 -C overflow-checks=on --test \
+     rustc --edition 2024 -C opt-level=0 -C overflow-checks=on --test \
        --error-format=json --remap-path-prefix "$work/g=$work" \
        -o "$work/prog" "$work/g/main.rs"
      ```
@@ -422,7 +422,8 @@ It is logged at `warn` (without code).
      check itself times out or is killed, the server applies rules 2–4
      using the combined diagnostics only.
   5. On success: `rm -rf "$work/g" "$work/main.rs"`, then
-     `RUST_MIN_STACK=8388608 exec timeout … "$work/prog" <libtest args>`.
+     `exec timeout … "$work/prog" <libtest args>`. (The learner-only check keeps
+     `/run`'s flags, so its text matches `/run`'s.)
 
   `run` mode is byte for byte unchanged, and `check_sandbox` keeps using
   it.
@@ -572,13 +573,13 @@ At risk:
 
 | Risk | Mitigation |
 |---|---|
-| Compile cost: the harness adds ≈ +0.15 s plus 0.002–0.025 s per test (x86); 3–4× a tiny program's bare compile | P1 benchmark on the VM before merge, comparing whole jobs (container start included). Target: grade job ≤ 1.5× run job for a typical lesson. Fallbacks: a slimmer prelude (non-generic record code, less generic code per check), or `-C opt-level=0` for grade. |
+| Compile cost: the harness adds ≈ +0.15 s plus 0.002–0.025 s per test (x86); 3–4× a tiny program's bare compile | Round 3 measured whole jobs (container start included), x86, Docker runc, median of 9: at `opt-level=1` a graded job was 2.1–2.4× a `/run` job; at `opt-level=0` it is **u6-l2 0.398 s vs 0.275 s (1.45×), u12-l2 0.416 s vs 0.305 s (1.37×), u0-l1 0.397 s vs 0.260 s (1.53×)** (median of 15; a run of 9 gave 1.46, 1.34, 1.48). So two of three meet the 1.5× target and the print-only one sits at the edge: the cost is code generation of the harness (0.18 s of `--emit=obj` against 0.03 s for the bare program), not linking. Legacy exercises no longer use `/grade` at all. Still to measure: ARM, and gVisor (not installed here). |
 | JSON diagnostics drift | Only used to place errors inside test code. Errors in learner code use the human output of the learner-only check. Parsing is defensive, and Rust is pinned by digest. |
 | `output_of` under gVisor | D3. If it fails, drop it; u3-l1 and u7-l4 then take the fallback in §9. |
 | Learner names and lints vs harness | The machinery lives in `mod __rr` with absolute paths and no lint attributes, and every helper is referenced. Residuals (test `error`, caught by the checker for solutions): a learner `deny(warnings)` plus a warning in a test body; `forbid(unsafe_code)` plus `output_of`. |
 | Learner-only check misses an error class | Rule 2 (§6.1) reports any combined-compile error whose site is a learner line as `code`, so a check that passes can't turn learner errors into `harness`. G3b and G3c pin this. |
 | Shared process state | Authoring rule 7. |
-| Old app or old runner | `/run` is unchanged. Deploy the runner and Caddy before the app release. An app that gets 404 on `/grade` shows "needs an update" and never marks the exercise solved. |
+| Old app or old runner | `/run` is unchanged. Exercises that have `tests` need the new runner and Caddy: an app that gets 404 on `/grade` shows "needs an update" and never marks the exercise solved. Exercises with only `expectedOutput` (55 of 58 until PR 2) use `/run` and need nothing. |
 
 Open questions for the owner:
 
@@ -640,7 +641,8 @@ Open questions for the owner:
 - G11 validation 400s. G12 alternating `/run` and `/grade` drains one shared
   bucket.
 - G13 recursion depth 20 000 (256-byte frames) passes in both `/run` and
-  `/grade` (`RUST_MIN_STACK`).
+  `/grade` (the 16 MiB grading thread). G13b 20 spawned threads work in
+  both (local and Docker).
 - G14 shadowing fixtures: the learner defines `Option`, `Result<T>`,
   `String`, `Vec`, `Box`, `Ok`/`Err`/`Some`/`None`; a test that uses
   `check_eq!` on learner functions still compiles and runs.
@@ -716,7 +718,7 @@ Every finding was re-checked locally before it was accepted.
   `/grade` body limit (193 KB) is under Caddy's 256 KB.
 - **M1 stack.** Reproduced (the threshold depends on frame size: depth
   20 000 with 256-byte frames overflows only under `--test`), and fixed by
-  `RUST_MIN_STACK=8388608` (verified). Test G13.
+  `RUST_MIN_STACK=8388608` (verified; replaced in round 3, see below). Test G13.
 - **M2 shadowing / forbid.** Reproduced with learner `Option` and `String`.
   The machinery moved to a separate `mod __rr` (no glob import, absolute
   paths). Lint attributes removed from generated code and only used
@@ -784,6 +786,80 @@ All findings were reproduced locally before being accepted.
 - **N7 accepted (kept as a fallback).** `no_main` is normally unreachable
   (E0601 is caught by rule 1). It is kept as a cheap fallback rather than
   folded into `harness`, because the learner-facing advice is different.
+
+## 16. Review round 3 (changelog)
+
+Each finding was reproduced before the fix.
+
+- **Major 1 accepted.** A learner could print a `mainend` record with one
+  field and make the server index out of bounds (the handler panicked). The
+  record parser now checks values as well as arity per kind (`mainend` is
+  exactly `ok`, or `panic` plus two fields) and reads fields with `get`
+  everywhere. `NONCE` and `LEARNER_LINES` are private to `mod __rr`, so
+  learner code cannot read them (a compile error in the learner's code).
+  Tests: every record kind with every arity 0–4 and odd values must not
+  panic (`malformed_records_never_panic`), a bad `mainend`, and an unclosed
+  `\u{` run (the unescape no longer scans the rest of the text for each).
+  Residual: a determined learner can still find the nonce by reading its own
+  binary; this lets it forge only the record kinds it could print anyway, and
+  only for its own grade.
+- **Major 2 accepted, with the coordinator's two decisions.** (a) Legacy
+  `expectedOutput`-only exercises use plain `/run` and the old client-side
+  compare, shown as one output test (`GradeResult.fromLegacyRun`). (b) The
+  combined build uses `-C opt-level=0` (keeping `overflow-checks=on`); the
+  learner-only check keeps `/run`'s flags. Measured, whole jobs (container
+  start included), x86, Docker runc, after one warm-up round:
+
+  | lesson | `/run` | `/grade` | ratio |
+  |---|---|---|---|
+  | u6-l2 (4 tests) | 0.275 s | 0.398 s | 1.45 |
+  | u12-l2 (1 output test) | 0.305 s | 0.416 s | 1.37 |
+  | u0-l1 (1 output test) | 0.260 s | 0.397 s | 1.53 |
+
+  (Median of 15 rounds; an earlier run of 9 gave 1.46, 1.34 and 1.48.)
+  Before: u6-l2 0.28 → 0.63 s (2.2×), u12-l2 2.1×, u0-l1 2.4× (coordinator's
+  numbers). ARM and gVisor were not measured. The test is
+  `cost_grade_against_run_on_lesson_solutions` (ignored, Docker). Because
+  frames are larger at opt-level 0, a recursion that fits `/run`'s 8 MiB could
+  overflow in an 8 MiB grading thread (the 20 000-deep test did), so the
+  grading thread has 16 MiB.
+- **Major 3 accepted.** `RUST_MIN_STACK` applied to every learner thread: 20
+  spawned threads failed with "failed to spawn thread" under the address-space
+  cap. It is gone; the tests and `main` run on one thread the harness spawns
+  with a 16 MiB stack (24 MiB broke 20 learner threads under the 320 MB cap,
+  16 MiB does not), named `main`. If the spawn fails, they run on the calling
+  thread. Tests: G13 (deep recursion) and G13b (20 threads), locally and in
+  Docker.
+- **Minor, accepted.** A check whose unwind the learner caught
+  (`catch_unwind`) now fails the test (`FAILURE` is checked after `Ok`).
+  Authoring note: a check inside a spawned thread whose join result is
+  ignored is lost. `output_of` limits the capture file to 64 KB
+  (`RLIMIT_FSIZE`, `SIGXFSZ` ignored), so a flood fails that test with
+  "failed printing to stdout" instead of filling the tmpfs; the rlimit is
+  restored before the final flush, so a line left in the buffer does not leak.
+  `interpret_grade` marks `main`'s stdout "[output truncated]" only if `main`
+  printed, and drops docker's "write /dev/stdout: broken pipe" line.
+  `rr-grade` (local mode) now uses the runner's limits (compile 10 s, run and
+  check 5 s, 64 KB of program output), kills the whole process group, and
+  builds at opt-level 0; it still has no address-space cap.
+  `main()` returning `Err` is a failed run as in `/run` (the harness exits
+  with code 1: output tests are `crashed` with reason `exit:1`; code tests
+  already ran).
+- **Minor, partly accepted.** Learner `#![deny(unreachable_pub)]`,
+  `unused_qualifications`, `let_underscore_drop`, `trivial_casts`,
+  `trivial_numeric_casts` made the harness fail (reason `harness`). The
+  generated modules now carry an `allow` of exactly those five (a lint the
+  learner `forbid`s is still an error, as is tripping it; no other lint is
+  listed because allowing a forbidden lint is itself an error).
+  `#![no_implicit_prelude]` is the learner's own breakage (their `println!`
+  fails, as in `/run`). A learner-defined `mod __rr` is not handled
+  (documented residual).
+- **Minor, accepted.** `check_lessons.py`: the docstring now states what
+  `--strict` does; `--help` prints the usage; unknown options are refused;
+  `rr-grade` is built with `--locked` and brought up to date once per run.
+  `models.dart`: wrongly typed `label`, `panics` or `tests` are a
+  `FormatException`. `code_editor.dart` is formatted again. The u4-l4 starter
+  no longer warns about an unused parameter.
 
 ## Sources
 

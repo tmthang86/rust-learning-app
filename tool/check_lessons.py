@@ -18,14 +18,19 @@ For every lesson in assets/content/lessons/:
 Usage: python3 tool/check_lessons.py [--strict] [--lessons-dir DIR]
        python3 tool/check_lessons.py --self-test
 
-Needs rustc and, to build `rr-grade`, cargo. The grader is
-`$RR_GRADE`, or runner/target/release/rr-grade (built with
-`cargo build --release -p rr-grade` in runner/ when missing). CI pins the
-Rust version to the sandbox's (see runner/sandbox.Dockerfile), so a lesson is
+Needs rustc and, to build `rr-grade`, cargo. The grader is `$RR_GRADE`, or
+runner/target/release/rr-grade, which is brought up to date once per run with
+`cargo build --release --locked -p rr-grade` in runner/ (a no-op when current;
+if cargo is missing, an existing binary is used as is). CI pins the Rust
+version to the sandbox's (see runner/sandbox.Dockerfile), so a lesson is
 judged here as it will be judged by the runner.
 
---strict: an exercise that still has `expectedOutput` instead of `tests`, or
-that is below its minimums, is an error (without it, a warning).
+Minimums (docs/exercise-tests-design.md, section 9): an exercise with `tests`
+must always meet them. One that still has only `expectedOutput` is not
+checked against them, unless --strict is given: then it is an error, as is a
+missing `tests`. A legacy exercise is otherwise graded as one output test.
+
+--strict: see above (used for the lessons that have been migrated).
 --self-test: checks the checker on made-up exercises (a broken hidden test
 must be caught).
 
@@ -120,21 +125,31 @@ def output_comment(code):
     return "\n".join(l[3:] if l.startswith("// ") else l[2:] for l in body)
 
 
+_GRADER = None
+
+
 def rr_grade_binary():
-    """The path of the grader, built on first use."""
+    """The path of the grader; brought up to date on first use."""
+    global _GRADER
+    if _GRADER:
+        return _GRADER
     given = os.environ.get("RR_GRADE")
     if given:
+        _GRADER = given
         return given
     exe = os.path.join(RUNNER, "target", "release", "rr-grade")
-    if not os.path.exists(exe):
-        if shutil.which("cargo") is None:
+    if shutil.which("cargo") is None:
+        if not os.path.exists(exe):
             sys.exit("rr-grade is not built and cargo is not on PATH (see the usage)")
-        print("Building rr-grade (cargo build --release -p rr-grade) ...", flush=True)
+    else:
+        # A stale binary would grade with old rules, so always ask cargo.
+        print("Building rr-grade (cargo build --release --locked -p rr-grade) ...", flush=True)
         built = subprocess.run(
-            ["cargo", "build", "--release", "-p", "rr-grade"], cwd=RUNNER
+            ["cargo", "build", "--release", "--locked", "-p", "rr-grade"], cwd=RUNNER
         )
         if built.returncode != 0:
             sys.exit("could not build rr-grade")
+    _GRADER = exe
     return exe
 
 
@@ -459,6 +474,14 @@ def self_test():
 def main():
     global STRICT
     args = sys.argv[1:]
+    if "-h" in args or "--help" in args:
+        print((__doc__ or "").strip())
+        sys.exit(0)
+    known = {"--self-test", "--strict", "--lessons-dir"}
+    for i, a in enumerate(args):
+        is_dir_value = i > 0 and args[i - 1] == "--lessons-dir"
+        if a.startswith("-") and a not in known and not is_dir_value:
+            sys.exit(f"unknown option {a} (see --help)")
     if "--self-test" in args:
         self_test()
     STRICT = "--strict" in args
