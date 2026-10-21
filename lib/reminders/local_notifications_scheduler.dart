@@ -15,14 +15,23 @@ import 'reminder_scheduler.dart';
 /// - Nothing asks for permission until [requestPermission]. On iOS the
 ///   prompt is deferred by turning every request flag off at initialization.
 class LocalNotificationsScheduler implements ReminderScheduler {
-  LocalNotificationsScheduler([FlutterLocalNotificationsPlugin? plugin])
-    : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+  /// [createChannel] is a seam for tests; the default asks the Android
+  /// implementation of the plugin (nothing on iOS).
+  LocalNotificationsScheduler({
+    FlutterLocalNotificationsPlugin? plugin,
+    Future<void> Function(AndroidNotificationChannel channel)? createChannel,
+  }) : _plugin = plugin ?? FlutterLocalNotificationsPlugin() {
+    _createChannel = createChannel ?? _createAndroidChannel;
+  }
 
   final FlutterLocalNotificationsPlugin _plugin;
+  late final Future<void> Function(AndroidNotificationChannel channel)
+  _createChannel;
   bool _ready = false;
   AppLocalizations? _l10n;
 
   static const _channelId = 'study_reminders';
+  static const _importance = Importance.defaultImportance;
 
   /// A white, transparent-background drawable (Android draws the small
   /// notification icon as a silhouette; a coloured launcher icon would show
@@ -38,36 +47,54 @@ class LocalNotificationsScheduler implements ReminderScheduler {
   @override
   bool get supported => _platformSupported;
 
-  /// The Android details for a notification. The channel name and
-  /// description are shown in the system settings; with `update` the plugin
-  /// renames an existing channel, so they follow a language change (the
-  /// default, `createIfNotExists`, would keep the first language forever).
+  /// The Android channel in the app's language. Its name and description
+  /// are what Android's notification settings show.
   @visibleForTesting
-  static AndroidNotificationDetails androidDetails(AppLocalizations? l10n) =>
-      AndroidNotificationDetails(
+  static AndroidNotificationChannel androidChannel(AppLocalizations l10n) =>
+      AndroidNotificationChannel(
         _channelId,
-        l10n?.reminderChannelName ?? 'Study reminders',
-        channelDescription: l10n?.reminderChannelDescription,
-        importance: Importance.defaultImportance,
-        priority: Priority.defaultPriority,
-        channelAction: AndroidNotificationChannelAction.update,
+        l10n.reminderChannelName,
+        description: l10n.reminderChannelDescription,
+        importance: _importance,
       );
 
   @override
   Future<void> initialize(AppLocalizations l10n) async {
     _l10n = l10n;
-    if (!supported || _ready) return;
-    await _plugin.initialize(
-      settings: const InitializationSettings(
-        android: AndroidInitializationSettings(_androidIcon),
-        iOS: DarwinInitializationSettings(
-          requestAlertPermission: false,
-          requestBadgePermission: false,
-          requestSoundPermission: false,
+    if (!supported) return;
+    if (!_ready) {
+      await _plugin.initialize(
+        settings: const InitializationSettings(
+          android: AndroidInitializationSettings(_androidIcon),
+          iOS: DarwinInitializationSettings(
+            requestAlertPermission: false,
+            requestBadgePermission: false,
+            requestSoundPermission: false,
+          ),
         ),
-      ),
-    );
-    _ready = true;
+      );
+      _ready = true;
+    }
+    // Before every schedule, so the channel name and description in
+    // Android's settings follow the app language. Android's
+    // NotificationManager.createNotificationChannel creates the channel
+    // when it is missing and updates the name and description of an
+    // existing one, leaving the user's own settings for it alone.
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      try {
+        await _createChannel(androidChannel(l10n));
+      } catch (e) {
+        debugPrint('Updating the reminder channel failed: $e');
+      }
+    }
+  }
+
+  Future<void> _createAndroidChannel(AndroidNotificationChannel channel) async {
+    await _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(channel);
   }
 
   @override
@@ -119,7 +146,14 @@ class LocalNotificationsScheduler implements ReminderScheduler {
     if (!supported) return;
     await _plugin.cancelAll();
     final details = NotificationDetails(
-      android: androidDetails(_l10n),
+      // The channel itself is created in initialize(); these only name it.
+      android: AndroidNotificationDetails(
+        _channelId,
+        _l10n?.reminderChannelName ?? 'Study reminders',
+        channelDescription: _l10n?.reminderChannelDescription,
+        importance: _importance,
+        priority: Priority.defaultPriority,
+      ),
       iOS: const DarwinNotificationDetails(presentBadge: false),
     );
     for (final r in reminders) {

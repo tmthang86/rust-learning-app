@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -78,6 +79,12 @@ CourseRepository viCourse({Map<String, String> extraFiles = const {}}) {
       ...extraFiles,
     },
   );
+}
+
+/// A plugin that accepts every call and does nothing.
+class _SilentPlugin implements FlutterLocalNotificationsPlugin {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => Future<bool?>.value(true);
 }
 
 /// Serves files from memory, holding back the ones with a gate until the
@@ -318,16 +325,32 @@ void main() {
         state.dispose();
       });
 
-      test('rename the Android channel in the new language', () {
-        final vi = lookupAppLocalizations(const Locale('vi'));
+      test('create or rename the Android channel in the app language', () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+        addTearDown(() => debugDefaultTargetPlatformOverride = null);
+        final channels = <AndroidNotificationChannel>[];
+        final scheduler = LocalNotificationsScheduler(
+          plugin: _SilentPlugin(),
+          createChannel: (c) async => channels.add(c),
+        );
         final en = lookupAppLocalizations(const Locale('en'));
-        for (final l10n in [vi, en]) {
-          final d = LocalNotificationsScheduler.androidDetails(l10n);
-          expect(d.channelName, l10n.reminderChannelName);
-          expect(d.channelDescription, l10n.reminderChannelDescription);
-          // The default (create if missing) would keep the first language.
-          expect(d.channelAction, AndroidNotificationChannelAction.update);
-        }
+        final vi = lookupAppLocalizations(const Locale('vi'));
+
+        await scheduler.initialize(en);
+        await scheduler.initialize(vi);
+
+        // Once per initialize (it runs before every schedule), so a new
+        // install gets the channel and a language change renames it.
+        expect(channels.map((c) => c.name), [
+          en.reminderChannelName,
+          vi.reminderChannelName,
+        ]);
+        expect(channels.last.description, vi.reminderChannelDescription);
+        expect(channels.every((c) => c.id == 'study_reminders'), isTrue);
+        expect(
+          channels.every((c) => c.importance == Importance.defaultImportance),
+          isTrue,
+        );
       });
 
       test('are scheduled again in the new language when it changes', () async {
