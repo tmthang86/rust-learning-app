@@ -700,6 +700,9 @@ class AppState extends ChangeNotifier {
         // From now on the device copy is this account's, also if this merge
         // fails and is retried (the retry must not drop it again).
         await prefs.setString(_syncedUidKey, user.uid);
+        // The old account's pending track choice is not this account's.
+        await prefs.remove(_trackDirtyKey);
+        if (stale()) return;
         if (remote.needsRepair) {
           await s.replace(
             user.uid,
@@ -707,7 +710,6 @@ class AppState extends ChangeNotifier {
             completed: {..._completed},
             dailyXp: {..._dailyXp},
           );
-          _xpDirty.clear();
         } else if (xpAhead.isNotEmpty) {
           await s.setDailyXp(user.uid, xpAhead);
         }
@@ -738,7 +740,6 @@ class AppState extends ChangeNotifier {
             completed: {..._completed},
             dailyXp: {..._dailyXp},
           );
-          _xpDirty.clear();
         } else {
           if (localOnly.isNotEmpty) await s.addCompleted(user.uid, localOnly);
           if (stale()) return;

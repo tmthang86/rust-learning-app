@@ -334,6 +334,27 @@ void main() {
       expect(prefs.getBool('reminderPromptSeen'), isTrue);
     });
 
+    test('a reset while the permission dialog is open wins over turning '
+        'on', () async {
+      final r = await make(
+        with_: FakeReminderScheduler(permission: false)
+          ..requestGate = Completer<void>(),
+      );
+      final turningOn = r.setEnabled(true);
+      await Future<void>.delayed(Duration.zero);
+      expect(scheduler.permissionRequests, 1);
+
+      await r.reset();
+      scheduler.requestGate!.complete();
+      expect(await turningOn, isFalse);
+      await r.refresh();
+
+      expect(r.enabled, isFalse);
+      expect(scheduler.scheduled, isEmpty);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool('reminderEnabled'), isNull);
+    });
+
     test('reset does not wait for a plugin call that hangs', () async {
       final r = await make(prefs: {'reminderEnabled': true});
       await r.refresh();

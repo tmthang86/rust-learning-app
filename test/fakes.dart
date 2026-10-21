@@ -350,9 +350,14 @@ class FakeReminderScheduler implements ReminderScheduler {
   @override
   Future<bool> hasPermission() async => permission;
 
+  /// When set, [requestPermission] waits for it (the system dialog is open).
+  Completer<void>? requestGate;
+
   @override
   Future<bool> requestPermission() async {
     permissionRequests++;
+    final g = requestGate;
+    if (g != null) await g.future;
     if (grantOnRequest) permission = true;
     return permission;
   }
@@ -709,5 +714,31 @@ StorePurchase removeAds(
 Future<void> flushAsync() async {
   for (var i = 0; i < 10; i++) {
     await Future<void>.delayed(Duration.zero);
+  }
+}
+
+/// A cloud whose full rewrites (`replace`) can be held, to test what
+/// happens while one is in flight.
+class HoldingReplaceSync extends FakeSync {
+  HoldingReplaceSync({super.dailyXp});
+
+  final Completer<void> hold = Completer<void>();
+  final Completer<void> started = Completer<void>();
+
+  @override
+  Future<void> replace(
+    String uid, {
+    Track? track,
+    required Set<String> completed,
+    Map<String, int> dailyXp = const {},
+  }) async {
+    if (!started.isCompleted) started.complete();
+    await hold.future;
+    return super.replace(
+      uid,
+      track: track,
+      completed: completed,
+      dailyXp: dailyXp,
+    );
   }
 }

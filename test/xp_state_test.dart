@@ -522,6 +522,74 @@ void main() {
       expect(sync.dailyXp, {today: 20});
     });
 
+    test('XP earned while a repair rewrite is in flight is sent after it '
+        '(same account)', () async {
+      mockPrefs({'dailyXp': '{"2026-03-17": 20}'});
+      final accounts = FakeAccounts();
+      final sync = HoldingReplaceSync(dailyXp: {'2026-03-17': 20});
+      sync.doc('u1').breakWith({'dailyXp': 'oops'});
+      final state = await signedOut(sync, accounts);
+
+      accounts.signInAs('u1');
+      await sync.started.future;
+      await state.markCompleted('l1'); // while the rewrite is pending
+      sync.hold.complete();
+      await settle();
+      await state.syncing;
+      await settle();
+
+      expect(sync.dailyXp, {'2026-03-17': 20, today: 20});
+      expect(await state.signOut(), isTrue);
+      await settle();
+      expect(sync.dailyXp, {'2026-03-17': 20, today: 20});
+    });
+
+    test('XP earned while a repair rewrite is in flight is sent after it '
+        '(other account)', () async {
+      mockPrefs({'dailyXp': '{"2026-03-18": 100}', 'syncedUid': 'u1'});
+      final accounts = FakeAccounts();
+      final sync = HoldingReplaceSync();
+      sync.doc('u2').breakWith({'dailyXp': 'oops'});
+      final state = await signedOut(sync, accounts);
+
+      accounts.signInAs('u2');
+      await sync.started.future;
+      await state.markCompleted('l1');
+      sync.hold.complete();
+      await settle();
+      await state.syncing;
+      await settle();
+
+      expect(sync.doc('u2').dailyXp, {today: 20});
+      expect(await state.signOut(), isTrue);
+      await settle();
+      expect(sync.doc('u2').dailyXp, {today: 20});
+    });
+
+    test("a failed merge for another account leaves none of the old "
+        "account's pending track choice behind", () async {
+      mockPrefs({
+        'dailyXp': '{"2026-03-18": 100}',
+        'syncedUid': 'u1',
+        'trackDirty': true,
+        'track': 'starter',
+      });
+      final accounts = FakeAccounts();
+      final sync = FakeSync();
+      sync.doc('u2').breakWith({'dailyXp': 'oops'});
+      sync.failWrites = true; // the repair write fails
+      final state = await signedOut(sync, accounts);
+
+      accounts.signInAs('u2');
+      await settle();
+      await state.syncing;
+
+      expect(state.syncFailed, isTrue);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('syncedUid'), 'u2');
+      expect(prefs.getBool('trackDirty'), isNot(true));
+    });
+
     test('a document with a wrong type for dailyXp is repaired with one '
         'rewrite that keeps the merged days', () async {
       mockPrefs({'dailyXp': '{"2026-03-17": 20}'});

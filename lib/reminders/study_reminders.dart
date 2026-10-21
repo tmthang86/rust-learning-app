@@ -46,6 +46,10 @@ class StudyReminders extends ChangeNotifier {
   bool _revokedBySystem = false;
   bool _disposed = false;
 
+  /// Counts resets. A job that was waiting for the system (the permission
+  /// dialog) gives up if the device was reset meanwhile: sign-out wins.
+  int _resetEpoch = 0;
+
   /// Work on the scheduler runs one job at a time, so a cancel never runs
   /// between two steps of another schedule.
   final List<(Future<void> Function(), Completer<void>)> _jobs = [];
@@ -126,10 +130,12 @@ class StudyReminders extends ChangeNotifier {
         return;
       }
       if (!supported) return;
+      final epoch = _resetEpoch;
       await scheduler.initialize(strings);
       final granted =
           await scheduler.hasPermission() ||
           await scheduler.requestPermission();
+      if (epoch != _resetEpoch) return;
       if (!granted) {
         _enabled = false;
         _permissionDenied = true;
@@ -177,6 +183,7 @@ class StudyReminders extends ChangeNotifier {
   /// plugin; only the cancelling is queued (and not awaited), so a plugin
   /// call that hangs cannot hold anything up.
   Future<void> reset() async {
+    _resetEpoch++;
     _enabled = false;
     _minutes = defaultReminderMinutes;
     _permissionDenied = false;
