@@ -45,7 +45,12 @@
     "prompt": "Add a function double(n: i32) -> i32 to the math module that returns n * 2. Remember the pub. Then add a second println! in main that prints math::double(21). The program should print two lines: 36 and then 42",
     "starter": "mod math {\n    pub fn square(n: i32) -> i32 {\n        n * n\n    }\n\n    // add pub fn double here\n}\n\nfn main() {\n    println!(\"{}\", math::square(6));\n}",
     "expectedOutput": "36\n42",
-    "solution": "mod math {\n    pub fn square(n: i32) -> i32 {\n        n * n\n    }\n\n    pub fn double(n: i32) -> i32 {\n        n * 2\n    }\n}\n\nfn main() {\n    println!(\"{}\", math::square(6));\n    println!(\"{}\", math::double(21));\n}"
+    "solution": "mod math {\n    pub fn square(n: i32) -> i32 {\n        n * n\n    }\n\n    pub fn double(n: i32) -> i32 {\n        n * 2\n    }\n}\n\nfn main() {\n    println!(\"{}\", math::square(6));\n    println!(\"{}\", math::double(21));\n}",
+    "hints": [
+      "double belongs inside the math module, next to square. Look at how square is written, and what main needs to be able to call it.",
+      "main is outside the module, so the function needs pub: pub fn double(n: i32) -> i32. The body is n * 2.",
+      "Add the function where the comment is. Then, in main, add a second println! that calls it by its path: math::double(21)."
+    ]
   },
   "quiz": [
     {

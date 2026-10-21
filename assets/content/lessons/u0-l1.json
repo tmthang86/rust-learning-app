@@ -13,7 +13,8 @@
     "prompt": "Swap the lines so the program prints First, then Second, each on its own line.",
     "starter": "fn main() {\n    println!(\"Second\");\n    println!(\"First\");\n}",
     "expectedOutput": "First\nSecond",
-    "solution": "fn main() {\n    println!(\"First\");\n    println!(\"Second\");\n}"
+    "solution": "fn main() {\n    println!(\"First\");\n    println!(\"Second\");\n}",
+    "hints": ["The computer runs your lines from top to bottom. Which line should run first?", "Each println! line is one whole instruction ending with ;. Move println!(\"First\"); above println!(\"Second\");, still inside the curly braces."]
   },
   "quiz": [
     {

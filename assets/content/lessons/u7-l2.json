@@ -65,7 +65,12 @@
     "prompt": "Pair only holds i32 values. Make it generic so it can hold any type, and keep swapped working. Then, at the end of main, build a Pair of two words (a and b), swap it, and print its left and right fields separated by a space. It should print two lines: 2 1 and b a. Hint: struct Pair<T>, impl<T> Pair<T>, and fn swapped(self) -> Pair<T>.",
     "starter": "struct Pair {\n    left: i32,\n    right: i32,\n}\n\nimpl Pair {\n    fn swapped(self) -> Pair {\n        Pair { left: self.right, right: self.left }\n    }\n}\n\nfn main() {\n    let numbers = Pair { left: 1, right: 2 }.swapped();\n    println!(\"{} {}\", numbers.left, numbers.right);\n}",
     "expectedOutput": "2 1\nb a",
-    "solution": "struct Pair<T> {\n    left: T,\n    right: T,\n}\n\nimpl<T> Pair<T> {\n    fn swapped(self) -> Pair<T> {\n        Pair { left: self.right, right: self.left }\n    }\n}\n\nfn main() {\n    let numbers = Pair { left: 1, right: 2 }.swapped();\n    println!(\"{} {}\", numbers.left, numbers.right);\n    let words = Pair { left: \"a\", right: \"b\" }.swapped();\n    println!(\"{} {}\", words.left, words.right);\n}"
+    "solution": "struct Pair<T> {\n    left: T,\n    right: T,\n}\n\nimpl<T> Pair<T> {\n    fn swapped(self) -> Pair<T> {\n        Pair { left: self.right, right: self.left }\n    }\n}\n\nfn main() {\n    let numbers = Pair { left: 1, right: 2 }.swapped();\n    println!(\"{} {}\", numbers.left, numbers.right);\n    let words = Pair { left: \"a\", right: \"b\" }.swapped();\n    println!(\"{} {}\", words.left, words.right);\n}",
+    "hints": [
+      "Pair only works with i32 right now. Making it generic touches three places: the struct, the impl line, and the type swapped returns. Look back at how the lesson made Point generic.",
+      "Declare T after the struct name, Pair<T>, and use it for both fields. The impl needs T twice: impl<T> Pair<T>. Then swapped returns Pair<T>.",
+      "At the end of main, build a Pair with left \"a\" and right \"b\", call swapped() on it, and print its left and right fields with a space between them."
+    ]
   },
   "quiz": [
     {
