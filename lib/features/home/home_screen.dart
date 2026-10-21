@@ -5,6 +5,7 @@ import '../../data/app_state.dart';
 import '../../data/models.dart';
 import '../../monetization/ad_banner.dart';
 import '../../monetization/ads_service.dart';
+import '../streak/streak_widgets.dart';
 import 'checkpoint_strings.dart';
 
 /// The course map: units for the learner's track, each with its lessons.
@@ -26,6 +27,9 @@ class HomeScreen extends StatelessWidget {
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
+                    const StreakCard(),
+                    const ReminderPromptCard(),
+                    const SizedBox(height: 12),
                     for (final (i, unit) in units.indexed) ...[
                       if (i > 0) const SizedBox(height: 12),
                       _UnitCard(unit: unit),

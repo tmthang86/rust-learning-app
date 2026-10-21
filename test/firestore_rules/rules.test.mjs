@@ -45,6 +45,9 @@ const tombstone = () =>
     setDoc(doc(ctx.firestore(), 'deletedUsers', 'u1'), { deletedAt: new Date(), expireAt: new Date() }));
 const tomb = (db = me) => doc(db, 'deletedUsers', 'u1');
 
+/** A map of n distinct day-like keys. */
+const days = (n) => Object.fromEntries(Array.from({ length: n }, (_, i) => [`d${i}`, 20]));
+
 const cases = [
   ['owner sets track', true, () => setDoc(mine(), { track: 'fast', updatedAt: now }, merge)],
   ['owner adds lessons', true, () =>
@@ -73,6 +76,47 @@ const cases = [
       completedLessons: Array.from({ length: 1000 }, (_, i) => `l${i}`),
       updatedAt: now,
     }, merge)],
+  ['owner sets XP for a day', true, () =>
+    setDoc(mine(), { dailyXp: { '2026-03-18': 20 }, updatedAt: now }, merge)],
+  ['XP not a map', false, () =>
+    setDoc(mine(), { dailyXp: 'lots', updatedAt: now }, merge)],
+  ['XP a list', false, () =>
+    setDoc(mine(), { dailyXp: [20], updatedAt: now }, merge)],
+  ['4001 XP days', false, () =>
+    setDoc(mine(), { dailyXp: days(4001), updatedAt: now }, merge)],
+  ['4000 XP days', true, () =>
+    setDoc(mine(), { dailyXp: days(4000), updatedAt: now }, merge)],
+  ['other user writes XP', false, () =>
+    setDoc(mine(other), { dailyXp: { '2026-03-18': 20 }, updatedAt: now }, merge)],
+  ['XP write without updatedAt', false, () =>
+    setDoc(mine(), { dailyXp: { '2026-03-18': 20 } }, merge)],
+  // A merge write that names one day changes only that day (Firestore merges
+  // maps field by field): this is how the app syncs XP.
+  ['a merge write changes only the day it names', true, async () => {
+    await seed({ dailyXp: { '2026-03-16': 30, '2026-03-17': 10 } });
+    await setDoc(mine(), { dailyXp: { '2026-03-17': 40, '2026-03-18': 5 }, updatedAt: now }, merge);
+    const xp = (await getDoc(mine())).data().dailyXp;
+    const want = { '2026-03-16': 30, '2026-03-17': 40, '2026-03-18': 5 };
+    if (JSON.stringify(xp, Object.keys(xp).sort()) !== JSON.stringify(want, Object.keys(want).sort())) {
+      throw new Error(`expected ${JSON.stringify(want)}, got ${JSON.stringify(xp)}`);
+    }
+  }],
+  ['a merge write to other fields keeps the XP', true, async () => {
+    await seed({ dailyXp: { '2026-03-16': 30 }, completedLessons: ['a'] });
+    await setDoc(mine(), { completedLessons: arrayUnion('b'), updatedAt: now }, merge);
+    const data = (await getDoc(mine())).data();
+    if (data.dailyXp['2026-03-16'] !== 30) throw new Error('XP lost');
+  }],
+  ['bad XP type blocks a merge write', false, async () => {
+    await seed({ dailyXp: 'oops', completedLessons: ['a'] });
+    return setDoc(mine(), { completedLessons: arrayUnion('b'), updatedAt: now }, merge);
+  }],
+  ['full rewrite repairs a bad XP type', true, async () => {
+    await seed({ dailyXp: 'oops', completedLessons: ['a'] });
+    return setDoc(mine(), { completedLessons: ['a'], dailyXp: { '2026-03-18': 20 }, updatedAt: now });
+  }],
+  ['XP inside a map need not be valid (the app ignores bad days)', true, () =>
+    setDoc(mine(), { dailyXp: { junk: 'x', '2026-03-18': 20 }, updatedAt: now }, merge)],
   ['other collection', false, () => setDoc(doc(me, 'entitlements', 'u1'), { premium: true })],
   ['other user deletes', false, () => deleteDoc(mine(other))],
   ['owner deletes', true, () => deleteDoc(mine())],

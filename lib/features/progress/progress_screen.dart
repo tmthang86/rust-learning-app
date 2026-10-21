@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/app_state.dart';
 import '../../data/models.dart';
 import '../account/account_widgets.dart';
+import '../streak/streak_widgets.dart';
 import 'monetization_widgets.dart';
 
 /// Sign in to sync progress, or shows who is signed in.
@@ -200,6 +201,8 @@ class ProgressScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+              const StreakStatsCard(),
               if (!state.accountsAllowed) ...[
                 const SizedBox(height: 16),
                 const _DeviceOnlyCard(),
@@ -231,6 +234,10 @@ class ProgressScreen extends StatelessWidget {
                   if (s.isNotEmpty) state.chooseTrack(s.first);
                 },
               ),
+              const Divider(height: 32),
+              const DailyGoalPicker(),
+              const SizedBox(height: 8),
+              const ReminderSettings(),
               const SizedBox(height: 24),
               const RemoveAdsCard(),
               const PrivacyOptionsTile(),

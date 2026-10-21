@@ -3,16 +3,22 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../data/models.dart';
+import '../data/streaks.dart';
 
 class RemoteProgress {
   const RemoteProgress({
     this.track,
     this.completed = const {},
+    this.dailyXp = const {},
     this.needsRepair = false,
   });
 
   final Track? track;
   final Set<String> completed;
+
+  /// XP per local day (`yyyy-MM-dd`), with bad keys and values already
+  /// dropped; see [cleanDailyXp].
+  final Map<String, int> dailyXp;
 
   /// The stored document breaks firestore.rules (a field with the wrong
   /// type, or a field that isn't allowed). The rules check the whole
@@ -24,7 +30,7 @@ class RemoteProgress {
   /// it would remove lessons another device added.
   final bool needsRepair;
 
-  static const fields = {'track', 'completedLessons', 'updatedAt'};
+  static const fields = {'track', 'completedLessons', 'dailyXp', 'updatedAt'};
 
   /// Reads a `users/{uid}` document without trusting its shape.
   ///
@@ -44,17 +50,23 @@ class RemoteProgress {
     final d = data ?? const <String, dynamic>{};
     final track = d['track'];
     final completed = d['completedLessons'];
+    final dailyXp = d['dailyXp'];
     final parsedTrack = track is String ? Track.fromName(track) : null;
     final repair =
         d.keys.any((k) => !fields.contains(k)) ||
         (d.containsKey('track') && parsedTrack == null) ||
         (d.containsKey('completedLessons') &&
-            (completed is! List || completed.any((e) => e is! String)));
+            (completed is! List || completed.any((e) => e is! String))) ||
+        // A wrong type breaks the rules. Single bad days inside the map
+        // don't (the rules only check the map's type and size), so they
+        // are ignored when reading instead.
+        (d.containsKey('dailyXp') && dailyXp is! Map);
     return RemoteProgress(
       track: parsedTrack,
       completed: completed is List
           ? completed.whereType<String>().where((id) => id.isNotEmpty).toSet()
           : const {},
+      dailyXp: cleanDailyXp(dailyXp),
       needsRepair: repair && confirmed,
     );
   }
@@ -105,6 +117,11 @@ abstract class ProgressSync {
   Future<void> addCompleted(String uid, Iterable<String> lessonIds);
   Future<void> setTrack(String uid, Track track);
 
+  /// Sets the XP of the given days and leaves every other day as it is. The
+  /// value of a day is replaced, not added to: the app decides what a day is
+  /// worth (the larger of what the devices know, see [mergeDailyXp]).
+  Future<void> setDailyXp(String uid, Map<String, int> days);
+
   /// Rewrites the whole document in one write. Used to repair a document
   /// that firestore.rules would otherwise refuse to update, and to put
   /// progress back after a failed account deletion.
@@ -112,6 +129,7 @@ abstract class ProgressSync {
     String uid, {
     Track? track,
     required Set<String> completed,
+    Map<String, int> dailyXp = const {},
   });
 
   /// Removes everything stored for [uid] (account deletion).
@@ -121,8 +139,8 @@ abstract class ProgressSync {
   Future<bool> flush(Duration timeout);
 }
 
-/// Firestore layout: `users/{uid}` with `track`, `completedLessons` and
-/// `updatedAt`. firestore.rules limits each user to their own document and
+/// Firestore layout: `users/{uid}` with `track`, `completedLessons`,
+/// `dailyXp` (a map from day to XP) and `updatedAt`. firestore.rules limits each user to their own document and
 /// to exactly these fields.
 class FirestoreProgressSync implements ProgressSync {
   FirestoreProgressSync([FirebaseFirestore? db])
@@ -165,6 +183,13 @@ class FirestoreProgressSync implements ProgressSync {
       }, SetOptions(merge: true));
 
   @override
+  Future<void> setDailyXp(String uid, Map<String, int> days) => _doc(uid).set({
+    // A merge write deep-merges maps: only these days change.
+    'dailyXp': days,
+    'updatedAt': FieldValue.serverTimestamp(),
+  }, SetOptions(merge: true));
+
+  @override
   Future<void> setTrack(String uid, Track track) => _doc(uid).set({
     'track': track.name,
     'updatedAt': FieldValue.serverTimestamp(),
@@ -175,11 +200,13 @@ class FirestoreProgressSync implements ProgressSync {
     String uid, {
     Track? track,
     required Set<String> completed,
+    Map<String, int> dailyXp = const {},
   }) =>
       // No merge: fields that aren't listed here are removed.
       _doc(uid).set({
         if (track != null) 'track': track.name,
         'completedLessons': completed.toList(),
+        if (dailyXp.isNotEmpty) 'dailyXp': dailyXp,
         'updatedAt': FieldValue.serverTimestamp(),
       });
 

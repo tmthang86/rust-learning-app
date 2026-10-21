@@ -9,6 +9,8 @@ import 'package:rust_learn/account/progress_sync.dart';
 import 'package:rust_learn/data/app_state.dart';
 import 'package:rust_learn/data/course_repository.dart';
 import 'package:rust_learn/data/models.dart';
+import 'package:rust_learn/l10n/streak_strings.dart';
+import 'package:rust_learn/reminders/reminder_scheduler.dart';
 import 'package:rust_learn/monetization/ad_config.dart';
 import 'package:rust_learn/monetization/ads_service.dart';
 import 'package:rust_learn/monetization/consent_service.dart';
@@ -133,9 +135,14 @@ class FakeAccounts implements AccountService {
 }
 
 class CloudDoc {
-  CloudDoc({this.track, Set<String>? completed}) : completed = completed ?? {};
+  CloudDoc({this.track, Set<String>? completed, Map<String, int>? dailyXp})
+    : completed = completed ?? {},
+      dailyXp = dailyXp ?? {};
   Track? track;
   final Set<String> completed;
+
+  /// XP per day, as stored under `dailyXp`.
+  final Map<String, int> dailyXp;
 
   /// Raw fields stored on top of the clean ones, e.g. `{'track': 42}` or
   /// `{'legacy': true}`. firestore.rules refuses merge writes to a document
@@ -145,7 +152,9 @@ class CloudDoc {
   bool get broken =>
       raw.keys.any((k) => !RemoteProgress.fields.contains(k)) ||
       (raw.containsKey('track') && raw['track'] is! String) ||
-      (raw.containsKey('completedLessons') && raw['completedLessons'] is! List);
+      (raw.containsKey('completedLessons') &&
+          raw['completedLessons'] is! List) ||
+      (raw.containsKey('dailyXp') && raw['dailyXp'] is! Map);
 
   void breakWith(Map<String, Object?> fields) => raw.addAll(fields);
 }
@@ -160,13 +169,21 @@ class FakeWriteError implements Exception {
 /// In-memory cloud with one document per uid.
 class FakeSync implements ProgressSync {
   /// Seeds the document of `u1`, the account [FakeAccounts.signIn] uses.
-  FakeSync({Track? track, Set<String>? completed, this.steps}) {
-    docs['u1'] = CloudDoc(track: track, completed: completed);
+  FakeSync({
+    Track? track,
+    Set<String>? completed,
+    Map<String, int>? dailyXp,
+    this.steps,
+  }) {
+    docs['u1'] = CloudDoc(track: track, completed: completed, dailyXp: dailyXp);
   }
 
   final Map<String, CloudDoc> docs = {};
   final List<String> loads = [];
   final List<Track> trackWrites = [];
+
+  /// Every `setDailyXp` call, in order.
+  final List<Map<String, int>> xpWrites = [];
   int replaces = 0;
 
   /// When given, each call is logged here (shared with [FakeAccounts.steps]).
@@ -193,6 +210,7 @@ class FakeSync implements ProgressSync {
   // The `u1` document, for the original tests.
   Track? get track => docs['u1']?.track;
   Set<String> get completed => doc('u1').completed;
+  Map<String, int> get dailyXp => doc('u1').dailyXp;
 
   void _write(String uid, {bool replacing = false}) {
     if (failWrites) throw const FakeWriteError('offline');
@@ -214,6 +232,7 @@ class FakeSync implements ProgressSync {
     return RemoteProgress.fromMap({
       if (snapshot.track != null) 'track': snapshot.track!.name,
       'completedLessons': snapshot.completed.toList(),
+      if (snapshot.dailyXp.isNotEmpty) 'dailyXp': {...snapshot.dailyXp},
       'updatedAt': unconfirmedReads ? null : 'server-time',
       ...snapshot.raw,
     }, confirmed: !unconfirmedReads);
@@ -223,6 +242,38 @@ class FakeSync implements ProgressSync {
   Future<void> addCompleted(String uid, Iterable<String> ids) async {
     _write(uid);
     doc(uid).completed.addAll(ids);
+  }
+
+  /// When set, `setDailyXp` waits for it before taking effect (a slow
+  /// write). Each call waits on the same gate.
+  Completer<void>? xpGate;
+
+  /// Runs at the start of every `setDailyXp` call, with the call number
+  /// (from 1); a test can hold individual calls here.
+  Future<void> Function(int call)? onXpWrite;
+  int _xpCalls = 0;
+  Future<void>? _xpChain;
+
+  /// Like Firestore, writes take effect in the order they were made, even
+  /// when an earlier one is slow.
+  @override
+  Future<void> setDailyXp(String uid, Map<String, int> days) async {
+    final call = ++_xpCalls;
+    final previous = _xpChain;
+    final done = Completer<void>();
+    _xpChain = done.future;
+    try {
+      if (previous != null) await previous;
+      await onXpWrite?.call(call);
+      final g = xpGate;
+      if (g != null) await g.future;
+      _write(uid);
+      xpWrites.add({...days});
+      // Like a Firestore merge write: only these days change.
+      doc(uid).dailyXp.addAll(days);
+    } finally {
+      done.complete();
+    }
   }
 
   @override
@@ -237,11 +288,16 @@ class FakeSync implements ProgressSync {
     String uid, {
     Track? track,
     required Set<String> completed,
+    Map<String, int> dailyXp = const {},
   }) async {
     steps?.add('replace');
     _write(uid, replacing: true);
     replaces++;
-    docs[uid] = CloudDoc(track: track, completed: {...completed});
+    docs[uid] = CloudDoc(
+      track: track,
+      completed: {...completed},
+      dailyXp: {...dailyXp},
+    );
   }
 
   @override
@@ -253,6 +309,77 @@ class FakeSync implements ProgressSync {
 
   @override
   Future<bool> flush(Duration timeout) async => flushResult;
+}
+
+/// Reminder scheduler stand-in that records what the app asks for.
+class FakeReminderScheduler implements ReminderScheduler {
+  FakeReminderScheduler({
+    this.supported = true,
+    this.permission = true,
+    this.grantOnRequest = true,
+  });
+
+  @override
+  bool supported;
+
+  /// What [hasPermission] answers (the system setting).
+  bool permission;
+
+  /// Whether a request for permission is granted.
+  bool grantOnRequest;
+
+  /// Make the next calls throw, like a failing plugin.
+  bool throws = false;
+
+  int initializes = 0;
+  int permissionRequests = 0;
+  int cancels = 0;
+
+  /// The reminders waiting right now.
+  List<ScheduledReminder> scheduled = [];
+
+  /// Every [replaceAll] call, in order.
+  final List<List<ScheduledReminder>> schedules = [];
+
+  @override
+  Future<void> initialize(StreakStrings strings) async {
+    if (throws) throw StateError('plugin failed');
+    initializes++;
+  }
+
+  @override
+  Future<bool> hasPermission() async => permission;
+
+  /// When set, [requestPermission] waits for it (the system dialog is open).
+  Completer<void>? requestGate;
+
+  @override
+  Future<bool> requestPermission() async {
+    permissionRequests++;
+    final g = requestGate;
+    if (g != null) await g.future;
+    if (grantOnRequest) permission = true;
+    return permission;
+  }
+
+  @override
+  Future<void> replaceAll(List<ScheduledReminder> reminders) async {
+    if (throws) throw StateError('plugin failed');
+    schedules.add(reminders);
+    scheduled = [...reminders];
+  }
+
+  /// When set, [cancelAll] waits for it (a plugin call that hangs).
+  Completer<void>? cancelGate;
+
+  @override
+  Future<void> cancelAll() async {
+    cancels++;
+    scheduled = [];
+    final g = cancelGate;
+    if (g != null) await g.future;
+    scheduled = [];
+  }
 }
 
 /// Returns fixed output, e.g. the exercise's expected answer.
@@ -342,12 +469,16 @@ Future<AppState> makeState(
   FakeSync sync, {
   CourseRepository? repository,
   CodeRunner runner = const PlaceholderCodeRunner(),
+  DateTime Function()? clock,
+  ReminderScheduler reminderScheduler = const NoopReminderScheduler(),
 }) async => AppState(
   repository: repository ?? CourseRepository(),
   runner: runner,
   prefs: await SharedPreferences.getInstance(),
   accounts: accounts,
   sync: sync,
+  clock: clock,
+  reminderScheduler: reminderScheduler,
 );
 
 Future<void> settle() => Future<void>.delayed(Duration.zero);
@@ -369,7 +500,10 @@ class FakeAds implements AdsService {
   final bool supported;
 
   @override
-  List<String> get unitIds => const ['test-banner-unit', 'test-interstitial-unit'];
+  List<String> get unitIds => const [
+    'test-banner-unit',
+    'test-interstitial-unit',
+  ];
 
   final List<AdAudience> initializedWith = [];
   int preloads = 0;
@@ -586,5 +720,31 @@ StorePurchase removeAds(
 Future<void> flushAsync() async {
   for (var i = 0; i < 10; i++) {
     await Future<void>.delayed(Duration.zero);
+  }
+}
+
+/// A cloud whose full rewrites (`replace`) can be held, to test what
+/// happens while one is in flight.
+class HoldingReplaceSync extends FakeSync {
+  HoldingReplaceSync({super.dailyXp});
+
+  final Completer<void> hold = Completer<void>();
+  final Completer<void> started = Completer<void>();
+
+  @override
+  Future<void> replace(
+    String uid, {
+    Track? track,
+    required Set<String> completed,
+    Map<String, int> dailyXp = const {},
+  }) async {
+    if (!started.isCompleted) started.complete();
+    await hold.future;
+    return super.replace(
+      uid,
+      track: track,
+      completed: completed,
+      dailyXp: dailyXp,
+    );
   }
 }
