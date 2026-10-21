@@ -1124,19 +1124,16 @@ fn interpret_grade(
 
     // Compiling failed, and the learner-only check ran: whose error is it?
     if c.code == Some(COMPILE_FAILED) && !c.overflow && c.stdout.starts_with(COMPILE_MARKER) {
-        let combined_json;
-        let check_text;
-        match find(&c.stderr, CHECK_MARKER) {
-            Some(i) => {
-                combined_json = String::from_utf8_lossy(&c.stderr[..i]).into_owned();
-                check_text =
-                    String::from_utf8_lossy(&c.stderr[i + CHECK_MARKER.len()..]).into_owned();
-            }
-            None => {
-                combined_json = String::from_utf8_lossy(&c.stderr).into_owned();
-                check_text = String::new();
-            }
-        }
+        let (combined_json, check_text) = match find(&c.stderr, CHECK_MARKER) {
+            Some(i) => (
+                String::from_utf8_lossy(&c.stderr[..i]).into_owned(),
+                String::from_utf8_lossy(&c.stderr[i + CHECK_MARKER.len()..]).into_owned(),
+            ),
+            None => (
+                String::from_utf8_lossy(&c.stderr).into_owned(),
+                String::new(),
+            ),
+        };
         // `RR-CHECK:<exit code>`; a check that was killed (137) or timed out
         // has no verdict.
         let rc = find(&c.stdout, CHECK_RESULT).and_then(|i| {
