@@ -158,7 +158,7 @@
       "lessons": [
         { "id": "u11-l1", "title": "Thread" },
         { "id": "u11-l2", "title": "Channel" },
-        { "id": "u11-l3", "title": "Trạng thái dùng chung với Arc và Mutex" },
+        { "id": "u11-l3", "title": "Trạng thái chia sẻ với Arc và Mutex" },
         { "id": "u11-l4", "title": "Giới thiệu về async" }
       ]
     },
