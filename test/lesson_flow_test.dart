@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:rust_learn/app/router.dart';
 import 'package:rust_learn/data/app_state.dart';
 import 'package:rust_learn/data/models.dart';
+import 'package:rust_learn/features/home/checkpoint_strings.dart';
 
 import 'dart:async';
 
@@ -63,13 +64,20 @@ void main() {
     await tester.tap(find.text('Basics'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Checkpoint'), findsOneWidget);
+    // Only the checkpoint row carries the label, not the normal lessons.
+    expect(find.text(CheckpointStrings.label), findsOneWidget);
+    expect(find.byIcon(Icons.circle_outlined), findsNWidgets(3));
+    Finder icon(String label) => find.byWidgetPredicate(
+          (w) => w is Icon && w.semanticLabel == label,
+        );
+    expect(icon(CheckpointStrings.notStarted), findsNWidgets(4));
     expect(find.byIcon(Icons.emoji_events_outlined), findsOneWidget);
     expect(find.textContaining('0 of 4 lessons done'), findsOneWidget);
 
     await tester.runAsync(() => state.markCompleted('u1-check'));
     await tester.pumpAndSettle();
     expect(find.byIcon(Icons.emoji_events), findsOneWidget);
+    expect(icon(CheckpointStrings.completed), findsOneWidget);
     expect(find.textContaining('1 of 4 lessons done'), findsOneWidget);
     expect(state.totalLessons, 4);
     expect(state.completedCount, 1);

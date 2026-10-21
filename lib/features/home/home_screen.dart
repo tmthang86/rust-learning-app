@@ -78,6 +78,9 @@ class _UnitCard extends StatelessWidget {
                 color: state.isCompleted(lesson.id)
                     ? theme.colorScheme.primary
                     : null,
+                semanticLabel: state.isCompleted(lesson.id)
+                    ? CheckpointStrings.completed
+                    : CheckpointStrings.notStarted,
               ),
               title: Text(lesson.title),
               subtitle: lesson.checkpoint
