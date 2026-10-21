@@ -4,11 +4,11 @@
   "sections": [
     {
       "type": "text",
-      "text": "Checkpoint này luyện tập ba bài học đầu của unit, và bài học cuối trong phần câu hỏi. Bạn sẽ khởi động các thread và join chúng theo thứ tự (bài Thread), thu thập kết quả từ nhiều sender qua một channel (bài Channel), và cộng các số vào một tổng chia sẻ phía sau Arc và Mutex (bài Trạng thái chia sẻ với Arc và Mutex). Bạn không viết main."
+      "text": "Checkpoint này luyện tập ba bài học đầu của unit, và bài học cuối trong phần câu hỏi. Bạn sẽ khởi động các thread và join chúng theo thứ tự (bài Thread), thu thập kết quả từ nhiều sender qua một channel (bài Channel), và cộng các số vào một tổng chia sẻ được bọc trong Arc và Mutex (bài Trạng thái chia sẻ với Arc và Mutex). Bạn không viết main."
     },
     {
       "type": "text",
-      "text": "Code khởi đầu biên dịch được, nhưng ba thân hàm được đánh dấu todo!(), một placeholder gây ra panic với thông báo \"not yet implemented\" khi nó chạy. Trình biên dịch hiển thị cảnh báo về import và biến không dùng cho đến khi bạn làm xong. Điều đó là bình thường. Kết quả của chương trình phải giống nhau ở mọi lần chạy, dù các thread chạy cùng một lúc. Đó là lý do mỗi hàm hoặc join các thread theo thứ tự đã khởi động chúng, hoặc sắp xếp những gì nó nhận được, trước khi trả về bất cứ thứ gì."
+      "text": "Code khởi đầu biên dịch được, nhưng ba thân hàm được đánh dấu todo!(), một ô giữ chỗ (placeholder) gây ra panic với thông báo \"not yet implemented\" khi nó chạy. Trình biên dịch hiển thị cảnh báo về import và biến không dùng cho đến khi bạn làm xong. Điều đó là bình thường. Kết quả của chương trình phải giống nhau ở mọi lần chạy, dù các thread chạy cùng một lúc. Đó là lý do mỗi hàm hoặc join các thread theo thứ tự đã khởi động chúng, hoặc sắp xếp những gì nó nhận được, trước khi trả về bất cứ thứ gì."
     },
     {
       "type": "note",
@@ -22,7 +22,7 @@
     },
     {
       "type": "note",
-      "text": "Các signature cần khớp: word_counts(texts: Vec<String>) -> Vec<usize> (cùng thứ tự với đầu vào), squares(n: u32) -> Vec<(u32, u32)> (đã sắp xếp), và parallel_total(chunks: Vec<Vec<u32>>) -> u32. Các trường hợp biên trong main: văn bản rỗng, dấu cách thừa, không có văn bản nào, n = 0, chunk rỗng, không có chunk nào.",
+      "text": "Các chữ ký cần khớp: word_counts(texts: Vec<String>) -> Vec<usize> (cùng thứ tự với đầu vào), squares(n: u32) -> Vec<(u32, u32)> (đã sắp xếp), và parallel_total(chunks: Vec<Vec<u32>>) -> u32. Các trường hợp biên trong main: văn bản rỗng, dấu cách thừa, không có văn bản nào, n = 0, chunk rỗng, không có chunk nào.",
       "track": "fast"
     }
   ],
@@ -59,7 +59,7 @@
     {
       "question": "Bạn gọi một async fn nhưng không bao giờ dùng .await trên future mà nó trả về và không bao giờ đưa nó cho một bộ chạy. Cái gì chạy?",
       "options": [
-        "Toàn bộ thân hàm chạy cùng một lúc, và kết quả bị vứt đi",
+        "Toàn bộ thân hàm chạy ngay lập tức, và kết quả bị vứt đi",
         "Chỉ code trước .await đầu tiên chạy",
         "Không gì chạy cả: một future là lazy cho đến khi có thứ gì đó poll nó"
       ],

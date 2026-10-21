@@ -8,7 +8,7 @@
     },
     {
       "type": "text",
-      "text": "Code khởi đầu biên dịch được, nhưng bốn thân hàm được đánh dấu todo!(), một placeholder gây ra panic với thông báo \"not yet implemented\" khi nó chạy. Trình biên dịch hiển thị cảnh báo về biến không dùng cho đến khi bạn làm xong. Điều đó là bình thường. Deref impl của bạn là thứ làm cho shout(&db) hoạt động trong main: Rust biến &Guard thành &String, rồi thành &str mà shout muốn. Chương trình in nhật ký ở cuối, nên các thông điệp cho bạn thấy thứ tự các giá trị được tạo ra và bị drop."
+      "text": "Code khởi đầu biên dịch được, nhưng bốn thân hàm được đánh dấu todo!(), một ô giữ chỗ (placeholder) gây ra panic với thông báo \"not yet implemented\" khi nó chạy. Trình biên dịch hiển thị cảnh báo về biến không dùng cho đến khi bạn làm xong. Điều đó là bình thường. impl Deref của bạn là thứ làm cho shout(&db) hoạt động trong main: Rust biến &Guard thành &String, rồi thành &str mà shout muốn. Chương trình in nhật ký ở cuối, nên các thông điệp cho bạn thấy thứ tự các giá trị được tạo ra và bị drop."
     },
     {
       "type": "note",
@@ -17,7 +17,7 @@
     },
     {
       "type": "note",
-      "text": "Các signature cần khớp: depth(tree: &Tree) -> u32, Guard::new(name: &str, log: &Rc<RefCell<Vec<String>>>) -> Guard, Drop::drop(&mut self) và Deref::deref(&self) -> &String. Nhật ký là một Vec<String> bên trong một RefCell bên trong một Rc. Rc::strong_count trong main kiểm tra rằng new thực sự thêm một chủ sở hữu. Thứ tự drop trong main: drop(cache) chạy sớm, và db bị drop ở cuối khối của nó.",
+      "text": "Các chữ ký cần khớp: depth(tree: &Tree) -> u32, Guard::new(name: &str, log: &Rc<RefCell<Vec<String>>>) -> Guard, Drop::drop(&mut self) và Deref::deref(&self) -> &String. Nhật ký là một Vec<String> bên trong một RefCell bên trong một Rc. Rc::strong_count trong main kiểm tra rằng new thực sự thêm một chủ sở hữu. Thứ tự drop trong main: drop(cache) chạy sớm, và db bị drop ở cuối khối của nó.",
       "track": "fast"
     }
   ],

@@ -8,11 +8,11 @@
     },
     {
       "type": "text",
-      "text": "Code khởi đầu cố ý chưa biên dịch được. Player nằm trong mod scoreboard, và module rank được lồng bên trong nó. Không có gì được đánh dấu pub, và main không có dòng use nào. Hãy đọc từng lỗi của trình biên dịch một: mỗi lỗi nêu tên một mục là riêng tư hoặc một tên không tìm thấy. Chỉ làm công khai những gì main cần. Trường points phải giữ riêng tư, vì chỉ các phương thức mới nên thay đổi nó. Ba thân hàm cũng được đánh dấu todo!(), một placeholder gây ra panic với thông báo \"not yet implemented\" khi nó chạy. Trình biên dịch hiển thị cảnh báo về biến không dùng cho đến khi bạn làm xong. Điều đó là bình thường."
+      "text": "Code khởi đầu cố ý chưa biên dịch được. Player nằm trong mod scoreboard, và module rank được lồng bên trong nó. Không có gì được đánh dấu pub, và main không có dòng use nào. Hãy đọc từng lỗi của trình biên dịch một: mỗi lỗi nêu tên một mục là riêng tư hoặc một tên không tìm thấy. Chỉ làm công khai những gì main cần. Trường points phải giữ riêng tư, vì chỉ các phương thức mới nên thay đổi nó. Ba thân hàm cũng được đánh dấu todo!(), một ô giữ chỗ (placeholder) gây ra panic với thông báo \"not yet implemented\" khi nó chạy. Trình biên dịch hiển thị cảnh báo về biến không dùng cho đến khi bạn làm xong. Điều đó là bình thường."
     },
     {
       "type": "text",
-      "text": "Ở cuối có một module #[cfg(test)] với hai test. Ứng dụng bỏ qua nó, vì nó biên dịch file của bạn mà không có test. Trên máy tính của riêng bạn, cargo test sẽ chạy chúng. Các dòng assert_eq! trong main làm cùng công việc đó ở đây: nếu một giá trị sai, chương trình bị panic và hiển thị giá trị bên trái và bên phải. Bạn sẽ tự thêm một dòng trong số đó."
+      "text": "Ở cuối có một module #[cfg(test)] với hai test. Ứng dụng bỏ qua nó, vì ứng dụng biên dịch file của bạn mà không có test. Trên máy tính của riêng bạn, cargo test sẽ chạy chúng. Các dòng assert_eq! trong main làm cùng công việc đó ở đây: nếu một giá trị sai, chương trình bị panic và hiển thị giá trị bên trái và bên phải. Bạn sẽ tự thêm một dòng trong số đó."
     },
     {
       "type": "note",
@@ -21,7 +21,7 @@
     },
     {
       "type": "note",
-      "text": "Các signature cần khớp: Player::add_points(&mut self, amount: u32), Player::spend(&mut self, cost: u32) -> Result<(), String>, và rank::title(player: &Player) -> &'static str. Văn bản lỗi được tạo bằng format!(\"{} needs {} more points\", name, missing). Một lần spend thất bại phải giữ nguyên số điểm. add_points phải cho ra 100 ngay cả với u32::MAX, nên đừng cộng trước khi bạn so sánh.",
+      "text": "Các chữ ký cần khớp: Player::add_points(&mut self, amount: u32), Player::spend(&mut self, cost: u32) -> Result<(), String>, và rank::title(player: &Player) -> &'static str. Văn bản lỗi được tạo bằng format!(\"{} needs {} more points\", name, missing). Một lần spend thất bại phải giữ nguyên số điểm. add_points phải cho ra 100 ngay cả với u32::MAX, nên đừng cộng trước khi bạn so sánh.",
       "track": "fast"
     }
   ],

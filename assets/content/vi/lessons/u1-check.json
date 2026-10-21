@@ -17,7 +17,7 @@
     },
     {
       "type": "note",
-      "text": "todo!() là một placeholder. Nếu chương trình chạy tới nó, chương trình sẽ dừng với thông báo \"not yet implemented\". Hãy thay mỗi todo!() bằng code của riêng bạn. Cho đến khi bạn làm xong, trình biên dịch có thể cảnh báo rằng một số tên không được dùng. Điều đó là bình thường."
+      "text": "todo!() là một ô giữ chỗ (placeholder). Nếu chương trình chạy tới nó, chương trình sẽ dừng với thông báo \"not yet implemented\". Hãy thay mỗi todo!() bằng code của riêng bạn. Cho đến khi bạn làm xong, trình biên dịch có thể cảnh báo rằng một số tên không được dùng. Điều đó là bình thường."
     },
     {
       "type": "note",
@@ -62,9 +62,9 @@
       "answer": 1
     },
     {
-      "question": "Cái nào trong những cái sau có thể cho một cái tên một kiểu mới, ví dụ từ văn bản thành số?",
+      "question": "Cách nào sau đây có thể gán một kiểu mới cho một tên, ví dụ từ văn bản thành số?",
       "options": [
-        "let mut and then =",
+        "let mut, rồi gán lại bằng =",
         "const",
         "Shadowing với một let mới"
       ],

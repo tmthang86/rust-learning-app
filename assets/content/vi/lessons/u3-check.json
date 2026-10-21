@@ -12,11 +12,11 @@
     },
     {
       "type": "note",
-      "text": "todo!() là một placeholder. Nếu chương trình chạy tới nó, chương trình sẽ dừng với thông báo \"not yet implemented\". Hãy thay mỗi todo!() bằng code của riêng bạn. Cho đến khi bạn làm xong, trình biên dịch có thể cảnh báo rằng một số tên không được dùng. Điều đó là bình thường."
+      "text": "todo!() là một ô giữ chỗ (placeholder). Nếu chương trình chạy tới nó, chương trình sẽ dừng với thông báo \"not yet implemented\". Hãy thay mỗi todo!() bằng code của riêng bạn. Cho đến khi bạn làm xong, trình biên dịch có thể cảnh báo rằng một số tên không được dùng. Điều đó là bình thường."
     },
     {
       "type": "note",
-      "text": "Gợi ý cho double_up: hàm sở hữu word. Bạn cần văn bản hai lần, nên hãy tạo một bản sao sở hữu bằng word.clone() và xây kết quả trong đó. Sau đó thêm một dấu cách bằng push_str(\" \") và thêm bản gốc bằng push_str(&word). Dòng cuối trả về kết quả."
+      "text": "Gợi ý cho double_up: hàm sở hữu word. Bạn cần văn bản hai lần, nên hãy tạo một bản sao có quyền sở hữu riêng bằng word.clone() và xây kết quả trong đó. Sau đó thêm một dấu cách bằng push_str(\" \") và thêm bản gốc bằng push_str(&word). Dòng cuối trả về kết quả."
     },
     {
       "type": "note",
@@ -24,7 +24,7 @@
     },
     {
       "type": "note",
-      "text": "Gợi ý cho apply_bonus: score là một &mut u32, một tham chiếu đến một con số. Hãy viết *score để chạm tới chính con số đó, ví dụ *score += 10;. Nếu con số khi đó lớn hơn 100, hãy đặt nó thành 100."
+      "text": "Gợi ý cho apply_bonus: score là một &mut u32, một tham chiếu đến một con số. Hãy viết *score để truy cập chính con số đó, ví dụ *score += 10;. Nếu con số khi đó lớn hơn 100, hãy đặt nó thành 100."
     },
     {
       "type": "note",
@@ -42,7 +42,7 @@
     "solution": "fn double_up(word: String) -> String {\n    let mut result = word.clone();\n    result.push_str(\" \");\n    result.push_str(&word);\n    result\n}\n\nfn apply_bonus(score: &mut u32) {\n    *score += 10;\n    if *score > 100 {\n        *score = 100;\n    }\n}\n\nfn first_half(s: &str) -> &str {\n    &s[..s.len() / 2]\n}\n\nfn main() {\n    let word = String::from(\"ha\");\n    let laugh = double_up(word.clone());\n    println!(\"{word} -> {laugh}\");\n\n    for start in [40, 90, 100] {\n        let mut score = start;\n        apply_bonus(&mut score);\n        println!(\"{start} -> {score}\");\n    }\n\n    let title = String::from(\"Ownership\");\n    println!(\"[{}]\", first_half(&title));\n    println!(\"[{}]\", first_half(\"hi\"));\n    println!(\"[{}]\", first_half(\"a\"));\n    println!(\"[{}]\", first_half(\"\"));\n}",
     "hints": [
       "double_up sở hữu word, nên bạn cần một bản sao để xây kết quả mà vẫn dùng được word. apply_bonus thay đổi một con số qua một tham chiếu &mut. first_half trả về một slice của s, không phải một String mới.",
-      "Trong double_up, hãy tạo let mut result = word.clone(); rồi push_str một dấu cách và sau đó là &word. Trong apply_bonus, hãy viết *score để chạm tới con số. Trong first_half, một slice trông như &s[..end], trong đó end là một nửa của s.len().",
+      "Trong double_up, hãy tạo let mut result = word.clone(); rồi push_str một dấu cách và sau đó là &word. Trong apply_bonus, hãy viết *score để truy cập con số. Trong first_half, một slice trông như &s[..end], trong đó end là một nửa của s.len().",
       "Trong apply_bonus, hãy viết *score += 10; rồi if *score > 100 { *score = 100; }. Trong first_half, dòng cuối là &s[..s.len() / 2], không có dấu chấm phẩy."
     ]
   },

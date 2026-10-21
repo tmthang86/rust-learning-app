@@ -12,7 +12,7 @@
     },
     {
       "type": "note",
-      "text": "todo!() là một placeholder. Nếu chương trình chạy tới nó, chương trình sẽ dừng với thông báo \"not yet implemented\". Hãy thay mỗi todo!() bằng code của riêng bạn. Cho đến khi bạn làm xong, trình biên dịch có thể cảnh báo rằng một số tên không được dùng. Điều đó là bình thường."
+      "text": "todo!() là một ô giữ chỗ (placeholder). Nếu chương trình chạy tới nó, chương trình sẽ dừng với thông báo \"not yet implemented\". Hãy thay mỗi todo!() bằng code của riêng bạn. Cho đến khi bạn làm xong, trình biên dịch có thể cảnh báo rằng một số tên không được dùng. Điều đó là bình thường."
     },
     {
       "type": "note",
@@ -24,7 +24,7 @@
     },
     {
       "type": "note",
-      "text": "Gợi ý cho count_of: get trả về một Option chứa một tham chiếu đến con số. Hãy dùng unwrap_or(&0) cho một từ không có, và * để lấy con số ra. get chấp nhận một &str dù các khóa là String."
+      "text": "Gợi ý cho count_of: get trả về một Option chứa một tham chiếu đến con số. Hãy dùng unwrap_or(&0) cho một từ không có trong map, và * để lấy con số ra. get chấp nhận một &str dù các khóa là String."
     },
     {
       "type": "note",

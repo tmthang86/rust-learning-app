@@ -12,7 +12,7 @@
     },
     {
       "type": "note",
-      "text": "todo!() là một placeholder. Nếu chương trình chạy tới nó, chương trình sẽ dừng với thông báo \"not yet implemented\". Hãy thay mỗi todo!() bằng code của riêng bạn. Cho đến khi bạn làm xong, trình biên dịch có thể cảnh báo rằng một số tên không được dùng. Điều đó là bình thường."
+      "text": "todo!() là một ô giữ chỗ (placeholder). Nếu chương trình chạy tới nó, chương trình sẽ dừng với thông báo \"not yet implemented\". Hãy thay mỗi todo!() bằng code của riêng bạn. Cho đến khi bạn làm xong, trình biên dịch có thể cảnh báo rằng một số tên không được dùng. Điều đó là bình thường."
     },
     {
       "type": "note",
@@ -42,14 +42,14 @@
     {
       "question": "Guard trong Vehicle::Truck(axles) if *axles >= 4 làm gì?",
       "options": [
-        "Nó làm cho nhánh khớp với mọi truck",
-        "Nó đếm số truck",
+        "Nó làm cho nhánh khớp với mọi xe tải",
+        "Nó đếm số xe tải",
         "Nhánh chỉ khớp nếu điều kiện thêm đó cũng đúng"
       ],
       "answer": 2
     },
     {
-      "question": "Một hàm có thể không tìm được câu trả lời, như chi phí cao nhất của không ticket nào. Kiểu trả về nào phù hợp?",
+      "question": "Một hàm có thể không tìm được câu trả lời, chẳng hạn chi phí cao nhất khi không có ticket nào. Kiểu trả về nào phù hợp?",
       "options": [
         "Option<u32>",
         "u32, với 0 là mã bí mật cho việc không có câu trả lời",
