@@ -1,0 +1,103 @@
+{
+  "id": "u11-l3",
+  "title": "Trạng thái chia sẻ với Arc và Mutex",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Channel truyền dữ liệu từ thread này sang thread khác. Đôi khi các thread cần chia sẻ cùng một dữ liệu, chẳng hạn một bộ đếm mà tất cả đều cập nhật. Rust cho phép điều này, nhưng buộc bạn phải cẩn thận. Công cụ chính là Mutex<T> (viết tắt của \"mutual exclusion\", loại trừ lẫn nhau): một cái khóa bao quanh một giá trị. Tại mỗi thời điểm chỉ một thread có thể giữ khóa và chạm vào giá trị."
+    },
+    {
+      "type": "text",
+      "text": "lock() chờ cho đến khi khóa rảnh rồi trả về một Result chứa một MutexGuard. Guard hoạt động giống một tham chiếu đến giá trị bên trong (bạn đọc và ghi qua nó bằng *). Khi guard bị drop, khóa được nhả ra tự động, nên bạn không bao giờ quên mở khóa. lock() trả về một Result vì một Mutex có thể bị \"poisoned\" (nhiễm độc): nếu một thread bị panic trong khi giữ khóa, dữ liệu bên trong có thể đã bị thay đổi dở dang, và các lời gọi lock() sau đó trả về Err. Hiện tại chúng ta chỉ unwrap()."
+    },
+    {
+      "type": "code",
+      "code": "use std::sync::Mutex;\n\nfn main() {\n    let counter = Mutex::new(0);\n    {\n        let mut guard = counter.lock().unwrap();\n        *guard += 1;\n    }   // the guard is dropped here, so the lock is released\n    println!(\"counter = {}\", *counter.lock().unwrap());\n}\n\n// Output:\n// counter = 1"
+    },
+    {
+      "type": "text",
+      "text": "Để chia sẻ một Mutex giữa các thread, nhiều thread phải cùng sở hữu nó. Rc từ Unit 10 sẽ là lựa chọn tự nhiên, nhưng Rc cập nhật bộ đếm của nó mà không có bảo vệ nào, nên hai thread có thể làm hỏng nó. Rust từ chối biên dịch đoạn đó:"
+    },
+    {
+      "type": "code",
+      "code": "use std::rc::Rc;\nuse std::sync::Mutex;\nuse std::thread;\n\n// This does NOT compile: error[E0277]: `Rc<Mutex<i32>>` cannot be sent\n// between threads safely.\nfn broken() {\n    let counter = Rc::new(Mutex::new(0));\n    let handle = thread::spawn(move || {\n        *counter.lock().unwrap() += 1;\n    });\n    handle.join().unwrap();\n}"
+    },
+    {
+      "type": "text",
+      "text": "Arc<T> là phiên bản an toàn giữa các thread của Rc<T>. Arc làm cho việc chia sẻ an toàn, chứ không phải dữ liệu bên trong: bảo vệ dữ liệu là việc của Mutex. Chữ A là viết tắt của \"atomic\": bộ đếm tham chiếu của nó được cập nhật theo cách an toàn giữa các thread. Arc::clone(&x) hoạt động giống Rc::clone. Cách kết hợp thường dùng là Arc<Mutex<T>>: Arc cho phép nhiều thread cùng sở hữu dữ liệu, còn Mutex cho phép mỗi lần chỉ một thread thay đổi nó."
+    },
+    {
+      "type": "code",
+      "code": "use std::sync::{Arc, Mutex};\nuse std::thread;\n\nfn main() {\n    let counter = Arc::new(Mutex::new(0));\n    let mut handles = Vec::new();\n    for _ in 0..8 {\n        let counter = Arc::clone(&counter);   // each thread owns one Arc\n        let handle = thread::spawn(move || {\n            for _ in 0..1000 {\n                *counter.lock().unwrap() += 1;   // the guard is dropped at the end of this line\n            }\n        });\n        handles.push(handle);\n    }\n    for handle in handles {\n        handle.join().unwrap();\n    }\n    println!(\"total = {}\", *counter.lock().unwrap());\n}\n\n// Output:\n// total = 8000"
+    },
+    {
+      "type": "text",
+      "text": "Tám thread, mỗi thread cộng 1000 lần, và kết quả luôn chính xác là 8000, vì khóa chỉ cho phép một thread thay đổi con số tại mỗi thời điểm."
+    },
+    {
+      "type": "text",
+      "text": "Làm sao trình biên dịch biết Rc không được phép? Hai marker trait mô tả điều gì là an toàn giữa các thread. Một kiểu là Send nếu một giá trị của nó có thể được move sang thread khác. Một kiểu là Sync nếu nó có thể được chia sẻ giữa các thread bằng tham chiếu. Rust tự suy ra điều này cho bạn: Rc không phải cái nào trong hai. Arc<Mutex<T>> là cả hai, miễn là T bên trong là Send (vì vậy Arc<Mutex<Rc<i32>>> vẫn bị từ chối). thread::spawn chỉ chấp nhận các closure có giá trị được capture là Send, điều này biến các data race có thể xảy ra thành lỗi biên dịch."
+    },
+    {
+      "type": "note",
+      "text": "Hãy nghĩ về Mutex như một căn phòng chỉ có một chìa khóa. Một thread phải lấy chìa khóa mới vào được, và trả lại khi đi ra. Mọi thread khác chờ bên ngoài. Hãy giữ thời gian ở trong phòng ngắn, để các thread khác không phải chờ lâu.",
+      "track": "starter"
+    },
+    {
+      "type": "text",
+      "text": "Vẫn còn một mối nguy mà trình biên dịch không thể bắt được: deadlock, khi các thread chờ nhau mãi mãi. Trường hợp đơn giản nhất là khóa cùng một Mutex hai lần trong một thread, vì guard đầu tiên vẫn còn sống:"
+    },
+    {
+      "type": "code",
+      "code": "use std::sync::Mutex;\n\n// Do not run this: the second lock never succeeds (it hangs, or may panic).\nfn deadlock(m: &Mutex<i32>) {\n    let first = m.lock().unwrap();\n    let second = m.lock().unwrap();   // waits for `first`, which is only dropped at the end\n    println!(\"{first} {second}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Hai thread khóa hai Mutex theo thứ tự ngược nhau cũng có thể làm nhau đứng yên. Để tránh deadlock: hãy giữ khóa trong thời gian ngắn nhất có thể, và luôn lấy nhiều khóa theo cùng một thứ tự."
+    },
+    {
+      "type": "note",
+      "text": "Khác với các đối tượng khóa của Go hay Java, Mutex của Rust sở hữu dữ liệu mà nó bảo vệ, nên bạn không thể chạm vào dữ liệu nếu không giữ khóa. Khác với synchronized hay ReentrantLock của Java, nó không reentrant: khóa nó lần nữa trong cùng một thread sẽ không bao giờ thành công (xem ở trên). Việc xử lý poisoning (xem ở trên) là tùy chọn: lock().unwrap() là lựa chọn phổ biến, và bạn có thể lấy lại dữ liệu bằng into_inner() trên lỗi. Với dữ liệu chủ yếu được đọc có RwLock<T>, và với một con số hoặc một cờ đơn lẻ thì các kiểu atomic như AtomicUsize không cần khóa nào cả.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Mỗi thread trong 4 thread cộng 1 vào bộ đếm. Hãy sửa lại để mỗi thread cộng 10. Chương trình sẽ in ra: total: 40",
+    "starter": "use std::sync::{Arc, Mutex};\nuse std::thread;\n\nfn main() {\n    let counter = Arc::new(Mutex::new(0));\n    let mut handles = Vec::new();\n    for _ in 0..4 {\n        let counter = Arc::clone(&counter);\n        handles.push(thread::spawn(move || {\n            *counter.lock().unwrap() += 1;\n        }));\n    }\n    for handle in handles {\n        handle.join().unwrap();\n    }\n    println!(\"total: {}\", *counter.lock().unwrap());\n}",
+    "expectedOutput": "total: 40",
+    "solution": "use std::sync::{Arc, Mutex};\nuse std::thread;\n\nfn main() {\n    let counter = Arc::new(Mutex::new(0));\n    let mut handles = Vec::new();\n    for _ in 0..4 {\n        let counter = Arc::clone(&counter);\n        handles.push(thread::spawn(move || {\n            *counter.lock().unwrap() += 10;\n        }));\n    }\n    for handle in handles {\n        handle.join().unwrap();\n    }\n    println!(\"total: {}\", *counter.lock().unwrap());\n}",
+    "hints": [
+      "Mỗi thread cộng vào bộ đếm thông qua khóa. Hãy tìm dòng có += trong closure.",
+      "Đổi 1 thành 10 trong dòng đó. lock().unwrap() trả về một guard hoạt động giống một tham chiếu, nên dấu * phía trước chạm tới con số và += 10 thay đổi nó. Bốn thread, mỗi thread cộng 10, cho ra 40."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Khi nào một Mutex được mở khóa trở lại?",
+      "options": [
+        "Sau một khoảng timeout cố định, để các thread khác đang chờ đến lượt",
+        "Chỉ khi bạn tự gọi phương thức unlock() trên Mutex",
+        "Khi MutexGuard bị drop, ví dụ ở cuối khối của nó"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Tại sao chúng ta dùng Arc chứ không dùng Rc để chia sẻ dữ liệu giữa các thread?",
+      "options": [
+        "Bộ đếm của Rc không an toàn giữa các thread, nên trình biên dịch từ chối Rc ở đó",
+        "Arc là kiểu nhỏ hơn Rc, điều này tốt hơn khi có nhiều thread",
+        "Rc chỉ chứa được các số thông thường, còn Arc chứa được giá trị của bất kỳ kiểu nào"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Deadlock là gì?",
+      "options": [
+        "Một panic bên trong một thread kéo sập cả chương trình theo, kể cả main",
+        "Các thread chờ nhau, hoặc chờ chính mình, nên không thread nào có thể tiếp tục",
+        "Một thread kết thúc trước main và vì thế mất kết quả của nó"
+      ],
+      "answer": 1
+    }
+  ]
+}

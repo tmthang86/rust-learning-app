@@ -540,9 +540,12 @@ void main() {
         final en = await repo.loadLesson(id);
         final tr = await repo.loadLesson(id, language: 'vi');
         expect(en, isNotNull, reason: id);
+        // A title can be code ("panic!") and stay the same, so the first
+        // section proves the translation was used.
         expect(
-          tr!.title,
-          isNot(en!.title),
+          tr!.title != en!.title ||
+              tr.sections.first.body != en.sections.first.body,
+          isTrue,
           reason: '$id was not used (does not fit the English lesson?)',
         );
         expect(tr.hasSameStructureAs(en), isTrue, reason: id);

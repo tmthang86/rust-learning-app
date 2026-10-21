@@ -1,0 +1,102 @@
+{
+  "id": "u1-l4",
+  "title": "Biến và tính có thể thay đổi",
+  "sections": [
+    {
+      "type": "text",
+      "text": "let tạo một biến. Theo mặc định, một biến không thể thay đổi sau khi được gán giá trị. Rust gọi đặc điểm này là bất biến (immutable)."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let x = 5;\n    println!(\"x is {x}\");\n    // x = 6;  // error: cannot assign twice to immutable variable\n}"
+    },
+    {
+      "type": "text",
+      "text": "Hãy thêm mut để cho phép thay đổi:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let mut count = 0;\n    count = count + 1;\n    count += 1;\n    println!(\"count is {count}\");\n}"
+    },
+    {
+      "type": "text",
+      "track": "starter",
+      "text": "count += 1 là cách viết ngắn của count = count + 1."
+    },
+    {
+      "type": "note",
+      "track": "fast",
+      "text": "Nếu bạn đến từ một ngôn ngữ khác: điều này ngược lại với hầu hết các ngôn ngữ, nơi biến có thể thay đổi trừ khi bạn ghi const hoặc final. Bất biến theo mặc định giúp dễ thấy giá trị nào thay đổi, và trình biên dịch bắt buộc điều đó."
+    },
+    {
+      "type": "text",
+      "text": "Rust thường tự suy ra kiểu của mỗi biến từ giá trị của nó và cách nó được dùng, nhưng bạn cũng có thể tự viết kiểu sau dấu hai chấm:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let speed: f64 = 2.5;\n    let lives: i32 = 3;\n    println!(\"{speed} {lives}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "f64 là số có dấu thập phân, còn i32 là số nguyên. Unit 2 nói về các kiểu số khác.",
+      "track": "starter"
+    },
+    {
+      "type": "text",
+      "text": "Hằng số dùng const và luôn cần một kiểu được viết ra. Chúng không bao giờ thay đổi. Theo quy ước, tên của chúng được viết hoa, như MAX_SCORE."
+    },
+    {
+      "type": "code",
+      "code": "const MAX_SCORE: u32 = 100;\n\nfn main() {\n    println!(\"Max score: {MAX_SCORE}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "u32 là số nguyên không thể âm.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Nếu bạn đến từ một ngôn ngữ khác: một let bất biến vẫn là một biến bình thường, nên giá trị của nó có thể được tính ra trong lúc chương trình chạy. Một const phải được biết ngay lúc biên dịch, được sao chép vào mỗi chỗ nó được dùng, và có thể được khai báo bên ngoài mọi hàm.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Chương trình này không biên dịch được. Hãy sửa để nó in ra: score is 15",
+    "starter": "fn main() {\n    let score = 10;\n    score = score + 5;\n    println!(\"score is {score}\");\n}",
+    "expectedOutput": "score is 15",
+    "solution": "fn main() {\n    let mut score = 10;\n    score = score + 5;\n    println!(\"score is {score}\");\n}",
+    "hints": [
+      "Biến không thể thay đổi trừ khi bạn nói rõ. Từ khóa nào trong bài học này cho phép một biến thay đổi?",
+      "Hãy thêm mut sau let, để dòng đó thành let mut score. Nó nằm ở dòng nơi score được tạo ra lần đầu."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Điều gì xảy ra nếu bạn thay đổi một biến được khai báo bằng let thường?",
+      "options": [
+        "Nó thay đổi",
+        "Chương trình bị sập khi chạy",
+        "Code không biên dịch được"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Dòng nào khai báo một biến mà bạn có thể thay đổi?",
+      "options": [
+        "let x = 1;",
+        "let mut x = 1;",
+        "const x = 1;"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Một const luôn phải có gì?",
+      "options": [
+        "Một kiểu được viết ra",
+        "Từ khóa mut",
+        "Một cái tên viết thường"
+      ],
+      "answer": 0
+    }
+  ]
+}

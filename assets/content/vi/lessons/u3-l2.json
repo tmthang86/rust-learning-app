@@ -1,0 +1,80 @@
+{
+  "id": "u3-l2",
+  "title": "Copy và Clone",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Không phải phép gán nào cũng di chuyển. Các giá trị đơn giản như số nguyên, số thực, bool và char được sao chép thay vì di chuyển. Cả hai biến vẫn dùng được."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let x = 5;\n    let y = x;      // x is copied\n    println!(\"x = {x}, y = {y}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Những kiểu này triển khai (implement) Copy, thứ đánh dấu một kiểu là rẻ để sao chép từng byte một. Rust tự động sao chép chúng thay vì di chuyển. (Copy là một trait: trait là một tập hợp có tên các khả năng hoặc phương thức mà một kiểu hứa là có. Unit 7 nói về trait.) Tuple và mảng chỉ gồm các kiểu Copy cũng là Copy. String không phải Copy, vì nó sở hữu văn bản trên heap."
+    },
+    {
+      "type": "text",
+      "text": "Với các kiểu như String, hãy yêu cầu một bản sao đầy đủ một cách tường minh bằng .clone():"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let original = String::from(\"rust\");\n    let copy = original.clone();\n    println!(\"{original} and {copy}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "clone() sao chép dữ liệu trên heap, có thể chậm với các giá trị lớn. Đó là lý do Rust bắt bạn phải viết nó ra: bạn có thể thấy các bản sao tốn kém xảy ra ở đâu."
+    },
+    {
+      "type": "note",
+      "text": "Clone là một cách tốt để thoát khỏi chỗ bí khi bạn đang học. Sau này bạn sẽ thường thay nó bằng một tham chiếu, cách này tránh được việc sao chép.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Bạn có thể thêm những trait này vào kiểu của riêng mình bằng #[derive(Clone, Copy)]. Copy chỉ được phép khi mọi trường đều là Copy và kiểu đó không triển khai Drop (Copy cũng yêu cầu Clone, nên cả hai cùng có trong derive), vì vậy một struct chứa một String có thể là Clone nhưng không bao giờ là Copy.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "first được di chuyển vào second, nên không thể in nó. Hãy dùng .clone() để cả hai đều in được. Chương trình phải in ra: apple apple",
+    "starter": "fn main() {\n    let first = String::from(\"apple\");\n    let second = first;\n    println!(\"{first} {second}\");\n}",
+    "expectedOutput": "apple apple",
+    "solution": "fn main() {\n    let first = String::from(\"apple\");\n    let second = first.clone();\n    println!(\"{first} {second}\");\n}",
+    "hints": [
+      "Viết let second = first sẽ di chuyển String. Bạn muốn second có bản sao riêng của nó thay vì vậy.",
+      "Một String có thể được sao chép bằng phương thức .clone(). Hãy gọi nó trên first, ở dòng tạo second.",
+      "Hãy đổi dòng đó thành let second = first.clone(); Khi đó cả hai biến đều sở hữu một String."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Cái nào trong những cái này được sao chép, không bị di chuyển, khi gán?",
+      "options": [
+        "String",
+        "i32",
+        "Vec<i32>"
+      ],
+      "answer": 1
+    },
+    {
+      "question": ".clone() làm gì với một String?",
+      "options": [
+        "Di chuyển nó",
+        "Tạo một bản sao đầy đủ dữ liệu của nó",
+        "Xóa nó"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Vì sao Rust không tự động clone String?",
+      "options": [
+        "Clone có thể tốn kém, nên cần được nhìn thấy rõ",
+        "String không thể được clone",
+        "Đó là một lỗi"
+      ],
+      "answer": 0
+    }
+  ]
+}

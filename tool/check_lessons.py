@@ -189,6 +189,24 @@ _CODE_WORD = re.compile(
 )
 # Rust keywords that are never ordinary English words.
 _CODE_KEYWORDS = {"let", "mut", "fn", "const", "struct", "enum", "impl", "mod", "pub", "dyn"}
+# Many keywords are English words too ("it won't let you", "a struct holds").
+# A keyword is code only in code shape: "let x =", "let mut", "fn name(",
+# "impl Trait for", "struct Name {". A bare word is prose, and translated.
+_KEYWORD_SHAPES = {
+    "let": re.compile(r"\blet\s+(?:mut\b|\w+\s*[=:;]|[A-Z]\w*\(|\()"),
+    "mut": re.compile(r"\bmut\s+\w+\s*[:,)=;]"),
+    "fn": re.compile(r"\bfn\s+(?:\w+\s*[(<]|\|)"),
+    "const": re.compile(r"\bconst\s+[A-Z_0-9]+\s*[:=]"),
+    "struct": re.compile(r"\bstruct\s+[A-Z]\w*\s*[{(;<:]"),
+    "enum": re.compile(r"\benum\s+[A-Z]\w*\s*[{<]"),
+    "impl": re.compile(r"\bimpl(?:<[^>]*>)?\s+[A-Z]\w*(?:<[^>]*>)?\s*(?:for\b|\{)"),
+    "mod": re.compile(r"\bmod\s+[a-z_]\w*\s*[{;]"),
+    "pub": re.compile(r"\bpub\s+(?:fn|struct|enum|mod|use|const)\b"),
+    "dyn": re.compile(r"\bdyn\s+[A-Z]"),
+}
+# Plain words in parentheses after a name are prose, not arguments:
+# "Some(that variable)".
+_PROSE_ARGS = re.compile(r"\b([A-Za-z_]\w*)\(\s*[A-Za-z]+(?:\s+[A-Za-z]+)+\s*\)")
 # Words that make an option code ("for x in &v") when nothing else is prose.
 _RUST_KEYWORDS = _CODE_KEYWORDS | {
     "for", "in", "if", "else", "new", "break", "return", "loop", "while",
@@ -205,6 +223,23 @@ _TRAILING_PUNCTUATION = ".,?:"
 _QUOTED = re.compile(r'"((?:[^"\\]|\\.)*)"')
 _MACRO_CALL = re.compile(r"\b([a-z_][a-z0-9_]*)!\s*[(\[{]")
 _NUMBER = re.compile(r"^-?[0-9][0-9_.]*$")
+
+
+def _strip_comment(line):
+    """The line without a trailing // comment (a // inside a string stays)."""
+    in_string = False
+    i = 0
+    while i < len(line):
+        ch = line[i]
+        if in_string and ch == "\\":
+            i += 2
+            continue
+        if ch == '"':
+            in_string = not in_string
+        elif not in_string and line.startswith("//", i):
+            return line[:i].rstrip()
+        i += 1
+    return line
 
 
 def lesson_vocabulary(lesson):
@@ -228,14 +263,25 @@ def lesson_vocabulary(lesson):
     macros = {"println", "print", "eprintln", "format", "vec", "panic", "assert"}
     for chunk in chunks:
         macros.update(_MACRO_CALL.findall(chunk))
-        literals.update(m.group(1) for m in _QUOTED.finditer(chunk))
-        outputs.update(m.group(1) for m in _QUOTED.finditer(chunk))
+        in_output_block = False
         for line in chunk.splitlines():
             line = line.strip()
             if line.startswith("//"):
-                line = line[2:].strip()
-            if line:
-                literals.add(line)
+                # Comments are not program output, except the lines of a
+                # "// Output:" block, which show what the program prints.
+                comment = line[2:].strip()
+                if comment.lower().startswith("output"):
+                    in_output_block = True
+                elif in_output_block and comment:
+                    literals.add(comment)
+                    outputs.add(comment)
+                continue
+            in_output_block = False
+            code = _strip_comment(line)
+            literals.update(m.group(1) for m in _QUOTED.finditer(code))
+            outputs.update(m.group(1) for m in _QUOTED.finditer(code))
+            if code:
+                literals.add(code)
     if isinstance(exercise, dict) and isinstance(exercise.get("expectedOutput"), str):
         outputs.update(l.strip() for l in exercise["expectedOutput"].splitlines())
     # Text the program prints can appear in prose without quotes ("prints
@@ -272,14 +318,18 @@ def word_tokens(text, vocab):
     """Code pieces found by their shape, as a Counter (each occurrence counts:
     `==` twice in the English text must be twice in the translation)."""
     tokens = Counter()
-    for word in _QUOTED.sub(" ", text).split():
+    unquoted = _PROSE_ARGS.sub(r"\1", _QUOTED.sub(" ", text))
+    for keyword, shape in _KEYWORD_SHAPES.items():
+        found = len(shape.findall(unquoted))
+        if found:
+            tokens[keyword] += found
+    for word in unquoted.split():
         word = _clean_token(word)
         if not word:
             continue
         macro = re.match(r"([a-z_][a-z0-9_]*)!", word)
         if (
             word in _CODE_OPERATORS
-            or word in _CODE_KEYWORDS
             or _CODE_WORD.search(word)
             or (macro and macro.group(1) in vocab["macros"])
             or _NUMBER.match(word)

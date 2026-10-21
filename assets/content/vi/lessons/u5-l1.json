@@ -1,0 +1,80 @@
+{
+  "id": "u5-l1",
+  "title": "Vector",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Vec<T> là một danh sách có thể tăng và giảm kích thước. Đây là collection bạn sẽ dùng nhiều nhất."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let mut scores: Vec<i32> = Vec::new();\n    scores.push(80);\n    scores.push(95);\n    scores.push(72);\n    println!(\"{:?} has {} items\", scores, scores.len());\n\n    let primes = vec![2, 3, 5, 7];   // vec! makes one with values\n    println!(\"{:?}\", primes);\n}"
+    },
+    {
+      "type": "text",
+      "text": "Đọc các phần tử bằng chỉ mục, hoặc an toàn hơn là dùng get, phương thức trả về một Option phòng khi chỉ mục nằm ngoài giới hạn:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let names = vec![\"An\", \"Binh\", \"Chi\"];\n    println!(\"{}\", names[1]);\n    match names.get(10) {\n        Some(n) => println!(\"found {n}\"),\n        None => println!(\"no item at 10\"),\n    }\n}"
+    },
+    {
+      "type": "text",
+      "text": "Hãy duyệt qua một vector bằng for. Mượn nó bằng & để đọc, hoặc &mut để thay đổi các phần tử ngay tại chỗ:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let mut prices = vec![10, 20, 30];\n    for p in &mut prices {\n        *p += 1;\n    }\n    for p in &prices {\n        println!(\"{p}\");\n    }\n    let last = prices.pop();   // removes and returns Some(31)\n    println!(\"{:?} {:?}\", last, prices);\n}"
+    },
+    {
+      "type": "note",
+      "text": "Iterator giúp những việc thường gặp trở nên ngắn gọn: v.iter().sum::<i32>(), v.iter().max(), v.iter().map(|x| x * 2).collect::<Vec<_>>(), v.iter().filter(|x| **x > 10).count().",
+      "track": "fast"
+    },
+    {
+      "type": "note",
+      "text": "for p in prices (không có &) di chuyển (move) vector vào vòng lặp, nên sau đó bạn không thể dùng prices nữa. Mượn bằng & giúp bạn giữ lại nó.",
+      "track": "starter"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy push 4 và 5 vào vector, rồi in nó ra. Chương trình sẽ in ra: [1, 2, 3, 4, 5]",
+    "starter": "fn main() {\n    let mut numbers = vec![1, 2, 3];   // keep mut: you'll push onto it\n    println!(\"{:?}\", numbers);\n}",
+    "expectedOutput": "[1, 2, 3, 4, 5]",
+    "solution": "fn main() {\n    let mut numbers = vec![1, 2, 3];\n    numbers.push(4);\n    numbers.push(5);\n    println!(\"{:?}\", numbers);\n}",
+    "hints": [
+      "Vector cần thêm hai phần tử nữa trước khi được in ra. Phương thức nào thêm một phần tử vào cuối?",
+      "Hãy dùng phương thức push, mỗi giá trị một lần gọi. Hãy làm việc đó ở một dòng phía trước println!.",
+      "Hãy viết numbers.push(4); và numbers.push(5); trước println!."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Phương thức nào thêm một phần tử vào cuối của một Vec?",
+      "options": [
+        "add",
+        "push",
+        "append_one"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "v.get(99) trả về gì khi v có 3 phần tử?",
+      "options": [
+        "Chương trình bị crash",
+        "None",
+        "0"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Làm thế nào để thay đổi mọi phần tử của v bên trong một vòng lặp for?",
+      "options": [
+        "for x in &mut v",
+        "for x in v.read()",
+        "for mut x in &v"
+      ],
+      "answer": 0
+    }
+  ]
+}

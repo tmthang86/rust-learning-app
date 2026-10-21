@@ -1,0 +1,100 @@
+{
+  "id": "u9-l2",
+  "title": "Visibility và use",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Trong Rust, mọi thứ bên trong một module đều riêng tư theo mặc định. Riêng tư nghĩa là: chỉ code trong module đó, và trong các module lồng bên trong nó, mới có thể dùng mục đó. Để cho phép bên ngoài truy cập, bạn thêm pub."
+    },
+    {
+      "type": "code",
+      "code": "mod outer {\n    fn secret() -> u32 {\n        42\n    }\n\n    pub fn reveal() -> u32 {\n        secret()\n    }\n\n    pub mod inner {\n        pub fn peek() -> u32 {\n            // a nested module may use its parent's private items\n            super::secret() + 1\n        }\n    }\n}\n\nfn main() {\n    println!(\"{} {}\", outer::reveal(), outer::inner::peek());\n}\n\n// Output:\n// 42 43"
+    },
+    {
+      "type": "text",
+      "text": "main có thể gọi reveal và peek vì chúng là pub. Nó không thể gọi secret trực tiếp: viết outer::secret() trong main sẽ thất bại với E0603, function secret is private. Quy tắc nhớ nhanh: module con thấy được các mục riêng tư của module cha, nhưng module cha và các module ngang hàng không thấy được các mục riêng tư của module con. Điều này cho phép một module giấu đi cách hoạt động bên trong của nó."
+    },
+    {
+      "type": "text",
+      "text": "pub cũng dùng được với struct, nhưng một struct có hai mức. pub struct làm cho kiểu đó công khai. Mỗi trường vẫn riêng tư trừ khi nó có pub riêng. Vì vậy một module có thể giữ một trường riêng tư và chỉ cho phép bên ngoài thay đổi nó thông qua các phương thức."
+    },
+    {
+      "type": "code",
+      "code": "mod bank {\n    pub struct Account {\n        pub owner: String,\n        balance: i64,\n    }\n\n    impl Account {\n        pub fn new(owner: &str) -> Account {\n            Account { owner: String::from(owner), balance: 0 }\n        }\n\n        pub fn deposit(&mut self, amount: i64) {\n            self.balance += amount;\n        }\n\n        pub fn balance(&self) -> i64 {\n            self.balance\n        }\n    }\n}\n\nfn main() {\n    let mut acc = bank::Account::new(\"Ada\");\n    acc.deposit(40);\n    println!(\"{} has {}\", acc.owner, acc.balance());\n}\n\n// Output:\n// Ada has 40"
+    },
+    {
+      "type": "text",
+      "text": "owner là công khai, nên main có thể đọc nó. balance là riêng tư, nên main chỉ có thể dùng deposit và balance(). Viết acc.balance từ main sẽ thất bại với E0616: field balance of struct Account is private. Lưu ý rằng Account::new cũng cần thiết: main không thể tự xây dựng Account { ... }, vì nó không thể gọi tên trường riêng tư. Enum thì khác. Nếu một enum là pub, tất cả variant của nó tự động là công khai. Điều tương tự áp dụng cho các phương thức của một trait pub: chúng vốn đã công khai, và việc viết pub lên chúng là một lỗi."
+    },
+    {
+      "type": "text",
+      "text": "Viết các đường dẫn dài thì mệt. Từ khóa use đưa một tên vào phạm vi để bạn dùng dạng ngắn. use chỉ ảnh hưởng đến module mà nó được viết trong đó, nên một module lồng bên trong cần các dòng use riêng của nó."
+    },
+    {
+      "type": "code",
+      "code": "mod zoo {\n    pub mod animals {\n        pub fn cat() -> String {\n            String::from(\"meow\")\n        }\n    }\n\n    pub mod show {\n        use super::animals;   // a use outside the module does not reach in here\n\n        pub fn line() -> String {\n            format!(\"the cat says {}\", animals::cat())\n        }\n    }\n}\n\nuse zoo::show;\n\nfn main() {\n    println!(\"{}\", show::line());\n}\n\n// Output:\n// the cat says meow"
+    },
+    {
+      "type": "text",
+      "text": "Có một thói quen phổ biến: đưa trực tiếp các kiểu vào (use std::collections::HashMap;), nhưng với hàm thì đưa module cha vào (use zoo::show, rồi show::line). Như vậy một lời gọi như show::line cho thấy hàm đến từ đâu. Dấu ngoặc nhọn nhóm các tên từ một đường dẫn: use std::collections::{HashMap, HashSet};. Dấu * (use std::collections::*;) nhập mọi thứ công khai, nhưng che giấu các tên đến từ đâu, nên hiếm khi được dùng."
+    },
+    {
+      "type": "text",
+      "text": "Từ as đặt cho một mục được nhập vào một tên mới. std::fmt::Result và std::io::Result là hai kiểu khác nhau có cùng tên, nên as giữ chúng tách biệt:"
+    },
+    {
+      "type": "code",
+      "code": "use std::fmt::Result as FmtResult;\nuse std::io::Result as IoResult;\n\nfn check_fmt() -> FmtResult {\n    Ok(())\n}\n\nfn check_io() -> IoResult<u32> {\n    Ok(7)\n}\n\nfn main() {\n    println!(\"{:?} {:?}\", check_fmt(), check_io());\n}\n\n// Output:\n// Ok(()) Ok(7)"
+    },
+    {
+      "type": "note",
+      "text": "Hãy nghĩ về một module như một căn phòng có quầy lễ tân. Bất cứ thứ gì được đánh dấu pub đều nằm trên quầy cho khách. Mọi thứ còn lại ở trong phòng sau. use giống như viết một biệt danh ngắn lên mẩu giấy ghi chú để bạn không phải nói đầy đủ địa chỉ mỗi lần. as cho phép bạn chọn biệt danh.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "use trông giống import trong Python hoặc JavaScript, nhưng nó chỉ tạo một lối tắt. Mọi mục đều có thể được truy cập bằng đường dẫn đầy đủ mà không cần nó, và không có gì được tải hay chạy. as giống như import ... as. Không như Python, nơi mọi thứ đều có thể được import và _name chỉ là một quy ước, Rust thực thi tính riêng tư: tác giả của module quyết định chia sẻ gì bằng pub, khá giống export trong JS. Cũng có những mức chi tiết hơn. pub(crate) nghĩa là hiển thị ở bất cứ đâu bên trong crate này nhưng không hiển thị với các crate khác; pub(super) nghĩa là hiển thị với module cha. pub use xuất lại một tên, để người dùng thư viện của bạn thấy một đường dẫn gọn gàng hơn. Những thứ này phát huy tác dụng khi bạn viết thư viện.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy thực hiện ba thay đổi. 1) Thêm một phương thức pub fn withdraw(&mut self, amount: i64) vào Account, trừ số tiền khỏi số dư. 2) Thêm dòng use bank::Account; phía trên main và viết Account::new(\"Ada\") thay cho bank::Account::new(\"Ada\"). 3) Trong main, gọi acc.withdraw(10) ngay sau lệnh deposit. Chương trình phải in ra: Ada: 30",
+    "starter": "mod bank {\n    pub struct Account {\n        pub owner: String,\n        balance: i64,\n    }\n\n    impl Account {\n        pub fn new(owner: &str) -> Account {\n            Account { owner: String::from(owner), balance: 0 }\n        }\n\n        pub fn deposit(&mut self, amount: i64) {\n            self.balance += amount;\n        }\n\n        pub fn balance(&self) -> i64 {\n            self.balance\n        }\n\n        // add pub fn withdraw here\n    }\n}\n\nfn main() {\n    let mut acc = bank::Account::new(\"Ada\");\n    acc.deposit(40);\n    println!(\"{}: {}\", acc.owner, acc.balance());\n}",
+    "expectedOutput": "Ada: 30",
+    "solution": "mod bank {\n    pub struct Account {\n        pub owner: String,\n        balance: i64,\n    }\n\n    impl Account {\n        pub fn new(owner: &str) -> Account {\n            Account { owner: String::from(owner), balance: 0 }\n        }\n\n        pub fn deposit(&mut self, amount: i64) {\n            self.balance += amount;\n        }\n\n        pub fn balance(&self) -> i64 {\n            self.balance\n        }\n\n        pub fn withdraw(&mut self, amount: i64) {\n            self.balance -= amount;\n        }\n    }\n}\n\nuse bank::Account;\n\nfn main() {\n    let mut acc = Account::new(\"Ada\");\n    acc.deposit(40);\n    acc.withdraw(10);\n    println!(\"{}: {}\", acc.owner, acc.balance());\n}",
+    "hints": [
+      "Có ba thay đổi nhỏ: một phương thức bên trong impl, một dòng use phía trên main, và một lời gọi trong main. Hãy bắt đầu với phương thức. Nó trông rất giống deposit.",
+      "Viết pub fn withdraw(&mut self, amount: i64) bên trong impl, có cùng dạng với deposit nhưng thực hiện phép trừ. Nó cần pub để main có thể gọi nó.",
+      "Bên trong withdraw, hãy viết self.balance -= amount; (deposit dùng +=). Sau đó thêm use bank::Account; phía trên main, dùng Account::new(\"Ada\"), và gọi acc.withdraw(10); ngay sau acc.deposit(40);"
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Nếu bạn viết một mục trong một module mà không có pub, ai có thể dùng nó?",
+      "options": [
+        "Chỉ code trong đúng module đó, không phải trong các module lồng bên trong nó",
+        "Mọi module trong chương trình, nhưng chỉ trong cùng một file",
+        "Chỉ code trong module đó và trong các module lồng bên trong nó"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Một module có pub struct Account { pub owner: String, balance: i64 }. Code bên ngoài module có thể làm gì với một giá trị Account?",
+      "options": [
+        "Nó có thể đọc owner, nhưng không thể chạm trực tiếp vào balance",
+        "Nó có thể đọc và thay đổi cả hai trường, vì struct là pub",
+        "Nó có thể đọc balance, nhưng không thể chạm trực tiếp vào owner"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "as trong use std::io::Result as IoResult; làm gì?",
+      "options": [
+        "Làm cho mục được nhập vào trở thành công khai với các module khác",
+        "Đặt cho mục được nhập vào một tên cục bộ mới",
+        "Chuyển kiểu được nhập vào thành một kiểu khác"
+      ],
+      "answer": 1
+    }
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "id": "u7-l1",
+  "title": "Hàm generic",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Đôi khi cùng một logic hoạt động với nhiều kiểu. Hoán đổi hai giá trị không quan tâm chúng là số hay chữ. Viết một bản sao của hàm cho mỗi kiểu sẽ lặp lại rất nhiều code. Một hàm generic được viết một lần và hoạt động với nhiều kiểu."
+    },
+    {
+      "type": "text",
+      "text": "Bạn làm một hàm trở nên generic bằng cách thêm một tham số kiểu (type parameter) trong dấu ngoặc góc sau tên của nó. Theo quy ước, nó được gọi là T, viết tắt của \"type\" (kiểu). T là một ô giữ chỗ (placeholder): mỗi lần bạn gọi hàm, Rust điền vào đó một kiểu thật."
+    },
+    {
+      "type": "code",
+      "code": "fn swap_pair<T>(pair: (T, T)) -> (T, T) {\n    (pair.1, pair.0)\n}\n\nfn main() {\n    let numbers = swap_pair((1, 2));\n    let words = swap_pair((\"left\", \"right\"));\n    let names = swap_pair((String::from(\"Ana\"), String::from(\"Binh\")));\n    println!(\"{:?}\", numbers);\n    println!(\"{:?}\", words);\n    println!(\"{:?}\", names);\n}\n\n// Output:\n// (2, 1)\n// (\"right\", \"left\")\n// (\"Binh\", \"Ana\")"
+    },
+    {
+      "type": "text",
+      "text": "<T> sau tên khai báo ô giữ chỗ. Sau đó, T có thể được dùng như bất kỳ kiểu nào trong các tham số và kiểu trả về. (T, T) là một tuple chứa hai giá trị cùng kiểu, còn pair.0 và pair.1 chọn các phần của nó. Ở lệnh gọi đầu tiên T trở thành i32, ở lệnh gọi thứ hai là &str, ở lệnh gọi thứ ba là String. Bạn không bao giờ viết kiểu thật: Rust tự suy ra từ các đối số. Chú thích Output ở cuối đoạn code cho thấy ba cặp đã được hoán đổi."
+    },
+    {
+      "type": "note",
+      "text": "Hãy nghĩ T như một chỗ trống trong một biểu mẫu. Hàm nói rằng \"đưa tôi hai thứ cùng loại, bất kể loại nào\". Mỗi lệnh gọi điền vào chỗ trống đó. Cái tên T chỉ là một thói quen; bạn có thể gọi nó là Item hoặc bất cứ tên nào khác.",
+      "track": "starter"
+    },
+    {
+      "type": "text",
+      "text": "Một hàm generic chỉ có thể làm những gì nó chắc chắn mọi T có thể làm. swap_pair chỉ di chuyển các giá trị, điều này hoạt động với mọi kiểu. So sánh hai giá trị bằng > không hoạt động với mọi kiểu (so sánh hai tệp thì có nghĩa là gì?). Vì vậy đoạn này không biên dịch được:"
+    },
+    {
+      "type": "code",
+      "code": "// This does NOT compile. Error E0369: binary operation `>` cannot be applied to type `&T`\nfn largest<T>(items: &[T]) -> &T {\n    let mut biggest = &items[0];\n    for item in items {\n        if item > biggest {\n            biggest = item;\n        }\n    }\n    biggest\n}"
+    },
+    {
+      "type": "text",
+      "text": "Cách sửa là cho Rust biết T phải là một kiểu có thể so sánh được. Bạn làm điều đó bằng cách viết T: PartialOrd. PartialOrd là một trait (một khả năng có tên) mà các kiểu có < và > đều có. Hãy đọc T: PartialOrd là \"bất kỳ kiểu T nào, miễn là nó có thể được sắp thứ tự\". Các bài sau sẽ giải thích trait và các ràng buộc này một cách đầy đủ; bây giờ bạn cứ chép theo mẫu."
+    },
+    {
+      "type": "code",
+      "code": "fn largest<T: PartialOrd>(items: &[T]) -> &T {\n    let mut biggest = &items[0];\n    for item in items {\n        if item > biggest {\n            biggest = item;\n        }\n    }\n    biggest\n}\n\nfn main() {\n    let numbers = [34, 50, 25, 100, 65];\n    let letters = ['y', 'm', 'a', 'q'];\n    println!(\"largest number: {}\", largest(&numbers));\n    println!(\"largest letter: {}\", largest(&letters));\n}"
+    },
+    {
+      "type": "text",
+      "text": "&[T] là một slice của bất kỳ kiểu T nào. Lặp qua một tham chiếu tới slice cho ra một tham chiếu tới từng phần tử, giống như khi lặp qua &prices với một Vec. Hàm trả về một tham chiếu tới phần tử lớn nhất, nên nó không bao giờ sao chép hay di chuyển gì cả. Nó gây ra panic với một slice rỗng, vì items[0] không tồn tại."
+    },
+    {
+      "type": "note",
+      "text": "Generic không tốn chi phí lúc chạy. Trình biên dịch tạo một bản sao riêng của hàm cho mỗi kiểu bạn thật sự dùng (điều này gọi là monomorphization), nên largest::<i32> chạy nhanh như một phiên bản i32 viết tay. Cách này gần với template của C++ hơn là generic của Java, vốn xóa các kiểu. Rust kiểm tra toàn bộ thân hàm một lần, chỉ dùng các ràng buộc, trong khi C++ chỉ kiểm tra những phần phụ thuộc vào T khi mỗi lần dùng được mở rộng.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "last_item chỉ hoạt động với slice của i32. Hãy làm cho nó hoạt động với slice của bất kỳ kiểu nào, để nó cũng hoạt động với một danh sách các từ. Sau đó, ở cuối main, tạo một mảng gồm ba từ (red, green và blue) và in phần tử cuối của nó. Chương trình sẽ in ra hai dòng: 15 và blue. Gợi ý: fn last_item<T>(items: &[T]) -> &T, và let words = [\"red\", \"green\", \"blue\"];",
+    "starter": "fn last_item(items: &[i32]) -> &i32 {\n    &items[items.len() - 1]\n}\n\nfn main() {\n    let numbers = [4, 8, 15];\n    println!(\"{}\", last_item(&numbers));\n}",
+    "expectedOutput": "15\nblue",
+    "solution": "fn last_item<T>(items: &[T]) -> &T {\n    &items[items.len() - 1]\n}\n\nfn main() {\n    let numbers = [4, 8, 15];\n    println!(\"{}\", last_item(&numbers));\n    let words = [\"red\", \"green\", \"blue\"];\n    println!(\"{}\", last_item(&words));\n}",
+    "hints": [
+      "Hàm chỉ nhận i32 vì tham số và kiểu trả về của nó. Những kiểu nào ở đó có thể trở thành một ô giữ chỗ, giống T trong swap_pair?",
+      "Hãy đặt một tham số kiểu trong dấu ngoặc góc sau tên hàm, rồi dùng T thay cho i32 trong tham số và trong kiểu trả về.",
+      "Hãy viết fn last_item<T>(items: &[T]) -> &T. Sau đó, ở cuối main, hãy tạo một mảng gồm ba từ và in last_item(&words), giống như lệnh gọi cho numbers."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "<T> trong fn swap_pair<T>(...) làm gì?",
+      "options": [
+        "Khai báo T là một struct mới mà hàm tạo ra mỗi lần chạy",
+        "Khai báo T là một hằng số có giá trị cố định khi chương trình khởi động",
+        "Khai báo T là một ô giữ chỗ đại diện cho một kiểu thật, được chọn ở mỗi lệnh gọi"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Vì sao largest cần T: PartialOrd?",
+      "options": [
+        "Vì > chỉ hoạt động trên các kiểu có thể sắp thứ tự, và một T trần không hứa hẹn gì",
+        "Vì slice phải được sắp xếp trước khi bạn có thể tìm phần tử lớn nhất trong đó",
+        "Vì hàm trả về một tham chiếu, và tham chiếu cần PartialOrd"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Rust quyết định T là kiểu nào bằng cách nào khi bạn gọi swap_pair((\"a\", \"b\"))?",
+      "options": [
+        "Nó dùng i32 trừ khi bạn viết một kiểu khác trong dấu ngoặc góc ở lệnh gọi",
+        "Nó suy ra T từ kiểu của các đối số bạn truyền vào",
+        "Nó quyết định lúc chạy, sau khi xem các giá trị"
+      ],
+      "answer": 1
+    }
+  ]
+}

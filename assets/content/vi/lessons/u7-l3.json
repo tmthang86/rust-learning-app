@@ -1,0 +1,84 @@
+{
+  "id": "u7-l3",
+  "title": "Trait",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Một trait mô tả điều gì đó mà một kiểu có thể làm. Nó chủ yếu liệt kê các chữ ký phương thức (nó cũng có thể liệt kê các kiểu; bạn sẽ gặp một ví dụ với Iterator trong Unit 8), và bất kỳ kiểu nào cũng có thể hứa cung cấp chúng. Bạn đã gặp một trait rồi: Display là trait cho \"có thể được hiển thị bằng {}\". Bây giờ bạn sẽ tự viết trait của riêng mình."
+    },
+    {
+      "type": "text",
+      "text": "trait Speak { ... } định nghĩa trait. Bên trong, một chữ ký phương thức kết thúc bằng dấu chấm phẩy là bắt buộc: mọi kiểu muốn có trait đều phải tự viết phần thân của nó. Một phương thức có phần thân là phương thức mặc định (default method): các kiểu nhận nó miễn phí, và có thể ghi đè (override) nó. impl Speak for Dog cấp trait cho một kiểu."
+    },
+    {
+      "type": "code",
+      "code": "trait Speak {\n    fn name(&self) -> String;\n    fn sound(&self) -> String;\n\n    // default method: built from the required ones\n    fn intro(&self) -> String {\n        format!(\"{} says {}\", self.name(), self.sound())\n    }\n}\n\nstruct Dog {\n    name: String,\n}\n\nstruct Robot {\n    id: u32,\n}\n\nimpl Speak for Dog {\n    fn name(&self) -> String {\n        self.name.clone()\n    }\n    fn sound(&self) -> String {\n        String::from(\"woof\")\n    }\n}\n\nimpl Speak for Robot {\n    fn name(&self) -> String {\n        format!(\"Robot {}\", self.id)\n    }\n    fn sound(&self) -> String {\n        String::from(\"beep\")\n    }\n    // override the default\n    fn intro(&self) -> String {\n        format!(\"[{}] {}\", self.name(), self.sound())\n    }\n}\n\nfn main() {\n    let dog = Dog { name: String::from(\"Rex\") };\n    let robot = Robot { id: 7 };\n    println!(\"{}\", dog.intro());\n    println!(\"{}\", robot.intro());\n}"
+    },
+    {
+      "type": "text",
+      "text": "Dog chỉ viết name và sound, và nhận intro miễn phí. Robot viết intro riêng của nó, thay thế bản mặc định. Bên trong một trait, self.name() gọi một phương thức khác của cùng trait; điều này hoạt động với mọi kiểu implement nó. Dog và Robot là những kiểu không liên quan, nhưng cả hai đều có thể Speak."
+    },
+    {
+      "type": "text",
+      "text": "Đây là cùng hình dạng với impl fmt::Display for LoginError mà bạn đã thấy, và cái cho ShopError mà bạn đã viết, trong Unit 6. Display là một trait của thư viện chuẩn. Nó yêu cầu một phương thức, fmt, và {} trong println! gọi nó. Đây là nó một lần nữa cho một kiểu mới:"
+    },
+    {
+      "type": "code",
+      "code": "use std::fmt;\n\nstruct Point {\n    x: i32,\n    y: i32,\n}\n\nimpl fmt::Display for Point {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        write!(f, \"({}, {})\", self.x, self.y)\n    }\n}\n\nfn main() {\n    let p = Point { x: 3, y: -1 };\n    println!(\"point is {p}\");\n    let text = p.to_string();   // free, because Point implements Display\n    println!(\"{} bytes\", text.len());\n}"
+    },
+    {
+      "type": "text",
+      "text": "Khi một kiểu implement Display, Rust cũng cấp cho nó phương thức to_string miễn phí. Đó là sức mạnh của trait: implement một thứ nhỏ và nhận thêm nhiều thứ."
+    },
+    {
+      "type": "note",
+      "text": "Trait là một lời hứa. impl Speak for Dog là một lời hứa có ký tên rằng Dog có mọi phương thức mà Speak liệt kê. Nếu bạn quên một phương thức bắt buộc, trình biên dịch sẽ cho bạn biết đó là phương thức nào.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Trait giống interface trong Java, C# và Go. Giống interface của Java và C# (và không giống Go), chúng có thể có phương thức mặc định. Không giống Go, một kiểu phải nói rõ ràng impl Trait for Type. Không giống Java, bạn có thể implement trait của chính mình cho một kiểu từ crate của người khác, như i32 hay String. Orphan rule giữ cho điều này an toàn: bạn chỉ được implement một trait cho một kiểu nếu trait hoặc kiểu đó được định nghĩa trong crate của bạn. Đó là lý do bạn không thể tự implement Display cho Vec<i32>.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Code khởi đầu có một trait Speak với một phương thức bắt buộc speak và một phương thức mặc định shout. Dog đã implement nó. Hãy làm cho Robot cũng speak được: speak của nó phải trả về beep, theo sau là một dấu cách và id của nó. Sau đó, ở cuối main, tạo một Robot với id 7 và in shout của nó. Chương trình sẽ in ra hai dòng: WOOF, I AM REX và BEEP 7. Trình biên dịch cảnh báo rằng Robot chưa bao giờ được tạo cho đến khi bạn hoàn thành; điều đó là bình thường. Gợi ý: impl Speak for Robot { fn speak(&self) -> String { format!(\"beep {}\", self.id) } }",
+    "starter": "trait Speak {\n    fn speak(&self) -> String;\n\n    fn shout(&self) -> String {\n        self.speak().to_uppercase()\n    }\n}\n\nstruct Dog {\n    name: String,\n}\n\nstruct Robot {\n    id: u32,\n}\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        format!(\"woof, I am {}\", self.name)\n    }\n}\n\nfn main() {\n    let dog = Dog { name: String::from(\"Rex\") };\n    println!(\"{}\", dog.shout());\n}",
+    "expectedOutput": "WOOF, I AM REX\nBEEP 7",
+    "solution": "trait Speak {\n    fn speak(&self) -> String;\n\n    fn shout(&self) -> String {\n        self.speak().to_uppercase()\n    }\n}\n\nstruct Dog {\n    name: String,\n}\n\nstruct Robot {\n    id: u32,\n}\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        format!(\"woof, I am {}\", self.name)\n    }\n}\n\nimpl Speak for Robot {\n    fn speak(&self) -> String {\n        format!(\"beep {}\", self.id)\n    }\n}\n\nfn main() {\n    let dog = Dog { name: String::from(\"Rex\") };\n    println!(\"{}\", dog.shout());\n    let robot = Robot { id: 7 };\n    println!(\"{}\", robot.shout());\n}",
+    "hints": [
+      "Dog nhận trait Speak từ khối impl riêng của nó. Robot cũng cần một khối như vậy. Trait yêu cầu phương thức nào, và phương thức nào bạn nhận miễn phí?",
+      "Hãy viết impl Speak for Robot { ... } và chỉ đặt phương thức bắt buộc speak vào bên trong. Nó trả về một String. Hãy dùng format! để ghép beep, một dấu cách và self.id.",
+      "Sau đó, ở cuối main, hãy tạo một Robot với id 7 và in robot.shout(), giống như cách main đã làm cho con chó."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Trong một trait, phương thức mặc định (default method) là gì?",
+      "options": [
+        "Một phương thức có phần thân trong trait, mà các kiểu nhận miễn phí và có thể thay thế",
+        "Một phương thức mà Rust tự động gọi khi một giá trị của kiểu được tạo ra",
+        "Một phương thức không có phần thân, mà mọi kiểu phải tự viết"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Dòng nào cấp trait Speak cho kiểu Robot?",
+      "options": [
+        "struct Robot: Speak { ... }",
+        "trait Speak for Robot { ... }",
+        "impl Speak for Robot { ... }"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Sau khi bạn implement Display cho một kiểu, bạn còn có thể làm gì khác với nó?",
+      "options": [
+        "In nó bằng {:?} và so sánh hai giá trị bằng ==",
+        "In nó bằng {} và gọi to_string trên nó",
+        "Sao chép nó thay vì di chuyển, và in nó bằng {:?}"
+      ],
+      "answer": 1
+    }
+  ]
+}

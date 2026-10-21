@@ -1,0 +1,88 @@
+{
+  "id": "u11-l4",
+  "title": "Giới thiệu về async",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Thread là một cách để chờ nhiều thứ cùng lúc. Async là một cách khác. Nó phù hợp với các chương trình dành phần lớn thời gian để chờ, chẳng hạn một máy chủ web với hàng nghìn kết nối. Một async fn không chạy khi bạn gọi nó. Nó trả về một future: một giá trị đại diện cho công việc chưa hoàn thành. Không có gì xảy ra cho đến khi có thứ gì đó điều khiển future chạy đến khi hoàn thành."
+    },
+    {
+      "type": "text",
+      "text": "Bên trong một async fn, bạn viết .await sau một future khác. Nó có nghĩa là: \"chờ ở đây cho đến khi việc này xong, và cho phép công việc khác chạy trong lúc đó\". Bạn chỉ có thể dùng .await bên trong code async. Future là lazy: nếu bạn không bao giờ await hay chạy một future, code của nó sẽ không bao giờ chạy."
+    },
+    {
+      "type": "text",
+      "text": "Thư viện chuẩn của Rust định nghĩa future là gì (trait Future) nhưng không có runtime để chạy chúng. Các chương trình thực tế thêm một crate như tokio cho việc đó. Ứng dụng này không thể dùng crate, nên chương trình bên dưới mang theo một bộ chạy nhỏ xíu gọi là block_on, chỉ xây dựng từ std. Nó hỏi future \"bạn xong chưa?\" (việc này gọi là polling). Nếu câu trả lời là \"chưa\", nó park thread cho đến khi future báo là đã sẵn sàng để được hỏi lại. Hãy chỉ đọc phần helper nếu bạn tò mò. Nó cũng chứa PauseOnce, một future nhỏ trả lời \"not ready yet\" (chưa sẵn sàng) ở lần đầu tiên được hỏi, để bạn có thể quan sát một .await tạm dừng."
+    },
+    {
+      "type": "code",
+      "code": "use std::future::Future;\nuse std::pin::pin;\nuse std::sync::Arc;\nuse std::task::{Context, Poll, Wake, Waker};\nuse std::thread::{self, Thread};\n\n// ---- You don't need to understand this helper. ----\n// Rust's standard library has no runtime, so this tiny one runs a future\n// to the end by polling it. Real programs use a crate such as tokio.\nstruct ThreadWaker(Thread);\n\nimpl Wake for ThreadWaker {\n    fn wake(self: Arc<Self>) {\n        self.0.unpark();\n    }\n}\n\nfn block_on<F: Future>(future: F) -> F::Output {\n    let mut future = pin!(future);\n    let waker = Waker::from(Arc::new(ThreadWaker(thread::current())));\n    let mut cx = Context::from_waker(&waker);\n    loop {\n        match future.as_mut().poll(&mut cx) {\n            Poll::Ready(value) => return value,\n            Poll::Pending => thread::park(),\n        }\n    }\n}\n\n// PauseOnce is a future that answers \"not ready yet\" the first time it is\n// asked, so that you can watch an .await pause. It is part of the helper too.\nuse std::pin::Pin;\n\nstruct PauseOnce {\n    paused: bool,\n}\n\nimpl Future for PauseOnce {\n    type Output = ();\n\n    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {\n        if self.paused {\n            Poll::Ready(())\n        } else {\n            self.paused = true;\n            cx.waker().wake_by_ref();   // \"ask me again right away\"\n            Poll::Pending\n        }\n    }\n}\n\n// ---- End of helper. ----\n\nasync fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\nasync fn greet(name: &str) -> String {\n    println!(\"greet: before the pause\");\n    PauseOnce { paused: false }.await;\n    println!(\"greet: after the pause\");\n    let sum = add(2, 3).await;\n    format!(\"Hello, {name}! 2 + 3 = {sum}\")\n}\n\nfn main() {\n    println!(\"1: calling greet\");\n    let future = greet(\"Ada\");\n    println!(\"2: we have a future, but nothing has run yet\");\n    let message = block_on(future);\n    println!(\"3: {message}\");\n}\n\n// Output:\n// 1: calling greet\n// 2: we have a future, but nothing has run yet\n// greet: before the pause\n// greet: after the pause\n// 3: Hello, Ada! 2 + 3 = 5"
+    },
+    {
+      "type": "text",
+      "text": "Hãy nhìn thứ tự các dòng trong chú thích Output ở cuối code. Việc gọi greet(\"Ada\") không in ra gì cả. Toàn bộ công việc diễn ra bên trong block_on. .await trên PauseOnce đã tạm dừng greet một lần rồi nó tiếp tục, trong khi add(2, 3).await kết thúc ngay lập tức. Lưu ý rằng block_on chỉ chạy một future, nên ở đây không có hai future nào tiến triển cùng nhau. Muốn xen kẽ cần có runtime hoặc một helper join."
+    },
+    {
+      "type": "note",
+      "text": "Bạn có thể đọc async fn như một hàm trả về một future. async fn add(a: i32, b: i32) -> i32 trả về một thứ sẽ tạo ra một i32 khi nó đã chạy. .await là cách bạn lấy i32 đó ra. Nếu bạn quên .await, bạn đang cầm phần công việc chưa xong, chứ không phải con số.",
+      "track": "starter"
+    },
+    {
+      "type": "text",
+      "text": "Một runtime như tokio có thể chạy hàng nghìn future trên vài thread: khi một future chờ, runtime chuyển sang future khác. Đây là chỗ .await thực sự phát huy tác dụng. Với tokio, bạn đặt #[tokio::main] phía trên hàm main async của mình, khởi động task bằng tokio::spawn, và chạy các future cùng lúc bên cạnh nhau bằng tokio::join!. Đoạn code bên dưới cho thấy một async fn dùng nó. Nó chỉ để xem, vì cần crate tokio:"
+    },
+    {
+      "type": "code",
+      "code": "// Needs the tokio crate (Cargo.toml: tokio = { version = \"1\", features = [\"full\"] }),\n// so it can't run in this app. In a real program, #[tokio::main] goes above\n// an async main function, which starts the runtime and calls fetch_two_pages().await.\nuse std::time::Duration;\n\nasync fn fetch(name: &str) -> String {\n    tokio::time::sleep(Duration::from_millis(100)).await;   // pretend to wait for the network\n    format!(\"page {name}\")\n}\n\nasync fn fetch_two_pages() {\n    // join! runs both futures side by side: about 100 ms in total, not 200\n    let (a, b) = tokio::join!(fetch(\"a\"), fetch(\"b\"));\n    println!(\"{a} and {b}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Khi nào nên dùng async và khi nào nên dùng thread? Thread đơn giản và phù hợp cho tính toán nặng. Async dành cho các chương trình có nhiều task chủ yếu là chờ, đặc biệt là code mạng. Nhiều dự án dùng cả hai."
+    },
+    {
+      "type": "note",
+      "text": "Nếu bạn đến từ JavaScript hoặc C#: một Promise của JavaScript, hoặc Task mà một phương thức async của C# trả về, đã đang chạy vào lúc bạn nhận được nó. Một future của Rust thì không: nó là lazy và không làm gì cho đến khi được await hoặc poll (một coroutine của Python cũng lazy theo cách tương tự). Rust cũng không đi kèm executor nào, nên bạn tự chọn một cái (tokio là phổ biến nhất; smol là một lựa chọn nhỏ gọn). Nếu bạn biết asyncio của Python, async fn giống async def, và block_on đóng vai trò của asyncio.run.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "run() gọi add_one một lần. Hãy làm cho nó gọi add_one lần thứ hai trên kết quả, với .await, rồi trả về giá trị đó. Chương trình sẽ in ra: 3",
+    "starter": "use std::future::Future;\nuse std::pin::pin;\nuse std::sync::Arc;\nuse std::task::{Context, Poll, Wake, Waker};\nuse std::thread::{self, Thread};\n\n// ---- You don't need to understand this helper. ----\n// Rust's standard library has no runtime, so this tiny one runs a future\n// to the end by polling it. Real programs use a crate such as tokio.\nstruct ThreadWaker(Thread);\n\nimpl Wake for ThreadWaker {\n    fn wake(self: Arc<Self>) {\n        self.0.unpark();\n    }\n}\n\nfn block_on<F: Future>(future: F) -> F::Output {\n    let mut future = pin!(future);\n    let waker = Waker::from(Arc::new(ThreadWaker(thread::current())));\n    let mut cx = Context::from_waker(&waker);\n    loop {\n        match future.as_mut().poll(&mut cx) {\n            Poll::Ready(value) => return value,\n            Poll::Pending => thread::park(),\n        }\n    }\n}\n// ---- End of helper. ----\n\nasync fn add_one(x: i32) -> i32 {\n    x + 1\n}\n\nasync fn run() -> i32 {\n    let first = add_one(1).await;\n    first\n}\n\nfn main() {\n    println!(\"{}\", block_on(run()));\n}",
+    "expectedOutput": "3",
+    "solution": "use std::future::Future;\nuse std::pin::pin;\nuse std::sync::Arc;\nuse std::task::{Context, Poll, Wake, Waker};\nuse std::thread::{self, Thread};\n\n// ---- You don't need to understand this helper. ----\n// Rust's standard library has no runtime, so this tiny one runs a future\n// to the end by polling it. Real programs use a crate such as tokio.\nstruct ThreadWaker(Thread);\n\nimpl Wake for ThreadWaker {\n    fn wake(self: Arc<Self>) {\n        self.0.unpark();\n    }\n}\n\nfn block_on<F: Future>(future: F) -> F::Output {\n    let mut future = pin!(future);\n    let waker = Waker::from(Arc::new(ThreadWaker(thread::current())));\n    let mut cx = Context::from_waker(&waker);\n    loop {\n        match future.as_mut().poll(&mut cx) {\n            Poll::Ready(value) => return value,\n            Poll::Pending => thread::park(),\n        }\n    }\n}\n// ---- End of helper. ----\n\nasync fn add_one(x: i32) -> i32 {\n    x + 1\n}\n\nasync fn run() -> i32 {\n    let first = add_one(1).await;\n    let second = add_one(first).await;\n    second\n}\n\nfn main() {\n    println!(\"{}\", block_on(run()));\n}",
+    "hints": [
+      "run lấy một con số từ add_one. Hãy gọi add_one lần thứ hai và đưa con số đó cho nó. Một async fn cần .await để tạo ra giá trị của nó.",
+      "Sau dòng đầu tiên, hãy viết dòng thứ hai: let second = add_one(first).await; để lần gọi thứ hai bắt đầu từ kết quả của lần gọi đầu.",
+      "Kết thúc bằng cách trả về second thay vì first ở dòng cuối của run."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Gọi một async fn cho bạn cái gì?",
+      "options": [
+        "Kết quả cuối cùng ngay lập tức, sau khi toàn bộ phần thân đã chạy",
+        "Một future: một giá trị đại diện cho công việc chưa chạy",
+        "Một thread hệ điều hành mới đã bắt đầu chạy phần thân"
+      ],
+      "answer": 1
+    },
+    {
+      "question": ".await làm gì?",
+      "options": [
+        "Chờ future đó kết thúc, trong khi cho phép công việc khác chạy",
+        "Khởi động một thread hệ điều hành mới để chạy future song song với main",
+        "Chuyển future thành kiểu đầu ra của nó mà không bao giờ phải chờ"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Tại sao các chương trình async thực tế thêm một crate như tokio?",
+      "options": [
+        "Rust không có từ khóa async, nên một crate phải tự thêm cú pháp",
+        "Các hàm async không thể gọi println! trừ khi một crate bọc nó cho chúng",
+        "Thư viện chuẩn định nghĩa future nhưng không có runtime để chạy chúng"
+      ],
+      "answer": 2
+    }
+  ]
+}

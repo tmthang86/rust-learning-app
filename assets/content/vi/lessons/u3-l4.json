@@ -1,0 +1,76 @@
+{
+  "id": "u3-l4",
+  "title": "Tham chiếu có thể thay đổi (&mut)",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Một tham chiếu chia sẻ chỉ cho phép bạn đọc. Để thay đổi một giá trị đang được mượn, hãy dùng tham chiếu có thể thay đổi: &mut. Bản thân biến phải được khai báo mut."
+    },
+    {
+      "type": "code",
+      "code": "fn add_exclamation(text: &mut String) {\n    text.push_str(\"!\");\n}\n\nfn main() {\n    let mut message = String::from(\"Hello\");\n    add_exclamation(&mut message);\n    add_exclamation(&mut message);\n    println!(\"{message}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Quy tắc then chốt: tại bất kỳ thời điểm nào, bạn có thể có một tham chiếu có thể thay đổi, hoặc bất kỳ số lượng tham chiếu chia sẻ nào, nhưng không được cả hai."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let mut score = 10;\n    let r = &mut score;\n    *r += 5;              // * dereferences: it follows the reference to the value\n    // let r2 = &score;   // error while r is still in use\n    println!(\"{r}\");\n    let r2 = &score;      // fine: r isn't used any more\n    println!(\"{r2}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Quy tắc này ngăn một phần của chương trình thay đổi dữ liệu trong khi một phần khác đang đọc hoặc thay đổi nó, nhờ đó tránh được cả một lớp lỗi gọi là data race."
+    },
+    {
+      "type": "note",
+      "text": "Một lần mượn kéo dài đến lần cuối cùng nó được dùng, chứ không phải đến hết khối. Đó là lý do r2 được phép xuất hiện sau lần dùng cuối của r.",
+      "track": "fast"
+    },
+    {
+      "type": "note",
+      "text": "Hãy hình dung một tấm bảng trắng: nhiều người có thể đọc nó cùng lúc, hoặc một người có thể viết lên nó, nhưng không ai nên đọc khi có người đang viết dở.",
+      "track": "starter"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy hoàn thành double để nó nhân đôi số thông qua tham chiếu có thể thay đổi (dùng *n). Chương trình phải in ra: 42",
+    "starter": "fn double(n: &mut i32) {\n    // change n here\n}\n\nfn main() {\n    let mut value = 21;\n    double(&mut value);\n    println!(\"{value}\");\n}",
+    "expectedOutput": "42",
+    "solution": "fn double(n: &mut i32) {\n    *n *= 2;\n}\n\nfn main() {\n    let mut value = 21;\n    double(&mut value);\n    println!(\"{value}\");\n}",
+    "hints": [
+      "Tham số n là một tham chiếu, không phải một con số. Để thay đổi giá trị mà nó trỏ tới, trước tiên hãy đi theo tham chiếu.",
+      "Hãy dùng * để đi theo một tham chiếu, như *r += 5 trong bài học. Sau đó thực hiện phép nhân đôi trên giá trị nằm phía sau nó.",
+      "Bên trong double hãy viết *n = *n * 2; (hoặc dạng ngắn hơn *n *= 2;, hoạt động giống +=)."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Có thể có bao nhiêu tham chiếu có thể thay đổi tới một giá trị được dùng cùng một lúc?",
+      "options": [
+        "Một",
+        "Hai",
+        "Không giới hạn"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Bạn có thể có một &mut và một & tới cùng một giá trị được dùng cùng một lúc không?",
+      "options": [
+        "Có",
+        "Không",
+        "Chỉ với số"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Toán tử giải tham chiếu (dereference) * làm gì trong *r += 1?",
+      "options": [
+        "Nhân r",
+        "Đi theo tham chiếu để thay đổi giá trị mà nó trỏ tới",
+        "Làm cho r có thể thay đổi"
+      ],
+      "answer": 1
+    }
+  ]
+}

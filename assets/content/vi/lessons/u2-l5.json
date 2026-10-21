@@ -1,0 +1,79 @@
+{
+  "id": "u2-l5",
+  "title": "Hàm và giá trị trả về",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Hàm được khai báo bằng fn. Mỗi tham số cần có một kiểu, và kiểu trả về nằm sau ->."
+    },
+    {
+      "type": "code",
+      "code": "fn square(n: i32) -> i32 {\n    n * n\n}\n\nfn describe(n: i32) {\n    println!(\"{n} squared is {}\", square(n));\n}\n\nfn main() {\n    describe(4);\n    describe(9);\n}"
+    },
+    {
+      "type": "text",
+      "text": "Biểu thức cuối cùng trong một hàm, không có dấu chấm phẩy, là giá trị mà hàm trả về. Thêm dấu chấm phẩy sẽ biến nó thành một câu lệnh, không trả về gì cả. Rust viết giá trị \"không gì cả\" này là (), kiểu unit. Vô tình thêm dấu chấm phẩy đó là một lỗi thường gặp lúc mới học, và trình biên dịch sẽ chỉ ra nó bằng một thông báo như: expected i32, found ()."
+    },
+    {
+      "type": "text",
+      "text": "Hãy dùng return để thoát khỏi một hàm sớm:"
+    },
+    {
+      "type": "code",
+      "code": "fn safe_divide(a: i32, b: i32) -> i32 {\n    if b == 0 {\n        return 0;\n    }\n    a / b\n}\n\nfn main() {\n    println!(\"{}\", safe_divide(10, 2));\n    println!(\"{}\", safe_divide(10, 0));\n}"
+    },
+    {
+      "type": "text",
+      "text": "Một hàm có thể trả về nhiều giá trị cùng lúc bằng cách trả về một tuple:"
+    },
+    {
+      "type": "code",
+      "code": "fn min_max(a: i32, b: i32) -> (i32, i32) {\n    if a < b { (a, b) } else { (b, a) }\n}\n\nfn main() {\n    let (low, high) = min_max(8, 3);\n    println!(\"low {low}, high {high}\");\n}"
+    },
+    {
+      "type": "note",
+      "text": "Nếu bạn đến từ một ngôn ngữ khác: kiểu của tham số và kiểu trả về luôn được viết ra; Rust chỉ suy luận kiểu bên trong thân hàm. Một hàm không có -> trả về (), kiểu unit.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Chương trình này không biên dịch được. Hãy sửa để nó in ra: 212",
+    "starter": "fn celsius_to_fahrenheit(c: f64) -> f64 {\n    c * 9.0 / 5.0 + 32.0;\n}\n\nfn main() {\n    println!(\"{}\", celsius_to_fahrenheit(100.0));\n}",
+    "expectedOutput": "212",
+    "solution": "fn celsius_to_fahrenheit(c: f64) -> f64 {\n    c * 9.0 / 5.0 + 32.0\n}\n\nfn main() {\n    println!(\"{}\", celsius_to_fahrenheit(100.0));\n}",
+    "hints": [
+      "Hàm này lẽ ra phải trả về một con số, nhưng một ký tự rất nhỏ ở cuối dòng cuối cùng của nó đã ngăn điều đó.",
+      "Dòng cuối của một hàm chỉ là kết quả của nó khi không có dấu chấm phẩy. Hãy nhìn dòng có c * 9.0 / 5.0 + 32.0.",
+      "Hãy xóa dấu chấm phẩy ở cuối dòng c * 9.0 / 5.0 + 32.0 bên trong hàm."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Nếu dòng cuối cùng bên trong một khối kết thúc bằng dấu chấm phẩy, khối đó trả về giá trị gì?",
+      "options": [
+        "Vẫn là giá trị của dòng cuối đó",
+        "Không gì cả: kiểu unit ()",
+        "Một lỗi lúc chạy"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Kiểu trả về được đặt ở đâu?",
+      "options": [
+        "Trước fn",
+        "Sau -> theo sau các tham số",
+        "Bên trong cặp dấu ngoặc nhọn"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Làm thế nào để một hàm trả về hai giá trị?",
+      "options": [
+        "Trả về một tuple",
+        "Dùng hai câu lệnh return",
+        "Không thể"
+      ],
+      "answer": 0
+    }
+  ]
+}

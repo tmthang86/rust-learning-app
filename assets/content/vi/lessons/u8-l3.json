@@ -1,0 +1,96 @@
+{
+  "id": "u8-l3",
+  "title": "Trait Iterator",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Iterator là thứ đưa ra từng phần tử một. Nó là một trait tên là Iterator, và chỉ cần đúng một phương thức: next. Mỗi lần gọi next trả về Some(item) chứa phần tử kế tiếp, và khi không còn phần tử nào nó trả về None. Ở đây chúng ta gọi next bằng tay trên iterator của một Vec:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let colors = vec![\"red\", \"green\", \"blue\"];\n    let mut it = colors.iter();\n    println!(\"{:?}\", it.next());\n    println!(\"{:?}\", it.next());\n    println!(\"{:?}\", it.next());\n    println!(\"{:?}\", it.next());\n}\n\n// Output:\n// Some(\"red\")\n// Some(\"green\")\n// Some(\"blue\")\n// None"
+    },
+    {
+      "type": "text",
+      "text": "it phải là mut, vì mỗi lần gọi next làm thay đổi vị trí bên trong của iterator. Chú thích Output cho thấy bốn lần gọi trả về gì: ba giá trị Some chứa các phần tử (chúng là tham chiếu đến các chuỗi, được in ra theo cùng một cách), rồi đến None."
+    },
+    {
+      "type": "text",
+      "text": "Đây là những gì một vòng lặp for làm ngầm bên dưới. for x in something trước tiên gọi into_iter() trên nó để lấy một iterator, rồi gọi next hết lần này đến lần khác cho đến khi nhận được None. Một dãy số (range) như 0..3 vốn đã là một iterator. Một Vec thì không, nhưng into_iter() biến nó thành một iterator."
+    },
+    {
+      "type": "text",
+      "text": "Một collection có thể đưa các phần tử của nó cho bạn theo ba cách. iter() mượn từng phần tử (bạn nhận &T). iter_mut() mượn từng phần tử dưới dạng có thể thay đổi (bạn nhận &mut T). into_iter() lấy quyền sở hữu collection và đưa cho bạn chính các phần tử (T)."
+    },
+    {
+      "type": "text",
+      "text": "Các vòng lặp for mà bạn đã biết là cách viết tắt của những điều này: for x in &v là v.iter(), for x in &mut v là v.iter_mut(), và for x in v là v.into_iter()."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let mut numbers = vec![1, 2, 3];\n\n    for n in numbers.iter() {\n        println!(\"read {n}\");\n    }\n\n    for n in numbers.iter_mut() {\n        *n *= 10;\n    }\n    println!(\"{:?}\", numbers);\n\n    for n in numbers.into_iter() {\n        println!(\"owned {n}\");\n    }\n    // numbers has been moved into the loop and can't be used here\n}"
+    },
+    {
+      "type": "text",
+      "text": "Bạn có thể tạo iterator của riêng mình bằng cách implement trait Iterator cho một struct. Bạn cần viết hai thứ. type Item = u32; cho biết kiểu của các phần tử bạn đưa ra (một associated type, tức kiểu liên kết: một kiểu thuộc về phần impl của trait). Và fn next(&mut self) -> Option<u32>, trả về phần tử kế tiếp hoặc None."
+    },
+    {
+      "type": "code",
+      "code": "struct Countdown {\n    n: u32,\n}\n\nimpl Iterator for Countdown {\n    type Item = u32;\n\n    fn next(&mut self) -> Option<u32> {\n        if self.n == 0 {\n            None\n        } else {\n            let current = self.n;\n            self.n -= 1;\n            Some(current)\n        }\n    }\n}\n\nfn main() {\n    for x in (Countdown { n: 3 }) {\n        println!(\"{x}\");\n    }\n\n    // writing next gave us more methods for free, such as sum\n    let total: u32 = Countdown { n: 4 }.sum();   // 4 + 3 + 2 + 1\n    println!(\"total {total}\");\n}\n\n// Output:\n// 3\n// 2\n// 1\n// total 10"
+    },
+    {
+      "type": "text",
+      "text": "Bộ đếm ngược lưu trạng thái của nó trong struct (n) và thay đổi nó ở mỗi lần gọi. Cặp dấu ngoặc đơn thêm quanh struct ở dòng for là cần thiết vì nếu không Rust sẽ đọc { là phần bắt đầu của thân vòng lặp. Các phương thức nhận được miễn phí, như sum, là chủ đề của hai bài tiếp theo."
+    },
+    {
+      "type": "note",
+      "text": "Hãy nhớ Option từ Unit 4: Some(x) nghĩa là có một giá trị, None nghĩa là không có. Một iterator chỉ là một cỗ máy liên tục trả lời \"tiếp theo là gì?\" bằng Some(item), và cuối cùng là None khi nó xong.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Iterator của Rust là lazy và pull-based, giống generator của Python, Iterator của Java, IEnumerable của C# và iterator của JS (Java Streams cũng là lazy), nhưng không có hasNext riêng: None nghĩa là xong. Chúng thường biên dịch ra cùng mã máy với một vòng lặp viết tay (một zero-cost abstraction, tức trừu tượng hóa không tốn chi phí). Vòng lặp for trên một Vec mà bạn sở hữu (into_iter) di chuyển Vec: đó là khác biệt chính so với các ngôn ngữ khác.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Counter phải đưa ra các số từ 1 đến max. Hãy điền next sao cho nó trả về None khi current lớn hơn max. Cho đến lúc đó nó trả về Some của giá trị hiện tại, và tăng current lên 1 cho lần gọi tiếp theo. Chương trình phải in ra 1, 2, 3 và 4 trên bốn dòng. Code khởi đầu hiện cảnh báo rằng current và max không bao giờ được đọc; chúng sẽ biến mất khi bạn viết next. Gợi ý: lưu self.current vào một biến, cộng 1 vào self.current, rồi trả về Some(biến đó).",
+    "starter": "struct Counter {\n    current: u32,\n    max: u32,\n}\n\nimpl Iterator for Counter {\n    type Item = u32;\n\n    fn next(&mut self) -> Option<u32> {\n        // write the logic here; for now it always says \"no more items\"\n        None\n    }\n}\n\nfn main() {\n    let counter = Counter { current: 1, max: 4 };\n    for n in counter {\n        println!(\"{n}\");\n    }\n}",
+    "expectedOutput": "1\n2\n3\n4",
+    "solution": "struct Counter {\n    current: u32,\n    max: u32,\n}\n\nimpl Iterator for Counter {\n    type Item = u32;\n\n    fn next(&mut self) -> Option<u32> {\n        if self.current > self.max {\n            None\n        } else {\n            let value = self.current;\n            self.current += 1;\n            Some(value)\n        }\n    }\n}\n\nfn main() {\n    let counter = Counter { current: 1, max: 4 };\n    for n in counter {\n        println!(\"{n}\");\n    }\n}",
+    "hints": [
+      "Mỗi lần gọi next phải đưa ra số hiện tại rồi tiến lên. Khi current đã vượt quá max, không còn gì để đưa ra nữa.",
+      "Hãy kiểm tra điều kiện kết thúc trước: nếu self.current > self.max, trả về None. Nếu không thì trả về Some của một số. next nhận &mut self, nên nó có thể thay đổi self.current.",
+      "Trong phần else, trước tiên hãy lưu số đó: let value = self.current; rồi làm self.current += 1; và kết thúc bằng Some(value)."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Phương thức next của một iterator trả về gì khi không còn phần tử nào?",
+      "options": [
+        "Some với giá trị mặc định của kiểu phần tử, chẳng hạn 0",
+        "None, mà vòng lặp for hiểu là tín hiệu để dừng",
+        "Một giá trị Err mà vòng lặp for biến thành một panic"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Phương thức nào lấy quyền sở hữu một Vec và đưa cho bạn các phần tử của nó theo giá trị?",
+      "options": [
+        "iter(), đưa ra các phần tử thuộc sở hữu và để Vec rỗng",
+        "iter_mut(), trao các phần tử và tiêu thụ Vec",
+        "into_iter(), tiêu thụ Vec và đưa ra các phần tử thuộc sở hữu"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Bạn phải viết gì để implement Iterator cho struct của riêng mình?",
+      "options": [
+        "Đặt type Item và viết phương thức next",
+        "Viết một vòng lặp for và lưu các phần tử vào một trường Vec",
+        "Viết next và cả một phương thức len cho biết còn lại bao nhiêu phần tử"
+      ],
+      "answer": 0
+    }
+  ]
+}

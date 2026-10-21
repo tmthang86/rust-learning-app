@@ -1,0 +1,116 @@
+{
+  "id": "u9-l3",
+  "title": "Package, crate và Cargo",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Hai từ bạn sẽ gặp rất nhiều. Một crate là đơn vị code nhỏ nhất mà trình biên dịch build cùng một lúc. Một package là một thư mục do Cargo quản lý; nó chứa một hoặc nhiều crate, cùng với một file tên là Cargo.toml mô tả chúng."
+    },
+    {
+      "type": "text",
+      "text": "Có hai loại crate. Một binary crate biên dịch thành một chương trình bạn có thể chạy, và nó có một hàm main. Một library crate không có main; nó cung cấp code cho các crate khác dùng. Mọi chương trình trong khóa học này cho đến giờ đều là một binary crate trong một file duy nhất."
+    },
+    {
+      "type": "text",
+      "text": "Chạy cargo new my_app và Cargo tạo package này cho bạn:"
+    },
+    {
+      "type": "code",
+      "code": "my_app/\n    Cargo.toml        <- describes the package\n    src/\n        main.rs       <- the root of the binary crate\n        lib.rs        <- optional: cargo new does not make it; you add it for a library crate"
+    },
+    {
+      "type": "text",
+      "text": "src/main.rs là crate root của binary, và src/lib.rs, nếu bạn tự thêm vào, là crate root của một library. File crate root là nơi trình biên dịch bắt đầu đọc; nội dung của nó tạo thành module cấp cao nhất, crate, mà bạn đã gặp trước đó. Cargo.toml trông như thế này:"
+    },
+    {
+      "type": "code",
+      "code": "[package]\nname = \"my_app\"\nversion = \"0.1.0\"\nedition = \"2024\"\n\n[dependencies]\nrand = \"0.10\""
+    },
+    {
+      "type": "text",
+      "text": "Phần [package] cho biết tên, phiên bản và edition của Rust. Phần [dependencies] liệt kê các crate khác mà bạn muốn. Ở đây chúng ta yêu cầu rand, một crate phổ biến dùng để tạo số ngẫu nhiên. \"0.10\" nghĩa là bất kỳ phiên bản 0.10.x tương thích nào."
+    },
+    {
+      "type": "text",
+      "text": "Khi bạn build, Cargo tải rand từ crates.io, nơi công khai để mọi người chia sẻ crate, và build nó luôn. Sau đó code của bạn có thể viết use rand::...; để dùng nó. Cargo cũng ghi một file Cargo.lock lưu lại các phiên bản chính xác, để mọi người build với cùng các phiên bản đó."
+    },
+    {
+      "type": "text",
+      "text": "Quan trọng: trình soạn thảo trong ứng dụng này không thể tải crate, và nó biên dịch một file duy nhất bằng rustc thuần, nên ở đây không có Cargo.toml. Bất cứ thứ gì có phần [dependencies] chỉ được hiển thị, không được chạy. Thư viện chuẩn, std, là một crate đi kèm với Rust, nên use std::... luôn hoạt động."
+    },
+    {
+      "type": "text",
+      "text": "Đây là những lệnh Cargo bạn sẽ dùng hằng ngày. Hãy chạy chúng trong một terminal, bên trong thư mục package của bạn:"
+    },
+    {
+      "type": "code",
+      "code": "cargo new my_app      # make a new package\ncargo build           # compile it\ncargo run             # compile and run\ncargo check           # check for errors, faster than build\ncargo test            # run the tests (next lesson)\ncargo add rand        # add a dependency to Cargo.toml\ncargo build --release # compile with full optimizations"
+    },
+    {
+      "type": "text",
+      "text": "Bây giờ quay lại với module. Khi một module lớn lên, bạn chuyển nó sang file riêng. Trong src/main.rs, hãy viết mod garden; với dấu chấm phẩy thay vì một khối. Rust sau đó tải phần thân module từ src/garden.rs. Một module lồng bên trong nó, được khai báo bằng pub mod vegetables; bên trong garden.rs, nằm trong src/garden/vegetables.rs."
+    },
+    {
+      "type": "code",
+      "code": "my_app/\n    src/\n        main.rs               <- has: mod garden;\n        garden.rs             <- has: pub mod vegetables;\n        garden/\n            vegetables.rs     <- the body of garden::vegetables"
+    },
+    {
+      "type": "text",
+      "text": "Cây module vẫn giống như khi bạn viết mọi thứ inline. Các đường dẫn trong code của bạn (garden::vegetables::count()) không thay đổi, chỉ nơi lưu văn bản là khác. Đây là phiên bản inline, với các chú thích cho thấy mỗi phần sẽ nằm ở file nào. Nó in ra cùng kết quả với phiên bản dùng file:"
+    },
+    {
+      "type": "code",
+      "code": "// src/main.rs holds mod garden; and main\n// src/garden.rs holds the body of mod garden\nmod garden {\n    // src/garden/vegetables.rs holds the body of mod vegetables\n    pub mod vegetables {\n        pub fn count() -> u32 {\n            3\n        }\n    }\n\n    pub fn plant(name: &str) -> String {\n        format!(\"planted {name}\")\n    }\n}\n\nfn main() {\n    println!(\"{}, {} in the garden\", garden::plant(\"carrot\"), garden::vegetables::count());\n}\n\n// Output:\n// planted carrot, 3 in the garden"
+    },
+    {
+      "type": "note",
+      "text": "Một package giống như một thư mục công thức nấu ăn. Cargo.toml là danh sách mua sắm ở trang đầu: nó nêu tên món ăn và các nguyên liệu (crate) bạn cần từ cửa hàng (crates.io). Cargo đi mua sắm giúp bạn rồi nấu mọi thứ cùng với code của riêng bạn.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Nếu bạn đến từ Java, Go hoặc C#: một crate là đơn vị mà Rust biên dịch một lần, gần giống một module hoặc JAR của Java, một package của Go hoặc một assembly của .NET (một package Cargo gần với một module của Go hơn). Nếu bạn biết npm hoặc PyPI, thì Cargo.toml giống package.json hoặc pyproject.toml, Cargo.lock giống package-lock.json, và crates.io là registry. Một package có thể có một library crate và nhiều binary crate (các binary bổ sung nằm trong src/bin/). Cargo.lock thường được commit (cargo new thiết lập điều này), kể cả với library. Workspace cho phép nhiều package dùng chung một file lock và một thư mục build. Cách bố trí cũ garden/mod.rs cũng dùng được, nhưng garden.rs nằm cạnh thư mục garden/ là phong cách hiện nay.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy giả sử module lồng là file src/shop/fruits.rs. Bên trong mod shop, thêm pub mod fruits với một hàm pub fn count() -> u32 trả về 5. Sau đó thay số 0 trong main bằng shop::fruits::count(). Chương trình phải in ra: shop is open, 5 kinds of fruit",
+    "starter": "mod shop {\n    pub fn open() -> String {\n        String::from(\"shop is open\")\n    }\n\n    // add pub mod fruits here\n}\n\nfn main() {\n    let count = 0;   // replace 0 with shop::fruits::count()\n    println!(\"{}, {} kinds of fruit\", shop::open(), count);\n}",
+    "expectedOutput": "shop is open, 5 kinds of fruit",
+    "solution": "mod shop {\n    pub fn open() -> String {\n        String::from(\"shop is open\")\n    }\n\n    pub mod fruits {\n        pub fn count() -> u32 {\n            5\n        }\n    }\n}\n\nfn main() {\n    let count = shop::fruits::count();\n    println!(\"{}, {} kinds of fruit\", shop::open(), count);\n}",
+    "hints": [
+      "Module shop cần một module lồng bên trong nó, như một thư mục trong một thư mục. Hãy xem formal nằm bên trong greetings như thế nào.",
+      "Bên trong mod shop, hãy viết pub mod fruits { ... } và đặt một hàm vào đó: pub fn count() -> u32 trả về 5. Cả hai đều cần pub, vì main nằm bên ngoài.",
+      "Trong main, thay số 0 bằng đường dẫn đầy đủ tới hàm: shop::fruits::count()."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "File nào là root của một binary crate trong package được tạo bởi cargo new?",
+      "options": [
+        "Cargo.toml, file mô tả package",
+        "src/lib.rs, file chứa code của library",
+        "src/main.rs, file chứa main"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Phần [dependencies] của Cargo.toml làm gì?",
+      "options": [
+        "Nó liệt kê các crate mà package cần, mà Cargo sẽ tải và build",
+        "Nó liệt kê các hàm mà package công khai cho các crate khác",
+        "Nó liệt kê các file nguồn mà trình biên dịch nên đưa vào bản build"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Trong src/main.rs bạn viết mod garden; với dấu chấm phẩy. Rust tìm phần thân của module đó ở đâu?",
+      "options": [
+        "Trong src/main.rs, phía dưới dòng mod",
+        "Trong một file tên garden.rs bên trong thư mục src",
+        "Trong Cargo.toml, dưới mục [package]"
+      ],
+      "answer": 1
+    }
+  ]
+}

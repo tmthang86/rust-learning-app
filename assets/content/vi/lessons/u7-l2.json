@@ -1,0 +1,104 @@
+{
+  "id": "u7-l2",
+  "title": "Struct và enum generic",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Struct và enum cũng có thể có tham số kiểu. Đây là một Point mà tọa độ có thể thuộc bất kỳ kiểu nào, miễn là x và y cùng kiểu:"
+    },
+    {
+      "type": "code",
+      "code": "struct Point<T> {\n    x: T,\n    y: T,\n}\n\nimpl<T> Point<T> {\n    fn x(&self) -> &T {\n        &self.x\n    }\n}\n\nfn main() {\n    let whole = Point { x: 5, y: 10 };\n    let fractional = Point { x: 1.5, y: 4.0 };\n    println!(\"{} {}\", whole.x(), whole.y);\n    println!(\"{} {}\", fractional.x(), fractional.y);\n}"
+    },
+    {
+      "type": "text",
+      "text": "Point<T> khai báo T sau tên, rồi dùng nó cho các trường. Rust tự suy ra T từ các giá trị: whole là một Point<i32> và fractional là một Point<f64>. Một phương thức có thể trùng tên với một trường: whole.x() gọi phương thức, còn whole.y đọc trường."
+    },
+    {
+      "type": "text",
+      "text": "Hãy nhìn impl<T> Point<T>. <T> đầu tiên khai báo ô giữ chỗ (placeholder), giống như trong một hàm generic. Nếu không có nó, Rust sẽ nghĩ T là một kiểu thật tên là T. <T> thứ hai, trong Point<T>, cho biết impl này dành cho kiểu nào. Viết đầy đủ như vậy một lần là cách bạn nói \"cho mọi Point, bất kể T là gì\"."
+    },
+    {
+      "type": "text",
+      "text": "Cả hai trường dùng chung một T, nên trộn các kiểu là một lỗi. Point { x: 5, y: 4.0 } không biên dịch được: Rust chốt T là một kiểu số nguyên từ x, rồi gặp một số thực trong y (lỗi E0308, mismatched types). Nếu bạn muốn hai kiểu khác nhau, hãy dùng hai tham số kiểu, Point<T, U>."
+    },
+    {
+      "type": "text",
+      "text": "Bạn cũng có thể viết một impl cho một kiểu cụ thể. Phương thức này chỉ tồn tại với Point<f64>, vì nó cần căn bậc hai:"
+    },
+    {
+      "type": "code",
+      "code": "struct Point<T> {\n    x: T,\n    y: T,\n}\n\nimpl Point<f64> {\n    fn distance_from_origin(&self) -> f64 {\n        (self.x * self.x + self.y * self.y).sqrt()\n    }\n}\n\nfn main() {\n    let p = Point { x: 3.0, y: 4.0 };\n    println!(\"distance: {}\", p.distance_from_origin());\n}"
+    },
+    {
+      "type": "text",
+      "text": "Bạn đã dùng các kiểu generic rồi. Option<T> và Result<T, E> là những enum bình thường có tham số kiểu. Định nghĩa thật của chúng trong thư viện chuẩn trông như sau:"
+    },
+    {
+      "type": "code",
+      "code": "// Copies of the standard library definitions (simplified), shown for reading\nenum Option<T> {\n    Some(T),\n    None,\n}\n\nenum Result<T, E> {\n    Ok(T),\n    Err(E),\n}"
+    },
+    {
+      "type": "text",
+      "text": "Vì vậy, Option<i32> là \"một Option chứa một i32\", và Result<u32, String> là \"một Result là Ok với một u32 hoặc Err với một String\". Vec<T> cũng cùng ý tưởng: một struct generic, nên Vec<i32> và Vec<String> là các kiểu khác nhau được tạo từ một định nghĩa. Đây là một kiểu generic nhỏ do chúng ta tự viết, bao bọc một Vec<T>:"
+    },
+    {
+      "type": "code",
+      "code": "struct Stack<T> {\n    items: Vec<T>,\n}\n\nimpl<T> Stack<T> {\n    fn new() -> Stack<T> {\n        Stack { items: Vec::new() }\n    }\n\n    fn push(&mut self, item: T) {\n        self.items.push(item);\n    }\n\n    fn pop(&mut self) -> Option<T> {\n        self.items.pop()\n    }\n\n    fn peek(&self) -> Option<&T> {\n        self.items.last()\n    }\n}\n\nfn main() {\n    let mut plates: Stack<String> = Stack::new();\n    plates.push(String::from(\"blue\"));\n    plates.push(String::from(\"red\"));\n    println!(\"top: {:?}\", plates.peek());\n    println!(\"took: {:?}\", plates.pop());\n    println!(\"took: {:?}\", plates.pop());\n    println!(\"took: {:?}\", plates.pop());\n}"
+    },
+    {
+      "type": "text",
+      "text": "Rust có thể suy ra T từ các lệnh gọi push phía sau, nên annotation Stack<String> ở đây không thật sự cần thiết. Viết nó làm code rõ ràng hơn, và bạn bắt buộc phải viết khi không có gì phía sau cho biết T là gì. last() trên một Vec trả về một Option chứa tham chiếu tới phần tử cuối, hoặc None nếu Vec rỗng. peek dùng lại điều đó."
+    },
+    {
+      "type": "note",
+      "text": "Stack<T> là generic trên bất kỳ T nào, kể cả những kiểu bạn chưa thấy. Đó chính là mục đích: một định nghĩa, và trình biên dịch tạo đúng phiên bản cho mỗi T bạn dùng. Nếu giúp ích được, hãy hình dung Vec<T> như một chiếc hộp có nhãn \"T đi vào đây\".",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Giống List<T> trong Java/C# hay std::vector<T> trong C++. Khác với Java, không có type erasure và không có boxing; giống C# và C++, Stack<i32> lưu các giá trị i32 thuần. Option<T> là thứ thay thế null của Rust, và Result<T, E> thay thế cho các exception được ném ra. Cả hai đều là các enum generic bình thường, không phải phép thuật của ngôn ngữ.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Pair chỉ chứa các giá trị i32. Hãy làm nó generic để nó chứa được bất kỳ kiểu nào, và giữ cho swapped vẫn hoạt động. Sau đó, ở cuối main, tạo một Pair gồm hai từ (a và b), hoán đổi nó, và in các trường left và right của nó cách nhau bởi một dấu cách. Chương trình sẽ in ra hai dòng: 2 1 và b a. Gợi ý: struct Pair<T>, impl<T> Pair<T>, và fn swapped(self) -> Pair<T>.",
+    "starter": "struct Pair {\n    left: i32,\n    right: i32,\n}\n\nimpl Pair {\n    fn swapped(self) -> Pair {\n        Pair { left: self.right, right: self.left }\n    }\n}\n\nfn main() {\n    let numbers = Pair { left: 1, right: 2 }.swapped();\n    println!(\"{} {}\", numbers.left, numbers.right);\n}",
+    "expectedOutput": "2 1\nb a",
+    "solution": "struct Pair<T> {\n    left: T,\n    right: T,\n}\n\nimpl<T> Pair<T> {\n    fn swapped(self) -> Pair<T> {\n        Pair { left: self.right, right: self.left }\n    }\n}\n\nfn main() {\n    let numbers = Pair { left: 1, right: 2 }.swapped();\n    println!(\"{} {}\", numbers.left, numbers.right);\n    let words = Pair { left: \"a\", right: \"b\" }.swapped();\n    println!(\"{} {}\", words.left, words.right);\n}",
+    "hints": [
+      "Hiện giờ Pair chỉ hoạt động với i32. Việc làm nó generic ảnh hưởng đến ba chỗ: struct, dòng impl, và kiểu mà swapped trả về. Hãy xem lại cách bài học làm Point trở nên generic.",
+      "Hãy khai báo T sau tên struct, Pair<T>, và dùng nó cho cả hai trường. impl cần T hai lần: impl<T> Pair<T>. Sau đó swapped trả về Pair<T>.",
+      "Ở cuối main, hãy tạo một Pair với left là \"a\" và right là \"b\", gọi swapped() trên nó, rồi in các trường left và right của nó với một dấu cách ở giữa."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Vì sao viết impl<T> Point<T> mà không chỉ là impl Point<T>?",
+      "options": [
+        "<T> đầu tiên chọn kiểu cụ thể duy nhất mà mọi Point sẽ chứa từ lúc đó trở đi",
+        "<T> đầu tiên khai báo T là một ô giữ chỗ, để Rust không đi tìm một kiểu thật tên là T",
+        "<T> đầu tiên chỉ làm cho kiểu trả về của các phương thức trở nên generic, chứ không phải tham số của chúng"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Option<T> là gì?",
+      "options": [
+        "Một struct generic có trường value và cờ is_present",
+        "Một từ khóa mà trình biên dịch xử lý đặc biệt, không có định nghĩa trong thư viện",
+        "Một enum generic có hai variant, Some(T) và None"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Vì sao Point { x: 5, y: 4.0 } thất bại khi cả hai trường của Point<T> có kiểu T?",
+      "options": [
+        "x và y dùng chung một T, nhưng 5 là số nguyên còn 4.0 là số thực",
+        "Point chỉ có thể được tạo với các giá trị số nguyên trong các trường của nó",
+        "Số thực không thể được lưu trong struct generic, chỉ trong struct thông thường"
+      ],
+      "answer": 0
+    }
+  ]
+}

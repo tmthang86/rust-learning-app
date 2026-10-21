@@ -61,9 +61,10 @@ token is one of:
   `x.len()`, `v[0]`, `#[test]`;
 - a macro known from the lesson's code (`println!`, `vec!`), a `snake_case`
   name, a number type (`i32`, `u8`, `f64`), an error code (`E0308`), a file name
-  (`Cargo.toml`, `src/main.rs`), a flag (`--words`), a Rust-only keyword (`let`,
-  `mut`, `fn`, `const`, `struct`, `enum`, `impl`, `mod`, `pub`, `dyn`), a bare
-  number;
+  (`Cargo.toml`, `src/main.rs`), a flag (`--words`), a keyword in code shape
+  (`let x =`, `let mut`, `fn name(`, `impl Trait for`, `struct Name {`; the same
+  word as plain English, like "it won't let you", is prose and is translated),
+  a bare number;
 - a quoted string that the lesson's own code or expected output has
   (`"Grade A"`), and a line of that output written right after "prints",
   "print:" or a colon (`it should print: Even`). Quoted words that are not in
@@ -72,6 +73,9 @@ token is one of:
 
 A quiz option that is *only* code or program output (`==`, `greet();`, `"7"`,
 `Grade A`, `let mut x = 1;`, `for x in &v`) must be byte-identical to English.
+Plain words in parentheses after a name (`Some(that variable)`) are prose, and
+quoted text that appears only in a code comment is not program output (only
+lines after `// Output:` are).
 Words around code tokens can be translated freely. The scan is a heuristic:
 when it flags something that is not code, rewrite the English or the
 translation so the token appears as is (a translator can always keep the

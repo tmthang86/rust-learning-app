@@ -1,0 +1,84 @@
+{
+  "id": "u3-l3",
+  "title": "Mượn (borrowing) và tham chiếu",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Việc di chuyển giá trị vào và ra khỏi mọi hàm sẽ rất mệt. Thay vào đó, bạn có thể cho mượn một giá trị bằng một tham chiếu, viết với &. Việc này gọi là mượn (borrowing)."
+    },
+    {
+      "type": "code",
+      "code": "fn count_letters(text: &String) -> usize {\n    text.len()   // len counts bytes: one per letter in plain English text\n}\n\nfn main() {\n    let word = String::from(\"borrow\");\n    let n = count_letters(&word);\n    println!(\"{word} has {n} letters\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Hàm nhận một tham chiếu, dùng nó, và tự động trả lại. Chủ sở hữu vẫn giữ giá trị, nên word vẫn dùng được sau đó."
+    },
+    {
+      "type": "text",
+      "text": "Bạn có thể có bao nhiêu tham chiếu chia sẻ tùy thích cùng một lúc (cuốn Book và các lỗi của trình biên dịch gọi chúng là tham chiếu bất biến, immutable reference), vì không ai có thể thay đổi giá trị qua chúng:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let city = String::from(\"Hanoi\");\n    let r1 = &city;\n    let r2 = &city;\n    println!(\"{r1} {r2} {city}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Một tham chiếu không bao giờ được sống lâu hơn giá trị mà nó trỏ tới. Trình biên dịch kiểm tra điều này, nên Rust không thể có con trỏ treo (dangling pointer). Hàm dangle bị đặt trong chú thích bên dưới không biên dịch được: nó cố trả về một tham chiếu, nhưng không có giá trị nào sống đủ lâu để nó mượn từ đó:"
+    },
+    {
+      "type": "code",
+      "code": "// fn dangle() -> &String {   // error: missing lifetime specifier\n//     let s = String::from(\"oops\");\n//     &s   // s is dropped when the function ends\n// }\nfn make() -> String {\n    String::from(\"fine\")   // return the owned value instead\n}\n\nfn main() {\n    println!(\"{}\", make());\n}"
+    },
+    {
+      "type": "note",
+      "text": "Một tham chiếu giống như cho một người bạn đọc cuốn sách của bạn trong khi bạn quan sát. Họ trả lại, và bạn vẫn sở hữu nó.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Phần của trình biên dịch thực thi điều này là borrow checker (trình kiểm tra mượn). Trong code theo phong cách Rust chuẩn (idiomatic), tham số thường nhận &str thay vì &String; bạn sẽ thấy lý do trong bài học Slice.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy đổi total_length để nó mượn cả hai String thay vì lấy quyền sở hữu, để main vẫn in được a. Chương trình phải in ra: 9\ngood",
+    "starter": "fn total_length(x: String, y: String) -> usize {\n    x.len() + y.len()\n}\n\nfn main() {\n    let a = String::from(\"good\");\n    let b = String::from(\"night\");\n    println!(\"{}\", total_length(a, b));\n    println!(\"{a}\");\n}",
+    "expectedOutput": "9\ngood",
+    "solution": "fn total_length(x: &String, y: &String) -> usize {\n    x.len() + y.len()\n}\n\nfn main() {\n    let a = String::from(\"good\");\n    let b = String::from(\"night\");\n    println!(\"{}\", total_length(&a, &b));\n    println!(\"{a}\");\n}",
+    "hints": [
+      "Truyền một String vào một hàm sẽ di chuyển nó. Hãy đổi hàm để nó chỉ mượn cả hai.",
+      "Hãy dùng & ở hai chỗ: trước String trong mỗi kiểu tham số, và trước mỗi biến ở chỗ gọi.",
+      "Hãy viết x: &String và y: &String trong hàm. Trong main hãy gọi total_length(&a, &b)."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "&word tạo ra cái gì?",
+      "options": [
+        "Một bản sao của word",
+        "Một tham chiếu mượn word",
+        "Một chủ sở hữu mới của word"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Có thể tồn tại bao nhiêu tham chiếu chia sẻ (&) cùng một lúc?",
+      "options": [
+        "Chỉ một",
+        "Bao nhiêu cũng được",
+        "Hai"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Vì sao một hàm không thể trả về một tham chiếu tới String cục bộ của chính nó?",
+      "options": [
+        "String bị drop khi hàm kết thúc",
+        "Không thể trả về tham chiếu",
+        "String quá lớn"
+      ],
+      "answer": 0
+    }
+  ]
+}

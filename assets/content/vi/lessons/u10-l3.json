@@ -1,0 +1,92 @@
+{
+  "id": "u10-l3",
+  "title": "Rc<T>",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Thường thì một giá trị có một chủ sở hữu. Đôi khi điều đó quá chặt. Hãy nghĩ đến một đồ thị, hoặc nhiều thiết bị cùng thuộc về một người. Rc<T> (Reference Counted, đếm tham chiếu) cho phép nhiều chủ sở hữu của cùng một giá trị. Nó giữ một bộ đếm số chủ sở hữu hiện có, và giải phóng giá trị khi chủ sở hữu cuối cùng không còn."
+    },
+    {
+      "type": "text",
+      "text": "Bạn tạo một Rc bằng Rc::new(value). Để thêm một chủ sở hữu nữa, hãy gọi Rc::clone(&a). Việc này không sao chép dữ liệu. Nó tạo một con trỏ mới tới cùng dữ liệu và cộng 1 vào bộ đếm. Rc::strong_count(&a) cho bạn biết giá trị đếm hiện tại. Kiểu này nằm trong std::rc, nên hãy đưa nó vào bằng use."
+    },
+    {
+      "type": "code",
+      "code": "use std::rc::Rc;\n\nstruct Owner {\n    name: String,\n}\n\nstruct Gadget {\n    id: u32,\n    owner: Rc<Owner>,\n}\n\nfn main() {\n    let owner = Rc::new(Owner { name: String::from(\"Ada\") });\n    let g1 = Gadget { id: 1, owner: Rc::clone(&owner) };\n    let g2 = Gadget { id: 2, owner: Rc::clone(&owner) };\n\n    println!(\"gadget {} belongs to {}\", g1.id, g1.owner.name);\n    println!(\"gadget {} belongs to {}\", g2.id, g2.owner.name);\n    println!(\"owners: {}\", Rc::strong_count(&owner));\n}\n\n// Output:\n// gadget 1 belongs to Ada\n// gadget 2 belongs to Ada\n// owners: 3"
+    },
+    {
+      "type": "text",
+      "text": "Ba Rc trỏ tới một Owner: biến owner và hai gadget. Bạn có thể đọc qua một Rc giống như qua một Box, nên g1.owner.name hoạt động. Nếu chúng ta đặt Owner trực tiếp vào cả hai gadget, dữ liệu đã bị di chuyển vào cái đầu tiên."
+    },
+    {
+      "type": "text",
+      "text": "Bộ đếm lại giảm xuống khi một chủ sở hữu ra khỏi phạm vi. Chú thích ở cuối cho thấy nó thay đổi thế nào:"
+    },
+    {
+      "type": "code",
+      "code": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(String::from(\"shared\"));\n    println!(\"count after creating a = {}\", Rc::strong_count(&a));\n    let b = Rc::clone(&a);\n    println!(\"count after creating b = {}\", Rc::strong_count(&a));\n    {\n        let c = Rc::clone(&a);\n        println!(\"count after creating c = {} ({c})\", Rc::strong_count(&a));\n    }\n    println!(\"count after c goes out of scope = {}\", Rc::strong_count(&a));\n    println!(\"{a} {b}\");\n}\n\n// Output:\n// count after creating a = 1\n// count after creating b = 2\n// count after creating c = 3 (shared)\n// count after c goes out of scope = 2\n// shared shared"
+    },
+    {
+      "type": "text",
+      "text": "Khi bộ đếm về 0, giá trị bị drop, dùng ý tưởng Drop ở bài trước. Bạn có thể viết a.clone() thay cho Rc::clone(&a). Cả hai đều chạy được, nhưng Rc::clone làm rõ cho người đọc rằng đó là một thao tác sao chép con trỏ rẻ, không phải sao chép sâu dữ liệu."
+    },
+    {
+      "type": "text",
+      "text": "Có một điểm vướng. Một Rc chỉ cho quyền truy cập chia sẻ, chỉ đọc. Nếu nhiều chủ sở hữu có thể thay đổi giá trị cùng lúc, điều đó sẽ phá vỡ các quy tắc mượn. Code này không biên dịch được. Rust báo E0594: cannot assign to data in an Rc. Bài sau cho thấy cách để vừa chia sẻ vừa có thể thay đổi. Ngoài ra, Rc chỉ dành cho một thread. Unit 11 giới thiệu Arc, anh em an toàn với thread của nó."
+    },
+    {
+      "type": "code",
+      "code": "// This does NOT compile: E0594, cannot assign to data in an Rc.\nuse std::rc::Rc;\n\nfn bump() {\n    let a = Rc::new(5);\n    *a += 1;\n}"
+    },
+    {
+      "type": "note",
+      "text": "Hãy tưởng tượng một gia đình dùng chung một tài khoản xem phim trực tuyến. Không ai sở hữu nó một mình. Mỗi người giữ một tham chiếu, và tài khoản chỉ bị đóng khi người cuối cùng rời đi. Rc chính là như vậy: một bộ đếm xem còn bao nhiêu người đang dùng thứ đó.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Nếu bạn đến từ Java, C# hoặc Python: các ngôn ngữ đó chia sẻ đối tượng thoải mái và dùng bộ thu gom rác (garbage collector). Rc gần với cơ chế đếm tham chiếu của Python hơn: trong Rust nó là tùy chọn (opt-in), và bộ đếm của nó không phải atomic, đó là lý do trình biên dịch từ chối gửi một Rc sang thread khác. Bộ đếm tham chiếu của C++ std::shared_ptr an toàn với thread, nên nó tương ứng với Arc, loại atomic; Rc giống một shared_ptr không có bộ đếm atomic. Các chu trình (A trỏ tới B, B trỏ ngược lại A) không bao giờ được giải phóng (bộ thu gom chu trình của Python không có tương đương trong Rust), nên hãy dùng Weak cho các con trỏ ngược, như bài sau cho thấy.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy tạo một chủ sở hữu thứ hai b của cùng chuỗi đó (chia sẻ nó, đừng sao chép). Sau đó in ra có bao nhiêu chủ sở hữu, và đổi println! cuối cùng để nó in a và b cách nhau bởi một dấu cách. Chương trình phải in ra hai dòng: count = 2 và hello hello. Gợi ý: let b = Rc::clone(&a); và println!(\"count = {}\", Rc::strong_count(&a));",
+    "starter": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(String::from(\"hello\"));\n    // add b and the count line here\n    println!(\"{a}\");\n}",
+    "expectedOutput": "count = 2\nhello hello",
+    "solution": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(String::from(\"hello\"));\n    let b = Rc::clone(&a);\n    println!(\"count = {}\", Rc::strong_count(&a));\n    println!(\"{a} {b}\");\n}",
+    "hints": [
+      "b phải là một chủ sở hữu khác của cùng String đó, không phải một bản sao. Hàm Rc nào thêm một chủ sở hữu, và hàm nào cho bạn biết có bao nhiêu chủ sở hữu?",
+      "Rc::clone(&a) tạo một chủ sở hữu mới và cộng 1 vào bộ đếm. Rc::strong_count(&a) cho giá trị đếm hiện tại.",
+      "Viết let b = Rc::clone(&a); rồi println!(\"count = {}\", Rc::strong_count(&a));. Cuối cùng đổi println! cuối cùng để in a và b với một dấu cách ở giữa: \"{a} {b}\"."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Rc::clone(&a) làm gì?",
+      "options": [
+        "Tạo một bản sao sâu của dữ liệu và trao cho nó một chủ sở hữu mới",
+        "Thêm một chủ sở hữu nữa và tăng bộ đếm, mà không sao chép dữ liệu",
+        "Di chuyển giá trị ra khỏi a, nên a không thể dùng được nữa"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Khi nào giá trị bên trong một Rc bị drop?",
+      "options": [
+        "Khi chủ sở hữu đầu tiên ra khỏi phạm vi",
+        "Khi chương trình kết thúc, bất kể còn những chủ sở hữu nào",
+        "Khi chủ sở hữu cuối cùng không còn và bộ đếm về 0"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Bạn có thể thay đổi dữ liệu bên trong một Rc<i32> chỉ bằng Rc không?",
+      "options": [
+        "Không, một Rc chỉ cho quyền truy cập chia sẻ, chỉ đọc vào dữ liệu",
+        "Có, bằng cách viết *a += 1 trực tiếp trên Rc",
+        "Có, nhưng chỉ khi Rc được khai báo bên trong main"
+      ],
+      "answer": 0
+    }
+  ]
+}

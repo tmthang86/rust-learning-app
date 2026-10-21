@@ -1,0 +1,75 @@
+{
+  "id": "u2-l4",
+  "title": "loop, while và for",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Rust có ba loại vòng lặp. loop lặp mãi cho đến khi bạn thoát ra khỏi nó bằng break:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let mut tries = 0;\n    let result = loop {\n        tries += 1;\n        if tries == 3 {\n            break tries * 10;\n        }\n    };\n    println!(\"Stopped after {tries} tries, result {result}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "break có thể mang một giá trị ra khỏi vòng lặp, nên loop cũng có thể dùng như một biểu thức. Điều này chỉ áp dụng với loop: while và for không thể trả về một giá trị bằng break."
+    },
+    {
+      "type": "text",
+      "text": "while lặp trong khi một điều kiện còn đúng. for đi qua một dãy số (range) hoặc một collection, và là loại bạn sẽ dùng nhiều nhất:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let mut n = 3;\n    while n > 0 {\n        println!(\"{n}\");\n        n -= 1;\n    }\n\n    for i in 0..3 {\n        println!(\"i = {i}\");\n    }\n\n    let fruits = [\"apple\", \"pear\", \"plum\"];\n    for fruit in fruits {\n        println!(\"I like {fruit}\");\n    }\n}"
+    },
+    {
+      "type": "text",
+      "text": "0..3 đếm 0, 1, 2 (nó dừng trước 3). 0..=3 bao gồm cả số 3. Hãy dùng continue để nhảy sang vòng tiếp theo và break để dừng sớm."
+    },
+    {
+      "type": "note",
+      "text": "Vòng lặp for trong Rust luôn đi qua một iterator, nên các lỗi chỉ số lệch một (off-by-one) hiếm khi xảy ra. Cần cả chỉ số nữa? Hãy dùng for (i, fruit) in fruits.iter().enumerate().",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy dùng vòng lặp for để cộng các số từ 1 đến 10 và in ra tổng. Chương trình phải in ra: 55",
+    "starter": "fn main() {\n    // keep mut: your loop will change total\n    let mut total = 0;\n    // loop here\n    println!(\"{total}\");\n}",
+    "expectedOutput": "55",
+    "solution": "fn main() {\n    let mut total = 0;\n    for n in 1..=10 {\n        total += n;\n    }\n    println!(\"{total}\");\n}",
+    "hints": [
+      "Bạn muốn lặp lại cùng một bước cho mỗi số từ 1 đến 10. Loại vòng lặp nào đi qua một dãy số (range)?",
+      "Hãy dùng for n in 1..=10. Dấu ..= nghĩa là dãy bao gồm cả 10. Bên trong vòng lặp, hãy cộng n vào total.",
+      "Bên trong vòng lặp hãy viết total += n; Vòng lặp nằm ở chỗ chú thích ghi loop here, trước println!."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "0..3 tạo ra những số nào?",
+      "options": [
+        "0, 1, 2",
+        "0, 1, 2, 3",
+        "1, 2, 3"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Bên trong một khối loop (từ khóa loop), làm thế nào để dừng và trả về giá trị 5?",
+      "options": [
+        "return 5 loop",
+        "break 5;",
+        "stop(5)"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "continue làm gì?",
+      "options": [
+        "Kết thúc chương trình",
+        "Nhảy sang vòng tiếp theo của vòng lặp",
+        "Thoát khỏi vòng lặp"
+      ],
+      "answer": 1
+    }
+  ]
+}

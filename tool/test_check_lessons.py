@@ -359,6 +359,51 @@ class CodeInProse(unittest.TestCase):
         self.assertEqual(c.missing_code("it prints Even when ok", "nó in ra Chẵn khi đúng", v), ["Even"])
         self.assertEqual(c.missing_code("It should print: Even", "Nó nên in: Even", v), [])
 
+    def test_keywords_are_code_only_in_code_shape(self):
+        vocab = c.lesson_vocabulary(CODE_LESSON)
+        for prose in (
+            "The compiler won't let you do that, and a struct holds fields.",
+            "Use a match when you move on, in a loop; the type is where it lives.",
+            "An enum has variants; impl blocks and mod files come later.",
+        ):
+            self.assertFalse(c.code_tokens(prose, vocab), prose)
+        shapes = {
+            "let": "Write let x = 5; first",
+            "mut": "Write let mut total = 0;",
+            "fn": "Start with fn add(a: i32) -> i32",
+            "struct": "Declare struct Game { score: u32 } here",
+            "enum": "Declare enum State { On, Off } here",
+            "impl": "Write impl Speak for Robot { ... }",
+            "dyn": "Use Box<dyn Speak> or dyn Speak",
+        }
+        for keyword, text in shapes.items():
+            self.assertIn(keyword, c.code_tokens(text, vocab), text)
+        # ...and dropping the code from a translation is still found.
+        self.assertIn("let", c.missing_code("Write let x = 5; first", "Hãy viết var x = 5; trước", vocab))
+        self.assertEqual(c.missing_code("It won't let you", "Nó không cho phép bạn", vocab), [])
+
+    def test_prose_in_parentheses_is_not_an_argument_list(self):
+        vocab = c.lesson_vocabulary(CODE_LESSON)
+        self.assertFalse(c.code_tokens("Some(that variable) holds it", vocab))
+        self.assertEqual(
+            c.missing_code("Some(that variable) holds it", "Some chứa biến đó", vocab), []
+        )
+        self.assertTrue(c.code_tokens("Use Some(value) or add(2, 3)", vocab))
+
+    def test_quoted_text_only_in_a_comment_is_not_output(self):
+        lesson = {
+            "sections": [
+                {"type": "code", "code": 'fn main() {\n    // say "not ready yet" later\n    println!("go");\n}'},
+                {"type": "code", "code": 'println!("hi");\n// Output:\n// hi'},
+            ],
+        }
+        vocab = c.lesson_vocabulary(lesson)
+        self.assertNotIn("not ready yet", vocab["literals"])
+        self.assertNotIn("not ready yet", vocab["printed"])
+        self.assertIn("go", vocab["literals"])
+        self.assertIn("hi", vocab["literals"])  # an "// Output:" line is output
+        self.assertFalse(c.code_tokens('It says "not ready yet" to you', vocab))
+
     def test_token_counts_matter(self):
         vocab = c.lesson_vocabulary(CODE_LESSON)
         en = "Use if age == 18 { ... } else if age == 19 { ... } to decide."

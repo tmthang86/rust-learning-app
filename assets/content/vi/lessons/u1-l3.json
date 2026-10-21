@@ -1,0 +1,81 @@
+{
+  "id": "u1-l3",
+  "title": "In ra màn hình với println!",
+  "sections": [
+    {
+      "type": "text",
+      "text": "println! in ra văn bản rồi xuống dòng mới. Cặp dấu ngoặc nhọn {} bên trong văn bản là các ô giữ chỗ (placeholder), sẽ được điền bằng giá trị."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let name = \"Ferris\";\n    let age = 8;\n    println!(\"{} is {} years old\", name, age);\n    println!(\"{name} is {age} years old\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Cả hai dòng đều in ra cùng một thứ. Bạn có thể liệt kê các giá trị sau đoạn văn bản, hoặc đặt trực tiếp tên của một biến vào bên trong cặp dấu ngoặc nhọn."
+    },
+    {
+      "type": "text",
+      "track": "starter",
+      "text": "Biến là một cái tên cho một giá trị, như bạn đã thấy ở Unit 0. Ở đây name giữ văn bản \"Ferris\" và age giữ số 8. Bài học tiếp theo sẽ xem kỹ hơn việc thay đổi biến."
+    },
+    {
+      "type": "note",
+      "track": "fast",
+      "text": "Nếu bạn đến từ một ngôn ngữ khác: {name} hoạt động giống f-string trong Python hay template literal trong JavaScript, nhưng chuỗi định dạng (format string) được kiểm tra lúc biên dịch. Gõ sai một ô giữ chỗ là lỗi biên dịch, không phải một bất ngờ lúc chạy. Chỉ một tên biến đơn thuần mới đặt vừa trong cặp dấu ngoặc nhọn (khác với f-string và template literal, vốn nhận bất kỳ biểu thức nào): {age + 1} là một lỗi. Với mọi trường hợp khác, hãy dùng {} và truyền giá trị sau chuỗi: println!(\"{}\", age + 1)."
+    },
+    {
+      "type": "text",
+      "text": "print! giống như vậy nhưng không xuống dòng mới. eprintln! in ra luồng lỗi (error stream). {:?} in một giá trị ở dạng debug, rất tiện cho một nhóm giá trị như thế này (một mảng; sẽ nói thêm ở Unit 2):"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let scores = [90, 72, 85];\n    println!(\"{:?}\", scores);\n}"
+    },
+    {
+      "type": "note",
+      "text": "Nếu bạn đến từ một ngôn ngữ khác: ứng dụng hiển thị các cảnh báo của rustc tách riêng khỏi kết quả của chương trình, và chúng không bao giờ làm chương trình dừng lại. Trong các bài tập, cảnh báo về biến không được dùng thường chỉ có nghĩa là bạn chưa làm xong. Đừng làm theo lời khuyên thêm dấu gạch dưới vào trước tên: làm vậy chỉ ẩn cảnh báo chứ không sửa code của bạn.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy dùng các biến để in ra chính xác: Ferris has 3 friends",
+    "starter": "fn main() {\n    let name = \"Ferris\";\n    let friends = 3;\n    println!(\"\");\n}",
+    "expectedOutput": "Ferris has 3 friends",
+    "solution": "fn main() {\n    let name = \"Ferris\";\n    let friends = 3;\n    println!(\"{name} has {friends} friends\");\n}",
+    "hints": [
+      "Hiện giờ đoạn văn bản giữa cặp dấu nháy của println! đang trống, nên chỉ có một dòng trống được in ra.",
+      "Hãy đặt tên của một biến vào bên trong {} trong đoạn văn bản. Bên trong dấu nháy, hãy viết {name} ở chỗ cần điền tên.",
+      "Hãy điền vào giữa dấu nháy {name} has {friends} friends. Hãy chắc chắn các dấu cách khớp với kết quả mong đợi."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "{} làm gì bên trong println!?",
+      "options": [
+        "Bắt đầu một khối code mới",
+        "Đánh dấu chỗ một giá trị được chèn vào",
+        "In ra cặp dấu ngoặc nhọn"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "println!(\"{:?}\", [1, 2]) in ra gì?",
+      "options": [
+        "[1, 2]",
+        "1 2",
+        "{:?}"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "print! khác println! ở điểm nào?",
+      "options": [
+        "Nó chậm hơn",
+        "Nó không thêm dòng mới",
+        "Nó chỉ in ra số"
+      ],
+      "answer": 1
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "id": "u4-l3",
+  "title": "Enum",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Một enum là một kiểu có thể là một trong một tập variant cố định. Hãy dùng nó khi một giá trị chỉ có thể là một trong vài thứ."
+    },
+    {
+      "type": "code",
+      "code": "#[derive(Debug)]\nenum Direction {\n    North,\n    East,\n    South,\n    West,\n}\n\nfn main() {\n    let heading = Direction::East;\n    println!(\"Heading: {:?}\", heading);\n\n    let all = [Direction::North, Direction::East, Direction::South, Direction::West];\n    for d in all {\n        println!(\"{:?}\", d);\n    }\n}"
+    },
+    {
+      "type": "text",
+      "text": "Variant có thể mang dữ liệu, và mỗi variant có thể mang dữ liệu khác nhau. Để làm việc khác nhau cho mỗi variant, hãy dùng match. Bạn sẽ học match đầy đủ ở bài học cuối của unit này. Bây giờ, hãy đọc mỗi nhánh như \"nếu nó là variant này, chạy code này\", và để ý cách nhánh lấy dữ liệu ra khỏi variant:"
+    },
+    {
+      "type": "code",
+      "code": "enum Shape {\n    Circle(f64),\n    Rectangle { width: f64, height: f64 },\n    Dot,\n}\n\nfn main() {\n    let shapes = [\n        Shape::Circle(1.5),\n        Shape::Rectangle { width: 2.0, height: 3.0 },\n        Shape::Dot,\n    ];\n    for s in shapes {\n        match s {\n            Shape::Circle(radius) => println!(\"circle, radius {radius}\"),\n            Shape::Rectangle { width, height } => println!(\"rectangle, {width} by {height}\"),\n            Shape::Dot => println!(\"a dot\"),\n        }\n    }\n}"
+    },
+    {
+      "type": "text",
+      "text": "Enum cũng có thể có phương thức, trong một khối impl giống như struct:"
+    },
+    {
+      "type": "code",
+      "code": "#[derive(Debug)]\nenum Light {\n    Red,\n    Yellow,\n    Green,\n}\n\nimpl Light {\n    fn seconds(&self) -> u32 {\n        match self {\n            Light::Red => 30,\n            Light::Yellow => 3,\n            Light::Green => 25,\n        }\n    }\n}\n\nfn main() {\n    for light in [Light::Red, Light::Yellow, Light::Green] {\n        println!(\"{:?} lasts {} seconds\", light, light.seconds());\n    }\n}"
+    },
+    {
+      "type": "note",
+      "text": "Một enum giống như một câu trả lời trắc nghiệm: giá trị đúng là một trong các lựa chọn được liệt kê, không bao giờ là thứ gì khác.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Enum của Rust là tagged union (sum type): khác với enum của C hay các hằng enum singleton của Java, mỗi variant có thể mang dữ liệu riêng, khá giống một sealed interface của Java với các cài đặt record. Cùng với struct, chúng cho phép bạn làm cho các trạng thái không hợp lệ không thể biểu diễn được.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy thêm variant thứ tư, Mythic, vào Rarity, và thêm Rarity::Mythic vào cuối danh sách để nó cũng được in ra. Chương trình phải in ra: Common\nRare\nEpic\nMythic",
+    "starter": "#[derive(Debug)]\nenum Rarity {\n    Common,\n    Rare,\n    Epic,\n}\n\nfn main() {\n    let all = [Rarity::Common, Rarity::Rare, Rarity::Epic];\n    for r in all {\n        println!(\"{:?}\", r);\n    }\n}",
+    "expectedOutput": "Common\nRare\nEpic\nMythic",
+    "solution": "#[derive(Debug)]\nenum Rarity {\n    Common,\n    Rare,\n    Epic,\n    Mythic,\n}\n\nfn main() {\n    let all = [Rarity::Common, Rarity::Rare, Rarity::Epic, Rarity::Mythic];\n    for r in all {\n        println!(\"{:?}\", r);\n    }\n}",
+    "hints": [
+      "Có hai chỗ liệt kê các độ hiếm: chính enum và mảng trong main. Cả hai đều cần cái mới.",
+      "Hãy thêm một dòng Mythic, vào enum. Sau đó thêm Rarity::Mythic vào cuối mảng, bên trong dấu ngoặc vuông."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Một giá trị enum có thể là bao nhiêu variant tại một thời điểm?",
+      "options": [
+        "Đúng một",
+        "Tất cả",
+        "Bao nhiêu cũng được"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Bạn viết variant East của Direction như thế nào?",
+      "options": [
+        "Direction.East",
+        "Direction::East",
+        "East(Direction)"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Các variant khác nhau của cùng một enum có thể mang dữ liệu khác nhau không?",
+      "options": [
+        "Có",
+        "Không",
+        "Chỉ số"
+      ],
+      "answer": 0
+    }
+  ]
+}

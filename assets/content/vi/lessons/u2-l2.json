@@ -1,0 +1,79 @@
+{
+  "id": "u2-l2",
+  "title": "Tuple và mảng",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Kiểu phức hợp gom nhiều giá trị lại với nhau. Rust có sẵn hai kiểu: tuple và mảng."
+    },
+    {
+      "type": "text",
+      "text": "Một tuple gom một số lượng giá trị cố định, các giá trị đó có thể thuộc những kiểu khác nhau. Hãy lấy các phần bằng .0, .1 và cứ thế, hoặc tách chúng ra bằng let (việc này gọi là destructuring):"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let point = (3, 7);\n    println!(\"x = {}, y = {}\", point.0, point.1);\n\n    let person = (\"Ada\", 36, true);\n    let (name, age, active) = person;\n    println!(\"{name} is {age}, active: {active}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Một mảng chứa một số lượng giá trị cố định, tất cả cùng một kiểu. Hãy đếm từ 0 khi bạn truy cập bằng chỉ số:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let days = [\"Mon\", \"Tue\", \"Wed\", \"Thu\", \"Fri\"];\n    println!(\"First day: {}\", days[0]);\n    println!(\"Number of days: {}\", days.len());\n\n    let zeros = [0; 4];   // four zeros\n    println!(\"{:?}\", zeros);\n}"
+    },
+    {
+      "type": "text",
+      "text": "{:?} là định dạng debug. Nó in được cả tuple và mảng, điều mà {} thường không làm được."
+    },
+    {
+      "type": "note",
+      "text": "Nếu bạn đến từ một ngôn ngữ khác: Rust không bao giờ đọc vượt quá cuối mảng. Nếu bạn viết một chỉ số cố định quá lớn, như days[10] trên mảng 5 ngày này, trình biên dịch sẽ phát hiện và từ chối build. Nếu chỉ số chỉ được biết trong lúc chương trình chạy, chương trình sẽ dừng với lỗi \"index out of bounds\". Khi bạn cần một danh sách có thể lớn lên, hãy dùng Vec (Unit 5).",
+      "track": "fast"
+    },
+    {
+      "type": "note",
+      "text": "Phần tử đầu tiên nằm ở chỉ số 0, nên phần tử cuối của một mảng 5 phần tử nằm ở chỉ số 4.",
+      "track": "starter"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy in ra điểm thứ ba trong mảng bằng cách dùng chỉ số. Chương trình phải in ra: 88",
+    "starter": "fn main() {\n    let scores = [72, 95, 88, 61];\n    println!(\"{}\", scores[0]);\n}",
+    "expectedOutput": "88",
+    "solution": "fn main() {\n    let scores = [72, 95, 88, 61];\n    println!(\"{}\", scores[2]);\n}",
+    "hints": [
+      "Hãy xem println! đang dùng chỉ số nào. Hãy nhớ rằng việc đếm bắt đầu từ 0, không phải 1.",
+      "Phần tử thứ ba nằm ở chỉ số 2. Hãy đổi số bên trong dấu ngoặc vuông sau scores."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Điểm khác biệt chính giữa tuple và mảng là gì?",
+      "options": [
+        "Mảng có thể lớn lên",
+        "Các phần tử của tuple có thể có kiểu khác nhau",
+        "Tuple không thể được in ra"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Chỉ số của phần tử đầu tiên trong một mảng là gì?",
+      "options": [
+        "0",
+        "1",
+        "-1"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Làm thế nào để lấy giá trị thứ hai của tuple t?",
+      "options": [
+        "t[1]",
+        "t.1",
+        "t.2"
+      ],
+      "answer": 1
+    }
+  ]
+}

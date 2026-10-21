@@ -1,0 +1,86 @@
+{
+  "id": "u2-l3",
+  "title": "if là một biểu thức",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Bạn đã gặp if và else ở Unit 0, nơi chúng chọn những dòng nào sẽ chạy.",
+      "track": "starter"
+    },
+    {
+      "type": "text",
+      "text": "Trong Rust, if không chỉ là cách chọn đoạn code nào chạy: nó còn tạo ra một giá trị. Nghĩa là bạn có thể dùng nó ở vế phải của một let."
+    },
+    {
+      "type": "note",
+      "text": "Nếu bạn đến từ một ngôn ngữ khác: điều kiện không cần dấu ngoặc đơn (trình biên dịch sẽ cảnh báo nếu bạn thêm thừa), nhưng cặp dấu ngoặc nhọn luôn bắt buộc, kể cả khi chỉ có một dòng.",
+      "track": "fast"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let temperature = 18;\n    let coat = if temperature < 15 { \"heavy\" } else { \"light\" };\n    println!(\"Wear a {coat} coat\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Cả hai nhánh phải trả về cùng một kiểu. Hãy chú ý là không có dấu chấm phẩy sau \"heavy\" và \"light\": biểu thức cuối cùng trong một khối chính là giá trị của nó."
+    },
+    {
+      "type": "note",
+      "text": "Điều này thay thế toán tử ba ngôi (ternary operator) (cond ? a : b) có trong C, Java và JavaScript. Rust không có toán tử đó, vì if đã làm được việc ấy rồi.",
+      "track": "fast"
+    },
+    {
+      "type": "text",
+      "text": "Điều kiện phải là một bool. Rust không coi một con số là true hay false:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let count = 3;\n    // if count { ... }      // error: expected bool, found integer\n    if count != 0 {\n        println!(\"We have {count} items\");\n    }\n    let label = if count == 1 { \"item\" } else { \"items\" };\n    println!(\"{count} {label}\");\n}"
+    },
+    {
+      "type": "note",
+      "text": "Một khối trong cặp dấu ngoặc nhọn cũng là một biểu thức. let x = { let a = 2; a * 3 }; gán x bằng 6.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy dùng if như một biểu thức để gán size bằng \"big\" khi n lớn hơn 100 và \"small\" trong trường hợp còn lại. Chương trình phải in ra: big",
+    "starter": "fn main() {\n    let n = 250;\n    let size = \"?\";\n    println!(\"{size}\");\n}",
+    "expectedOutput": "big",
+    "solution": "fn main() {\n    let n = 250;\n    let size = if n > 100 { \"big\" } else { \"small\" };\n    println!(\"{size}\");\n}",
+    "hints": [
+      "Bạn cần if tạo ra một giá trị, chứ không chỉ chạy code. Dòng nào nên nhận giá trị đó?",
+      "Ở dòng let size, hãy viết if sau dấu =. Hãy đặt hai giá trị có thể có vào các khối, mỗi giá trị không có dấu chấm phẩy.",
+      "Hãy viết let size = if n > 100 { \"big\" } else { \"small\" }; Toàn bộ if nằm ở vế phải của dấu =."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "let x = if true { 1 } else { 2 }; gán x bằng gì?",
+      "options": [
+        "1",
+        "2",
+        "true"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Điều gì phải đúng với cả hai nhánh của một if được dùng làm giá trị?",
+      "options": [
+        "Chúng phải có cùng độ dài",
+        "Chúng phải cho ra cùng một kiểu",
+        "Cả hai đều phải in ra"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Bạn có thể viết if 5 { ... } trong Rust không?",
+      "options": [
+        "Có, 5 được coi là true",
+        "Không, điều kiện phải là một bool",
+        "Chỉ bên trong main"
+      ],
+      "answer": 1
+    }
+  ]
+}

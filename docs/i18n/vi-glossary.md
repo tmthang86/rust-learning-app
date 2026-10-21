@@ -139,6 +139,61 @@ first use in a lesson (and, in titles, where the table says so).
 | command-line tool (CLI) | công cụ dòng lệnh (CLI) | |
 | web server | máy chủ web | |
 
+### Terms used in Units 1-12
+
+Chosen while translating the lessons. Where earlier tables already list a term,
+that row wins.
+
+**Kept in English** (lower case, not pluralised; gloss only where noted):
+implement, override, annotation, lifetime annotation, elision rules, orphan rule,
+destructor, unwind, parse, exception, type erasure, monomorphization, trait
+object, fat pointer, static/dynamic dispatch, vtable, deref coercion, turbofish,
+workspace, integration test, doctest, atomic, runtime, executor, polling, lazy,
+thread pool, worker, handle, guard, prelude, marker trait, tuple struct, match
+guard, combinator, literal, destructuring.
+
+**Always glossed at first use in a lesson**: *dangling pointer* is "con trỏ treo
+(dangling pointer)" and *dangling reference* is "tham chiếu treo (dangling
+reference)" (not the bare English word in one lesson and a gloss in another).
+
+| English | Vietnamese | Note |
+| --- | --- | --- |
+| Unit N / unit | Unit N / unit | keep; the UI shows only the number |
+| dependency | dependency (thư viện phụ thuộc) | gloss at first use |
+| format string | chuỗi định dạng (format string) | |
+| index | chỉ số | |
+| signed / unsigned | có dấu / không dấu | |
+| floating-point | số thực dấu phẩy động | |
+| overflow | tràn (overflow) | |
+| cast | ép kiểu | |
+| owner | chủ sở hữu | |
+| caller | bên gọi | |
+| shared reference | tham chiếu chia sẻ | |
+| immutable reference | tham chiếu bất biến | |
+| borrow checker | borrow checker (trình kiểm tra mượn) | |
+| dereference | giải tham chiếu | |
+| associated function | hàm liên kết | |
+| constructor | hàm khởi tạo | |
+| type parameter | tham số kiểu | |
+| where clause | mệnh đề where | `where` keep |
+| default method | phương thức mặc định | |
+| associated type | kiểu liên kết | |
+| consumer | consumer (bộ tiêu thụ) | |
+| type annotation | khai báo kiểu | |
+| angle brackets / curly braces | dấu ngoặc góc / ngoặc nhọn | |
+| key (of a map) | khóa | |
+| pure function | hàm thuần túy | |
+| state machine | máy trạng thái | |
+| port | cổng | |
+| starter code | code khởi đầu | |
+| "Coming from another language:" | Nếu bạn đến từ một ngôn ngữ khác: | |
+| "It should print:" | Chương trình phải in ra: | |
+
+Keywords (`let`, `struct`, `enum`, `impl`, ...) are English words too. In prose,
+translate the word when it is a plain word ("won't let you" -> "không cho phép
+bạn"); keep the keyword when it names the code (`let x = 5;`, `struct Game {`,
+`impl Speak for Robot`). The checker only enforces the code shape.
+
 ### UI words
 
 | English | Vietnamese |

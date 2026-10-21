@@ -1,0 +1,58 @@
+{
+  "id": "u1-l1",
+  "title": "Hello, world!",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Mọi chương trình Rust bắt đầu chạy từ một hàm tên là main. Bên trong nó, println! in ra một dòng văn bản."
+    },
+    {
+      "type": "text",
+      "track": "starter",
+      "text": "Hàm là một khối lệnh có tên. Cặp dấu ngoặc nhọn { } đánh dấu chỗ nó bắt đầu và kết thúc. Máy tính chạy các dòng bên trong main từ trên xuống dưới."
+    },
+    {
+      "type": "note",
+      "track": "fast",
+      "text": "Nếu bạn đến từ một ngôn ngữ khác: println! là một macro chứ không phải một hàm, vì nó cần nhận số lượng đối số bất kỳ và kiểm tra chuỗi định dạng (format string) của nó với các đối số đó ngay lúc biên dịch. Hàm Rust không làm được cả hai điều này."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    println!(\"Hello, world!\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "fn khai báo một hàm. println! kết thúc bằng ! vì nó là một macro: một loại lệnh đặc biệt mà Rust mở rộng thành nhiều code hơn trước khi chương trình chạy. Bạn sẽ gặp thêm nhiều macro sau này. Hầu hết các dòng kết thúc bằng dấu chấm phẩy (bạn sẽ thấy các ngoại lệ sau). Chuỗi được đặt trong dấu nháy kép."
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy sửa chương trình để nó in ra: Hello, Rust!",
+    "starter": "fn main() {\n    println!(\"Hello, world!\");\n}",
+    "expectedOutput": "Hello, Rust!",
+    "solution": "fn main() {\n    println!(\"Hello, Rust!\");\n}",
+    "hints": [
+      "Hãy nhìn đoạn văn bản bên trong dấu nháy của println!. Đoạn văn bản đó là thứ được in ra.",
+      "Hãy đổi từ world thành Rust. Giữ nguyên dấu phẩy và dấu chấm than."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Một chương trình Rust bắt đầu chạy từ đâu?",
+      "options": [
+        "Dòng đầu tiên của tệp",
+        "Hàm main",
+        "Bất kỳ hàm nào tên là start"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Vì sao println! kết thúc bằng dấu chấm than?",
+      "options": [
+        "Để nó in thật to",
+        "Vì nó là một macro",
+        "Vì nó trả về một lỗi"
+      ],
+      "answer": 1
+    }
+  ]
+}

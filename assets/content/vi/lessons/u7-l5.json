@@ -1,0 +1,108 @@
+{
+  "id": "u7-l5",
+  "title": "Lifetime",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Mọi tham chiếu đều trỏ tới một giá trị đang sống ở đâu đó, và một tham chiếu không bao giờ được sống lâu hơn giá trị đó. Khoảng thời gian một tham chiếu còn hợp lệ là lifetime của nó. Phần lớn thời gian Rust tự suy ra lifetime, và bạn vẫn luôn dựa vào điều đó. Bài này cho thấy những trường hợp Rust cần bạn giúp."
+    },
+    {
+      "type": "text",
+      "text": "Đây là một hàm trả về chuỗi slice dài hơn trong hai chuỗi slice. Nó không biên dịch được:"
+    },
+    {
+      "type": "code",
+      "code": "// This does NOT compile. Error E0106: missing lifetime specifier.\nfn longest(x: &str, y: &str) -> &str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}"
+    },
+    {
+      "type": "text",
+      "text": "Kết quả là một tham chiếu, nhưng nó mượn từ x hoặc y, và Rust không thể biết là từ cái nào. Nó cần biết kết quả còn hợp lệ trong bao lâu. Một lifetime annotation nói điều đó. Tên lifetime là một dấu nháy đơn và một cái tên ngắn, thường là 'a. Bạn khai báo nó trong dấu ngoặc góc, giống như một tham số kiểu, rồi viết nó sau dấu & của mỗi tham chiếu:"
+    },
+    {
+      "type": "code",
+      "code": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\nfn main() {\n    let a = String::from(\"lifetimes\");\n    let b = String::from(\"are fine\");\n    let result = longest(&a, &b);   // &String turns into &str here\n    println!(\"longest: {result}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Hãy đọc nó như sau: \"x, y và kết quả đều chia sẻ lifetime 'a. Kết quả chỉ hợp lệ chừng nào cả x và y còn hợp lệ.\" Annotation không làm cho thứ gì sống lâu hơn. Nó chỉ mô tả mối quan hệ giữa lifetime của các đầu vào và đầu ra, để trình biên dịch có thể kiểm tra mọi bên gọi."
+    },
+    {
+      "type": "text",
+      "text": "Việc kiểm tra đó bắt được những bug thật. Ở đây result được dùng sau khi second đã bị drop ở cuối khối bên trong. Trình biên dịch từ chối:"
+    },
+    {
+      "type": "code",
+      "code": "// This does NOT compile (longest is the function above).\n// Error E0597: `second` does not live long enough.\nfn demo() {\n    let first = String::from(\"long string\");\n    let result;\n    {\n        let second = String::from(\"short\");\n        result = longest(first.as_str(), second.as_str());\n    }\n    println!(\"{result}\");   // result may point at second, which is gone\n}"
+    },
+    {
+      "type": "text",
+      "text": "Vì sao bạn chưa bao giờ phải viết lifetime cho các hàm như first_word(s: &str) -> &str? Rust điền chúng bằng ba quy tắc elision. Nói một cách đơn giản: (1) mỗi tham số tham chiếu có lifetime riêng của nó. (2) Nếu có đúng một lifetime đầu vào, đầu ra cũng nhận nó. (3) Nếu một phương thức có &self hoặc &mut self, đầu ra nhận lifetime của self. Khi các quy tắc này vẫn để đầu ra chưa xác định, như với longest (hai đầu vào), bạn phải tự viết nó."
+    },
+    {
+      "type": "text",
+      "text": "Một struct giữ một tham chiếu cũng cần một lifetime, để Rust biết struct đó không thể sống lâu hơn thứ nó mượn:"
+    },
+    {
+      "type": "code",
+      "code": "struct Excerpt<'a> {\n    part: &'a str,\n}\n\nimpl<'a> Excerpt<'a> {\n    fn first_word(&self) -> &str {\n        match self.part.find(' ') {\n            Some(i) => &self.part[..i],\n            None => self.part,\n        }\n    }\n}\n\nfn main() {\n    let novel = String::from(\"Call me Ishmael. Some years ago...\");\n    let end = novel.find('.').unwrap_or(novel.len());\n    let e = Excerpt { part: &novel[..end] };\n    println!(\"excerpt: {}\", e.part);\n    println!(\"first word: {}\", e.first_word());\n}"
+    },
+    {
+      "type": "text",
+      "text": "Excerpt<'a> nghĩa là \"một Excerpt mượn trong khoảng 'a\". Nó được khai báo sau tên và được dùng trong trường. impl<'a> Excerpt<'a> lặp lại nó, giống như impl<T> đã làm cho generic. first_word không cần annotation, vì quy tắc 3 áp dụng. Vì e mượn từ novel, novel phải còn sống chừng nào e còn được dùng."
+    },
+    {
+      "type": "text",
+      "text": "Có một lifetime đặc biệt, 'static. Nó nghĩa là \"hợp lệ trong suốt thời gian chạy của chương trình\". Mọi string literal đều có kiểu này, &'static str, vì văn bản được lưu ngay bên trong chương trình. Đừng thêm 'static chỉ để làm trình biên dịch hết báo lỗi. Nó thường che giấu một vấn đề thật."
+    },
+    {
+      "type": "note",
+      "text": "Nếu một lỗi lifetime làm bạn bối rối, hãy hỏi: \"ai sở hữu dữ liệu, và chủ sở hữu có sống đủ lâu không?\" Chủ sở hữu thường là một String hoặc Vec trong một khối nào đó. Một tham chiếu tới nó không thể sống lâu hơn khối đó.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Đây là phép kiểm tra mà C và C++ để lại cho bạn (một con trỏ được trả về tới một biến cục bộ đã chết là một con trỏ treo (dangling pointer)). Các ngôn ngữ dùng bộ thu gom rác (garbage collector) tránh điều đó bằng cách giữ các đối tượng sống. Trong Rust, lifetime bị xóa sau khi kiểm tra, nên chúng không tốn gì lúc chạy. Các nhãn như 'a chỉ tồn tại cho trình biên dịch.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "longest đã được viết sẵn. Hãy thêm một hàm shorter trả về giá trị ngắn hơn trong hai giá trị &str (giá trị đầu tiên nếu chúng cùng độ dài). Sau đó, ở cuối main, in ra kết quả mà shorter trả về cho tree và forest. Chương trình sẽ in ra hai dòng: forest và tree. Gợi ý: shorter cần cùng các lifetime annotation như longest.",
+    "starter": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\n// add shorter here\n\nfn main() {\n    println!(\"{}\", longest(\"tree\", \"forest\"));\n}",
+    "expectedOutput": "forest\ntree",
+    "solution": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\nfn shorter<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() <= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\nfn main() {\n    println!(\"{}\", longest(\"tree\", \"forest\"));\n    println!(\"{}\", shorter(\"tree\", \"forest\"));\n}",
+    "hints": [
+      "shorter có cùng vấn đề như longest: kết quả mượn từ x hoặc y, và Rust cần được cho biết nó còn hợp lệ trong bao lâu. Hãy chép hình dạng của longest.",
+      "Hãy cho shorter cùng các lifetime annotation như longest: fn shorter<'a>(x: &'a str, y: &'a str) -> &'a str. Trong thân hàm, đổi >= thành <=, để khi bằng nhau vẫn trả về x.",
+      "Hãy trả về x khi x.len() <= y.len(), nếu không thì trả về y. Dấu <= làm cho khi bằng nhau sẽ cho giá trị đầu tiên. Sau đó hãy in shorter(\"tree\", \"forest\") ở cuối main."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "'a trong fn longest<'a>(x: &'a str, y: &'a str) -> &'a str cho trình biên dịch biết điều gì?",
+      "options": [
+        "Kết quả sống suốt chương trình, bất kể điều gì xảy ra với x và y",
+        "Kết quả chỉ còn hợp lệ chừng nào cả x và y còn hợp lệ",
+        "x và y phải có độ dài chính xác bằng nhau, để kết quả có thể là một trong hai"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Vì sao fn first_word(s: &str) -> &str không cần lifetime annotation nào?",
+      "options": [
+        "Các hàm trả về &str được miễn kiểm tra lifetime",
+        "Vì các giá trị &str được sao chép, nên không gì có thể thành dangling",
+        "Quy tắc elision: với đúng một tham chiếu đầu vào, đầu ra nhận lifetime của nó"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Kiểu của một string literal như \"hello\" là gì?",
+      "options": [
+        "&'static str, hợp lệ trong suốt thời gian chạy của chương trình",
+        "String, một giá trị sở hữu bị drop ở cuối khối của nó",
+        "&'a str, chỉ hợp lệ cho đến cuối khối gần nhất"
+      ],
+      "answer": 0
+    }
+  ]
+}

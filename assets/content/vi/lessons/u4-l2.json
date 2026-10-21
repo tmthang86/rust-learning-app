@@ -1,0 +1,76 @@
+{
+  "id": "u4-l2",
+  "title": "Phương thức",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Phương thức là các hàm thuộc về một kiểu. Bạn viết chúng bên trong một khối impl. Tham số đầu tiên, self, là giá trị mà phương thức được gọi trên đó."
+    },
+    {
+      "type": "code",
+      "code": "struct Rectangle {\n    width: u32,\n    height: u32,\n}\n\nimpl Rectangle {\n    fn area(&self) -> u32 {\n        self.width * self.height\n    }\n\n    fn is_square(&self) -> bool {\n        self.width == self.height\n    }\n}\n\nfn main() {\n    let r = Rectangle { width: 3, height: 4 };\n    println!(\"area {}, square: {}\", r.area(), r.is_square());\n}"
+    },
+    {
+      "type": "text",
+      "text": "&self mượn giá trị để đọc nó. &mut self mượn nó để thay đổi nó. self không có & thì lấy quyền sở hữu."
+    },
+    {
+      "type": "text",
+      "text": "Mọi hàm trong một khối impl đều là một hàm liên kết (associated function): nó thuộc về kiểu. Những hàm nhận self là phương thức, được gọi bằng dấu chấm. Những hàm không có self được gọi bằng :: và thường được dùng làm hàm khởi tạo (constructor) có tên new:"
+    },
+    {
+      "type": "code",
+      "code": "struct Account {\n    balance: i64,\n}\n\nimpl Account {\n    fn new() -> Account {\n        Account { balance: 0 }\n    }\n\n    fn deposit(&mut self, amount: i64) {\n        self.balance += amount;\n    }\n}\n\nfn main() {\n    let mut acc = Account::new();\n    acc.deposit(50);\n    acc.deposit(25);\n    println!(\"balance {}\", acc.balance);\n}"
+    },
+    {
+      "type": "note",
+      "text": "Bạn đã dùng các hàm liên kết rồi: String::from là một ví dụ.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Bên trong một impl, bạn có thể viết Self thay cho tên kiểu, ví dụ fn new() -> Self. Lời gọi phương thức tự động tham chiếu, nên r.area() hoạt động dù r là một giá trị hay một tham chiếu.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy thêm một phương thức perimeter(&self) -> u32 vào Rectangle, trả về 2 * (width + height). Sau đó đổi println! để nó in cả hai, dùng r.area() và r.perimeter(). Chương trình phải in ra: area 12, perimeter 14",
+    "starter": "struct Rectangle {\n    width: u32,\n    height: u32,\n}\n\nimpl Rectangle {\n    fn area(&self) -> u32 {\n        self.width * self.height\n    }\n\n    // add perimeter here\n}\n\nfn main() {\n    let r = Rectangle { width: 3, height: 4 };\n    println!(\"area {}\", r.area());\n}",
+    "expectedOutput": "area 12, perimeter 14",
+    "solution": "struct Rectangle {\n    width: u32,\n    height: u32,\n}\n\nimpl Rectangle {\n    fn area(&self) -> u32 {\n        self.width * self.height\n    }\n\n    fn perimeter(&self) -> u32 {\n        2 * (self.width + self.height)\n    }\n}\n\nfn main() {\n    let r = Rectangle { width: 3, height: 4 };\n    println!(\"area {}, perimeter {}\", r.area(), r.perimeter());\n}",
+    "hints": [
+      "Hãy xem area được viết thế nào bên trong impl. Phương thức mới của bạn theo cùng một mẫu, nên hãy bắt chước hình dạng của nó.",
+      "Hãy thêm fn perimeter(&self) -> u32 bên trong khối impl. Dùng self.width và self.height trong phép tính.",
+      "Phần thân là 2 * (self.width + self.height). Sau đó in bằng println!(\"area {}, perimeter {}\", r.area(), r.perimeter());"
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Bạn viết phương thức cho một struct ở đâu?",
+      "options": [
+        "Trong một khối impl",
+        "Bên trong struct",
+        "Trong main"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Một phương thức làm thay đổi giá trị nên nhận loại self nào?",
+      "options": [
+        "&self",
+        "&mut self",
+        "Không có self"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Làm thế nào để gọi hàm liên kết new trên Account?",
+      "options": [
+        "Account.new()",
+        "Account::new()",
+        "new Account()"
+      ],
+      "answer": 1
+    }
+  ]
+}

@@ -1,0 +1,114 @@
+{
+  "id": "u2-l1",
+  "title": "Các kiểu scalar",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Mọi giá trị trong Rust đều có một kiểu. Kiểu scalar chứa một giá trị duy nhất: số nguyên, số thực dấu phẩy động (floating-point), boolean và ký tự."
+    },
+    {
+      "type": "text",
+      "text": "Số nguyên là các số tròn. Các kiểu có dấu (signed: i8, i16, i32, i64, i128) có thể âm; các kiểu không dấu (unsigned: u8, u16, u32, u64, u128) thì không. Con số là kích thước tính bằng bit, quyết định phạm vi giá trị: một u8 chứa từ 0 đến 255 và một i8 chứa từ -128 đến 127. i32 là kiểu mặc định. usize được dùng cho số lượng và chỉ số (index)."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let age: u8 = 30;\n    let balance: i64 = -1_250;\n    let items: usize = 3;\n    println!(\"{age} {balance} {items}\");\n}"
+    },
+    {
+      "type": "note",
+      "text": "Dấu _ trong 1_250 chỉ để dễ đọc, giống dấu phẩy trong 1,250.",
+      "track": "starter"
+    },
+    {
+      "type": "text",
+      "text": "Số thực là f64 (mặc định) và f32. bool là true hoặc false. char là một ký tự Unicode duy nhất đặt trong dấu nháy đơn:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let price = 9.99;          // f64\n    let ready: bool = true;\n    let grade = 'A';           // char\n    let crab = '🦀';\n    println!(\"{price} {ready} {grade} {crab}\");\n    println!(\"7 / 2 = {}\", 7 / 2);\n    println!(\"7.0 / 2.0 = {}\", 7.0 / 2.0);\n}"
+    },
+    {
+      "type": "text",
+      "text": "Chia hai số nguyên sẽ bỏ phần dư, nên 7 / 2 bằng 3. Hãy dùng số thực khi bạn cần phần thập phân."
+    },
+    {
+      "type": "text",
+      "text": "Rust không bao giờ tự trộn các kiểu số với nhau. Bạn không thể nhân một số nguyên với một số thực, kể cả khi đáp án có vẻ hiển nhiên. Hãy chuyển số nguyên sang số thực trước bằng as:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let items = 3;\n    let price = 2.5;\n    let total = items as f64 * price;\n    println!(\"{total}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "items as f64 biến số nguyên 3 thành số thực 3.0, nên cả hai vế của * đều là f64 và chương trình in ra 7.5."
+    },
+    {
+      "type": "text",
+      "text": "Giữa các kiểu số, as không bao giờ thất bại, nhưng nó có thể làm mất thông tin khi giá trị không vừa với kiểu mới:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let price = 2.9;\n    let big = 300;\n    println!(\"{}\", price as i32);\n    println!(\"{}\", big as u8);\n}"
+    },
+    {
+      "type": "text",
+      "text": "2.9 as i32 là 2, vì phần thập phân bị bỏ đi. 300 quá lớn đối với một u8, và phép ép kiểu số nguyên chỉ giữ lại những bit vừa, nên nó quay vòng thành 300 - 256 = 44. (Số thực thì khác: 300.0 as u8 cho 255, giá trị lớn nhất của u8.) Chỉ dùng as khi bạn biết giá trị vừa. Nó không dùng được với văn bản, nên hãy dùng parse() để biến văn bản thành số."
+    },
+    {
+      "type": "note",
+      "text": "Nếu bạn đến từ một ngôn ngữ khác: Rust không có chuyển đổi số tự động, kể cả từ i32 sang i64. Nếu một số nguyên bị tràn (overflow) trong lúc chương trình chạy, chương trình dừng với một lỗi. Đó là điều xảy ra trong ứng dụng này và trong cargo run (một bản build debug). Các bản build release bỏ qua bước kiểm tra đó và quay vòng một cách âm thầm, trừ khi bạn bật kiểm tra tràn số.",
+      "track": "fast"
+    },
+    {
+      "type": "note",
+      "text": "Nếu bạn đến từ một ngôn ngữ khác: với các chuyển đổi không bao giờ làm mất dữ liệu, hãy dùng i64::from(x) (hoặc x.into()) thay vì as. Chúng chỉ biên dịch được khi mọi giá trị có thể có đều vừa, như từ i32 sang i64.",
+      "track": "fast"
+    },
+    {
+      "type": "note",
+      "text": "Nếu bạn đến từ một ngôn ngữ khác: các literal số có thể mang hậu tố kiểu, như 5u8 hoặc 2.5f32. usize rộng bằng một con trỏ, tức 64 bit trên hầu hết các máy hiện nay. Một char là 4 byte và chứa một giá trị Unicode scalar (một code point). Một số thứ trông như một ký tự, chẳng hạn emoji cờ hoặc chữ có dấu được ghép từ hai code point, cần nhiều hơn một char.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Chương trình này không biên dịch được vì total là số thực còn count là số nguyên, và Rust không chia số này cho số kia. Hãy chuyển count sang f64 bằng as để nó in ra: 2.5",
+    "starter": "fn main() {\n    let total = 10.0;\n    let count = 4;\n    let average = total / count;\n    println!(\"{average}\");\n}",
+    "expectedOutput": "2.5",
+    "solution": "fn main() {\n    let total = 10.0;\n    let count = 4;\n    let average = total / count as f64;\n    println!(\"{average}\");\n}",
+    "hints": [
+      "Rust cần cả hai vế của / cùng một kiểu. Hãy tìm chỗ count được dùng trong phép chia.",
+      "Hãy viết as f64 ngay sau count, đúng chỗ nó được chia. as được tính trước /, nên bạn không cần dấu ngoặc.",
+      "Hãy đổi phép chia thành total / count as f64. Chỉ count cần chuyển đổi, vì total đã là một số thực."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Kiểu số nguyên mặc định là gì?",
+      "options": [
+        "i64",
+        "i32",
+        "usize"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "7 / 2 cho kết quả gì với số nguyên?",
+      "options": [
+        "3",
+        "3.5",
+        "4"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Cái nào là một char hợp lệ?",
+      "options": [
+        "\"a\"",
+        "'a'",
+        "'ab'"
+      ],
+      "answer": 1
+    }
+  ]
+}

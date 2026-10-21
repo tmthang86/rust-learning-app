@@ -1,0 +1,96 @@
+{
+  "id": "u10-l1",
+  "title": "Box<T>",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Con trỏ thông minh (smart pointer) là một giá trị trỏ đến dữ liệu được lưu ở nơi khác, và còn làm thêm việc phụ cho bạn. Cái đơn giản nhất là Box<T>. Nó đặt một giá trị lên heap, vùng bộ nhớ lớn dành cho dữ liệu có kích thước có thể thay đổi hoặc không biết trước. Bản thân Box nhỏ và nằm ở nơi mà bất kỳ biến nào khác sẽ nằm. Nó sở hữu dữ liệu trên heap, và khi Box ra khỏi phạm vi, dữ liệu được giải phóng."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let b = Box::new(5);\n    println!(\"b = {b}\");\n    let total = *b + 1;   // * reaches the value inside the box\n    println!(\"total = {total}\");\n}\n\n// Output:\n// b = 5\n// total = 6"
+    },
+    {
+      "type": "text",
+      "text": "Với một con số thông thường, bạn sẽ không bao giờ bận tâm dùng Box. Nó trở nên hữu ích trong ba tình huống. Tình huống đầu tiên là một kiểu chứa chính nó. Hãy tưởng tượng một danh sách mà mỗi phần tử giữ một con số và phần còn lại của danh sách. Đây là lần thử đầu tiên. Code này không biên dịch được. Rust báo E0072: recursive type List has infinite size."
+    },
+    {
+      "type": "code",
+      "code": "// This does NOT compile: E0072, recursive type List has infinite size.\nenum List {\n    Cons(i32, List),\n    Nil,\n}"
+    },
+    {
+      "type": "text",
+      "text": "Rust phải biết một List chiếm bao nhiêu byte. Một Cons chứa một List, mà List đó chứa một Cons, và cứ thế mãi mãi. Cách sửa là lưu phần còn lại của danh sách đằng sau một Box. Một Box luôn có cùng kích thước (nó chỉ là một con trỏ), nên kích thước được biết."
+    },
+    {
+      "type": "code",
+      "code": "enum List {\n    Cons(i32, Box<List>),\n    Nil,\n}\nuse List::{Cons, Nil};\n\nfn sum(list: &List) -> i32 {\n    match list {\n        Cons(value, rest) => *value + sum(rest),\n        Nil => 0,\n    }\n}\n\nfn main() {\n    let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));\n    println!(\"sum = {}\", sum(&list));\n}\n\n// Output:\n// sum = 6"
+    },
+    {
+      "type": "text",
+      "text": "Cons và Nil là hai variant của enum. Một Cons chứa một con số và một Box chứa phần còn lại của danh sách; Nil đánh dấu phần cuối. Dòng use List::{Cons, Nil}; cho phép chúng ta viết Cons thay vì List::Cons. Trong sum, chúng ta dùng match trên một tham chiếu, nên value là một &i32 và *value là chính con số đó. rest là một tham chiếu đến một Box<List>, và Rust cho phép chúng ta truyền nó vào nơi cần một &List. Bài sau sẽ giải thích tại sao."
+    },
+    {
+      "type": "text",
+      "text": "Tình huống thứ hai là trộn các kiểu khác nhau trong một collection. Một Vec chứa một kiểu, nhưng đôi khi bạn muốn một Vec các thứ chỉ chia sẻ một số hành vi. Giả sử Shape là một trait, và Circle và Square đều implement nó. Kiểu dyn Shape có nghĩa là \"một giá trị nào đó của bất kỳ kiểu nào implement Shape\". Nó được gọi là trait object. Rust chỉ quyết định gọi phương thức area nào khi chương trình chạy. Circle và Square có kích thước khác nhau, nên Rust không thể biết kích thước của một dyn Shape lúc biên dịch. Nó phải nằm sau một con trỏ như Box, vốn luôn có một kích thước. Box<dyn Shape> là một Box chứa bất kỳ Shape nào."
+    },
+    {
+      "type": "code",
+      "code": "use std::f64::consts::PI;   // PI from the standard library\n\ntrait Shape {\n    fn area(&self) -> f64;\n    fn name(&self) -> String;\n}\n\nstruct Circle {\n    radius: f64,\n}\n\nstruct Square {\n    side: f64,\n}\n\nimpl Shape for Circle {\n    fn area(&self) -> f64 {\n        PI * self.radius * self.radius\n    }\n    fn name(&self) -> String {\n        String::from(\"circle\")\n    }\n}\n\nimpl Shape for Square {\n    fn area(&self) -> f64 {\n        self.side * self.side\n    }\n    fn name(&self) -> String {\n        String::from(\"square\")\n    }\n}\n\nfn main() {\n    let shapes: Vec<Box<dyn Shape>> = vec![\n        Box::new(Circle { radius: 1.0 }),\n        Box::new(Square { side: 2.0 }),\n    ];\n    for s in &shapes {\n        println!(\"{}: {:.2}\", s.name(), s.area());   // {:.2} prints 2 digits after the point\n    }\n}\n\n// Output:\n// circle: 3.14\n// square: 4.00"
+    },
+    {
+      "type": "text",
+      "text": "Tình huống thứ ba là di chuyển một giá trị lớn mà không sao chép nó. Di chuyển một Box chỉ sao chép con trỏ, không phải toàn bộ dữ liệu đằng sau nó. Điều này ít quan trọng hơn, nên chỉ cần biết là nó tồn tại."
+    },
+    {
+      "type": "note",
+      "text": "Bộ nhớ có hai vùng chính. Stack nhanh và gọn gàng, dành cho các giá trị có kích thước đã biết khi chương trình được biên dịch, như các con số. Heap dành cho dữ liệu có thể lớn lên hoặc có kích thước không biết trước, như phần văn bản bên trong một String. Bạn đã dùng heap rồi: String và Vec giữ nội dung của chúng ở đó. Box là cách đơn giản, không làm gì thêm, để đặt một giá trị lên heap.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Nếu bạn đến từ C++: Box<T> giống std::unique_ptr<T>. Nó có một chủ sở hữu và tự động giải phóng dữ liệu của mình. Không có bộ thu gom rác (garbage collector) và không có delete thủ công. Box<dyn Trait> giống một con trỏ lớp cơ sở (base class) với các phương thức virtual (dynamic dispatch qua vtable). Không như các trình biên dịch C++ điển hình, vốn lưu một con trỏ vtable bên trong mỗi đối tượng, một Box<dyn Trait> là một fat pointer, một con trỏ tới dữ liệu và một con trỏ tới vtable. Ngược lại, với generic, Rust tạo một bản sao code riêng cho mỗi kiểu (static dispatch). Hãy dùng Box<dyn Trait> khi bạn cần các kiểu khác nhau ở cùng một chỗ lúc chạy.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Thêm một hàm length(list: &List) -> u32 đếm số phần tử: một Cons tính là 1 cộng với độ dài của phần còn lại, và Nil là 0. Hãy làm theo dạng của sum. Sau đó đổi println! trong main để nó in cả hai: sum = 6, length = 3",
+    "starter": "enum List {\n    Cons(i32, Box<List>),\n    Nil,\n}\nuse List::{Cons, Nil};\n\nfn sum(list: &List) -> i32 {\n    match list {\n        Cons(value, rest) => *value + sum(rest),\n        Nil => 0,\n    }\n}\n\n// add fn length here\n\nfn main() {\n    let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));\n    println!(\"sum = {}\", sum(&list));\n}",
+    "expectedOutput": "sum = 6, length = 3",
+    "solution": "enum List {\n    Cons(i32, Box<List>),\n    Nil,\n}\nuse List::{Cons, Nil};\n\nfn sum(list: &List) -> i32 {\n    match list {\n        Cons(value, rest) => *value + sum(rest),\n        Nil => 0,\n    }\n}\n\nfn length(list: &List) -> u32 {\n    match list {\n        Cons(_, rest) => 1 + length(rest),\n        Nil => 0,\n    }\n}\n\nfn main() {\n    let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));\n    println!(\"sum = {}, length = {}\", sum(&list), length(&list));\n}",
+    "hints": [
+      "length theo dạng của sum: một match trên danh sách với một nhánh cho Cons và một nhánh cho Nil. Mỗi nhánh nên cho ra gì?",
+      "Viết fn length(list: &List) -> u32 và match list. Nil cho ra 0. Trong nhánh Cons bạn không cần con số, nên hãy viết _ ở đó (nó có nghĩa là \"bất kỳ giá trị nào, bị bỏ qua\") và đặt tên cho phần còn lại.",
+      "Nhánh Cons là 1 + length(rest). Sau đó đổi println! trong main để in cả hai: sum = {}, length = {}, với sum(&list) và length(&list)."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Tại sao enum List { Cons(i32, List), Nil } không biên dịch được?",
+      "options": [
+        "Một enum không thể có một variant chứa một variant khác",
+        "Một Cons sẽ chứa một List chứa một Cons, nên kích thước của nó là vô hạn",
+        "i32 không thể được lưu bên trong một variant của enum"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Box<T> giữ giá trị kiểu T ở đâu?",
+      "options": [
+        "Trên stack, bên trong biến Box",
+        "Được sao chép vào mọi biến dùng Box",
+        "Trên heap, với Box giữ một con trỏ tới nó"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Vec<Box<dyn Shape>> cho phép bạn làm gì?",
+      "options": [
+        "Lưu các giá trị có kiểu khác nhau mà đều implement Shape",
+        "Lưu các giá trị thuộc bất kỳ kiểu nào, không cần trait chung",
+        "Chỉ lưu Circle, vì Box cố định kiểu"
+      ],
+      "answer": 0
+    }
+  ]
+}

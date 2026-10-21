@@ -1,0 +1,99 @@
+{
+  "id": "u11-l1",
+  "title": "Thread",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Cho đến giờ, mỗi chương trình chỉ làm một việc tại một thời điểm. Một thread cho phép chương trình làm nhiều việc cùng lúc. Mỗi thread chạy code riêng của nó, và hệ điều hành chia sẻ bộ xử lý giữa các thread. thread::spawn khởi động một thread mới. Bạn đưa cho nó một closure (đoạn code cần chạy, viết là || { ... }), và nó trả về một JoinHandle. Gọi join() trên handle sẽ chờ cho đến khi thread đó chạy xong."
+    },
+    {
+      "type": "code",
+      "code": "use std::thread;\n\nfn main() {\n    println!(\"main: starting a worker\");\n    let handle = thread::spawn(|| {\n        println!(\"worker: hello from another thread\");\n    });\n    handle.join().unwrap();\n    println!(\"main: the worker has finished\");\n}\n\n// Output:\n// main: starting a worker\n// worker: hello from another thread\n// main: the worker has finished"
+    },
+    {
+      "type": "text",
+      "text": "Các thread chạy cùng một lúc, nên nếu main và worker đều in ra trong khi đang chạy, thứ tự có thể thay đổi giữa các lần chạy. Ở đây main chờ tại join() trước khi in tiếp, nên kết quả luôn giống nhau. Mọi ví dụ trong unit này đều được xây dựng theo cách đó: chờ các thread, rồi mới in."
+    },
+    {
+      "type": "text",
+      "text": "join() trả về một Result. Nó là Err nếu thread bị panic, đó là lý do chúng ta gọi unwrap(). Một thread cũng có thể trả về một giá trị: bất cứ thứ gì closure trả về sẽ đi ra từ join(). Hãy join những thread mà bạn quan tâm: khi main kết thúc, toàn bộ chương trình kết thúc và mọi thread vẫn đang chạy đều bị dừng."
+    },
+    {
+      "type": "code",
+      "code": "use std::thread;\n\nfn main() {\n    let handle = thread::spawn(|| {\n        let mut total = 0;\n        for n in 1..=100 {\n            total += n;\n        }\n        total\n    });\n    let total = handle.join().unwrap();\n    println!(\"sum of 1..=100 is {total}\");\n}\n\n// Output:\n// sum of 1..=100 is 5050"
+    },
+    {
+      "type": "note",
+      "text": "Một thread giống như người thợ thứ hai trong bếp. Hai người nấu ăn cùng lúc, và join() là việc bạn đứng chờ ở cửa cho đến khi người kia nói \"xong\". Nếu bạn không bao giờ chờ, có thể bạn sẽ làm xong và rời đi trước họ.",
+      "track": "starter"
+    },
+    {
+      "type": "text",
+      "text": "Một thread được khởi động có thể vẫn tiếp tục chạy sau khi hàm đã khởi động nó trả về. Vì vậy nó không thể đơn giản mượn (borrowing) các biến cục bộ của bạn: lúc đó chúng có thể đã không còn nữa. Trình biên dịch kiểm tra điều này giúp bạn. Cách sửa là viết move trước closure, để trao cho closure quyền sở hữu (ownership) các biến mà nó dùng."
+    },
+    {
+      "type": "code",
+      "code": "use std::thread;\n\n// This does NOT compile: error[E0373]: closure may outlive the current\n// function, but it borrows `numbers`. Fix it by writing `move ||`.\nfn broken() {\n    let numbers = vec![1, 2, 3];\n    let handle = thread::spawn(|| {\n        println!(\"{numbers:?}\");\n    });\n    handle.join().unwrap();\n}"
+    },
+    {
+      "type": "text",
+      "text": "Đây là cách làm thường gặp: khởi động nhiều thread trong một vòng lặp, giữ các handle trong một Vec, rồi join chúng theo thứ tự. Mỗi thread sở hữu String riêng của nó vì closure là closure move. Vì chúng ta join theo đúng thứ tự đã khởi động, kết quả luôn giống nhau."
+    },
+    {
+      "type": "code",
+      "code": "use std::thread;\n\nfn main() {\n    let words = vec![String::from(\"alpha\"), String::from(\"beta\"), String::from(\"gamma\")];\n    let mut handles = Vec::new();\n    for word in words {\n        let handle = thread::spawn(move || {\n            let letters = word.len();   // len() counts bytes (one per letter here)\n            (word, letters)   // give the word back, together with its length\n        });\n        handles.push(handle);\n    }\n    for handle in handles {\n        let (word, letters) = handle.join().unwrap();\n        println!(\"{word}: {letters} bytes\");\n    }\n}\n\n// Output:\n// alpha: 5 bytes\n// beta: 4 bytes\n// gamma: 5 bytes"
+    },
+    {
+      "type": "text",
+      "text": "Đôi khi bạn thật sự muốn các thread mượn dữ liệu cục bộ. thread::scope giúp làm điều đó an toàn: mọi thread được khởi động bên trong scope đều được join trước khi scope kết thúc, nên không thứ gì có thể sống lâu hơn dữ liệu mà nó mượn. Không cần move. Closure bạn đưa cho scope nhận s, handle của scope, và bạn khởi động thread bằng s.spawn(...). Bất cứ thứ gì closure đó trả về, ở đây là một tuple, chính là thứ thread::scope trả về."
+    },
+    {
+      "type": "code",
+      "code": "use std::thread;\n\nfn main() {\n    let numbers = vec![1, 2, 3, 4, 5, 6];\n    let (left, right) = numbers.split_at(3);   // two slices of the same Vec, no copying\n    let (a, b) = thread::scope(|s| {\n        let first = s.spawn(|| {\n            let sum: i32 = left.iter().sum();\n            sum\n        });\n        let second = s.spawn(|| {\n            let sum: i32 = right.iter().sum();\n            sum\n        });\n        (first.join().unwrap(), second.join().unwrap())\n    });\n    println!(\"left = {a}, right = {b}\");\n    println!(\"total = {}\", a + b);\n}\n\n// Output:\n// left = 6, right = 15\n// total = 21"
+    },
+    {
+      "type": "note",
+      "text": "Nếu bạn đến từ Python hoặc Java: thread của Rust là thread thật của hệ điều hành, giống một platform thread của Java (không phải virtual thread), và không có GIL như trong các bản build CPython tiêu chuẩn, nên công việc nặng về CPU thật sự chạy song song. Goroutine của Go nhẹ hơn, nhưng std::thread của Rust là thứ gần nhất với một thread Java. Một panic trong thread được khởi động không làm main chết theo: thay vào đó join() trả về Err. Và data race được bắt ngay lúc biên dịch, điều mà bạn sẽ thấy trong các bài học tiếp theo.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hiện tại mỗi thread trả về n. Hãy sửa closure để nó trả về n * n. Chương trình sẽ in ra: [1, 4, 9]",
+    "starter": "use std::thread;\n\nfn main() {\n    let mut handles = Vec::new();\n    for n in 1..=3 {\n        handles.push(thread::spawn(move || n));\n    }\n    let mut results = Vec::new();\n    for handle in handles {\n        results.push(handle.join().unwrap());\n    }\n    println!(\"{:?}\", results);\n}",
+    "expectedOutput": "[1, 4, 9]",
+    "solution": "use std::thread;\n\nfn main() {\n    let mut handles = Vec::new();\n    for n in 1..=3 {\n        handles.push(thread::spawn(move || n * n));\n    }\n    let mut results = Vec::new();\n    for handle in handles {\n        results.push(handle.join().unwrap());\n    }\n    println!(\"{:?}\", results);\n}",
+    "hints": [
+      "Closure trả về biểu thức cuối cùng của nó, và join() trả giá trị đó lại. Hiện giờ closure chỉ trả về n.",
+      "Closure là phần sau move ||. Thân của nó chỉ là n, nên hãy viết n * n ở đó. Hãy giữ move: mỗi thread cần bản sao n riêng của nó."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "handle.join() làm gì?",
+      "options": [
+        "Khởi động thread và quay về main ngay lập tức",
+        "Chờ thread chạy xong và trả về kết quả của nó",
+        "Dừng thread ngay lập tức và bỏ đi những gì nó đã tính"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Tại sao closure được truyền cho thread::spawn thường cần move?",
+      "options": [
+        "Thread có thể sống lâu hơn hàm, nên nó phải sở hữu dữ liệu mà nó dùng",
+        "move sao chép dữ liệu, nên thread chạy nhanh hơn so với khi chỉ mượn thông thường",
+        "Rust chỉ cho phép thread dùng dữ liệu đã được sao chép lên heap trước"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Điều gì đặc biệt ở thread::scope?",
+      "options": [
+        "Nó chạy các thread lần lượt từng cái một, nên chúng không bao giờ chồng lên nhau về thời gian trên bất kỳ lõi nào",
+        "Nó cho phép các thread sống lâu hơn main, vì scope giữ chúng sống sau đó",
+        "Các thread của nó có thể mượn biến cục bộ, vì tất cả đều được join trước khi nó kết thúc"
+      ],
+      "answer": 2
+    }
+  ]
+}

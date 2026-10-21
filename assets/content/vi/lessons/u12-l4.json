@@ -1,0 +1,75 @@
+{
+  "id": "u12-l4",
+  "title": "Máy chủ web mini, phần 2",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Bài học trước chúng ta đã viết các hàm thuần túy từ văn bản request sang văn bản response. Bây giờ chúng ta kết nối chúng với mạng bằng std: TcpListener chờ các kết nối, và TcpStream là một kết nối đang mở mà bạn có thể đọc và ghi. Chúng ta bind vào \"127.0.0.1:0\". 127.0.0.1 là địa chỉ loopback (chỉ máy tính của chính bạn, và là loại duy nhất mà sandbox này cho phép). Cổng (port) 0 nghĩa là \"chọn giúp tôi một cổng rảnh bất kỳ\"."
+    },
+    {
+      "type": "text",
+      "text": "Các stream mang byte, nên as_bytes() biến văn bản thành byte trước khi gửi đi. Các phương thức như read_line, read_to_string và write_all đến từ các trait (BufRead, Read, Write), và các phương thức của một trait chỉ hoạt động khi trait đó nằm trong phạm vi. Iterator nằm trong prelude, đó là lý do collect() chưa bao giờ cần một dòng use, nhưng Read, Write và BufRead thì không, nên chúng ta import chúng. write! và writeln! giống print! và println!, nhưng chúng gửi văn bản vào một stream."
+    },
+    {
+      "type": "text",
+      "text": "Chương trình thực hiện toàn bộ cuộc trò chuyện trong một tiến trình. Một thread server chấp nhận đúng ba kết nối và khởi động một thread mới cho mỗi kết nối. Ba thread client kết nối, gửi một request GET và đọc câu trả lời. Chúng ta join các client theo thứ tự đã khởi động chúng, nên kết quả luôn giống nhau."
+    },
+    {
+      "type": "code",
+      "code": "use std::io::{BufRead, BufReader, Read, Write};\nuse std::net::{SocketAddr, TcpListener, TcpStream};   // SocketAddr holds an IP address and a port\nuse std::thread;\n\n// The pure part, as in part 1 (shortened): request line in, response text out.\nfn respond(request_line: &str) -> String {\n    // nth(1) is the second word of \"GET /hello HTTP/1.1\": the path\n    let path = request_line.split_whitespace().nth(1).unwrap_or(\"/\");\n    let (status, body) = match path {\n        \"/\" => (\"200 OK\", \"Welcome!\"),\n        \"/hello\" => (\"200 OK\", \"Hello from a thread!\"),\n        _ => (\"404 Not Found\", \"Nothing here\"),\n    };\n    format!(\n        \"HTTP/1.1 {status}\\r\\nContent-Length: {}\\r\\nConnection: close\\r\\n\\r\\n{body}\",\n        body.len()\n    )\n}\n\n// Handles one connection: read the request, write the response.\nfn handle(mut stream: TcpStream) {\n    // BufReader wraps the stream so we can read it one line at a time\n    let mut reader = BufReader::new(&stream);\n    let mut request_line = String::new();\n    // read_line adds one line (with its \\r\\n) to the String and returns\n    // how many bytes it read. 0 means the other side closed the connection.\n    reader.read_line(&mut request_line).unwrap();\n    // Read and ignore the header lines, up to the blank line.\n    loop {\n        let mut line = String::new();\n        let n = reader.read_line(&mut line).unwrap();\n        if n == 0 || line == \"\\r\\n\" {\n            break;\n        }\n    }\n    let response = respond(&request_line);\n    stream.write_all(response.as_bytes()).unwrap();\n}   // the stream is dropped here, which closes the connection\n\n// The server: accept a fixed number of connections, one thread each.\nfn serve(listener: TcpListener, connections: usize) {\n    let mut handlers = Vec::new();\n    // incoming() gives each new connection in turn; take() stops after `connections`\n    for stream in listener.incoming().take(connections) {\n        let stream = stream.unwrap();\n        handlers.push(thread::spawn(move || handle(stream)));\n    }\n    for handler in handlers {\n        handler.join().unwrap();\n    }\n}\n\n// A tiny client: connect, send a request, read everything until the server closes.\nfn fetch(addr: SocketAddr, path: &str) -> String {\n    let mut stream = TcpStream::connect(addr).unwrap();\n    write!(stream, \"GET {path} HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\n\").unwrap();\n    let mut reply = String::new();\n    // read_to_string finishes when the server closes the connection\n    stream.read_to_string(&mut reply).unwrap();\n    reply\n}\n\nfn main() {\n    let listener = TcpListener::bind(\"127.0.0.1:0\").unwrap();\n    let addr = listener.local_addr().unwrap();   // which port did the OS choose?\n    println!(\"server is listening on 127.0.0.1 (the OS chose the port)\");\n\n    let paths = [\"/\", \"/hello\", \"/nope\"];\n    let server = thread::spawn(move || serve(listener, paths.len()));\n\n    let mut clients = Vec::new();\n    for path in paths {\n        clients.push(thread::spawn(move || fetch(addr, path)));\n    }\n    for (path, client) in paths.iter().zip(clients) {\n        let reply = client.join().unwrap();\n        let (head, body) = reply.split_once(\"\\r\\n\\r\\n\").unwrap();\n        println!(\"GET {path} -> {} | {body}\", head.lines().next().unwrap());\n    }\n    server.join().unwrap();\n    println!(\"server finished\");\n}\n\n// Output:\n// server is listening on 127.0.0.1 (the OS chose the port)\n// GET / -> HTTP/1.1 200 OK | Welcome!\n// GET /hello -> HTTP/1.1 200 OK | Hello from a thread!\n// GET /nope -> HTTP/1.1 404 Not Found | Nothing here\n// server finished"
+    },
+    {
+      "type": "text",
+      "text": "Vì mỗi kết nối có một thread riêng, một client chậm không thể chặn các client khác. Đó là ý tưởng đằng sau một máy chủ dùng thread đơn giản. Một máy chủ thực sự sẽ lặp qua listener.incoming() mãi mãi, thay vì dừng sau ba kết nối, và sẽ dùng một thread pool (một tập thread worker cố định) để một loạt client dồn dập không thể tạo ra số thread không giới hạn. Chương cuối của Rust Book xây dựng đúng điều đó."
+    },
+    {
+      "type": "note",
+      "text": "Một cổng giống như số căn hộ: địa chỉ 127.0.0.1 là tòa nhà (chính máy tính của bạn) và cổng chọn cánh cửa. Trình duyệt dùng cổng 80 cho http:// và 443 cho https:// trừ khi địa chỉ nói khác đi. Dùng cổng 0 là yêu cầu hệ thống cho bất kỳ cánh cửa nào còn rảnh, điều này tránh xung đột với các chương trình khác.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Đây là mô hình một thread cho mỗi kết nối, giống như một máy chủ Java hoặc C blocking cổ điển. Nó đơn giản và xử lý tốt hàng trăm client; với hàng chục nghìn kết nối phần lớn là nhàn rỗi, code async (unit trước) với tokio là lựa chọn thường dùng. Với HTTP thực, bạn sẽ dùng hyper, axum hoặc actix-web, chúng xử lý keep-alive, body chunked, TLS và hơn thế nữa. Lưu ý rằng header Connection: close chỉ báo cho một client thực rằng đừng chờ thêm; việc đóng stream (drop ở cuối handle) mới là thứ kết thúc read_to_string của client chúng ta.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Máy chủ echo này gửi thẳng dòng của client trở lại. Hãy sửa để máy chủ hét lên: nó phải trả lời cùng dòng đó bằng chữ hoa. Chương trình sẽ in ra: HELLO. Gợi ý: tạo câu trả lời bằng line.trim().to_uppercase().",
+    "starter": "use std::io::{BufRead, BufReader, Write};\nuse std::net::{TcpListener, TcpStream};\nuse std::thread;\n\nfn main() {\n    let listener = TcpListener::bind(\"127.0.0.1:0\").unwrap();\n    let addr = listener.local_addr().unwrap();\n\n    let server = thread::spawn(move || {\n        // accept gives back the stream and the client's address; we ignore the address\n        let (mut stream, _) = listener.accept().unwrap();\n        let mut line = String::new();\n        BufReader::new(&stream).read_line(&mut line).unwrap();\n        let reply = line.trim().to_string();\n        writeln!(stream, \"{reply}\").unwrap();\n    });\n\n    let mut client = TcpStream::connect(addr).unwrap();\n    writeln!(client, \"hello\").unwrap();\n    let mut reply = String::new();\n    BufReader::new(&client).read_line(&mut reply).unwrap();\n    println!(\"{}\", reply.trim());\n    server.join().unwrap();\n}",
+    "expectedOutput": "HELLO",
+    "solution": "use std::io::{BufRead, BufReader, Write};\nuse std::net::{TcpListener, TcpStream};\nuse std::thread;\n\nfn main() {\n    let listener = TcpListener::bind(\"127.0.0.1:0\").unwrap();\n    let addr = listener.local_addr().unwrap();\n\n    let server = thread::spawn(move || {\n        let (mut stream, _) = listener.accept().unwrap();\n        let mut line = String::new();\n        BufReader::new(&stream).read_line(&mut line).unwrap();\n        let reply = line.trim().to_uppercase();\n        writeln!(stream, \"{reply}\").unwrap();\n    });\n\n    let mut client = TcpStream::connect(addr).unwrap();\n    writeln!(client, \"hello\").unwrap();\n    let mut reply = String::new();\n    BufReader::new(&client).read_line(&mut reply).unwrap();\n    println!(\"{}\", reply.trim());\n    server.join().unwrap();\n}",
+    "hints": [
+      "Chỉ có một dòng trong server cần thay đổi: dòng tạo reply. Hiện giờ nó chỉ sao chép dòng đã được trim.",
+      "Hãy dùng to_uppercase() thay cho to_string(). Nó trả về một String mới viết hoa. Giữ trim() phía trước nó, để ký tự xuống dòng ở cuối được bỏ đi trước."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Việc bind vào \"127.0.0.1:0\" làm gì?",
+      "options": [
+        "Lắng nghe trên mọi máy tính đang kết nối internet cùng một lúc, trên bất kỳ cổng rảnh nào",
+        "Dùng 0 như một số cổng thật mà các client phải kết nối tới",
+        "Chỉ lắng nghe trên máy tính này, trên một cổng rảnh do hệ điều hành chọn"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Tại sao read_to_string của client chúng ta kết thúc?",
+      "options": [
+        "Server đóng kết nối khi TcpStream của nó bị drop",
+        "Nó bỏ cuộc sau khi chờ một giây mà không có thêm dữ liệu đến",
+        "Nó dừng ngay khi nhận được dòng đầu tiên của câu trả lời"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Tại sao server xử lý mỗi kết nối trong một thread riêng?",
+      "options": [
+        "Rust yêu cầu một thread riêng cho mỗi TcpStream bạn tạo",
+        "Khi đó một client chậm không thể chặn việc phục vụ các client khác",
+        "Thread làm mỗi phản hồi ngắn hơn, nên nó truyền nhanh hơn qua kết nối"
+      ],
+      "answer": 1
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "id": "u8-l1",
+  "title": "Closure",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Closure là một hàm nhỏ không có tên mà bạn có thể lưu trong một biến hoặc truyền cho một hàm khác. Bạn viết các tham số giữa hai dấu gạch đứng, rồi đến phần thân."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let add_one = |x| x + 1;\n    let add = |a: i32, b: i32| -> i32 { a + b };\n    let greet = || println!(\"hello from a closure\");\n\n    println!(\"{}\", add_one(5));\n    println!(\"{}\", add(2, 3));\n    greet();\n}"
+    },
+    {
+      "type": "text",
+      "text": "|x| x + 1 nhận một tham số, x, và trả về x + 1. Với một biểu thức duy nhất, bạn không cần dấu ngoặc nhọn. |a: i32, b: i32| -> i32 { a + b } cho thấy dạng đầy đủ với các kiểu và một khối. Khi bạn viết kiểu trả về (-> i32), dấu ngoặc nhọn là bắt buộc. || không có tham số. Bạn gọi một closure bằng dấu ngoặc đơn, giống như gọi một hàm."
+    },
+    {
+      "type": "text",
+      "text": "Không như hàm, closure thường không cần khai báo kiểu (type annotation). Rust xem closure được dùng như thế nào và tự suy ra các kiểu. Nhưng một closure chỉ có một kiểu cho mỗi tham số. Khi Rust đã thấy add_one(5), x là một i32, và việc gọi add_one(\"hi\") sau đó là lỗi kiểu (E0308)."
+    },
+    {
+      "type": "text",
+      "text": "Closure có thể được truyền cho hàm. Kiểu tham số impl Fn(i32) -> i32 có nghĩa là \"bất kỳ closure hoặc hàm nào nhận một i32 và trả về một i32\". Hàm thông thường cũng có thể được truyền. (Fn là một trait; bài sau sẽ giải thích nó, cùng với FnMut và FnOnce.)"
+    },
+    {
+      "type": "code",
+      "code": "fn apply_twice(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(f(value))\n}\n\nfn double(x: i32) -> i32 {\n    x * 2\n}\n\nfn main() {\n    let add_ten = |x| x + 10;\n    println!(\"{}\", apply_twice(add_ten, 1));\n    println!(\"{}\", apply_twice(double, 3));\n    println!(\"{}\", apply_twice(|x| x * x, 3));\n}"
+    },
+    {
+      "type": "text",
+      "text": "apply_twice gọi f trên giá trị, rồi gọi f lần nữa trên kết quả. Với add_ten, 1 trở thành 11 rồi 21. Lời gọi cuối cùng viết closure ngay trong danh sách đối số, đó là cách closure được dùng phổ biến nhất."
+    },
+    {
+      "type": "text",
+      "text": "Thư viện chuẩn có rất nhiều phương thức nhận closure. sort_by_key sắp xếp một Vec theo bất kỳ khóa nào mà closure trả về. unwrap_or_else trên một Option chỉ chạy closure của nó nếu giá trị là None, nên giá trị mặc định chỉ được tạo khi cần:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let mut words = vec![\"pear\", \"fig\", \"banana\", \"kiwi\"];\n    words.sort_by_key(|w| w.len());\n    println!(\"{:?}\", words);\n\n    let nickname: Option<String> = None;\n    let shown = nickname.unwrap_or_else(|| String::from(\"guest\"));\n    println!(\"{shown}\");\n}\n\n// Output:\n// [\"fig\", \"pear\", \"kiwi\", \"banana\"]\n// guest"
+    },
+    {
+      "type": "text",
+      "text": "Ở đây sort_by_key gọi closure trên từng từ để lấy độ dài của nó, và sắp xếp các từ theo con số đó. Các từ có độ dài bằng nhau giữ nguyên thứ tự ban đầu (pear vẫn đứng trước kiwi trong chú thích Output)."
+    },
+    {
+      "type": "note",
+      "text": "Closure giống như một tấm thẻ công thức mà bạn có thể đưa cho người khác. Họ quyết định khi nào làm theo. Ở đây sort_by_key làm theo nó mỗi khi cần so sánh hai từ, nên nó có thể đọc cùng một tấm thẻ nhiều lần.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Closure là lambda của Rust: lambda x: x + 1 của Python, x => x + 1 của JavaScript, x -> x + 1 của Java, x => x + 1 của C#, [](int x) { return x + 1; } của C++. Không như lambda của Python, thân của một closure Rust có thể là một khối đầy đủ với nhiều câu lệnh. Mỗi closure có một kiểu riêng, duy nhất, không thể gọi tên, đó là lý do bạn nhận chúng bằng impl Fn(...) hoặc một generic F: Fn(...) chứ không dùng một kiểu cụ thể.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "apply gọi một closure trên một con số. Code khởi đầu truyền cho nó một closure nhân đôi. Bên dưới đó, hãy tạo một closure trừ 5 khỏi đối số của nó, truyền nó cho apply cùng với 50, và in kết quả. Chương trình phải in ra hai dòng: 42 và 45. Gợi ý: let minus_five = |x| x - 5;",
+    "starter": "fn apply(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(value)\n}\n\nfn main() {\n    let doubled = apply(|x| x * 2, 21);\n    println!(\"{doubled}\");\n}",
+    "expectedOutput": "42\n45",
+    "solution": "fn apply(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(value)\n}\n\nfn main() {\n    let doubled = apply(|x| x * 2, 21);\n    println!(\"{doubled}\");\n    let minus_five = |x| x - 5;\n    println!(\"{}\", apply(minus_five, 50));\n}",
+    "hints": [
+      "Một closure có thể được lưu trong một biến và truyền cho apply, giống như closure nhân đôi trong code khởi đầu. Hãy tạo một closure trừ thay vào đó.",
+      "Hãy viết tham số giữa hai dấu gạch đứng, rồi đến phần thân: |x| x - 5. Đặt nó vào một biến bằng let, và truyền biến đó cho apply.",
+      "Bên dưới println! đầu tiên, hãy viết let minus_five = |x| x - 5; rồi println!(\"{}\", apply(minus_five, 50))."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Cái nào là closure cộng 1 vào tham số của nó?",
+      "options": [
+        "|x| x + 1",
+        "(x) => x + 1",
+        "fn |x| x + 1"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Một closure lần đầu được gọi với một String, rồi sau đó với một i32. Điều gì xảy ra?",
+      "options": [
+        "Nó chạy được, vì closure chọn một kiểu tham số mới cho mỗi lần gọi",
+        "Nó biên dịch được, nhưng lần gọi thứ hai gây ra panic lúc chạy",
+        "Lỗi biên dịch, vì lần gọi đầu tiên đã cố định kiểu tham số của closure"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Kiểu tham số impl Fn(i32) -> i32 chấp nhận những gì?",
+      "options": [
+        "Chỉ những closure capture một biến i32 từ môi trường xung quanh của chúng",
+        "Bất kỳ closure hoặc hàm nào nhận một i32 và trả về một i32",
+        "Bất kỳ closure nào nhận một i32, bất kể nó trả về kiểu gì"
+      ],
+      "answer": 1
+    }
+  ]
+}
