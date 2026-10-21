@@ -16,7 +16,8 @@
     "prompt": "Use a for loop to print the 3 times table from 3 x 1 to 3 x 5. Print only the results, each on its own line: 3, 6, 9, 12, 15",
     "starter": "fn main() {\n    // your loop here\n}",
     "expectedOutput": "3\n6\n9\n12\n15",
-    "solution": "fn main() {\n    for n in 1..=5 {\n        println!(\"{}\", 3 * n);\n    }\n}"
+    "solution": "fn main() {\n    for n in 1..=5 {\n        println!(\"{}\", 3 * n);\n    }\n}",
+    "hints": ["You want to repeat one print five times, with a different number each time. Which kind of loop goes through a range?", "Use for n in 1..=5. The 1..=5 range includes 5. Inside the loop, n holds the current number.", "Inside the loop, print 3 * n with println!. For example: println!(\"{}\", 3 * n); The empty {} shows that value."]
   },
   "quiz": [
     {

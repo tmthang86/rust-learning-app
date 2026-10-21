@@ -53,7 +53,12 @@
     "prompt": "Make a second owner b of the same string (share it, don't copy it). Then print how many owners there are, and change the last println! so it prints a and b separated by a space. It should print two lines: count = 2 and hello hello. Hint: let b = Rc::clone(&a); and println!(\"count = {}\", Rc::strong_count(&a));",
     "starter": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(String::from(\"hello\"));\n    // add b and the count line here\n    println!(\"{a}\");\n}",
     "expectedOutput": "count = 2\nhello hello",
-    "solution": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(String::from(\"hello\"));\n    let b = Rc::clone(&a);\n    println!(\"count = {}\", Rc::strong_count(&a));\n    println!(\"{a} {b}\");\n}"
+    "solution": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(String::from(\"hello\"));\n    let b = Rc::clone(&a);\n    println!(\"count = {}\", Rc::strong_count(&a));\n    println!(\"{a} {b}\");\n}",
+    "hints": [
+      "b should be another owner of the same String, not a copy. Which Rc function adds an owner, and which one tells you how many there are?",
+      "Rc::clone(&a) makes a new owner and adds 1 to the count. Rc::strong_count(&a) gives the current count.",
+      "Write let b = Rc::clone(&a); then println!(\"count = {}\", Rc::strong_count(&a));. Finally change the last println! to print a and b with a space between: \"{a} {b}\"."
+    ]
   },
   "quiz": [
     {

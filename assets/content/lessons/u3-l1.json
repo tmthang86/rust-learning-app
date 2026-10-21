@@ -54,7 +54,12 @@
     "prompt": "The program uses name after it was moved into greet. Change greet so it doesn't need to own the String: make the parameter a reference (&String) and call it with &name. A reference lets greet borrow the String instead of owning it; you'll learn how references work in the Borrowing lesson of this unit. It should print: Hello, Ferris\nBye, Ferris",
     "starter": "fn greet(name: String) {\n    println!(\"Hello, {name}\");\n}\n\nfn main() {\n    let name = String::from(\"Ferris\");\n    greet(name);\n    println!(\"Bye, {name}\");\n}",
     "expectedOutput": "Hello, Ferris\nBye, Ferris",
-    "solution": "fn greet(name: &String) {\n    println!(\"Hello, {name}\");\n}\n\nfn main() {\n    let name = String::from(\"Ferris\");\n    greet(&name);\n    println!(\"Bye, {name}\");\n}"
+    "solution": "fn greet(name: &String) {\n    println!(\"Hello, {name}\");\n}\n\nfn main() {\n    let name = String::from(\"Ferris\");\n    greet(&name);\n    println!(\"Bye, {name}\");\n}",
+    "hints": [
+      "Passing name to greet moves it, so main can't use it afterwards. Let greet borrow it instead.",
+      "A reference lets a function borrow a value. In the parameter list, put & before the type. In the call, put & before the variable.",
+      "Change the parameter to name: &String. Then call greet(&name) in main."
+    ]
   },
   "quiz": [
     {

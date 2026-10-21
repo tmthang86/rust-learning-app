@@ -45,7 +45,12 @@
     "prompt": "The tiny server in route() only knows the home page. Add an About page: a request for the path /about should answer with status 200 and the body About us, while other unknown paths still give 404. The program should print three lines: 200 Home page, 200 About us, 404 Not found. Hint: add the match arm \"/about\" => (200, \"About us\") before the _ arm.",
     "starter": "fn route(path: &str) -> (u16, &'static str) {\n    match path {\n        \"/\" => (200, \"Home page\"),\n        _ => (404, \"Not found\"),\n    }\n}\n\nfn main() {\n    for path in [\"/\", \"/about\", \"/nope\"] {\n        let (status, body) = route(path);\n        println!(\"{status} {body}\");\n    }\n}",
     "expectedOutput": "200 Home page\n200 About us\n404 Not found",
-    "solution": "fn route(path: &str) -> (u16, &'static str) {\n    match path {\n        \"/\" => (200, \"Home page\"),\n        \"/about\" => (200, \"About us\"),\n        _ => (404, \"Not found\"),\n    }\n}\n\nfn main() {\n    for path in [\"/\", \"/about\", \"/nope\"] {\n        let (status, body) = route(path);\n        println!(\"{status} {body}\");\n    }\n}"
+    "solution": "fn route(path: &str) -> (u16, &'static str) {\n    match path {\n        \"/\" => (200, \"Home page\"),\n        \"/about\" => (200, \"About us\"),\n        _ => (404, \"Not found\"),\n    }\n}\n\nfn main() {\n    for path in [\"/\", \"/about\", \"/nope\"] {\n        let (status, body) = route(path);\n        println!(\"{status} {body}\");\n    }\n}",
+    "hints": [
+      "Right now /about falls into the _ arm and gives 404. Look at the arm for \"/\" and add one like it for /about.",
+      "Each arm has a path text on the left and a tuple on the right: the status number and the body text.",
+      "Add \"/about\" => (200, \"About us\"), above the _ arm. The _ arm matches everything, so an arm placed after it would never run."
+    ]
   },
   "quiz": [
     {

@@ -45,7 +45,12 @@
     "prompt": "parse returns a Result. Use expect with a message to get the number out so it can be doubled. It should print: 84",
     "starter": "fn main() {\n    let n: i32 = \"42\".parse();\n    println!(\"{}\", n * 2);\n}",
     "expectedOutput": "84",
-    "solution": "fn main() {\n    let n: i32 = \"42\".parse().expect(\"not a number\");\n    println!(\"{}\", n * 2);\n}"
+    "solution": "fn main() {\n    let n: i32 = \"42\".parse().expect(\"not a number\");\n    println!(\"{}\", n * 2);\n}",
+    "hints": [
+      "The parse call gives back a Result, not a number. You need to get the number out of it.",
+      "A Result has a method expect. It gives you the value, or stops the program with your message if parsing failed. Add it after parse().",
+      "Write \"42\".parse().expect(\"not a number\"). Put a short message in the quotes."
+    ]
   },
   "quiz": [
     {

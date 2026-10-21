@@ -42,7 +42,12 @@
     "prompt": "Use the variables to print exactly: Ferris has 3 friends",
     "starter": "fn main() {\n    let name = \"Ferris\";\n    let friends = 3;\n    println!(\"\");\n}",
     "expectedOutput": "Ferris has 3 friends",
-    "solution": "fn main() {\n    let name = \"Ferris\";\n    let friends = 3;\n    println!(\"{name} has {friends} friends\");\n}"
+    "solution": "fn main() {\n    let name = \"Ferris\";\n    let friends = 3;\n    println!(\"{name} has {friends} friends\");\n}",
+    "hints": [
+      "Right now the text between the quotes of println! is empty, so only an empty line prints.",
+      "Put a variable's name inside {} in the text. Inside the quotes, write {name} where the name goes.",
+      "Fill the quotes with {name} has {friends} friends. Make sure the spaces match the expected output."
+    ]
   },
   "quiz": [
     {
