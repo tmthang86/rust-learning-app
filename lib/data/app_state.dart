@@ -11,6 +11,7 @@ import '../reminders/study_reminders.dart';
 import '../runner/code_runner.dart';
 import 'age.dart';
 import 'course_repository.dart';
+import 'error_explanations.dart';
 import 'models.dart';
 import 'streaks.dart';
 
@@ -44,7 +45,9 @@ class AppState extends ChangeNotifier {
     AgeStore? age,
     this.clock,
     ReminderScheduler reminderScheduler = const NoopReminderScheduler(),
-  }) : age = age ?? AgeStore(prefs) {
+    ErrorExplanationRepository? errors,
+  }) : age = age ?? AgeStore(prefs),
+       errors = errors ?? ErrorExplanationRepository() {
     reminders = StudyReminders(
       prefs: prefs,
       scheduler: reminderScheduler,
@@ -96,6 +99,9 @@ class AppState extends ChangeNotifier {
   static const _childAccountKey = 'childAccountToDelete';
 
   final CourseRepository repository;
+
+  /// Explanations for compiler errors, loaded on first use.
+  final ErrorExplanationRepository errors;
   final CodeRunner runner;
   final SharedPreferences prefs;
   final AccountService accounts;

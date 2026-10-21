@@ -7,8 +7,8 @@ import '../../data/models.dart';
 import '../../monetization/ad_banner.dart';
 import '../../monetization/ads_service.dart';
 import '../../monetization/monetization.dart';
-import '../editor/code_editor.dart';
 import '../streak/streak_widgets.dart';
+import 'exercise_panel.dart';
 
 /// One lesson: explanation, examples, an exercise and a link to the quiz.
 class LessonScreen extends StatefulWidget {
@@ -167,9 +167,10 @@ class _LessonBody extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(exercise.prompt),
                 const SizedBox(height: 12),
-                CodeEditor(
-                  initialCode: exercise.starter,
-                  expectedOutput: exercise.expectedOutput,
+                ExercisePanel(
+                  key: ValueKey(lesson.id),
+                  lessonId: lesson.id,
+                  exercise: exercise,
                   // Solving the exercise completes the lesson, as does
                   // passing the quiz.
                   onSolved: () => state

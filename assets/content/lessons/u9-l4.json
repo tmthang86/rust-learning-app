@@ -53,7 +53,12 @@
     "prompt": "The function is_even has a bug, so the first assert_eq! panics. Fix is_even so it returns true when n % 2 == 0. Then add one more check before the println!: assert!(!is_even(7)); It should print: all tests passed",
     "starter": "fn is_even(n: i32) -> bool {\n    n % 2 == 1\n}\n\nfn main() {\n    assert_eq!(is_even(4), true);\n    assert_eq!(is_even(10), true);\n    // add assert!(!is_even(7)); here\n    println!(\"all tests passed\");\n}",
     "expectedOutput": "all tests passed",
-    "solution": "fn is_even(n: i32) -> bool {\n    n % 2 == 0\n}\n\nfn main() {\n    assert_eq!(is_even(4), true);\n    assert_eq!(is_even(10), true);\n    assert!(!is_even(7));\n    println!(\"all tests passed\");\n}"
+    "solution": "fn is_even(n: i32) -> bool {\n    n % 2 == 0\n}\n\nfn main() {\n    assert_eq!(is_even(4), true);\n    assert_eq!(is_even(10), true);\n    assert!(!is_even(7));\n    println!(\"all tests passed\");\n}",
+    "hints": [
+      "The first assert_eq! panics because is_even gives the wrong answer for 4. What is the remainder when an even number is divided by 2?",
+      "An even number leaves a remainder of 0. Change the comparison in is_even from 1 to 0.",
+      "Then, before the final println!, add assert!(!is_even(7)); The ! flips true into false, so the check passes when 7 is not even."
+    ]
   },
   "quiz": [
     {

@@ -45,7 +45,12 @@
     "prompt": "The starter has a Speak trait with a required speak method and a default shout method. Dog already implements it. Make Robot speak too: its speak should return beep followed by a space and its id. Then, at the end of main, create a Robot with id 7 and print its shout. It should print two lines: WOOF, I AM REX and BEEP 7. The compiler warns that Robot is never constructed until you finish; that is expected. Hint: impl Speak for Robot { fn speak(&self) -> String { format!(\"beep {}\", self.id) } }",
     "starter": "trait Speak {\n    fn speak(&self) -> String;\n\n    fn shout(&self) -> String {\n        self.speak().to_uppercase()\n    }\n}\n\nstruct Dog {\n    name: String,\n}\n\nstruct Robot {\n    id: u32,\n}\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        format!(\"woof, I am {}\", self.name)\n    }\n}\n\nfn main() {\n    let dog = Dog { name: String::from(\"Rex\") };\n    println!(\"{}\", dog.shout());\n}",
     "expectedOutput": "WOOF, I AM REX\nBEEP 7",
-    "solution": "trait Speak {\n    fn speak(&self) -> String;\n\n    fn shout(&self) -> String {\n        self.speak().to_uppercase()\n    }\n}\n\nstruct Dog {\n    name: String,\n}\n\nstruct Robot {\n    id: u32,\n}\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        format!(\"woof, I am {}\", self.name)\n    }\n}\n\nimpl Speak for Robot {\n    fn speak(&self) -> String {\n        format!(\"beep {}\", self.id)\n    }\n}\n\nfn main() {\n    let dog = Dog { name: String::from(\"Rex\") };\n    println!(\"{}\", dog.shout());\n    let robot = Robot { id: 7 };\n    println!(\"{}\", robot.shout());\n}"
+    "solution": "trait Speak {\n    fn speak(&self) -> String;\n\n    fn shout(&self) -> String {\n        self.speak().to_uppercase()\n    }\n}\n\nstruct Dog {\n    name: String,\n}\n\nstruct Robot {\n    id: u32,\n}\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        format!(\"woof, I am {}\", self.name)\n    }\n}\n\nimpl Speak for Robot {\n    fn speak(&self) -> String {\n        format!(\"beep {}\", self.id)\n    }\n}\n\nfn main() {\n    let dog = Dog { name: String::from(\"Rex\") };\n    println!(\"{}\", dog.shout());\n    let robot = Robot { id: 7 };\n    println!(\"{}\", robot.shout());\n}",
+    "hints": [
+      "Dog gets the Speak trait from its own impl block. Robot needs one too. Which method does the trait require, and which one do you get for free?",
+      "Write impl Speak for Robot { ... } and put only the required method speak inside it. It returns a String. Use format! to join beep, a space and self.id.",
+      "Then, at the end of main, create a Robot with id 7 and print robot.shout(), the same way main already does it for the dog."
+    ]
   },
   "quiz": [
     {

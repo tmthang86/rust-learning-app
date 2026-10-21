@@ -48,7 +48,12 @@
     "prompt": "Make last_three return a slice of the last three bytes (use &s[s.len() - 3..]). For plain English text like \"rust\", that's the last three letters. It should print: ust",
     "starter": "fn last_three(s: &str) -> &str {\n    s\n}\n\nfn main() {\n    println!(\"{}\", last_three(\"rust\"));\n}",
     "expectedOutput": "ust",
-    "solution": "fn last_three(s: &str) -> &str {\n    &s[s.len() - 3..]\n}\n\nfn main() {\n    println!(\"{}\", last_three(\"rust\"));\n}"
+    "solution": "fn last_three(s: &str) -> &str {\n    &s[s.len() - 3..]\n}\n\nfn main() {\n    println!(\"{}\", last_three(\"rust\"));\n}",
+    "hints": [
+      "Right now the function hands back all of s. You want a slice that starts 3 bytes before the end and runs to the end.",
+      "A slice like &s[start..] takes everything from start to the end. The start is the length minus 3.",
+      "Replace the s on the line inside the function with &s[s.len() - 3..]."
+    ]
   },
   "quiz": [
     {

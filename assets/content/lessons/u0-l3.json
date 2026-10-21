@@ -13,7 +13,8 @@
     "prompt": "Finish the program so it prints Even when number is even and Odd otherwise. number % 2 gives the remainder after dividing by 2. With 8 it should print: Even",
     "starter": "fn main() {\n    let number = 8;\n    // print Even or Odd here\n}",
     "expectedOutput": "Even",
-    "solution": "fn main() {\n    let number = 8;\n    if number % 2 == 0 {\n        println!(\"Even\");\n    } else {\n        println!(\"Odd\");\n    }\n}"
+    "solution": "fn main() {\n    let number = 8;\n    if number % 2 == 0 {\n        println!(\"Even\");\n    } else {\n        println!(\"Odd\");\n    }\n}",
+    "hints": ["You need to make a choice, and this lesson has a tool for that. The question to ask is whether the remainder is 0.", "Use if with a condition that compares number % 2 using ==. Put an else after it for the other case.", "Write if number % 2 == 0 { ... } else { ... }. Put one println! in each block: Even in the first, Odd in the else."]
   },
   "quiz": [
     {

@@ -1,0 +1,10 @@
+error: expected `;`, found `println`
+ --> b.rs:2:14
+  |
+2 |     let x = 5
+  |              ^ help: add `;` here
+3 |     println!("{x}");
+  |     ------- unexpected token
+
+error: aborting due to 1 previous error
+

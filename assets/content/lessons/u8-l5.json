@@ -65,7 +65,12 @@
     "prompt": "The starter adds up word lengths with a for loop and prints 9. Replace the loop with an iterator pipeline that maps each word to its length and sums them, keeping the printed total. Then, on a new line, print how many of the words are longer than 2 bytes, counted with filter and count. It should print two lines: 9 and 2. Hint: the total needs a type, so write let total: usize = ... and end the pipeline with .sum().",
     "starter": "fn main() {\n    let words = [\"rust\", \"is\", \"fun\"];\n    let mut total = 0;\n    for w in words {\n        total += w.len();\n    }\n    println!(\"{total}\");\n}",
     "expectedOutput": "9\n2",
-    "solution": "fn main() {\n    let words = [\"rust\", \"is\", \"fun\"];\n    let total: usize = words.iter().map(|w| w.len()).sum();\n    println!(\"{total}\");\n    let long = words.iter().filter(|w| w.len() > 2).count();\n    println!(\"{long}\");\n}"
+    "solution": "fn main() {\n    let words = [\"rust\", \"is\", \"fun\"];\n    let total: usize = words.iter().map(|w| w.len()).sum();\n    println!(\"{total}\");\n    let long = words.iter().filter(|w| w.len() > 2).count();\n    println!(\"{long}\");\n}",
+    "hints": [
+      "Both lines end a pipeline with a consuming method. The first one turns each word into a number and adds the numbers. The second one keeps some words and counts them.",
+      "For the total: words.iter().map(|w| w.len()).sum(). The sum needs to know its type, so write let total: usize = before it.",
+      "For the second line, use filter with w.len() > 2 and end with count(). Put the result in a variable and print it on a new line after the total."
+    ]
   },
   "quiz": [
     {

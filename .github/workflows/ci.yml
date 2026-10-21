@@ -45,6 +45,7 @@ jobs:
         with:
           toolchain: stable
       - run: python3 tool/check_lessons.py
+      - run: python3 tool/check_errors.py
 
   runner:
     name: Runner fmt, clippy, test
