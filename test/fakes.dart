@@ -9,6 +9,8 @@ import 'package:rust_learn/account/progress_sync.dart';
 import 'package:rust_learn/data/app_state.dart';
 import 'package:rust_learn/data/course_repository.dart';
 import 'package:rust_learn/data/models.dart';
+import 'package:rust_learn/l10n/streak_strings.dart';
+import 'package:rust_learn/reminders/reminder_scheduler.dart';
 import 'package:rust_learn/monetization/ad_config.dart';
 import 'package:rust_learn/monetization/ads_service.dart';
 import 'package:rust_learn/monetization/consent_service.dart';
@@ -133,9 +135,14 @@ class FakeAccounts implements AccountService {
 }
 
 class CloudDoc {
-  CloudDoc({this.track, Set<String>? completed}) : completed = completed ?? {};
+  CloudDoc({this.track, Set<String>? completed, Map<String, int>? dailyXp})
+    : completed = completed ?? {},
+      dailyXp = dailyXp ?? {};
   Track? track;
   final Set<String> completed;
+
+  /// XP per day, as stored under `dailyXp`.
+  final Map<String, int> dailyXp;
 
   /// Raw fields stored on top of the clean ones, e.g. `{'track': 42}` or
   /// `{'legacy': true}`. firestore.rules refuses merge writes to a document
@@ -145,7 +152,9 @@ class CloudDoc {
   bool get broken =>
       raw.keys.any((k) => !RemoteProgress.fields.contains(k)) ||
       (raw.containsKey('track') && raw['track'] is! String) ||
-      (raw.containsKey('completedLessons') && raw['completedLessons'] is! List);
+      (raw.containsKey('completedLessons') &&
+          raw['completedLessons'] is! List) ||
+      (raw.containsKey('dailyXp') && raw['dailyXp'] is! Map);
 
   void breakWith(Map<String, Object?> fields) => raw.addAll(fields);
 }
@@ -160,13 +169,21 @@ class FakeWriteError implements Exception {
 /// In-memory cloud with one document per uid.
 class FakeSync implements ProgressSync {
   /// Seeds the document of `u1`, the account [FakeAccounts.signIn] uses.
-  FakeSync({Track? track, Set<String>? completed, this.steps}) {
-    docs['u1'] = CloudDoc(track: track, completed: completed);
+  FakeSync({
+    Track? track,
+    Set<String>? completed,
+    Map<String, int>? dailyXp,
+    this.steps,
+  }) {
+    docs['u1'] = CloudDoc(track: track, completed: completed, dailyXp: dailyXp);
   }
 
   final Map<String, CloudDoc> docs = {};
   final List<String> loads = [];
   final List<Track> trackWrites = [];
+
+  /// Every `setDailyXp` call, in order.
+  final List<Map<String, int>> xpWrites = [];
   int replaces = 0;
 
   /// When given, each call is logged here (shared with [FakeAccounts.steps]).
@@ -193,6 +210,7 @@ class FakeSync implements ProgressSync {
   // The `u1` document, for the original tests.
   Track? get track => docs['u1']?.track;
   Set<String> get completed => doc('u1').completed;
+  Map<String, int> get dailyXp => doc('u1').dailyXp;
 
   void _write(String uid, {bool replacing = false}) {
     if (failWrites) throw const FakeWriteError('offline');
@@ -214,6 +232,7 @@ class FakeSync implements ProgressSync {
     return RemoteProgress.fromMap({
       if (snapshot.track != null) 'track': snapshot.track!.name,
       'completedLessons': snapshot.completed.toList(),
+      if (snapshot.dailyXp.isNotEmpty) 'dailyXp': {...snapshot.dailyXp},
       'updatedAt': unconfirmedReads ? null : 'server-time',
       ...snapshot.raw,
     }, confirmed: !unconfirmedReads);
@@ -223,6 +242,14 @@ class FakeSync implements ProgressSync {
   Future<void> addCompleted(String uid, Iterable<String> ids) async {
     _write(uid);
     doc(uid).completed.addAll(ids);
+  }
+
+  @override
+  Future<void> setDailyXp(String uid, Map<String, int> days) async {
+    _write(uid);
+    xpWrites.add({...days});
+    // Like a Firestore merge write: only these days change.
+    doc(uid).dailyXp.addAll(days);
   }
 
   @override
@@ -237,11 +264,16 @@ class FakeSync implements ProgressSync {
     String uid, {
     Track? track,
     required Set<String> completed,
+    Map<String, int> dailyXp = const {},
   }) async {
     steps?.add('replace');
     _write(uid, replacing: true);
     replaces++;
-    docs[uid] = CloudDoc(track: track, completed: {...completed});
+    docs[uid] = CloudDoc(
+      track: track,
+      completed: {...completed},
+      dailyXp: {...dailyXp},
+    );
   }
 
   @override
@@ -253,6 +285,66 @@ class FakeSync implements ProgressSync {
 
   @override
   Future<bool> flush(Duration timeout) async => flushResult;
+}
+
+/// Reminder scheduler stand-in that records what the app asks for.
+class FakeReminderScheduler implements ReminderScheduler {
+  FakeReminderScheduler({
+    this.supported = true,
+    this.permission = true,
+    this.grantOnRequest = true,
+  });
+
+  @override
+  bool supported;
+
+  /// What [hasPermission] answers (the system setting).
+  bool permission;
+
+  /// Whether a request for permission is granted.
+  bool grantOnRequest;
+
+  /// Make the next calls throw, like a failing plugin.
+  bool throws = false;
+
+  int initializes = 0;
+  int permissionRequests = 0;
+  int cancels = 0;
+
+  /// The reminders waiting right now.
+  List<ScheduledReminder> scheduled = [];
+
+  /// Every [replaceAll] call, in order.
+  final List<List<ScheduledReminder>> schedules = [];
+
+  @override
+  Future<void> initialize(StreakStrings strings) async {
+    if (throws) throw StateError('plugin failed');
+    initializes++;
+  }
+
+  @override
+  Future<bool> hasPermission() async => permission;
+
+  @override
+  Future<bool> requestPermission() async {
+    permissionRequests++;
+    if (grantOnRequest) permission = true;
+    return permission;
+  }
+
+  @override
+  Future<void> replaceAll(List<ScheduledReminder> reminders) async {
+    if (throws) throw StateError('plugin failed');
+    schedules.add(reminders);
+    scheduled = [...reminders];
+  }
+
+  @override
+  Future<void> cancelAll() async {
+    cancels++;
+    scheduled = [];
+  }
 }
 
 /// Returns fixed output, e.g. the exercise's expected answer.
@@ -336,12 +428,16 @@ Future<AppState> makeState(
   FakeSync sync, {
   CourseRepository? repository,
   CodeRunner runner = const PlaceholderCodeRunner(),
+  DateTime Function()? clock,
+  ReminderScheduler reminderScheduler = const NoopReminderScheduler(),
 }) async => AppState(
   repository: repository ?? CourseRepository(),
   runner: runner,
   prefs: await SharedPreferences.getInstance(),
   accounts: accounts,
   sync: sync,
+  clock: clock,
+  reminderScheduler: reminderScheduler,
 );
 
 Future<void> settle() => Future<void>.delayed(Duration.zero);
@@ -363,7 +459,10 @@ class FakeAds implements AdsService {
   final bool supported;
 
   @override
-  List<String> get unitIds => const ['test-banner-unit', 'test-interstitial-unit'];
+  List<String> get unitIds => const [
+    'test-banner-unit',
+    'test-interstitial-unit',
+  ];
 
   final List<AdAudience> initializedWith = [];
   int preloads = 0;

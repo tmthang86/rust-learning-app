@@ -8,6 +8,7 @@ import '../../monetization/ad_banner.dart';
 import '../../monetization/ads_service.dart';
 import '../../monetization/monetization.dart';
 import '../editor/code_editor.dart';
+import '../streak/streak_widgets.dart';
 
 /// One lesson: explanation, examples, an exercise and a link to the quiz.
 class LessonScreen extends StatefulWidget {
@@ -137,6 +138,8 @@ class _LessonBody extends StatelessWidget {
     final theme = Theme.of(context);
     final exercise = lesson.exercise;
     final sections = lesson.sections.where((s) => s.visibleTo(track)).toList();
+    // Taken now: the snackbar for a finished lesson must outlive the screen.
+    final messenger = ScaffoldMessenger.of(context);
     // The banner goes after the first section, and only when at least one
     // more section follows, so reading text always separates it from the
     // exercise's editor and Run output further down.
@@ -169,7 +172,9 @@ class _LessonBody extends StatelessWidget {
                   expectedOutput: exercise.expectedOutput,
                   // Solving the exercise completes the lesson, as does
                   // passing the quiz.
-                  onSolved: () => state.markCompleted(lesson.id),
+                  onSolved: () => state
+                      .markCompleted(lesson.id)
+                      .then((award) => showXpSnackBar(messenger, award)),
                 ),
                 const SizedBox(height: 24),
               ],
@@ -191,7 +196,9 @@ class _LessonBody extends StatelessWidget {
               else if (exercise == null)
                 FilledButton(
                   onPressed: () {
-                    state.markCompleted(lesson.id);
+                    state
+                        .markCompleted(lesson.id)
+                        .then((award) => showXpSnackBar(messenger, award));
                     final monetization = MonetizationScope.read(context);
                     leaveLesson(context);
                     // A natural break: the lesson is done and closed.

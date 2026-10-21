@@ -1,14 +1,18 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../account/account_service.dart';
 import '../account/progress_sync.dart';
+import '../reminders/reminder_scheduler.dart';
+import '../reminders/study_reminders.dart';
 import '../runner/code_runner.dart';
 import 'age.dart';
 import 'course_repository.dart';
 import 'models.dart';
+import 'streaks.dart';
 
 /// App-wide state: the course, the learner's track and their progress.
 ///
@@ -25,6 +29,11 @@ import 'models.dart';
 ///
 /// Accounts are off for anyone whose birth year says they may be under 13
 /// ([accountsAllowed]); see [AgeGroup.allowsAccounts].
+///
+/// The XP log ([dailyXp]) follows the same rules as the completed lessons
+/// in every one of those paths. Merging takes the larger value per day
+/// (never a sum). The daily goal and the reminder settings stay on the
+/// device and are never synced; signing out resets them with the rest.
 class AppState extends ChangeNotifier {
   AppState({
     required this.repository,
@@ -33,9 +42,18 @@ class AppState extends ChangeNotifier {
     this.accounts = const DisabledAccountService(),
     this.sync,
     AgeStore? age,
+    this.clock,
+    ReminderScheduler reminderScheduler = const NoopReminderScheduler(),
   }) : age = age ?? AgeStore(prefs) {
+    reminders = StudyReminders(
+      prefs: prefs,
+      scheduler: reminderScheduler,
+      clock: now,
+      goalMetToday: () => summary.goalMet(dailyGoal),
+    )..addListener(notifyListeners);
     _track = Track.fromName(prefs.getString(_trackKey));
     _completed = (prefs.getStringList(_completedKey) ?? const []).toSet();
+    _dailyXp = _readDailyXp(prefs);
     _user = accounts.currentUser;
     _userSub = accounts.userChanges.listen(_onUserChanged);
     this.age.addListener(_onAgeChanged);
@@ -48,6 +66,14 @@ class AppState extends ChangeNotifier {
 
   static const _trackKey = 'track';
   static const _completedKey = 'completedLessons';
+
+  /// The XP log as JSON: `{"2026-03-08": 25}`.
+  static const _dailyXpKey = 'dailyXp';
+  static const _dailyGoalKey = 'dailyGoal';
+
+  /// Which lessons already earned XP today (JSON `{"day": ..., "lessons":
+  /// [...]}`), so re-running an exercise can't farm XP.
+  static const _xpAwardedKey = 'xpAwardedToday';
 
   /// The account the device progress was last synced with; absent when the
   /// progress was never synced.
@@ -78,11 +104,22 @@ class AppState extends ChangeNotifier {
   /// The birth year from the age screen.
   final AgeStore age;
 
+  /// Study reminder settings and schedule (device only).
+  late final StudyReminders reminders;
+
+  /// Replaces the clock for tests. Without it the age store's clock is used,
+  /// so a test that sets that one moves everything.
+  final DateTime Function()? clock;
+
+  /// The current time, for the XP days and the reminders.
+  DateTime now() => (clock ?? age.now)();
+
   late final StreamSubscription<AccountUser?> _userSub;
 
   Course? _course;
   Track? _track;
   Set<String> _completed = {};
+  Map<String, int> _dailyXp = {};
   AccountUser? _user;
   bool _sawAuthEvent = false;
   bool _syncFailed = false;
@@ -90,6 +127,11 @@ class AppState extends ChangeNotifier {
   /// Lessons finished while a merge is running; a merge that replaces the
   /// device copy with the cloud's keeps them.
   final Set<String> _finishedDuringMerge = {};
+
+  /// XP earned while a merge is running, by day. It is not sent until the
+  /// merge ends: the device's XP may still be another account's, so a write
+  /// of "today's total" now could put that account's XP into this one.
+  final Map<String, int> _xpDuringMerge = {};
   bool _merging = false;
 
   /// True while the account is being deleted: no background writes, so
@@ -121,6 +163,59 @@ class AppState extends ChangeNotifier {
   Track? get track => _track;
   Set<String> get completedLessons => Set.unmodifiable(_completed);
   AccountUser? get user => _user;
+
+  /// XP per local day, newest data included. Unmodifiable.
+  Map<String, int> get dailyXp => Map.unmodifiable(_dailyXp);
+
+  /// The daily goal in XP; one of [dailyGoalChoices].
+  int get dailyGoal {
+    final g = prefs.getInt(_dailyGoalKey);
+    return g != null && dailyGoalChoices.contains(g) ? g : defaultDailyGoal;
+  }
+
+  StreakSummary? _summary;
+  String? _summaryDay;
+
+  /// Streak, longest streak, freezes, total and today's XP, derived from
+  /// [dailyXp] for today's date.
+  StreakSummary get summary {
+    final day = dayKey(now());
+    if (_summary == null || _summaryDay != day) {
+      _summary = summarizeStreak(_dailyXp, now());
+      _summaryDay = day;
+    }
+    return _summary!;
+  }
+
+  /// Whether the Home screen may offer the one-time reminder card: reminders
+  /// can work here and are off, the card was never answered, the learner
+  /// finished a first lesson and is known to be 13 or older. Never for
+  /// under-13s, and never while the age is unknown (it is checked again
+  /// every time, so a pending card disappears if the age changes).
+  bool get showReminderPrompt {
+    final group = age.group;
+    return reminders.supported &&
+        !reminders.enabled &&
+        !reminders.promptSeen &&
+        _completed.isNotEmpty &&
+        (group == AgeGroup.teen || group == AgeGroup.adult);
+  }
+
+  Future<void> setDailyGoal(int xp) async {
+    if (!dailyGoalChoices.contains(xp)) return;
+    await prefs.setInt(_dailyGoalKey, xp);
+    notifyListeners();
+    // Whether today's reminder is still needed depends on the goal.
+    unawaited(reminders.refresh());
+  }
+
+  /// Called when the app comes back to the foreground: the day may have
+  /// changed, and reminders are planned again.
+  void onResume() {
+    _summary = null;
+    notifyListeners();
+    unawaited(reminders.refresh());
+  }
 
   /// True when the last attempt to sync with the cloud failed.
   bool get syncFailed => _syncFailed;
@@ -261,19 +356,100 @@ class AppState extends ChangeNotifier {
 
   bool isCompleted(String lessonId) => _completed.contains(lessonId);
 
-  Future<void> markCompleted(String lessonId) async {
+  /// Records a finished lesson and its XP: [xpFirstCompletion] the first
+  /// time, [xpReview] for a lesson that was already done. A lesson earns XP
+  /// at most once per day, so solving the exercise and then passing the quiz,
+  /// or running a solved exercise again, doesn't count twice. Returns what
+  /// was earned.
+  Future<XpAward> markCompleted(String lessonId) async {
+    final epoch = _accountEpoch;
     final added = _completed.add(lessonId);
     // During a merge the device copy may still be another account's, so a
     // lesson that looks done already is still remembered and sent: the
-    // account signing in has just finished it.
+    // account signing in has just finished it. (Its XP is a review's: the
+    // merge hasn't said yet whether this account had finished it.)
     final duringMerge = _user != null && _merging;
     if (duringMerge) _finishedDuringMerge.add(lessonId);
-    if (!added && !duringMerge) return;
-    if (added) {
-      await prefs.setStringList(_completedKey, _completed.toList());
-      notifyListeners();
+    final award = _award(lessonId, first: added);
+    if (!added && !duringMerge && award.xp == 0) return award;
+    // Written together, so the stored copy never has one without the other.
+    await Future.wait([
+      if (added) prefs.setStringList(_completedKey, _completed.toList()),
+      if (award.xp > 0) ...[_saveXp(), _saveAwarded()],
+    ]);
+    if (added || award.xp > 0) notifyListeners();
+    if (epoch != _accountEpoch) return award;
+    if (added || duringMerge) {
+      _push((s, uid) => s.addCompleted(uid, [lessonId]));
     }
-    _push((s, uid) => s.addCompleted(uid, [lessonId]));
+    if (award.xp > 0) {
+      final day = dayKey(now());
+      if (duringMerge) {
+        _xpDuringMerge[day] = (_xpDuringMerge[day] ?? 0) + award.xp;
+      } else {
+        final total = _dailyXp[day]!;
+        _push((s, uid) => s.setDailyXp(uid, {day: total}));
+      }
+      unawaited(reminders.refresh());
+    }
+    return award;
+  }
+
+  /// Adds the XP for finishing [lessonId] to today, unless it already earned
+  /// XP today. Changes memory only; the caller saves.
+  XpAward _award(String lessonId, {required bool first}) {
+    final day = dayKey(now());
+    final awarded = _readAwarded(day);
+    if (awarded.contains(lessonId)) return XpAward.none;
+    final xp = first ? xpFirstCompletion : xpReview;
+    final before = _dailyXp[day] ?? 0;
+    final after = before + xp;
+    _dailyXp = {..._dailyXp, day: after};
+    _summary = null;
+    _awardedDay = day;
+    _awardedLessons = {...awarded, lessonId};
+    final goal = dailyGoal;
+    return XpAward(xp: xp, goalReached: before < goal && after >= goal);
+  }
+
+  String? _awardedDay;
+  Set<String> _awardedLessons = {};
+
+  /// Lessons that earned XP on [day].
+  Set<String> _readAwarded(String day) {
+    if (_awardedDay == null) {
+      try {
+        final raw = prefs.getString(_xpAwardedKey);
+        final data = raw == null ? null : jsonDecode(raw);
+        if (data is Map && data['day'] is String && data['lessons'] is List) {
+          _awardedDay = data['day'] as String;
+          _awardedLessons = {
+            for (final id in data['lessons'] as List)
+              if (id is String) id,
+          };
+        }
+      } catch (_) {
+        // Unreadable: start the day empty.
+      }
+      _awardedDay ??= '';
+    }
+    return _awardedDay == day ? _awardedLessons : const {};
+  }
+
+  Future<void> _saveAwarded() => prefs.setString(
+    _xpAwardedKey,
+    jsonEncode({'day': _awardedDay, 'lessons': _awardedLessons.toList()}),
+  );
+
+  Future<void> _saveXp() => prefs.setString(_dailyXpKey, jsonEncode(_dailyXp));
+
+  static Map<String, int> _readDailyXp(SharedPreferences prefs) {
+    try {
+      final raw = prefs.getString(_dailyXpKey);
+      return raw == null ? {} : cleanDailyXp(jsonDecode(raw));
+    } catch (_) {
+      return {};
+    }
   }
 
   /// Tries the cloud sync again after a failure.
@@ -360,10 +536,21 @@ class AppState extends ChangeNotifier {
     _accountEpoch++;
     _track = null;
     _completed = {};
+    _dailyXp = {};
+    _summary = null;
+    _awardedDay = '';
+    _awardedLessons = {};
+    _xpDuringMerge.clear();
     _syncFailed = false;
     notifyListeners();
     await prefs.remove(_trackKey);
     await prefs.remove(_completedKey);
+    await prefs.remove(_dailyXpKey);
+    await prefs.remove(_dailyGoalKey);
+    await prefs.remove(_xpAwardedKey);
+    // The next person on this device starts with reminders off and no
+    // notification of the last one's left waiting.
+    await reminders.reset();
     await prefs.remove(_syncedUidKey);
     await prefs.remove(_trackDirtyKey);
     await prefs.remove(_unconfirmedKey);
@@ -417,6 +604,7 @@ class AppState extends ChangeNotifier {
       }
     }
     _finishedDuringMerge.clear();
+    _xpDuringMerge.clear();
     _merging = true;
 
     try {
@@ -425,11 +613,26 @@ class AppState extends ChangeNotifier {
 
       final owner = prefs.getString(_syncedUidKey);
       final Track? finalTrack;
+
+      // The days the cloud is known to hold after this merge. XP earned
+      // while the merge runs is sent afterwards if it went beyond that.
+      Map<String, int> sentXp;
       if (owner != null && owner != user.uid) {
         // Left over from another account: never upload it, take the cloud's.
         // Lessons finished since this sign-in are this account's (they were
         // already sent to it), so they stay.
         _completed = {...remote.completed, ..._finishedDuringMerge};
+        // XP earned since this sign-in is this account's and was not sent
+        // yet, so it is added on top of the cloud's days.
+        _dailyXp = {...remote.dailyXp};
+        _xpDuringMerge.forEach(
+          (day, xp) => _dailyXp[day] = (_dailyXp[day] ?? 0) + xp,
+        );
+        _summary = null;
+        final xpAhead = daysAhead(_dailyXp, remote.dailyXp);
+        sentXp = remote.needsRepair
+            ? {..._dailyXp}
+            : {...remote.dailyXp, ...xpAhead};
         _track = finalTrack = remote.track;
         await _saveLocal();
         if (stale()) return;
@@ -438,7 +641,10 @@ class AppState extends ChangeNotifier {
             user.uid,
             track: finalTrack,
             completed: {..._completed},
+            dailyXp: sentXp,
           );
+        } else if (xpAhead.isNotEmpty) {
+          await s.setDailyXp(user.uid, xpAhead);
         }
       } else {
         final localOnly = _completed.difference(remote.completed);
@@ -448,6 +654,14 @@ class AppState extends ChangeNotifier {
         finalTrack = pushTrack ? local : (remote.track ?? local);
 
         _completed.addAll(remote.completed);
+        // Per day the larger value, never the sum; days where the device is
+        // ahead of the cloud are sent.
+        _dailyXp = mergeDailyXp(_dailyXp, remote.dailyXp);
+        _summary = null;
+        final xpAhead = daysAhead(_dailyXp, remote.dailyXp);
+        sentXp = remote.needsRepair
+            ? {..._dailyXp}
+            : {...remote.dailyXp, ...xpAhead};
         _track = finalTrack;
         await _saveLocal();
         if (stale()) return;
@@ -458,9 +672,12 @@ class AppState extends ChangeNotifier {
             user.uid,
             track: finalTrack,
             completed: {..._completed},
+            dailyXp: sentXp,
           );
         } else {
           if (localOnly.isNotEmpty) await s.addCompleted(user.uid, localOnly);
+          if (stale()) return;
+          if (xpAhead.isNotEmpty) await s.setDailyXp(user.uid, xpAhead);
           if (stale()) return;
           if (pushTrack && local != remote.track) {
             await s.setTrack(user.uid, local);
@@ -468,10 +685,14 @@ class AppState extends ChangeNotifier {
         }
       }
       if (stale()) return;
+      final lateXp = daysAhead(_dailyXp, sentXp);
+      if (lateXp.isNotEmpty) await s.setDailyXp(user.uid, lateXp);
+      if (stale()) return;
       if (_track == finalTrack) await prefs.setBool(_trackDirtyKey, false);
       await prefs.setString(_syncedUidKey, user.uid);
       _syncFailed = false;
       notifyListeners();
+      unawaited(reminders.refresh());
     } catch (e) {
       // Offline or misconfigured: keep working from the device copy.
       debugPrint('Progress sync failed: $e');
@@ -486,6 +707,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> _saveLocal() async {
     await prefs.setStringList(_completedKey, _completed.toList());
+    await _saveXp();
     final t = _track;
     if (t == null) {
       await prefs.remove(_trackKey);
@@ -631,6 +853,9 @@ class AppState extends ChangeNotifier {
             completed: accountsAllowed
                 ? {...remote.completed, ..._completed}
                 : {...remote.completed},
+            dailyXp: accountsAllowed
+                ? mergeDailyXp(_dailyXp, remote.dailyXp)
+                : {...remote.dailyXp},
           )
           .timeout(serverTimeout);
       return true;
@@ -644,6 +869,8 @@ class AppState extends ChangeNotifier {
   /// upload doesn't lose lessons that were only in the cloud.
   Future<void> _keepCloudCopy(RemoteProgress remote) async {
     _completed.addAll(remote.completed);
+    _dailyXp = mergeDailyXp(_dailyXp, remote.dailyXp);
+    _summary = null;
     _track ??= remote.track;
     await _saveLocal();
   }
@@ -700,6 +927,9 @@ class AppState extends ChangeNotifier {
   void dispose() {
     _userSub.cancel();
     age.removeListener(_onAgeChanged);
+    reminders
+      ..removeListener(notifyListeners)
+      ..dispose();
     super.dispose();
   }
 }
