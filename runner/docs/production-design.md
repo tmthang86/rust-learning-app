@@ -1038,7 +1038,9 @@ reason goes only to logs (`auth_error`).
   `no_main`, `tests_dont_fit`, `harness`. The server sends codes, never
   English prose (compiler diagnostics and program output excepted).
 - The learner's code and a generated harness are compiled once with
-  `rustc --test`; the program runs once with `RUST_MIN_STACK=8 MiB`. When the
+  `rustc --test -C opt-level=0`; the program runs once, its tests and `main`
+  on one thread with a 16 MiB stack (learner threads keep the default stack).
+  Output limits and the address-space cap are `/run`'s. When the
   compile fails, the job script compiles the learner's code alone
   (`--emit=mir`, the flags of `/run`) to decide whose error it is; that check
   runs only after a failed compile, within the run timeout.

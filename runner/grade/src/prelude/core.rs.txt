@@ -1,5 +1,5 @@
-    pub const NONCE: &str = "__NONCE__";
-    pub const LEARNER_LINES: u32 = __LEARNER_LINES__;
+    const NONCE: &str = "__NONCE__";
+    const LEARNER_LINES: u32 = __LEARNER_LINES__;
     const VALUE_CAP: usize = 1024;
 
     // What the grading thread is doing: 0 nothing, 1 a test case, 2 `main`.
@@ -164,14 +164,19 @@
         MODE.with(|m| m.set(1));
         let result = ::std::panic::catch_unwind(test);
         MODE.with(|m| m.set(0));
+        // A failed check the code under test caught (`catch_unwind`) still
+        // failed the test.
+        let failure = FAILURE.with(|f| f.borrow_mut().take());
         match result {
-            ::core::result::Result::Ok(()) => match panics {
-                ::core::option::Option::None => record("pass", &[]),
-                ::core::option::Option::Some(_) => record("nopanic", &[]),
+            ::core::result::Result::Ok(()) => match (failure, panics) {
+                (::core::option::Option::Some([expr, expected, actual]), _) => {
+                    record("fail", &[cap(&expr), cap(&expected), cap(&actual)])
+                }
+                (::core::option::Option::None, ::core::option::Option::None) => record("pass", &[]),
+                (::core::option::Option::None, ::core::option::Option::Some(_)) => record("nopanic", &[]),
             },
             ::core::result::Result::Err(payload) => {
                 if payload.is::<CheckFailed>() {
-                    let failure = FAILURE.with(|f| f.borrow_mut().take());
                     if let ::core::option::Option::Some([expr, expected, actual]) = failure {
                         record("fail", &[cap(&expr), cap(&expected), cap(&actual)]);
                     } else {

@@ -555,7 +555,7 @@ runs code for anyone is a bug.
 
 `/grade` (exercises with tests) goes through the same gate, so it must answer
 the same way. A `404` here means Caddy does not know the path, so the app's
-Run button would fail on every exercise:
+Run button would fail on every exercise that has tests:
 
 ```sh
 curl -i -X POST "https://$DOMAIN/grade" \

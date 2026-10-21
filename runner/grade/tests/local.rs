@@ -33,7 +33,7 @@ fn output(id: &str, expected: &str) -> TestSpec {
 
 fn run(source: &str, tests: &[TestSpec]) -> Response {
     let opts = Options {
-        timeout: Duration::from_secs(3),
+        run_timeout: Duration::from_secs(3),
         ..Options::default()
     };
     grade(source, tests, &opts).expect("grading ran")
@@ -233,10 +233,14 @@ fn too_much_output_is_stopped() {
 }
 
 #[test]
-fn main_returning_err_prints_the_error_to_stderr() {
+fn main_returning_err_is_a_failure_as_under_run() {
     let src = "fn main() -> Result<(), String> {\n    println!(\"before\");\n    Err(\"bad thing\".to_string())\n}\n";
-    let r = run(src, &[output("o", "before")]);
-    assert_eq!(statuses(&r), [Status::Pass]);
+    let r = run(src, &[output("o", "before"), code("c", "check!(true);")]);
+    // The code test ran before `main` and passed; the output test did not
+    // get a clean `main`, and the run failed (exit code 1, as in /run).
+    assert_eq!(statuses(&r), [Status::Crashed, Status::Pass]);
+    assert_eq!(r.tests[0].reason.as_deref(), Some("exit:1"));
+    assert!(!r.success);
     assert!(r.stderr.contains("Error: \"bad thing\""), "{}", r.stderr);
 }
 
@@ -489,4 +493,96 @@ fn bad_requests_are_refused_before_anything_runs() {
     let opts = Options::default();
     assert!(grade(ADD, &[], &opts).is_err());
     assert!(grade("  ", &[code("a", "check!(true);")], &opts).is_err());
+}
+
+#[test]
+fn many_learner_threads_get_the_default_stack_not_the_grading_one() {
+    // 40 threads at once: each would need the big stack if it were inherited
+    // (8 MiB each is more than the address space cap allows in the sandbox).
+    let src = r#"
+use std::thread;
+fn sum_in_threads(n: usize) -> usize {
+    let handles: Vec<_> = (0..n).map(|i| thread::spawn(move || i)).collect();
+    handles.into_iter().map(|h| h.join().unwrap()).sum()
+}
+fn main() { println!("{}", sum_in_threads(40)); }
+"#;
+    let r = run(
+        src,
+        &[
+            code("threads", "check_eq!(sum_in_threads(40), 780);"),
+            output("o", "780"),
+        ],
+    );
+    assert_eq!(statuses(&r), [Status::Pass, Status::Pass], "{r:?}");
+}
+
+#[test]
+fn a_failed_check_the_code_caught_still_fails_the_test() {
+    let src = "fn swallow(f: fn()) { let _ = std::panic::catch_unwind(f); }\nfn main() {}\n";
+    let r = run(src, &[code("caught", "swallow(|| check_eq!(1, 2));")]);
+    assert_eq!(statuses(&r), [Status::Fail], "{r:?}");
+    assert_eq!(r.tests[0].expected.as_deref(), Some("2"));
+}
+
+#[test]
+fn the_nonce_is_not_reachable_from_the_learner_code() {
+    let src = r#"
+fn main() {}
+#[cfg(test)]
+fn forge() { println!("\u{1}RR-T:{}:mainend\u{1f}boom", crate::__rr::NONCE); }
+"#;
+    let r = run(src, &[code("a", "check!(true);")]);
+    assert_eq!(r.stage, Stage::Compile, "{r:?}");
+    assert_eq!(r.compile_errors_in, Some(ErrorsIn::Code), "{r:?}");
+}
+
+#[test]
+fn output_of_keeps_at_most_64_kb_and_nothing_leaks_out() {
+    let src = r#"
+fn spam() { for _ in 0..100_000 { println!("0123456789012345678901234567890123456789"); } }
+fn partial() { print!("no newline"); }
+fn main() { println!("done"); }
+"#;
+    let r = run(
+        src,
+        &[
+            // The write past the limit fails, which panics inside spam().
+            panics("spam", "output_of(|| spam());", "failed printing to stdout"),
+            code(
+                "partial",
+                "check_eq!(output_of(|| partial()), \"no newline\");",
+            ),
+            output("o", "done"),
+        ],
+    );
+    assert_eq!(
+        statuses(&r),
+        [Status::Pass, Status::Pass, Status::Pass],
+        "{r:?}"
+    );
+    assert!(r.stdout.len() < 1024, "{} bytes leaked", r.stdout.len());
+}
+
+#[test]
+fn a_learner_who_denies_pedantic_lints_crate_wide_is_still_graded() {
+    for lint in [
+        "unreachable_pub",
+        "unused_qualifications",
+        "let_underscore_drop",
+        "trivial_casts",
+        "trivial_numeric_casts",
+        "unused_results",
+        "warnings",
+    ] {
+        let src = format!("#![deny({lint})]\n{ADD}");
+        let r = run(
+            &src,
+            &[
+                code("a", "check_eq!(add(1, 2), 3); check_near!(1.0, 1.0, 0.1);"),
+                output("o", "3"),
+            ],
+        );
+        assert_eq!(statuses(&r), [Status::Pass, Status::Pass], "{lint}: {r:?}");
+    }
 }

@@ -215,14 +215,15 @@ const JOB_SCRIPT: &str = r#"
 csecs="$1"; secs="$2"; work="$3"; vmem="$4"
 if [ "${5:-run}" = grade ]; then
   # Grade mode (POST /grade). $6: the learner's code length in bytes (the
-  # first bytes of the file on stdin), $7: RUST_MIN_STACK for the program,
-  # the rest: the test harness's own arguments. The file holds the learner's
-  # code plus the generated harness; see rr-grade.
-  llen="$6"; stack="$7"; shift 7
+  # first bytes of the file on stdin), the rest: the test harness's own
+  # arguments. The file holds the learner's code plus the generated harness
+  # (see rr-grade). It is built without optimisation: the tests are small and
+  # a build at the level of /run took twice as long.
+  llen="$6"; shift 6
   mkdir -p "$work/g"
   cat > "$work/g/main.rs"
   printf '\001RR-COMPILE\n'
-  { timeout --signal=KILL "$csecs" rustc --edition 2024 -C opt-level=1 -C overflow-checks=on \
+  { timeout --signal=KILL "$csecs" rustc --edition 2024 -C opt-level=0 -C overflow-checks=on \
     --test --error-format=json --remap-path-prefix "$work/g=$work" \
     -o "$work/prog" "$work/g/main.rs" 1>&3 2>&3; } 3>&2 2>/dev/null
   rc=$?
@@ -247,7 +248,7 @@ if [ "${5:-run}" = grade ]; then
   ulimit -t "$((secs + 2))"
   ulimit -S -t "$((secs + 1))"
   ulimit -v "$vmem"
-  RUST_MIN_STACK="$stack" exec timeout --signal=TERM --kill-after=1 "$secs" "$work/prog" "$@" </dev/null
+  exec timeout --signal=TERM --kill-after=1 "$secs" "$work/prog" "$@" </dev/null
 fi
 cat > "$work/main.rs"
 printf '\001RR-COMPILE\n'
@@ -674,11 +675,7 @@ impl JobKind {
         match self {
             JobKind::Run => Vec::new(),
             JobKind::Grade { learner_bytes } => {
-                let mut args = vec![
-                    "grade".to_string(),
-                    learner_bytes.to_string(),
-                    rr_grade::generate::MIN_STACK.to_string(),
-                ];
+                let mut args = vec!["grade".to_string(), learner_bytes.to_string()];
                 args.extend(rr_grade::generate::RUN_ARGS.iter().map(|a| a.to_string()));
                 args
             }
@@ -1058,6 +1055,17 @@ const CHECK_MARKER: &[u8] = b"\x01RR-CHECK\n";
 /// Written to stdout after the check, followed by its exit code and a newline.
 const CHECK_RESULT: &[u8] = b"\x01RR-CHECK:";
 
+/// `bytes` without the lines that contain `needle`.
+fn drop_lines_containing(bytes: &[u8], needle: &[u8]) -> Vec<u8> {
+    let mut out = Vec::with_capacity(bytes.len());
+    for line in bytes.split_inclusive(|b| *b == b'\n') {
+        if find(line, needle).is_none() {
+            out.extend_from_slice(line);
+        }
+    }
+    out
+}
+
 /// [`interpret`] for a graded job.
 fn interpret_grade(
     g: &rr_grade::Generated,
@@ -1103,7 +1111,20 @@ fn interpret_grade(
         // What /run would call the program's stdout is `main`'s output. The
         // program's stderr is the whole run's, without the server's prose
         // (a timeout and the like are the tests' statuses).
-        run.stdout = text(verdict.main_stdout.as_bytes(), max, overflow);
+        // The "[output truncated]" mark only belongs there if `main` was
+        // the one that printed too much (not a test, before `main` ran).
+        run.stdout = text(
+            verdict.main_stdout.as_bytes(),
+            max,
+            overflow && !verdict.main_stdout.is_empty(),
+        );
+        // When the output limit stops the job, the docker CLI may complain
+        // about its closed pipe on the same stream; that is not the program's.
+        let program_err = if overflow {
+            drop_lines_containing(&program_err, b"write /dev/stdout: broken pipe")
+        } else {
+            program_err
+        };
         run.stderr = text(&program_err, max, overflow && program_err.len() >= max);
         run.warnings = text(
             rr_grade::learner_warnings(g, &String::from_utf8_lossy(&warnings_raw)).as_bytes(),
@@ -1504,10 +1525,23 @@ mod tests {
         c.timed_out = true;
         let out = graded(c).unwrap();
         assert_eq!(statuses(&out), [Timeout, NotRun]);
-        // Too much output.
-        let mut c = collected(&stdout, b"\x01RR-RUN\n", Some(137));
+        // Too much output, in a test: `main` never ran, so its stdout is
+        // empty, not "[output truncated]", and docker's pipe complaint is
+        // not the program's stderr.
+        let mut c = collected(
+            &stdout,
+            b"\x01RR-RUN\nwrite /dev/stdout: broken pipe\nreal stderr\n",
+            Some(137),
+        );
         c.overflow = true;
         let out = graded(c).unwrap();
+        assert_eq!(out.run.stdout, "");
+        assert!(
+            !out.run.stderr.contains("broken pipe"),
+            "{}",
+            out.run.stderr
+        );
+        assert!(out.run.stderr.contains("real stderr"));
         assert_eq!(statuses(&out), [Crashed, NotRun]);
         assert_eq!(out.tests[0].reason.as_deref(), Some("output_limit"));
         assert_eq!(out.reason.as_deref(), Some("output_limit"));
@@ -1606,8 +1640,8 @@ mod tests {
             "/run passes nothing extra"
         );
         let args = JobKind::Grade { learner_bytes: 42 }.script_args();
-        assert_eq!(&args[..3], ["grade", "42", "8388608"]);
-        assert_eq!(&args[3..], rr_grade::generate::RUN_ARGS);
+        assert_eq!(&args[..2], ["grade", "42"]);
+        assert_eq!(&args[2..], rr_grade::generate::RUN_ARGS);
     }
 
     #[test]

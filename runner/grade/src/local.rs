@@ -3,7 +3,9 @@
 //!
 //! It takes the same steps as the runner's job script, with plain
 //! `std::process`: it works on macOS too, and like the old checker it is
-//! **not a sandbox**. Only run lesson content you trust.
+//! **not a sandbox**. Only run lesson content you trust. Time and output
+//! limits are the runner's (compile 10 s, run 5 s, 64 KB of output); there is
+//! no address-space cap.
 
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -13,11 +15,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use crate::classify::{CheckResult, ErrorsIn, classify_compile, learner_warnings};
-use crate::generate::{MIN_STACK, RUN_ARGS, build};
+use crate::generate::{RUN_ARGS, build};
 use crate::results::{End, EndState, MainStatus, results};
 use crate::{Response, Stage, Status, TestResult, TestSpec, validate};
 
-/// The flags `/run` compiles with (`runner/src/sandbox.rs`).
+/// The flags `/run` compiles with (`runner/src/sandbox.rs`): used for the
+/// learner-only check, whose text must match `/run`'s.
 const FLAGS: [&str; 6] = [
     "--edition",
     "2024",
@@ -27,23 +30,37 @@ const FLAGS: [&str; 6] = [
     "overflow-checks=on",
 ];
 
-/// Most bytes read from a program's stdout or stderr.
-const MAX_CAPTURE: usize = 4 * 1024 * 1024;
+/// The flags of the combined build (the job script's grade block).
+const GRADE_FLAGS: [&str; 6] = [
+    "--edition",
+    "2024",
+    "-C",
+    "opt-level=0",
+    "-C",
+    "overflow-checks=on",
+];
+
+/// Most bytes read from rustc's output (JSON diagnostics can be long).
+const COMPILE_CAPTURE: usize = 4 * 1024 * 1024;
+/// Most bytes read from the graded program, as in the runner.
+const RUN_CAPTURE: usize = 64 * 1024;
 
 #[derive(Debug, Clone)]
 pub struct Options {
     /// The compiler to run.
     pub rustc: String,
-    /// Wall-clock limit for each of compiling, the learner-only check and
-    /// running.
-    pub timeout: Duration,
+    /// Wall-clock limit for compiling.
+    pub compile_timeout: Duration,
+    /// Wall-clock limit for the learner-only check and for running.
+    pub run_timeout: Duration,
 }
 
 impl Default for Options {
     fn default() -> Self {
         Self {
             rustc: "rustc".into(),
-            timeout: Duration::from_secs(10),
+            compile_timeout: Duration::from_secs(10),
+            run_timeout: Duration::from_secs(5),
         }
     }
 }
@@ -58,6 +75,7 @@ struct Captured {
 
 fn read_all<R: Read + Send + 'static>(
     mut reader: R,
+    cap: usize,
     overflow: Arc<AtomicBool>,
 ) -> std::thread::JoinHandle<Vec<u8>> {
     std::thread::spawn(move || {
@@ -67,7 +85,7 @@ fn read_all<R: Read + Send + 'static>(
             match reader.read(&mut chunk) {
                 Ok(0) | Err(_) => return buf,
                 Ok(n) => {
-                    if buf.len() + n > MAX_CAPTURE {
+                    if buf.len() + n > cap {
                         overflow.store(true, Ordering::SeqCst);
                         // Keep draining so the child can finish being killed.
                         continue;
@@ -79,26 +97,51 @@ fn read_all<R: Read + Send + 'static>(
     })
 }
 
-fn run_capped(cmd: &mut Command, timeout: Duration) -> std::io::Result<Captured> {
+#[cfg(unix)]
+unsafe extern "C" {
+    fn kill(pid: i32, sig: i32) -> i32;
+}
+
+/// Kills the child and everything it started: it leads its own process
+/// group, so a grandchild holding the output pipes can't make us wait.
+fn kill_group(child: &mut std::process::Child) {
+    #[cfg(unix)]
+    {
+        // SAFETY: a plain signal to the process group the child leads.
+        unsafe {
+            kill(-(child.id() as i32), 9);
+        }
+    }
+    let _ = child.kill();
+}
+
+fn run_capped(cmd: &mut Command, timeout: Duration, cap: usize) -> std::io::Result<Captured> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        cmd.process_group(0);
+    }
     let mut child = cmd
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
     let overflow = Arc::new(AtomicBool::new(false));
-    let out = read_all(child.stdout.take().expect("piped"), overflow.clone());
-    let err = read_all(child.stderr.take().expect("piped"), overflow.clone());
+    let out = read_all(child.stdout.take().expect("piped"), cap, overflow.clone());
+    let err = read_all(child.stderr.take().expect("piped"), cap, overflow.clone());
     let started = Instant::now();
     let mut timed_out = false;
     let status = loop {
         if let Some(status) = child.try_wait()? {
+            // Whatever it left running goes too.
+            kill_group(&mut child);
             break Some(status);
         }
         if started.elapsed() > timeout {
             timed_out = true;
         }
         if timed_out || overflow.load(Ordering::SeqCst) {
-            let _ = child.kill();
+            kill_group(&mut child);
             let _ = child.wait();
             break None;
         }
@@ -209,7 +252,7 @@ pub fn grade(code: &str, tests: &[TestSpec], opts: &Options) -> Result<Response,
 
     let mut compile = Command::new(&opts.rustc);
     compile
-        .args(FLAGS)
+        .args(GRADE_FLAGS)
         .arg("--test")
         .arg("--error-format=json")
         .arg("--remap-path-prefix")
@@ -217,7 +260,8 @@ pub fn grade(code: &str, tests: &[TestSpec], opts: &Options) -> Result<Response,
         .arg("-o")
         .arg(work.join("prog"))
         .arg(&combined);
-    let built = run_capped(&mut compile, opts.timeout).map_err(spawn_err)?;
+    let built =
+        run_capped(&mut compile, opts.compile_timeout, COMPILE_CAPTURE).map_err(spawn_err)?;
     let json = String::from_utf8_lossy(&built.stderr).into_owned();
 
     if built.timed_out || built.overflow {
@@ -240,7 +284,8 @@ pub fn grade(code: &str, tests: &[TestSpec], opts: &Options) -> Result<Response,
             .arg("-o")
             .arg(work.join("l.mir"))
             .arg(&learner);
-        let checked = run_capped(&mut check, opts.timeout).map_err(spawn_err)?;
+        let checked =
+            run_capped(&mut check, opts.run_timeout, COMPILE_CAPTURE).map_err(spawn_err)?;
         let check = if checked.timed_out || checked.overflow {
             None
         } else {
@@ -268,8 +313,8 @@ pub fn grade(code: &str, tests: &[TestSpec], opts: &Options) -> Result<Response,
     let _ = std::fs::remove_dir_all(work.join("g"));
     let _ = std::fs::remove_file(work.join("main.rs"));
     let mut run = Command::new(work.join("prog"));
-    run.args(RUN_ARGS).env("RUST_MIN_STACK", MIN_STACK);
-    let ran = run_capped(&mut run, opts.timeout)
+    run.args(RUN_ARGS);
+    let ran = run_capped(&mut run, opts.run_timeout, RUN_CAPTURE)
         .map_err(|e| format!("could not run the program: {e}"))?;
     let stdout = String::from_utf8_lossy(&ran.stdout).into_owned();
     let stderr = String::from_utf8_lossy(&ran.stderr).into_owned();

@@ -123,7 +123,9 @@ fn unescape(s: &str) -> String {
             Some('u') => {
                 let rest = chars.as_str();
                 let parsed = rest.strip_prefix('{').and_then(|r| {
-                    let end = r.find('}')?;
+                    // At most 8 hex digits, so an unclosed `\u{` costs a few
+                    // bytes to look at, not the rest of the text.
+                    let end = r.char_indices().take(9).find(|(_, c)| *c == '}')?.0;
                     let ch = char::from_u32(u32::from_str_radix(&r[..end], 16).ok()?)?;
                     Some((ch, end + 2))
                 });
@@ -145,13 +147,18 @@ fn unescape(s: &str) -> String {
     out
 }
 
-fn well_formed(kind: &str, fields: usize) -> bool {
+/// Whether a record has the shape its kind needs: the right number of
+/// fields and, where a field picks between meanings, one of them. Anything
+/// else (the learner can print what it likes) is plain output.
+fn well_formed(kind: &str, fields: &[String]) -> bool {
     match kind {
-        "case" => fields == 1,
-        "pass" | "nopanic" | "main" | "done" => fields == 0,
-        "fail" => fields == 3,
-        "panic" => fields == 2,
-        "mainend" => fields == 1 || fields == 3,
+        "case" => fields.len() == 1,
+        "pass" | "nopanic" | "main" | "done" => fields.is_empty(),
+        "fail" => fields.len() == 3,
+        "panic" => fields.len() == 2,
+        "mainend" => {
+            (fields.len() == 1 && fields[0] == "ok") || (fields.len() == 3 && fields[0] == "panic")
+        }
         _ => false,
     }
 }
@@ -172,7 +179,7 @@ fn parse_items(stdout: &str, nonce: &str) -> Vec<Item> {
         let mut parts = body.split('\u{1f}');
         let kind = parts.next().unwrap_or("").to_string();
         let fields: Vec<String> = parts.map(unescape).collect();
-        if well_formed(&kind, fields.len()) {
+        if well_formed(&kind, &fields) {
             if start > text_from {
                 items.push(Item::Text(stdout[text_from..start].to_string()));
             }
@@ -211,9 +218,9 @@ pub fn results(g: &Generated, stdout: &str, end: &EndState) -> RunVerdict {
                 }
             }
             Item::Rec(r) => {
-                let f = &r.fields;
+                let f = |i: usize| r.fields.get(i).map_or("", String::as_str);
                 match r.kind.as_str() {
-                    "case" => current = Some((f[0].clone(), String::new())),
+                    "case" => current = Some((f(0).to_string(), String::new())),
                     "pass" | "fail" | "panic" | "nopanic" => {
                         if let Some((id, printed)) = current.take() {
                             done_cases
@@ -226,12 +233,12 @@ pub fn results(g: &Generated, stdout: &str, end: &EndState) -> RunVerdict {
                         main_started = true;
                     }
                     "mainend" if main_started => {
-                        main_end = Some(if f[0] == "ok" {
+                        main_end = Some(if f(0) == "ok" {
                             MainEnd::Ok
                         } else {
                             MainEnd::Panic(
-                                truncate_marked(&f[1], VALUE_CAP),
-                                f[2].parse::<u32>().ok(),
+                                truncate_marked(f(1), VALUE_CAP),
+                                f(2).parse::<u32>().ok(),
                             )
                         });
                     }
@@ -306,20 +313,20 @@ fn interrupted(id: &str, end: &EndState) -> TestResult {
 }
 
 fn case_result(id: &str, r: &Record, printed: String) -> TestResult {
-    let f = &r.fields;
+    let f = |i: usize| r.fields.get(i).map_or("", String::as_str);
     let mut t = match r.kind.as_str() {
         "pass" => return TestResult::new(id, Status::Pass),
         "fail" => {
             let mut t = TestResult::new(id, Status::Fail);
-            t.expr = Some(truncate_marked(&f[0], VALUE_CAP));
-            t.expected = Some(truncate_marked(&f[1], VALUE_CAP));
-            t.actual = Some(truncate_marked(&f[2], VALUE_CAP));
+            t.expr = Some(truncate_marked(f(0), VALUE_CAP));
+            t.expected = Some(truncate_marked(f(1), VALUE_CAP));
+            t.actual = Some(truncate_marked(f(2), VALUE_CAP));
             t
         }
         "panic" => {
             let mut t = TestResult::new(id, Status::Panic);
-            t.message = Some(truncate_marked(&f[0], VALUE_CAP));
-            t.line = f[1].parse::<u32>().ok();
+            t.message = Some(truncate_marked(f(0), VALUE_CAP));
+            t.line = f(1).parse::<u32>().ok();
             t
         }
         _ => TestResult::new(id, Status::Nopanic),
@@ -535,6 +542,93 @@ mod tests {
             },
         );
         assert_eq!(statuses(&v), [Status::Timeout, Status::NotRun]);
+    }
+
+    /// The learner can print any record with the right nonce (if it finds
+    /// it): whatever the shape, grading must not panic.
+    #[test]
+    fn malformed_records_never_panic() {
+        let g = gen_(&[code("a"), code("b"), output("o", "x")]);
+        let kinds = [
+            "case", "pass", "fail", "panic", "nopanic", "main", "mainend", "done", "other", "",
+        ];
+        let values = [
+            "",
+            "ok",
+            "panic",
+            "boom",
+            "-1",
+            "99999999999",
+            "\\u{zz}",
+            "\\u{",
+        ];
+        let ends = [
+            EndState {
+                end: End::Exited(0),
+                stack_overflow: false,
+            },
+            EndState {
+                end: End::TimedOut,
+                stack_overflow: false,
+            },
+            EndState {
+                end: End::Exited(1),
+                stack_overflow: true,
+            },
+        ];
+        let mut cases = 0;
+        for kind in kinds {
+            for arity in 0..=4usize {
+                for value in values {
+                    let fields = vec![value; arity];
+                    let forged = rec(kind, &fields);
+                    // Alone, after a case, and after main started.
+                    for prefix in [
+                        String::new(),
+                        rec("case", &["a"]),
+                        rec("case", &["a"]) + &rec("pass", &[]) + &rec("main", &[]),
+                    ] {
+                        let stdout = format!("{prefix}{forged}{}", rec("done", &[]));
+                        for end in &ends {
+                            let v = results(&g, &stdout, end);
+                            assert_eq!(v.tests.len(), 3, "{kind} {arity} {value:?}");
+                            cases += 1;
+                        }
+                    }
+                }
+            }
+        }
+        assert!(cases > 1000);
+    }
+
+    #[test]
+    fn a_mainend_that_is_neither_ok_nor_panic_is_plain_output() {
+        let g = gen_(&[output("o", "hi\n")]);
+        let mut s = rec("main", &[]);
+        s += "hi\n";
+        s += &rec("mainend", &["boom"]);
+        s += &rec("mainend", &["ok"]);
+        let v = results(
+            &g,
+            &s,
+            &EndState {
+                end: End::Exited(0),
+                stack_overflow: false,
+            },
+        );
+        // The forged line is part of what the program printed, and the real
+        // end of `main` still counts.
+        assert!(v.main_stdout.contains("boom"));
+        assert_eq!(statuses(&v), [Status::Fail]);
+        assert_eq!(v.main, MainStatus::Ok);
+    }
+
+    #[test]
+    fn many_unclosed_unicode_escapes_are_cheap() {
+        let text = "\\u{".repeat(200_000);
+        let started = std::time::Instant::now();
+        assert_eq!(unescape(&text), text);
+        assert!(started.elapsed() < std::time::Duration::from_secs(2));
     }
 
     #[test]

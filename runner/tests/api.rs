@@ -562,10 +562,12 @@ async fn g7_too_much_output_is_cut_off_as_output_limit() {
 }
 
 #[tokio::test]
-async fn g8_main_returning_an_error_prints_it_to_stderr() {
+async fn g8_main_returning_an_error_is_a_failed_run_as_under_run() {
     let code = "fn main() -> Result<(), String> { println!(\"hi\"); Err(\"nope\".into()) }\n";
     let out = grade_local(code, json!([{ "id": "o", "output": "hi" }])).await;
-    assert_eq!(statuses(&out), ["pass"], "{out}");
+    assert_eq!(statuses(&out), ["crashed"], "{out}");
+    assert_eq!(out["tests"][0]["reason"], "exit:1");
+    assert_eq!(out["success"], false);
     assert!(
         out["stderr"].as_str().unwrap().contains("Error: \"nope\""),
         "{out}"
@@ -647,6 +649,23 @@ async fn g11_bad_test_lists_get_400_tests_invalid() {
     let (status, _, v) = common::send(router(), req).await;
     assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
     assert_eq!(v["code"], "bad_request");
+}
+
+/// 20 threads at once: they work in `/run`, and must in `/grade`, where only
+/// the grading thread has the big stack (8 MiB each would not fit the
+/// sandbox's address-space cap).
+const MANY_THREADS: &str = "use std::thread;\nfn sum(n: usize) -> usize { let hs: Vec<_> = (0..n).map(|i| thread::spawn(move || i)).collect(); hs.into_iter().map(|h| h.join().unwrap()).sum() }\nfn main() { println!(\"{}\", sum(20)); }\n";
+
+#[tokio::test]
+async fn g13b_many_threads_work_in_run_and_in_grade() {
+    let run = run_local(MANY_THREADS).await;
+    assert_eq!(run["stdout"], "190\n", "{run}");
+    let out = grade_local(
+        MANY_THREADS,
+        json!([{ "id": "t", "code": "check_eq!(sum(20), 190);" }, { "id": "o", "output": "190" }]),
+    )
+    .await;
+    assert_eq!(statuses(&out), ["pass", "pass"], "{out}");
 }
 
 #[tokio::test]
@@ -985,6 +1004,14 @@ async fn docker_grade_runs_the_cases() {
     let out = grade(deep, json!([{ "id": "deep", "code": "check_eq!(depth(20_000, [0; 256]), 20_000);" }, { "id": "o", "output": "20000" }])).await;
     assert_eq!(statuses(&out), ["pass", "pass"], "{out}");
 
+    // Many threads, under the sandbox's address-space cap.
+    let out = grade(
+        MANY_THREADS,
+        json!([{ "id": "t", "code": "check_eq!(sum(20), 190);" }, { "id": "o", "output": "190" }]),
+    )
+    .await;
+    assert_eq!(statuses(&out), ["pass", "pass"], "{out}");
+
     // D2: nothing of the source is left in /tmp when the program runs.
     let leftovers = "fn count() -> usize { std::fs::read_dir(\"/tmp\").unwrap().filter_map(|e| e.ok()).filter(|e| e.file_name() == \"main.rs\" || e.file_name() == \"g\").count() }\nfn main() {}\n";
     let out = grade(
@@ -1006,6 +1033,19 @@ async fn docker_grade_runs_the_cases() {
     .await;
     assert_eq!(statuses(&out), ["pass", "pass"], "{out}");
     assert_eq!(out["stdout"], "hello\n", "{out}");
+
+    // The capture is bounded: a flood inside output_of fails that test (the
+    // write past the limit panics) and does not fill the tmpfs.
+    let flood = "fn spam() { for _ in 0..2_000_000 { println!(\"0123456789012345678901234567890123456789\"); } }\nfn main() { println!(\"done\"); }\n";
+    let out = grade(
+        flood,
+        json!([
+            { "id": "spam", "code": "output_of(|| spam());", "panics": "failed printing" },
+            { "id": "o", "output": "done" },
+        ]),
+    )
+    .await;
+    assert_eq!(statuses(&out), ["pass", "pass"], "{out}");
 }
 
 /// A full tmpfs counts toward the sandbox's memory but not the program's
@@ -1056,4 +1096,74 @@ fn main() { println!("{}", BIG[7]); }"#;
     let stage = out["stage"].as_str().unwrap();
     assert!(stage == "compile" || stage == "timeout", "{out}");
     assert_eq!(out["success"], false, "{out}");
+}
+
+/// Whole-job time of `/grade` against `/run` (container start included) on
+/// the lessons' own solutions: the cost the design budgets at 1.5x. Prints
+/// the medians; run with `cargo test --test api cost -- --ignored --nocapture`.
+/// Set `COST_RUNS` for the number of rounds (default 3; the numbers in the design doc used 9).
+#[tokio::test]
+#[ignore]
+async fn cost_grade_against_run_on_lesson_solutions() {
+    let _turn = DOCKER_SUITE.lock().await;
+    let rounds: usize = std::env::var("COST_RUNS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(3);
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../assets/content/lessons");
+    let median = |mut v: Vec<f64>| {
+        v.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        v[v.len() / 2]
+    };
+    for id in ["u6-l2", "u12-l2", "u0-l1"] {
+        let lesson: Value =
+            serde_json::from_str(&std::fs::read_to_string(dir.join(format!("{id}.json"))).unwrap())
+                .unwrap();
+        let ex = &lesson["exercise"];
+        let solution = ex["solution"].as_str().unwrap().to_string();
+        let tests: Value = match ex.get("tests") {
+            Some(t) => Value::Array(
+                t.as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|t| {
+                        let mut t = t.clone();
+                        t.as_object_mut().unwrap().remove("label");
+                        t.as_object_mut().unwrap().remove("hidden");
+                        t
+                    })
+                    .collect(),
+            ),
+            None => json!([{ "id": "output", "output": ex["expectedOutput"] }]),
+        };
+        let (mut runs, mut grades) = (Vec::new(), Vec::new());
+        for round in 0..rounds + 1 {
+            let t = std::time::Instant::now();
+            let (status, out) = post_run(docker_state(), &solution).await;
+            assert_eq!(status, StatusCode::OK, "{out}");
+            let run_s = t.elapsed().as_secs_f64();
+            let t = std::time::Instant::now();
+            let (status, out) = post_grade(docker_state(), &solution, tests.clone()).await;
+            assert_eq!(status, StatusCode::OK, "{out}");
+            let grade_s = t.elapsed().as_secs_f64();
+            let passed = out["tests"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|t| t["status"] == "pass")
+                .count();
+            assert_eq!(passed, out["tests"].as_array().unwrap().len(), "{out}");
+            if round > 0 {
+                // The first round warms the image cache.
+                runs.push(run_s);
+                grades.push(grade_s);
+            }
+        }
+        let (r, g) = (median(runs), median(grades));
+        println!(
+            "COST {id}: run {r:.3}s, grade {g:.3}s, ratio {:.2} ({} tests)",
+            g / r,
+            tests.as_array().unwrap().len()
+        );
+    }
 }

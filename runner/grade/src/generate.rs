@@ -14,16 +14,25 @@
 //! }
 //! ```
 //!
-//! The generated code has no lint attributes, so a learner's
-//! `#![forbid(...)]` can't clash with it, and it is warning-free by
-//! construction: every helper is referenced from `__rr_grade`, and the
-//! self-check test uses every macro.
+//! The only lint attribute on the generated modules is an `allow` of three
+//! pedantic lints a learner might `deny` crate-wide (`ALLOWED_LINTS`), so a
+//! learner's `#![forbid(...)]` of any other lint can't clash with it. The code
+//! is warning-free by construction: every helper is referenced from
+//! `__rr_grade`, and the self-check test uses every macro.
 
 use crate::TestSpec;
 
 const CORE: &str = include_str!("prelude/core.rs.txt");
 const OUTPUT_OF: &str = include_str!("prelude/output_of.rs.txt");
 const MACROS: &str = include_str!("prelude/macros.rs.txt");
+
+/// Lints a learner may `deny` crate-wide that the generated code trips. They
+/// are allowed on the generated modules only. Only these: an `allow` of a
+/// lint the learner `forbid`s is an error (as is tripping it), so a lint the
+/// generated code does not trip must not be listed. `unsafe_code` is not
+/// either: `output_of` needs it (the documented residual).
+const ALLOWED_LINTS: &str = "unreachable_pub, unused_qualifications, let_underscore_drop, \
+     trivial_casts, trivial_numeric_casts";
 
 /// The libtest arguments that run the generated test and nothing else
 /// (`--exact` skips any `#[test]` the learner wrote).
@@ -36,10 +45,6 @@ pub const RUN_ARGS: [&str; 7] = [
     "--color",
     "never",
 ];
-
-/// `RUST_MIN_STACK` for the graded program: the main thread's 8 MiB, so a
-/// deep recursion that works in `/run` works inside a test too.
-pub const MIN_STACK: &str = "8388608";
 
 /// What a requested test is.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -121,7 +126,7 @@ pub fn build(code: &str, tests: &[TestSpec], nonce: &str) -> Generated {
         .iter()
         .any(|t| t.code.as_deref().is_some_and(|c| c.contains("output_of")));
 
-    out.push("\nmod __rr {\n");
+    out.push(&format!("\n#[allow({ALLOWED_LINTS})]\nmod __rr {{\n"));
     let core = CORE
         .replace("__NONCE__", nonce)
         .replace("__LEARNER_LINES__", &learner_lines.to_string());
@@ -131,7 +136,9 @@ pub fn build(code: &str, tests: &[TestSpec], nonce: &str) -> Generated {
     }
     out.push("}\n");
 
-    out.push("#[cfg(test)]\nmod __rr_tests {\n    use super::*;\n");
+    out.push(&format!(
+        "#[cfg(test)]\n#[allow({ALLOWED_LINTS})]\nmod __rr_tests {{\n    use super::*;\n"
+    ));
     if uses_output_of {
         out.push("    use crate::__rr::output_of;\n");
     }
@@ -154,7 +161,15 @@ pub fn build(code: &str, tests: &[TestSpec], nonce: &str) -> Generated {
         });
     }
 
-    out.push("    #[test]\n    fn __rr_grade() {\n        crate::__rr::start();\n");
+    // Every case and `main` run on one thread with a 16 MiB stack. `/run`'s
+    // main thread has 8 MiB, but this build is not optimised and its frames
+    // are larger, so a recursion that fits in `/run` fits here (a `#[test]`
+    // thread is only 2 MiB). Not bigger: the sandbox caps the address space
+    // (320 MB), and at 24 MiB a learner's 20 threads no longer fit. Threads
+    // the learner starts keep the default stack size, as in `/run`.
+    out.push(
+        "    #[test]\n    fn __rr_grade() {\n        crate::__rr::start();\n        let spawned = ::std::thread::Builder::new()\n            .name(::std::string::String::from(\"main\"))\n            .stack_size(16 * 1024 * 1024)\n            .spawn(__rr_all);\n        match spawned {\n            ::core::result::Result::Ok(handle) => {\n                let _ = handle.join();\n            }\n            ::core::result::Result::Err(_) => __rr_all(),\n        }\n    }\n\n    fn __rr_all() {\n",
+    );
     out.push(
         "        let _ = (\n            crate::__rr::start as fn(),\n            crate::__rr::fail as fn(&str, &str, &str) -> !,\n            crate::__rr::case as fn(&str, ::core::option::Option<&str>, fn()),\n            crate::__rr::main as fn(fn()),\n            crate::__rr::done as fn(),\n            crate::__rr::dbg::<i32> as fn(&i32) -> ::std::string::String,\n        );\n",
     );
@@ -184,7 +199,7 @@ pub fn build(code: &str, tests: &[TestSpec], nonce: &str) -> Generated {
         }
     }
     let main_call_line = out.push(
-        "        crate::__rr::main(|| { let _ = ::std::process::Termination::report(main()); });\n",
+        "        crate::__rr::main(|| if ::std::process::Termination::report(main()) != ::std::process::ExitCode::SUCCESS { ::std::process::exit(1) });\n",
     );
     out.push("        crate::__rr::done();\n    }\n}\n");
 
@@ -309,14 +324,17 @@ mod tests {
         assert!(g.source.contains("use crate::__rr::output_of;"));
         // The generated part of the file (after the learner's code).
         let generated = &g.source[g.learner_bytes..];
-        assert!(!generated.contains("#[allow") && !generated.contains("#![allow"));
+        // The only lint attributes are the two `allow`s of ALLOWED_LINTS, and
+        // nothing inner (`#![...]`) or about `unsafe_code`.
+        assert_eq!(generated.matches("#[allow(").count(), 2);
+        assert!(!generated.contains("#![") && !generated.contains("unsafe_code"));
     }
 
     #[test]
     fn nonce_and_learner_line_count_are_filled_in() {
         let g = build(LEARNER, &[code_test("t", "check!(true);")], "abc123");
-        assert!(g.source.contains("pub const NONCE: &str = \"abc123\";"));
-        assert!(g.source.contains("pub const LEARNER_LINES: u32 = 7;"));
+        assert!(g.source.contains("const NONCE: &str = \"abc123\";"));
+        assert!(g.source.contains("const LEARNER_LINES: u32 = 7;"));
         assert!(!g.source.contains("__NONCE__") && !g.source.contains("__LEARNER_LINES__"));
     }
 
