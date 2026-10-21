@@ -1,0 +1,179 @@
+{
+  "units": [
+    {
+      "id": "u0",
+      "number": 0,
+      "title": "Kiến thức lập trình cơ bản",
+      "summary": "Chương trình là gì, giá trị, quyết định, vòng lặp và hàm.",
+      "tracks": ["starter"],
+      "lessons": [
+        { "id": "u0-l1", "title": "Chương trình là gì?" },
+        { "id": "u0-l2", "title": "Giá trị và biến" },
+        { "id": "u0-l3", "title": "Đưa ra quyết định" },
+        { "id": "u0-l4", "title": "Lặp lại với vòng lặp" },
+        { "id": "u0-l5", "title": "Hàm" }
+      ]
+    },
+    {
+      "id": "u1",
+      "number": 1,
+      "title": "Bắt đầu",
+      "summary": "Hello world, Cargo, in ra màn hình, biến và shadowing.",
+      "tracks": ["starter", "fast"],
+      "lessons": [
+        { "id": "u1-l1", "title": "Hello, world!" },
+        { "id": "u1-l2", "title": "Cargo, công cụ build của Rust" },
+        { "id": "u1-l3", "title": "In ra màn hình với println!" },
+        { "id": "u1-l4", "title": "Biến và tính có thể thay đổi" },
+        { "id": "u1-l5", "title": "Shadowing" }
+      ]
+    },
+    {
+      "id": "u2",
+      "number": 2,
+      "title": "Kiểu dữ liệu và luồng điều khiển",
+      "summary": "Số, boolean, tuple, mảng, if, vòng lặp và hàm.",
+      "tracks": ["starter", "fast"],
+      "lessons": [
+        { "id": "u2-l1", "title": "Các kiểu scalar" },
+        { "id": "u2-l2", "title": "Tuple và mảng" },
+        { "id": "u2-l3", "title": "if là một biểu thức" },
+        { "id": "u2-l4", "title": "loop, while và for" },
+        { "id": "u2-l5", "title": "Hàm và giá trị trả về" }
+      ]
+    },
+    {
+      "id": "u3",
+      "number": 3,
+      "title": "Quyền sở hữu (ownership)",
+      "summary": "Ý tưởng giúp Rust an toàn mà không cần bộ thu gom rác (garbage collector).",
+      "tracks": ["starter", "fast"],
+      "lessons": [
+        { "id": "u3-l1", "title": "Quyền sở hữu và việc di chuyển (move)" },
+        { "id": "u3-l2", "title": "Copy và Clone" },
+        { "id": "u3-l3", "title": "Mượn (borrowing) và tham chiếu" },
+        { "id": "u3-l4", "title": "Tham chiếu có thể thay đổi" },
+        { "id": "u3-l5", "title": "Slice" }
+      ]
+    },
+    {
+      "id": "u4",
+      "number": 4,
+      "title": "Struct và enum",
+      "summary": "Mô hình hóa dữ liệu của bạn rồi dùng match để xử lý nó.",
+      "tracks": ["starter", "fast"],
+      "lessons": [
+        { "id": "u4-l1", "title": "Struct" },
+        { "id": "u4-l2", "title": "Phương thức" },
+        { "id": "u4-l3", "title": "Enum" },
+        { "id": "u4-l4", "title": "Option" },
+        { "id": "u4-l5", "title": "match và if let" }
+      ]
+    },
+    {
+      "id": "u5",
+      "number": 5,
+      "title": "Collection và chuỗi",
+      "summary": "Vec, String so với &str, và HashMap.",
+      "tracks": ["starter", "fast"],
+      "lessons": [
+        { "id": "u5-l1", "title": "Vector" },
+        { "id": "u5-l2", "title": "String và &str" },
+        { "id": "u5-l3", "title": "HashMap" }
+      ]
+    },
+    {
+      "id": "u6",
+      "number": 6,
+      "title": "Xử lý lỗi",
+      "summary": "panic!, Result, toán tử ? và kiểu lỗi tùy chỉnh.",
+      "tracks": ["starter", "fast"],
+      "lessons": [
+        { "id": "u6-l1", "title": "panic!" },
+        { "id": "u6-l2", "title": "Result" },
+        { "id": "u6-l3", "title": "Toán tử ?" },
+        { "id": "u6-l4", "title": "Kiểu lỗi tùy chỉnh" }
+      ]
+    },
+    {
+      "id": "u7",
+      "number": 7,
+      "title": "Generic và trait",
+      "summary": "Hàm và kiểu generic, trait, ràng buộc trait (trait bound) và lifetime.",
+      "tracks": ["starter", "fast"],
+      "lessons": [
+        { "id": "u7-l1", "title": "Hàm generic" },
+        { "id": "u7-l2", "title": "Struct và enum generic" },
+        { "id": "u7-l3", "title": "Trait" },
+        { "id": "u7-l4", "title": "Ràng buộc trait (trait bound)" },
+        { "id": "u7-l5", "title": "Lifetime" }
+      ]
+    },
+    {
+      "id": "u8",
+      "number": 8,
+      "title": "Closure và iterator",
+      "summary": "Closure, trait Iterator, adapter và collect.",
+      "tracks": ["starter", "fast"],
+      "lessons": [
+        { "id": "u8-l1", "title": "Closure" },
+        { "id": "u8-l2", "title": "Capture và move" },
+        { "id": "u8-l3", "title": "Trait Iterator" },
+        { "id": "u8-l4", "title": "Iterator adapter" },
+        { "id": "u8-l5", "title": "Tiêu thụ iterator" }
+      ]
+    },
+    {
+      "id": "u9",
+      "number": 9,
+      "title": "Module, crate và kiểm thử",
+      "summary": "Module, visibility, crate với Cargo, và test.",
+      "tracks": ["starter", "fast"],
+      "lessons": [
+        { "id": "u9-l1", "title": "Module" },
+        { "id": "u9-l2", "title": "Visibility và use" },
+        { "id": "u9-l3", "title": "Package, crate và Cargo" },
+        { "id": "u9-l4", "title": "Viết test" }
+      ]
+    },
+    {
+      "id": "u10",
+      "number": 10,
+      "title": "Con trỏ thông minh (smart pointer)",
+      "summary": "Box, Deref và Drop, Rc và RefCell.",
+      "tracks": ["starter", "fast"],
+      "lessons": [
+        { "id": "u10-l1", "title": "Box<T>" },
+        { "id": "u10-l2", "title": "Deref và Drop" },
+        { "id": "u10-l3", "title": "Rc<T>" },
+        { "id": "u10-l4", "title": "RefCell<T> và interior mutability" }
+      ]
+    },
+    {
+      "id": "u11",
+      "number": 11,
+      "title": "Đồng thời (concurrency)",
+      "summary": "Thread, channel, Arc và Mutex, và cái nhìn đầu tiên về async.",
+      "tracks": ["starter", "fast"],
+      "lessons": [
+        { "id": "u11-l1", "title": "Thread" },
+        { "id": "u11-l2", "title": "Channel" },
+        { "id": "u11-l3", "title": "Trạng thái dùng chung với Arc và Mutex" },
+        { "id": "u11-l4", "title": "Giới thiệu về async" }
+      ]
+    },
+    {
+      "id": "u12",
+      "number": 12,
+      "title": "Dự án tổng hợp",
+      "summary": "Xây dựng các chương trình hoàn chỉnh: một công cụ dòng lệnh (CLI), một trò phiêu lưu bằng văn bản và một máy chủ web.",
+      "tracks": ["starter", "fast"],
+      "lessons": [
+        { "id": "u12-l1", "title": "Một công cụ dòng lệnh" },
+        { "id": "u12-l2", "title": "Trò phiêu lưu bằng văn bản" },
+        { "id": "u12-l3", "title": "Máy chủ web mini, phần 1" },
+        { "id": "u12-l4", "title": "Máy chủ web mini, phần 2" }
+      ]
+    }
+  ]
+}

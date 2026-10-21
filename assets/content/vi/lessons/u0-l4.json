@@ -1,0 +1,38 @@
+{
+  "id": "u0-l4",
+  "title": "Lặp lại với vòng lặp",
+  "sections": [
+    { "type": "text", "text": "Vòng lặp chạy cùng một đoạn code nhiều lần, để bạn không phải viết đi viết lại." },
+    { "type": "text", "text": "Vòng lặp for duyệt qua một dãy số (range). 1..=5 nghĩa là từ 1 đến 5, bao gồm cả 5:" },
+    { "type": "code", "code": "fn main() {\n    for n in 1..=5 {\n        println!(\"Lap {n}\");\n    }\n    println!(\"Finished!\");\n}" },
+    { "type": "text", "text": "Mỗi lần lặp, n giữ số tiếp theo: 1, rồi 2, và cứ thế. Sau 5, vòng lặp kết thúc và chương trình tiếp tục với phần bên dưới nó." },
+    { "type": "text", "text": "Vòng lặp rất hợp để cộng dồn. Ở đây một biến giữ tổng đang tính. mut nghĩa là biến được phép thay đổi:" },
+    { "type": "code", "code": "fn main() {\n    let mut total = 0;\n    for n in 1..=4 {\n        total = total + n;\n    }\n    println!(\"1 + 2 + 3 + 4 = {total}\");\n}" },
+    { "type": "text", "text": "Vòng lặp while tiếp tục chạy chừng nào điều kiện của nó còn đúng:" },
+    { "type": "code", "code": "fn main() {\n    let mut countdown = 3;\n    while countdown > 0 {\n        println!(\"{countdown}...\");\n        countdown = countdown - 1;\n    }\n    println!(\"Lift off!\");\n}" },
+    { "type": "note", "text": "Nếu điều kiện của while không bao giờ trở thành sai, vòng lặp sẽ chạy mãi mãi. Trong ứng dụng này, một chương trình như vậy sẽ bị dừng sau vài giây, hoặc ngay khi nó in ra quá nhiều, và bạn sẽ thấy một thông báo giải thích lý do." }
+  ],
+  "exercise": {
+    "prompt": "Dùng vòng lặp for để in bảng cửu chương 3 từ 3 x 1 đến 3 x 5. Chỉ in kết quả, mỗi kết quả trên một dòng riêng: 3, 6, 9, 12, 15",
+    "starter": "fn main() {\n    // your loop here\n}",
+    "expectedOutput": "3\n6\n9\n12\n15",
+    "solution": "fn main() {\n    for n in 1..=5 {\n        println!(\"{}\", 3 * n);\n    }\n}"
+  },
+  "quiz": [
+    {
+      "question": "1..=3 bao gồm những số nào?",
+      "options": ["1 và 3", "1, 2 và 3", "0, 1, 2 và 3"],
+      "answer": 1
+    },
+    {
+      "question": "Vòng lặp while dừng khi nào?",
+      "options": ["Sau 10 vòng", "Khi điều kiện của nó trở thành sai", "Không bao giờ"],
+      "answer": 1
+    },
+    {
+      "question": "Vì sao total cần mut trong ví dụ cộng dồn?",
+      "options": ["Vì giá trị của nó thay đổi sau mỗi vòng", "Vì nó là một con số", "Vì nó nằm bên trong main"],
+      "answer": 0
+    }
+  ]
+}
