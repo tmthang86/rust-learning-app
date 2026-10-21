@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Resource shrinking must not remove the small icon the study-reminder
+     notifications use; the plugin looks it up by name at run time (see
+     flutter_local_notifications, "Release build configuration"). -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_reminder" />
