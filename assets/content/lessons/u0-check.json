@@ -28,10 +28,10 @@
     }
   ],
   "exercise": {
-    "prompt": "Replace each todo!() with working code. Do not change main.\n\nfn total_saved(days: i32) -> i32\nGives back 1 + 2 + ... + days. For 0 days it gives back 0.\n\nfn stars(total: i32) -> i32\nGives back 3 if total is 50 or more. Otherwise it gives back 2 if total is 10 or more. Otherwise it gives back 1.\n\nfn days_to_reach(goal: i32) -> i32\nYou save 1 coin on day 1, 2 coins on day 2, and so on. This gives back the first day on which the total saved is at least goal. If goal is 0, no days are needed, so it gives back 0.\n\nThe program should print:\nAfter 0 days: 0 coins, stars: 1\nAfter 4 days: 10 coins, stars: 2\nAfter 10 days: 55 coins, stars: 3\nGoal 0 takes 0 days\nGoal 15 takes 5 days\nGoal 20 takes 6 days",
-    "starter": "// Day 1 you save 1 coin, day 2 you save 2 coins, and so on.\nfn total_saved(days: i32) -> i32 {\n    todo!()\n}\n\nfn stars(total: i32) -> i32 {\n    todo!()\n}\n\nfn days_to_reach(goal: i32) -> i32 {\n    todo!()\n}\n\nfn main() {\n    let coins = total_saved(0);\n    println!(\"After 0 days: {coins} coins, stars: {}\", stars(coins));\n    let coins = total_saved(4);\n    println!(\"After 4 days: {coins} coins, stars: {}\", stars(coins));\n    let coins = total_saved(10);\n    println!(\"After 10 days: {coins} coins, stars: {}\", stars(coins));\n\n    println!(\"Goal 0 takes {} days\", days_to_reach(0));\n    println!(\"Goal 15 takes {} days\", days_to_reach(15));\n    println!(\"Goal 20 takes {} days\", days_to_reach(20));\n}",
+    "prompt": "Replace each todo!() with working code. Do not change main.\n\nfn total_saved(days: i32) -> i32\nGives back 1 + 2 + ... + days. For 0 days it gives back 0.\n\nfn stars(total: i32) -> i32\nGives back 3 if total is 50 or more. Otherwise it gives back 2 if total is 10 or more. Otherwise it gives back 1.\n\nfn days_to_reach(goal: i32) -> i32\nYou save 1 coin on day 1, 2 coins on day 2, and so on. This gives back the first day on which the total saved is at least goal. If goal is 0, no days are needed, so it gives back 0.\n\nThe numbers given to these functions are never negative, and days and goal are at most 1000.\n\nThe program should print:\nAfter 0 days: 0 coins, stars: 1\nAfter 4 days: 10 coins, stars: 2\nAfter 10 days: 55 coins, stars: 3\nGoal 0 takes 0 days\nGoal 15 takes 5 days\nGoal 20 takes 6 days",
+    "starter": "// Day 1 you save 1 coin, day 2 you save 2 coins, and so on.\nfn total_saved(days: i32) -> i32 {\n    todo!()\n}\n\nfn stars(total: i32) -> i32 {\n    todo!()\n}\n\nfn days_to_reach(goal: i32) -> i32 {\n    todo!()\n}\n\nfn main() {\n    let mut coins = total_saved(0);\n    println!(\"After 0 days: {coins} coins, stars: {}\", stars(coins));\n    coins = total_saved(4);\n    println!(\"After 4 days: {coins} coins, stars: {}\", stars(coins));\n    coins = total_saved(10);\n    println!(\"After 10 days: {coins} coins, stars: {}\", stars(coins));\n\n    println!(\"Goal 0 takes {} days\", days_to_reach(0));\n    println!(\"Goal 15 takes {} days\", days_to_reach(15));\n    println!(\"Goal 20 takes {} days\", days_to_reach(20));\n}",
     "expectedOutput": "After 0 days: 0 coins, stars: 1\nAfter 4 days: 10 coins, stars: 2\nAfter 10 days: 55 coins, stars: 3\nGoal 0 takes 0 days\nGoal 15 takes 5 days\nGoal 20 takes 6 days",
-    "solution": "fn total_saved(days: i32) -> i32 {\n    let mut total = 0;\n    for day in 1..=days {\n        total = total + day;\n    }\n    total\n}\n\nfn stars(total: i32) -> i32 {\n    let mut result = 1;\n    if total >= 50 {\n        result = 3;\n    } else if total >= 10 {\n        result = 2;\n    }\n    result\n}\n\nfn days_to_reach(goal: i32) -> i32 {\n    let mut days = 0;\n    let mut total = 0;\n    while total < goal {\n        days = days + 1;\n        total = total + days;\n    }\n    days\n}\n\nfn main() {\n    let coins = total_saved(0);\n    println!(\"After 0 days: {coins} coins, stars: {}\", stars(coins));\n    let coins = total_saved(4);\n    println!(\"After 4 days: {coins} coins, stars: {}\", stars(coins));\n    let coins = total_saved(10);\n    println!(\"After 10 days: {coins} coins, stars: {}\", stars(coins));\n\n    println!(\"Goal 0 takes {} days\", days_to_reach(0));\n    println!(\"Goal 15 takes {} days\", days_to_reach(15));\n    println!(\"Goal 20 takes {} days\", days_to_reach(20));\n}"
+    "solution": "fn total_saved(days: i32) -> i32 {\n    let mut total = 0;\n    for day in 1..=days {\n        total = total + day;\n    }\n    total\n}\n\nfn stars(total: i32) -> i32 {\n    let mut result = 1;\n    if total >= 50 {\n        result = 3;\n    } else if total >= 10 {\n        result = 2;\n    }\n    result\n}\n\nfn days_to_reach(goal: i32) -> i32 {\n    let mut days = 0;\n    let mut total = 0;\n    while total < goal {\n        days = days + 1;\n        total = total + days;\n    }\n    days\n}\n\nfn main() {\n    let mut coins = total_saved(0);\n    println!(\"After 0 days: {coins} coins, stars: {}\", stars(coins));\n    coins = total_saved(4);\n    println!(\"After 4 days: {coins} coins, stars: {}\", stars(coins));\n    coins = total_saved(10);\n    println!(\"After 10 days: {coins} coins, stars: {}\", stars(coins));\n\n    println!(\"Goal 0 takes {} days\", days_to_reach(0));\n    println!(\"Goal 15 takes {} days\", days_to_reach(15));\n    println!(\"Goal 20 takes {} days\", days_to_reach(20));\n}"
   },
   "quiz": [
     {
@@ -53,13 +53,13 @@
       "answer": 2
     },
     {
-      "question": "When does a while loop stop?",
+      "question": "In stars, why is the check for 50 written before the check for 10?",
       "options": [
-        "After exactly 10 rounds",
-        "When its condition becomes false",
-        "When the function is called"
+        "A total of 55 would fit total >= 10 first and get 2 stars instead of 3",
+        "The order of the checks makes no difference",
+        "Rust checks conditions from the bottom up"
       ],
-      "answer": 1
+      "answer": 0
     }
   ]
 }
