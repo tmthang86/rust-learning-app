@@ -189,10 +189,13 @@ reference)" (not the bare English word in one lesson and a gloss in another).
 | "Coming from another language:" | Nếu bạn đến từ một ngôn ngữ khác: | |
 | "It should print:" | Chương trình phải in ra: | |
 
-Keywords (`let`, `struct`, `enum`, `impl`, ...) are English words too. In prose,
-translate the word when it is a plain word ("won't let you" -> "không cho phép
-bạn"); keep the keyword when it names the code (`let x = 5;`, `struct Game {`,
-`impl Speak for Robot`). The checker only enforces the code shape.
+`let` is also an everyday English word. In prose, translate it when it is a plain
+word ("won't let you" -> "không cho phép bạn"); keep it when it names the code
+(`let x = 5;`, `let mut`, `if let`, `while let`, `let-else`). The checker enforces
+`let` only in that code shape. The other keywords (`mut`, `fn`, `const`,
+`struct`, `enum`, `impl`, `mod`, `pub`, `dyn`) are loanwords: keep them as
+written wherever they appear, in prose and in options (the checker enforces
+this).
 
 ### UI words
 

@@ -52,7 +52,7 @@
     },
     {
       "type": "note",
-      "text": "Stack<T> là generic trên bất kỳ T nào, kể cả những kiểu bạn chưa thấy. Đó chính là mục đích: một định nghĩa, và trình biên dịch tạo đúng phiên bản cho mỗi T bạn dùng. Nếu thấy dễ hình dung hơn, hãy hình dung Vec<T> như một chiếc hộp có nhãn \"T đặt ở đây\".",
+      "text": "Stack<T> là generic trên bất kỳ T nào, kể cả những kiểu bạn chưa thấy. Đó chính là mục đích: một định nghĩa, và trình biên dịch tạo đúng phiên bản cho mỗi T bạn dùng. Nếu thấy hữu ích, hãy hình dung Vec<T> như một chiếc hộp có nhãn \"T đặt ở đây\".",
       "track": "starter"
     },
     {

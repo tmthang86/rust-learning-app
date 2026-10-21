@@ -194,7 +194,10 @@ _BARE_KEYWORDS = _CODE_KEYWORDS - {"let"}
 # "let" is the exception: it is an everyday English word ("it won't let you",
 # "let several threads send"), so it is code only in code shape: "let x =",
 # "let mut", "let (a, b) =", "let Some(x) =".
-_LET_SHAPE = re.compile(r"\blet\s+(?:mut\b|\w+\s*[=:;]|[A-Z]\w*\(|\()")
+_LET_SHAPE = re.compile(
+    r"\blet\s+(?:mut\b|\w+\s*[=:;]|[A-Z]\w*\(|\()"
+    r"|\b(?:if|while)\s+let\b|\blet-else\b"
+)
 # Plain words in parentheses after a name are prose, not arguments:
 # "Some(that variable)". Code made of words ("v.get(i as usize)",
 # "Some(ref x)", "fn rename(mut self)") has keywords or types among them and

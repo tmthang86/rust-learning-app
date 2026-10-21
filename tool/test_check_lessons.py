@@ -372,6 +372,17 @@ class CodeInProse(unittest.TestCase):
         self.assertIn("let", c.missing_code("Write let x = 5; first", "Hãy viết var x = 5; trước", vocab))
         self.assertEqual(c.missing_code("It won't let you", "Nó không cho phép bạn", vocab), [])
 
+    def test_if_let_while_let_and_let_else_are_code(self):
+        vocab = c.lesson_vocabulary(CODE_LESSON)
+        for text in ("Prefer match or if let for one case", "Use while let to loop",
+                     "The let-else form returns early"):
+            self.assertEqual(c.code_tokens(text, vocab)["let"], 1, text)
+        self.assertIn("let", c.missing_code("Prefer match or if let for one case",
+                                            "Nên dùng match hoặc if cho một trường hợp", vocab))
+        self.assertEqual(c.missing_code("Prefer match or if let for one case",
+                                        "Nên dùng match hoặc if let cho một trường hợp", vocab), [])
+        self.assertFalse(c.code_tokens("Don't let it go; let me think", vocab))
+
     def test_other_keywords_are_code_wherever_they_appear(self):
         # The review's tampering table: each of these must be found.
         vocab = c.lesson_vocabulary(CODE_LESSON)

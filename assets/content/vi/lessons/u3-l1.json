@@ -46,7 +46,7 @@
     },
     {
       "type": "note",
-      "text": "Một move là một phép sao chép nông (shallow copy) rẻ của con trỏ, độ dài và dung lượng (capacity); dữ liệu trên heap không được sao chép. Vì chỉ tồn tại một chủ sở hữu, nên không có double free và không cần đếm tham chiếu. Dành cho lập trình viên C++: trong Rust, move là mặc định, trình biên dịch cấm mọi lần dùng biến cũ sau đó, và biến cũ không bị drop (chỉ chủ sở hữu mới đó là bị drop). Một đối tượng C++ sau khi bị move đi vẫn còn sống và destructor của nó vẫn chạy sau đó; các kiểu trong thư viện chuẩn được để lại ở trạng thái hợp lệ nhưng không xác định (valid but unspecified).",
+      "text": "Một move là một phép sao chép nông (shallow copy) rẻ của con trỏ, độ dài và dung lượng (capacity); dữ liệu trên heap không được sao chép. Vì chỉ tồn tại một chủ sở hữu, nên không có double free và không cần đếm tham chiếu. Dành cho lập trình viên C++: trong Rust, move là mặc định, trình biên dịch cấm mọi lần dùng biến cũ sau đó, và biến cũ không bị drop (chỉ có chủ sở hữu mới của giá trị bị drop). Một đối tượng C++ sau khi bị move đi vẫn còn sống và destructor của nó vẫn chạy sau đó; các kiểu trong thư viện chuẩn được để lại ở trạng thái hợp lệ nhưng không xác định (valid but unspecified).",
       "track": "fast"
     }
   ],

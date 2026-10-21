@@ -12,7 +12,7 @@
     },
     {
       "type": "text",
-      "text": "Bạn có thể làm cho kiểu của riêng mình hoạt động như vậy bằng cách implement trait Deref. Dưới đây là một kiểu box nhỏ tên là MyBox. struct MyBox<T>(T); là một tuple struct: một struct có các trường không tên, ở đây là một trường thuộc kiểu T bất kỳ, mà bạn truy cập bằng .0. Trait Deref cần hai thứ. type Target = T; cho biết * trả về kiểu gì (đây được gọi là kiểu liên kết (associated type)). Phương thức deref trả về một tham chiếu tới giá trị bên trong đó."
+      "text": "Bạn có thể làm cho kiểu của riêng mình hoạt động như vậy bằng cách implement trait Deref. Dưới đây là một kiểu box nhỏ tên là MyBox. struct MyBox<T>(T); là một tuple struct: một struct có các trường không tên, ở đây là một trường thuộc kiểu T bất kỳ, mà bạn truy cập bằng .0. Trait Deref cần hai thứ. type Target = T; cho biết * trả về kiểu gì (đây được gọi là kiểu liên kết, hay associated type). Phương thức deref trả về một tham chiếu tới giá trị bên trong đó."
     },
     {
       "type": "code",
