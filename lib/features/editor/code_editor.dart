@@ -11,10 +11,11 @@ import 'tests_panel.dart';
 
 /// A Rust code editor with a Run button and an output panel.
 ///
-/// When [tests] is set (or the legacy [expectedOutput], read as one output
-/// test), Run grades the code with the runner's `/grade`: a tests panel shows
-/// each test, and [onSolved] is called when every test passes. Without
-/// either (the playground), Run just runs the code.
+/// When [tests] is set, Run grades the code with the runner's `/grade`: a
+/// tests panel shows each test, and [onSolved] is called when every test
+/// passes. With only the legacy [expectedOutput], Run is a plain run whose
+/// output is compared here and shown as one test. Without either (the
+/// playground), Run just runs the code.
 ///
 /// A caller that needs to read or replace the code passes a [controller];
 /// [onRunFinished] reports every finished run.
@@ -129,9 +130,21 @@ class _CodeEditorState extends State<CodeEditor>
     // another account, or during account deletion.
     final epoch = state.accountEpoch;
     setState(() => _running = true);
-    final RunResult result = tests == null
-        ? await state.runner.run(_controller.text)
-        : await state.runner.grade(_controller.text, tests);
+    // Declared tests go to /grade. An exercise with only an expected output
+    // is run as before (one run, no /grade needed) and shown as one test.
+    final declared = widget.tests;
+    final expected = widget.expectedOutput;
+    final RunResult result;
+    if (declared != null) {
+      result = await state.runner.grade(_controller.text, declared);
+    } else if (expected != null) {
+      result = GradeResult.fromLegacyRun(
+        await state.runner.run(_controller.text),
+        expected,
+      );
+    } else {
+      result = await state.runner.run(_controller.text);
+    }
     final solved = _matches(result, tests);
     if (solved && state.accountEpoch == epoch) onSolved?.call();
     if (!mounted) return;
@@ -494,36 +507,38 @@ class _RunOutput extends StatelessWidget {
             child: const SizedBox(width: 1, height: 1),
           ),
         if (showOutput)
-        Semantics(
-          container: true,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: scheme.inverseSurface,
-              borderRadius: BorderRadius.circular(12),
-              border: isError
-                  ? Border.all(color: scheme.error, width: 2)
-                  : null,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  heading,
-                  style: textTheme.labelLarge?.copyWith(
-                    color: scheme.onInverseSurface,
-                    fontWeight: FontWeight.w700,
+          Semantics(
+            container: true,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: scheme.inverseSurface,
+                borderRadius: BorderRadius.circular(12),
+                border: isError
+                    ? Border.all(color: scheme.error, width: 2)
+                    : null,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    heading,
+                    style: textTheme.labelLarge?.copyWith(
+                      color: scheme.onInverseSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                SelectableText(
-                  body.isEmpty ? '(no output)' : body,
-                  style: codeTextStyle.copyWith(color: scheme.onInverseSurface),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  SelectableText(
+                    body.isEmpty ? '(no output)' : body,
+                    style: codeTextStyle.copyWith(
+                      color: scheme.onInverseSurface,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
         if (warnings.isNotEmpty) ...[
           const SizedBox(height: 8),
           Theme(

@@ -84,15 +84,15 @@ String _labelOf(ExerciseTest t) {
 }
 
 String _statusWord(TestStatus s) => switch (s) {
-      TestStatus.pass => ExerciseTestStrings.statusPassed,
-      TestStatus.fail ||
-      TestStatus.panic ||
-      TestStatus.nopanic => ExerciseTestStrings.statusFailed,
-      TestStatus.timeout => ExerciseTestStrings.statusTookTooLong,
-      TestStatus.notRun => ExerciseTestStrings.statusDidNotRun,
-      TestStatus.crashed => ExerciseTestStrings.statusCrashed,
-      TestStatus.error => ExerciseTestStrings.statusCouldNotRun,
-    };
+  TestStatus.pass => ExerciseTestStrings.statusPassed,
+  TestStatus.fail ||
+  TestStatus.panic ||
+  TestStatus.nopanic => ExerciseTestStrings.statusFailed,
+  TestStatus.timeout => ExerciseTestStrings.statusTookTooLong,
+  TestStatus.notRun => ExerciseTestStrings.statusDidNotRun,
+  TestStatus.crashed => ExerciseTestStrings.statusCrashed,
+  TestStatus.error => ExerciseTestStrings.statusCouldNotRun,
+};
 
 /// Output comparison as the runner does it: `\r\n` is `\n`, trailing
 /// whitespace goes from each line, blank lines at the start and end go.
@@ -157,9 +157,12 @@ class _TestsPanelState extends State<TestsPanel> {
     final textTheme = Theme.of(context).textTheme;
     final visible = tests.where((t) => !t.hidden).toList();
     final hidden = tests.where((t) => t.hidden).toList();
-    final passed = tests.where((t) => _statusOf(r, t) == TestStatus.pass).length;
-    final hiddenPassed =
-        hidden.where((t) => _statusOf(r, t) == TestStatus.pass).length;
+    final passed = tests
+        .where((t) => _statusOf(r, t) == TestStatus.pass)
+        .length;
+    final hiddenPassed = hidden
+        .where((t) => _statusOf(r, t) == TestStatus.pass)
+        .length;
     final cantUse = r.compileErrorsIn == 'tests';
     // In the "tests can't use your code" case only the affected tests show.
     final rows = cantUse
@@ -169,16 +172,19 @@ class _TestsPanelState extends State<TestsPanel> {
         .where((t) => _statusOf(r, t) != TestStatus.pass)
         .map((t) => t.id)
         .firstOrNull;
-    final visiblePass = visible.isNotEmpty &&
+    final visiblePass =
+        visible.isNotEmpty &&
         visible.every((t) => _statusOf(r, t) == TestStatus.pass);
     final hiddenFailing = hidden
-        .where((t) => const {
-              TestStatus.fail,
-              TestStatus.panic,
-              TestStatus.nopanic,
-              TestStatus.timeout,
-              TestStatus.crashed,
-            }.contains(_statusOf(r, t)))
+        .where(
+          (t) => const {
+            TestStatus.fail,
+            TestStatus.panic,
+            TestStatus.nopanic,
+            TestStatus.timeout,
+            TestStatus.crashed,
+          }.contains(_statusOf(r, t)),
+        )
         .isNotEmpty;
 
     // A Material, not a decorated box: the folded sections are list tiles,
@@ -192,101 +198,101 @@ class _TestsPanelState extends State<TestsPanel> {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Semantics(
-            header: true,
-            child: Text(
-              ExerciseTestStrings.testsSummary(passed, tests.length),
-              style: textTheme.titleSmall,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ExcludeSemantics(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: tests.isEmpty ? 0 : passed / tests.length,
-                minHeight: 8,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Semantics(
+              header: true,
+              child: Text(
+                ExerciseTestStrings.testsSummary(passed, tests.length),
+                style: textTheme.titleSmall,
               ),
             ),
-          ),
-          if (cantUse) ...[
-            const SizedBox(height: 12),
-            Semantics(
-              container: true,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.info_outline, color: scheme.error),
-                  const SizedBox(width: 8),
-                  Expanded(
+            const SizedBox(height: 8),
+            ExcludeSemantics(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: tests.isEmpty ? 0 : passed / tests.length,
+                  minHeight: 8,
+                ),
+              ),
+            ),
+            if (cantUse) ...[
+              const SizedBox(height: 12),
+              Semantics(
+                container: true,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline, color: scheme.error),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        r.reason == null || r.reason == 'tests_dont_fit'
+                            ? ExerciseTestStrings.testsCantUseYourCode
+                            : '${ExerciseTestStrings.testsCantUseYourCode} '
+                                  '${ExerciseTestStrings.reason(r.reason!)}',
+                        style: TextStyle(color: scheme.error),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            for (final t in rows)
+              _TestRow(
+                test: t,
+                result: r.testById(t.id),
+                status: _statusOf(r, t),
+                open: _open[t.id] ?? (t.id == firstFailure),
+                onToggle: () => setState(
+                  () => _open[t.id] = !(_open[t.id] ?? (t.id == firstFailure)),
+                ),
+              ),
+            if (hidden.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Semantics(
+                container: true,
+                child: Row(
+                  children: [
+                    Icon(
+                      hiddenPassed == hidden.length
+                          ? Icons.check_circle
+                          : Icons.visibility_off_outlined,
+                      color: hiddenPassed == hidden.length
+                          ? scheme.primary
+                          : scheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        ExerciseTestStrings.hiddenSummary(
+                          hiddenPassed,
+                          hidden.length,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (visiblePass && hiddenFailing)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(ExerciseTestStrings.hiddenOnlyFailing),
+                ),
+              for (final t in hidden)
+                if (_statusOf(r, t) == TestStatus.error)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
                     child: Text(
-                      r.reason == null || r.reason == 'tests_dont_fit'
-                          ? ExerciseTestStrings.testsCantUseYourCode
-                          : '${ExerciseTestStrings.testsCantUseYourCode} '
-                                '${ExerciseTestStrings.reason(r.reason!)}',
+                      ExerciseTestStrings.hiddenTestCantUseYourCode(
+                        r.testById(t.id)?.message ?? '',
+                      ),
                       style: TextStyle(color: scheme.error),
                     ),
                   ),
-                ],
-              ),
-            ),
+            ],
           ],
-          for (final t in rows)
-            _TestRow(
-              test: t,
-              result: r.testById(t.id),
-              status: _statusOf(r, t),
-              open: _open[t.id] ?? (t.id == firstFailure),
-              onToggle: () => setState(
-                () => _open[t.id] = !(_open[t.id] ?? (t.id == firstFailure)),
-              ),
-            ),
-          if (hidden.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Semantics(
-              container: true,
-              child: Row(
-                children: [
-                  Icon(
-                    hiddenPassed == hidden.length
-                        ? Icons.check_circle
-                        : Icons.visibility_off_outlined,
-                    color: hiddenPassed == hidden.length
-                        ? scheme.primary
-                        : scheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      ExerciseTestStrings.hiddenSummary(
-                        hiddenPassed,
-                        hidden.length,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (visiblePass && hiddenFailing)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(ExerciseTestStrings.hiddenOnlyFailing),
-              ),
-            for (final t in hidden)
-              if (_statusOf(r, t) == TestStatus.error)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    ExerciseTestStrings.hiddenTestCantUseYourCode(
-                      r.testById(t.id)?.message ?? '',
-                    ),
-                    style: TextStyle(color: scheme.error),
-                  ),
-                ),
-          ],
-        ],
         ),
       ),
     );
@@ -319,10 +325,8 @@ class _TestRow extends StatelessWidget {
       TestStatus.panic ||
       TestStatus.nopanic => (Icons.cancel, scheme.error),
       TestStatus.timeout => (Icons.schedule, scheme.error),
-      TestStatus.crashed || TestStatus.error => (
-        Icons.error_outline,
-        scheme.error,
-      ),
+      TestStatus.crashed ||
+      TestStatus.error => (Icons.error_outline, scheme.error),
       TestStatus.notRun => (
         Icons.remove_circle_outline,
         scheme.onSurfaceVariant,
@@ -452,9 +456,7 @@ class _Details extends StatelessWidget {
       case TestStatus.timeout:
         children.add(note(ExerciseTestStrings.testTimedOut));
       case TestStatus.crashed:
-        children.add(
-          note(ExerciseTestStrings.reason(r?.reason ?? 'unknown')),
-        );
+        children.add(note(ExerciseTestStrings.reason(r?.reason ?? 'unknown')));
       case TestStatus.error:
         children.add(
           note(ExerciseTestStrings.reason(r?.reason ?? 'tests_dont_fit')),

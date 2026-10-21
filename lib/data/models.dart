@@ -159,12 +159,18 @@ class ExerciseTest {
     if ((code is String) == (output is String)) {
       throw FormatException('test "$id" needs exactly one of code and output');
     }
+    final label = json['label'];
+    final panics = json['panics'];
+    if ((label != null && label is! String) ||
+        (panics != null && panics is! String)) {
+      throw FormatException('test "$id" has a "label" or "panics" that is not text');
+    }
     return ExerciseTest(
       id: id,
-      label: json['label'] as String?,
+      label: label as String?,
       hidden: json['hidden'] == true,
       code: code is String ? code : null,
-      panics: json['panics'] as String?,
+      panics: panics as String?,
       output: output is String ? output : null,
     );
   }
@@ -219,11 +225,18 @@ class Exercise {
         'an exercise needs "tests" or "expectedOutput"',
       );
     }
+    if (tests != null && tests is! List) {
+      throw const FormatException('"tests" is not a list');
+    }
     final declared = tests == null
         ? const <ExerciseTest>[]
-        : (tests as List)
-            .map((t) => ExerciseTest.fromJson(t as Map<String, dynamic>))
-            .toList();
+        : [
+            for (final t in tests as List)
+              if (t is Map<String, dynamic>)
+                ExerciseTest.fromJson(t)
+              else
+                throw const FormatException('a test is not an object'),
+          ];
     if (tests != null && declared.isEmpty) {
       throw const FormatException('"tests" is empty');
     }

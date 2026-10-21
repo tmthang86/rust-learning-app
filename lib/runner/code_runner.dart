@@ -205,6 +205,44 @@ class GradeResult extends RunResult {
         stderr: message,
       );
 
+  /// A plain run of an exercise that only has `expectedOutput` (it costs
+  /// one run, and works with a runner that has no `/grade`), as the one
+  /// output test it is: compared here the way the app always has, ignoring
+  /// whitespace around the whole output.
+  factory GradeResult.fromLegacyRun(RunResult r, String expected) {
+    if (r.stage == RunStage.unavailable) return GradeResult.unavailable(r.stderr);
+    final TestResult test;
+    switch (r.stage) {
+      case RunStage.compile:
+        test = const TestResult(
+          id: ExerciseTest.legacyId,
+          status: TestStatus.notRun,
+        );
+      case RunStage.timeout:
+        test = const TestResult(
+          id: ExerciseTest.legacyId,
+          status: TestStatus.timeout,
+        );
+      default:
+        final pass = r.success && r.stdout.trim() == expected.trim();
+        test = TestResult(
+          id: ExerciseTest.legacyId,
+          status: pass ? TestStatus.pass : TestStatus.fail,
+          expected: pass ? null : expected,
+          actual: pass ? null : r.stdout,
+        );
+    }
+    return GradeResult(
+      success: r.success,
+      stage: r.stage,
+      stdout: r.stdout,
+      stderr: r.stderr,
+      warnings: r.warnings,
+      tests: [test],
+      compileErrorsIn: r.stage == RunStage.compile ? 'code' : null,
+    );
+  }
+
   /// The result of the test with [id], if the runner sent one.
   TestResult? testById(String id) {
     for (final t in tests) {

@@ -111,12 +111,31 @@ void main() {
 
     test('a test needs an id and exactly one of code and output', () {
       expect(() => ExerciseTest.fromJson({'code': 'x'}), throwsFormatException);
+      expect(() => ExerciseTest.fromJson({'id': 'a'}), throwsFormatException);
       expect(
-        () => ExerciseTest.fromJson({'id': 'a'}),
+        () => ExerciseTest.fromJson({'id': 'a', 'code': 'x', 'output': 'y'}),
+        throwsFormatException,
+      );
+    });
+
+    test('wrongly typed fields are format errors, not type errors', () {
+      for (final bad in [
+        {'id': 'a', 'code': 'x', 'label': 5},
+        {'id': 'a', 'code': 'x', 'panics': []},
+        {'id': 5, 'code': 'x'},
+      ]) {
+        expect(() => ExerciseTest.fromJson(bad), throwsFormatException);
+      }
+      expect(
+        () => Exercise.fromJson({'prompt': 'p', 'starter': 's', 'tests': 'x'}),
         throwsFormatException,
       );
       expect(
-        () => ExerciseTest.fromJson({'id': 'a', 'code': 'x', 'output': 'y'}),
+        () => Exercise.fromJson({
+          'prompt': 'p',
+          'starter': 's',
+          'tests': [5],
+        }),
         throwsFormatException,
       );
     });
@@ -152,7 +171,10 @@ void main() {
     });
 
     test('a failing hidden test does not solve', () {
-      expect(_graded({'a': _pass('a'), 'b': _fail('b')}).solves(tests), isFalse);
+      expect(
+        _graded({'a': _pass('a'), 'b': _fail('b')}).solves(tests),
+        isFalse,
+      );
     });
 
     test('a test the runner sent no result for does not solve', () {
@@ -204,6 +226,55 @@ void main() {
         () => TestResult.fromJson({'id': 'a', 'status': 'weird'}),
         throwsFormatException,
       );
+    });
+  });
+
+  group('GradeResult.fromLegacyRun', () {
+    GradeResult legacy(RunResult r) => GradeResult.fromLegacyRun(r, 'hi\n');
+
+    test('matching output passes, ignoring whitespace around it', () {
+      final r = legacy(
+        const RunResult(success: true, stage: RunStage.run, stdout: ' hi'),
+      );
+      expect(r.tests.single.id, 'output');
+      expect(r.tests.single.status, TestStatus.pass);
+      expect(r.solves([ExerciseTest.legacy('hi')]), isTrue);
+    });
+
+    test('other output fails with expected and actual', () {
+      final r = legacy(
+        const RunResult(success: true, stage: RunStage.run, stdout: 'ho'),
+      );
+      expect(r.tests.single.status, TestStatus.fail);
+      expect(r.tests.single.expected, 'hi\n');
+      expect(r.tests.single.actual, 'ho');
+    });
+
+    test('a panic with the right output so far is still a failure', () {
+      final r = legacy(
+        const RunResult(success: false, stage: RunStage.run, stdout: 'hi'),
+      );
+      expect(r.tests.single.status, TestStatus.fail);
+    });
+
+    test('compile errors are the learner\'s, a timeout is a timeout', () {
+      final c = legacy(
+        const RunResult(success: false, stage: RunStage.compile, stderr: 'e'),
+      );
+      expect(c.compileErrorsIn, 'code');
+      expect(c.tests.single.status, TestStatus.notRun);
+      expect(showsTestsPanel(c), isFalse);
+      final t = legacy(
+        const RunResult(success: false, stage: RunStage.timeout),
+      );
+      expect(t.tests.single.status, TestStatus.timeout);
+    });
+
+    test('an unreachable runner stays unavailable', () {
+      final r = legacy(RunResult.unavailable('offline'));
+      expect(r.stage, RunStage.unavailable);
+      expect(r.stderr, 'offline');
+      expect(r.solves([ExerciseTest.legacy('hi')]), isFalse);
     });
   });
 
@@ -310,11 +381,10 @@ void main() {
       expect(r.stage, RunStage.run);
     });
 
-    Future<GradeResult> answering(http.Response response) =>
-        HttpCodeRunner(
-          base,
-          client: MockClient((_) async => response),
-        ).grade('x', tests);
+    Future<GradeResult> answering(http.Response response) => HttpCodeRunner(
+      base,
+      client: MockClient((_) async => response),
+    ).grade('x', tests);
 
     test('a runner without /grade says it needs an update', () async {
       final r = await answering(http.Response('Not Found', 404));
@@ -324,9 +394,7 @@ void main() {
     });
 
     test('tests_invalid has its own message', () async {
-      final r = await answering(
-        http.Response(errorBody('tests_invalid'), 400),
-      );
+      final r = await answering(http.Response(errorBody('tests_invalid'), 400));
       expect(r.stage, RunStage.unavailable);
       expect(r.stderr, ExerciseTestStrings.testsInvalid);
     });
@@ -343,23 +411,25 @@ void main() {
       expect(r.stderr, contains('7 seconds'));
     });
 
-    test('network failures, bad JSON and a missing tests list are unavailable',
-        () async {
-      final offline = await HttpCodeRunner(
-        base,
-        client: MockClient((_) async => throw http.ClientException('no')),
-      ).grade('x', tests);
-      expect(offline.stage, RunStage.unavailable);
+    test(
+      'network failures, bad JSON and a missing tests list are unavailable',
+      () async {
+        final offline = await HttpCodeRunner(
+          base,
+          client: MockClient((_) async => throw http.ClientException('no')),
+        ).grade('x', tests);
+        expect(offline.stage, RunStage.unavailable);
 
-      final garbage = await answering(http.Response('<html>', 200));
-      expect(garbage.stage, RunStage.unavailable);
+        final garbage = await answering(http.Response('<html>', 200));
+        expect(garbage.stage, RunStage.unavailable);
 
-      final noTests = await answering(
-        http.Response(jsonEncode({'success': true, 'stage': 'run'}), 200),
-      );
-      expect(noTests.stage, RunStage.unavailable);
-      expect(noTests.solves(tests), isFalse);
-    });
+        final noTests = await answering(
+          http.Response(jsonEncode({'success': true, 'stage': 'run'}), 200),
+        );
+        expect(noTests.stage, RunStage.unavailable);
+        expect(noTests.solves(tests), isFalse);
+      },
+    );
 
     test('a 404 from /run keeps its old message', () {
       expect(
@@ -405,22 +475,23 @@ void main() {
       expect(text, isNot(contains('Failed:')));
     });
 
-    test('is clipped at 200 characters and ends with the verdict if solved', () {
-      final long = 'x' * 500;
-      final r = _graded({
-        'a': _fail('a', expected: long, actual: long),
-      });
-      final one = [const ExerciseTest(id: 'a', label: 'A', code: 'x')];
-      final text = gradeAnnouncement(r, one, solved: false);
-      expect(text.length, lessThanOrEqualTo(201));
-      expect(text, endsWith('…'));
+    test(
+      'is clipped at 200 characters and ends with the verdict if solved',
+      () {
+        final long = 'x' * 500;
+        final r = _graded({'a': _fail('a', expected: long, actual: long)});
+        final one = [const ExerciseTest(id: 'a', label: 'A', code: 'x')];
+        final text = gradeAnnouncement(r, one, solved: false);
+        expect(text.length, lessThanOrEqualTo(201));
+        expect(text, endsWith('…'));
 
-      final all = _graded({'a': _pass('a')});
-      expect(
-        gradeAnnouncement(all, one, solved: true),
-        '1 of 1 test passed. ${ExerciseTestStrings.allTestsPassed}',
-      );
-    });
+        final all = _graded({'a': _pass('a')});
+        expect(
+          gradeAnnouncement(all, one, solved: true),
+          '1 of 1 test passed. ${ExerciseTestStrings.allTestsPassed}',
+        );
+      },
+    );
 
     test('says the tests cannot use the code in that case', () {
       final r = _graded(
@@ -491,21 +562,22 @@ void main() {
 
     const dummy = RunResult(success: true, stage: RunStage.run);
 
-    testWidgets('sends every test, hidden ones too, and no panel before a run', (
-      tester,
-    ) async {
-      await open(tester, 'graded', FakeRunner(dummy, graded: _graded({})));
-      expect(find.byType(TestsPanel), findsNothing);
+    testWidgets(
+      'sends every test, hidden ones too, and no panel before a run',
+      (tester) async {
+        await open(tester, 'graded', FakeRunner(dummy, graded: _graded({})));
+        expect(find.byType(TestsPanel), findsNothing);
 
-      await run(tester);
+        await run(tester);
 
-      expect(runner.gradeRequests, hasLength(1));
-      expect(runner.gradeRequests.single.map((t) => t.id), [
-        'fifteen-too-young',
-        'thirty-ok',
-        'boundary-18',
-      ]);
-    });
+        expect(runner.gradeRequests, hasLength(1));
+        expect(runner.gradeRequests.single.map((t) => t.id), [
+          'fifteen-too-young',
+          'thirty-ok',
+          'boundary-18',
+        ]);
+      },
+    );
 
     testWidgets('all tests passing solves the lesson once', (tester) async {
       await open(
@@ -556,7 +628,10 @@ void main() {
 
         expect(find.text('Tests: 2 of 3 passed'), findsOneWidget);
         expect(find.text('Hidden tests: 0 of 1 passed'), findsOneWidget);
-        expect(find.text(ExerciseTestStrings.hiddenOnlyFailing), findsOneWidget);
+        expect(
+          find.text(ExerciseTestStrings.hiddenOnlyFailing),
+          findsOneWidget,
+        );
         expect(find.text('Not quite yet. Keep trying.'), findsOneWidget);
         expect(state.isCompleted('graded'), isFalse);
         // Nothing about the hidden test is in the widget tree...
@@ -610,13 +685,17 @@ void main() {
       expect(find.text('is_adult(15)'), findsOneWidget);
       expect(find.text('is_adult(30)'), findsNothing);
 
-      await tester.tap(find.textContaining('30 is an adult', findRichText: true));
+      await tester.tap(
+        find.textContaining('30 is an adult', findRichText: true),
+      );
       await tester.pumpAndSettle();
       expect(find.text('is_adult(30)'), findsOneWidget);
       // Opening one does not close the other.
       expect(find.text('is_adult(15)'), findsOneWidget);
 
-      await tester.tap(find.textContaining('15 is too young', findRichText: true));
+      await tester.tap(
+        find.textContaining('15 is too young', findRichText: true),
+      );
       await tester.pumpAndSettle();
       expect(find.text('is_adult(15)'), findsNothing);
     });
@@ -638,10 +717,7 @@ void main() {
 
       await run(tester);
 
-      expect(
-        find.bySemanticsLabel('Failed: 15 is too young'),
-        findsOneWidget,
-      );
+      expect(find.bySemanticsLabel('Failed: 15 is too young'), findsOneWidget);
       expect(find.bySemanticsLabel('Passed: 30 is an adult'), findsOneWidget);
       final node = tester.getSemantics(
         find.bySemanticsLabel('Failed: 15 is too young'),
@@ -752,24 +828,32 @@ void main() {
       });
     }
 
-    testWidgets('a legacy exercise is one test with a plain label', (
-      tester,
-    ) async {
-      await open(
-        tester,
-        'legacy',
-        FakeRunner(
-          const RunResult(success: true, stage: RunStage.run, stdout: 'ho\n'),
-        ),
-      );
+    testWidgets(
+      'a legacy exercise is one test with a plain label, from a plain run',
+      (tester) async {
+        await open(
+          tester,
+          'legacy',
+          FakeRunner(
+            const RunResult(success: true, stage: RunStage.run, stdout: 'ho\n'),
+          ),
+        );
 
-      await run(tester);
+        await run(tester);
 
-      expect(runner.gradeRequests.single.single.id, 'output');
-      expect(find.text('Tests: 0 of 1 passed'), findsOneWidget);
-      expect(find.textContaining(ExerciseTestStrings.legacyOutputLabel, findRichText: true), findsOneWidget);
-      expect(state.isCompleted('legacy'), isFalse);
-    });
+        // A legacy exercise is a plain run, compared in the app.
+        expect(runner.gradeRequests, isEmpty);
+        expect(find.text('Tests: 0 of 1 passed'), findsOneWidget);
+        expect(
+          find.textContaining(
+            ExerciseTestStrings.legacyOutputLabel,
+            findRichText: true,
+          ),
+          findsOneWidget,
+        );
+        expect(state.isCompleted('legacy'), isFalse);
+      },
+    );
 
     testWidgets('a legacy exercise is solved by the right output', (
       tester,

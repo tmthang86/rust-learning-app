@@ -43,7 +43,7 @@
   ],
   "exercise": {
     "prompt": "first_even returns an Option. Finish even_or_zero so it returns the first even number, or 0 if there is no even number, using first_even and unwrap_or. For [3, 7, 8, 10] main should print: 8",
-    "starter": "fn first_even(numbers: &[i32]) -> Option<i32> {\n    for &n in numbers {   // each item is a &i32; &n gives the plain number n\n        if n % 2 == 0 {\n            return Some(n);\n        }\n    }\n    None\n}\n\nfn even_or_zero(numbers: &[i32]) -> i32 {\n    // first_even gives an Option<i32>. Turn it into a plain number,\n    // using 0 when it holds nothing.\n    todo!()\n}\n\nfn main() {\n    println!(\"{}\", even_or_zero(&[3, 7, 8, 10]));\n}",
+    "starter": "fn first_even(numbers: &[i32]) -> Option<i32> {\n    for &n in numbers {   // each item is a &i32; &n gives the plain number n\n        if n % 2 == 0 {\n            return Some(n);\n        }\n    }\n    None\n}\n\nfn even_or_zero(numbers: &[i32]) -> i32 {\n    // first_even gives an Option<i32>. Turn it into a plain number,\n    // using 0 when it holds nothing.\n    let _ = first_even(numbers); // delete this line when you use it for real\n    todo!()\n}\n\nfn main() {\n    println!(\"{}\", even_or_zero(&[3, 7, 8, 10]));\n}",
     "tests": [
       {
         "id": "finds-first-even",

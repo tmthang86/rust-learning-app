@@ -54,9 +54,8 @@ abstract final class ExerciseTestStrings {
   static String announceSummary(int passed, int total) =>
       '$passed of $total ${total == 1 ? 'test' : 'tests'} passed.';
   static String announceFailed(String label) => 'Failed: $label.';
-  static String announceHiddenFailed(int count) => count == 1
-      ? '1 hidden test failed.'
-      : '$count hidden tests failed.';
+  static String announceHiddenFailed(int count) =>
+      count == 1 ? '1 hidden test failed.' : '$count hidden tests failed.';
   static String rowLabel(String status, String label) => '$status: $label';
 
   // Why a test stopped, one per machine code the runner sends.

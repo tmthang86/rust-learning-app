@@ -158,7 +158,7 @@ class _ExercisePanelState extends State<ExercisePanel> {
         initialCode: exercise.starter,
         controller: _code,
         expectedOutput: exercise.expectedOutput,
-        tests: exercise.tests,
+        tests: exercise.declaredTests.isEmpty ? null : exercise.declaredTests,
         onSolved: widget.onSolved,
         onRunFinished: _onRunFinished,
         belowRunRow: Column(
