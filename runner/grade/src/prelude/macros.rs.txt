@@ -1,0 +1,39 @@
+    macro_rules! check_eq {
+        ($actual:expr, $expected:expr $(,)?) => {
+            match (&($actual), &($expected)) {
+                (actual, expected) => {
+                    if !(*actual == *expected) {
+                        $crate::__rr::fail(
+                            ::core::stringify!($actual),
+                            &$crate::__rr::dbg(expected),
+                            &$crate::__rr::dbg(actual),
+                        );
+                    }
+                }
+            }
+        };
+    }
+
+    macro_rules! check {
+        ($condition:expr $(,)?) => {
+            if !($condition) {
+                $crate::__rr::fail(::core::stringify!($condition), "true", "false");
+            }
+        };
+    }
+
+    macro_rules! check_near {
+        ($actual:expr, $expected:expr, $tolerance:expr $(,)?) => {
+            match (($actual) as f64, ($expected) as f64, ($tolerance) as f64) {
+                (actual, expected, tolerance) => {
+                    if !((actual - expected).abs() <= tolerance) {
+                        $crate::__rr::fail(
+                            ::core::stringify!($actual),
+                            &::std::format!("{:?} (within {:?})", expected, tolerance),
+                            &$crate::__rr::dbg(&actual),
+                        );
+                    }
+                }
+            }
+        };
+    }

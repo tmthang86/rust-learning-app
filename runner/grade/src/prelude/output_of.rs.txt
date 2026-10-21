@@ -1,0 +1,43 @@
+
+    unsafe extern "C" {
+        fn dup(fd: i32) -> i32;
+        fn dup2(old: i32, new: i32) -> i32;
+        fn close(fd: i32) -> i32;
+    }
+
+    static CAPTURES: ::std::sync::atomic::AtomicU32 = ::std::sync::atomic::AtomicU32::new(0);
+
+    /// What `run` printed to stdout (at most 64 KB). Panics in `run` pass
+    /// through after stdout is back.
+    pub fn output_of<F: ::core::ops::FnOnce()>(run: F) -> ::std::string::String {
+        use ::std::io::{Read, Seek};
+        use ::std::os::fd::AsRawFd;
+        let _ = ::std::io::Write::flush(&mut ::std::io::stdout());
+        let n = CAPTURES.fetch_add(1, ::std::sync::atomic::Ordering::Relaxed);
+        let path = ::std::env::temp_dir().join(::std::format!("rr-capture-{}-{n}", ::std::process::id()));
+        let mut file = ::std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create_new(true)
+            .open(&path)
+            .expect("could not capture the output");
+        let _ = ::std::fs::remove_file(&path);
+        // SAFETY: plain fd calls; fd 1 is put back before returning.
+        let saved = unsafe { dup(1) };
+        if saved < 0 || unsafe { dup2(file.as_raw_fd(), 1) } < 0 {
+            panic!("could not capture the output");
+        }
+        let result = ::std::panic::catch_unwind(::std::panic::AssertUnwindSafe(run));
+        let _ = ::std::io::Write::flush(&mut ::std::io::stdout());
+        unsafe {
+            dup2(saved, 1);
+            close(saved);
+        }
+        let mut bytes = ::std::vec::Vec::new();
+        let _ = file.seek(::std::io::SeekFrom::Start(0));
+        let _ = (&mut file).take(64 * 1024).read_to_end(&mut bytes);
+        if let ::core::result::Result::Err(payload) = result {
+            ::std::panic::resume_unwind(payload);
+        }
+        ::std::string::String::from_utf8_lossy(&bytes).into_owned()
+    }

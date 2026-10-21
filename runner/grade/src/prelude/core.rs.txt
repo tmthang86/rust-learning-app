@@ -1,0 +1,228 @@
+    pub const NONCE: &str = "__NONCE__";
+    pub const LEARNER_LINES: u32 = __LEARNER_LINES__;
+    const VALUE_CAP: usize = 1024;
+
+    // What the grading thread is doing: 0 nothing, 1 a test case, 2 `main`.
+    ::std::thread_local! {
+        static MODE: ::std::cell::Cell<u8> = const { ::std::cell::Cell::new(0) };
+        static PANIC: ::std::cell::RefCell<(::std::string::String, ::core::option::Option<u32>)> =
+            const { ::std::cell::RefCell::new((::std::string::String::new(), ::core::option::Option::None)) };
+        static FAILURE: ::std::cell::RefCell<::core::option::Option<[::std::string::String; 3]>> =
+            const { ::std::cell::RefCell::new(::core::option::Option::None) };
+    }
+
+    type Hook = ::std::boxed::Box<dyn ::core::ops::Fn(&::std::panic::PanicHookInfo<'_>) + ::core::marker::Sync + ::core::marker::Send + 'static>;
+    static DEFAULT_HOOK: ::std::sync::OnceLock<Hook> = ::std::sync::OnceLock::new();
+
+    /// Payload of the unwind that a failed check starts (no panic hook runs).
+    pub struct CheckFailed;
+
+    /// A `Debug` writer that stops at `VALUE_CAP` bytes.
+    struct Bounded {
+        text: ::std::string::String,
+        over: bool,
+    }
+
+    impl ::core::fmt::Write for Bounded {
+        fn write_str(&mut self, s: &str) -> ::core::fmt::Result {
+            let room = VALUE_CAP - self.text.len();
+            if s.len() <= room {
+                self.text.push_str(s);
+                return ::core::result::Result::Ok(());
+            }
+            let mut cut = room;
+            while !s.is_char_boundary(cut) {
+                cut -= 1;
+            }
+            self.text.push_str(&s[..cut]);
+            self.over = true;
+            ::core::result::Result::Err(::core::fmt::Error)
+        }
+    }
+
+    /// `{:?}` of a value, at most 1 KB.
+    pub fn dbg<T: ::core::fmt::Debug + ?Sized>(value: &T) -> ::std::string::String {
+        let mut out = Bounded { text: ::std::string::String::new(), over: false };
+        let _ = ::core::fmt::Write::write_fmt(&mut out, ::core::format_args!("{:?}", value));
+        if out.over {
+            out.text.push_str("...[truncated]");
+        }
+        out.text
+    }
+
+    fn escape(s: &str) -> ::std::string::String {
+        let mut out = ::std::string::String::with_capacity(s.len());
+        for c in s.chars() {
+            match c {
+                '\\' => out.push_str("\\\\"),
+                '\n' => out.push_str("\\n"),
+                c if c.is_control() => {
+                    out.push_str("\\u{");
+                    out.push_str(&::std::format!("{:x}", c as u32));
+                    out.push('}');
+                }
+                c => out.push(c),
+            }
+        }
+        out
+    }
+
+    /// Writes one result record (see the format in rr-grade). Learner text
+    /// still sitting in stdout's buffer goes out first.
+    fn record(kind: &str, fields: &[&str]) {
+        let mut line = ::std::string::String::new();
+        line.push('\u{1}');
+        line.push_str("RR-T:");
+        line.push_str(NONCE);
+        line.push(':');
+        line.push_str(kind);
+        for field in fields {
+            line.push('\u{1f}');
+            line.push_str(&escape(field));
+        }
+        line.push('\n');
+        let out = ::std::io::stdout();
+        let mut out = out.lock();
+        let _ = ::std::io::Write::flush(&mut out);
+        let _ = ::std::io::Write::write_all(&mut out, line.as_bytes());
+        let _ = ::std::io::Write::flush(&mut out);
+    }
+
+    fn cap(s: &str) -> &str {
+        if s.len() <= VALUE_CAP {
+            return s;
+        }
+        let mut cut = VALUE_CAP;
+        while !s.is_char_boundary(cut) {
+            cut -= 1;
+        }
+        &s[..cut]
+    }
+
+    fn hook(info: &::std::panic::PanicHookInfo<'_>) {
+        let mode = MODE.with(|m| m.get());
+        if mode == 0 {
+            if let ::core::option::Option::Some(default) = DEFAULT_HOOK.get() {
+                default(info);
+            }
+            return;
+        }
+        let message: ::std::string::String = match info.payload_as_str() {
+            ::core::option::Option::Some(s) => s.into(),
+            ::core::option::Option::None => "Box<dyn Any>".into(),
+        };
+        let mut line = ::core::option::Option::None;
+        let mut place = ::std::string::String::new();
+        if let ::core::option::Option::Some(loc) = info.location() {
+            place = ::std::format!("{}:{}:{}", loc.file(), loc.line(), loc.column());
+            if loc.file() == ::core::file!() && loc.line() <= LEARNER_LINES {
+                line = ::core::option::Option::Some(loc.line());
+            }
+        }
+        if mode == 2 {
+            ::std::eprintln!(
+                "thread 'main' panicked at {place}:\n{message}\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace"
+            );
+        }
+        PANIC.with(|p| *p.borrow_mut() = (message, line));
+    }
+
+    fn install_hook() {
+        ::std::panic::set_hook(::std::boxed::Box::new(hook));
+    }
+
+    /// Starts grading: remembers the default panic hook and installs ours.
+    pub fn start() {
+        let _ = DEFAULT_HOOK.set(::std::panic::take_hook());
+        install_hook();
+    }
+
+    /// A failed check: records what was checked, then unwinds quietly.
+    pub fn fail(expr: &str, expected: &str, actual: &str) -> ! {
+        FAILURE.with(|f| {
+            *f.borrow_mut() = ::core::option::Option::Some([expr.into(), expected.into(), actual.into()])
+        });
+        ::std::panic::resume_unwind(::std::boxed::Box::new(CheckFailed))
+    }
+
+    fn payload_text(payload: &(dyn ::core::any::Any + ::core::marker::Send)) -> ::std::string::String {
+        if let ::core::option::Option::Some(s) = payload.downcast_ref::<&str>() {
+            (*s).into()
+        } else if let ::core::option::Option::Some(s) = payload.downcast_ref::<::std::string::String>() {
+            s.clone()
+        } else {
+            "Box<dyn Any>".into()
+        }
+    }
+
+    /// Runs one test, isolated, and writes its records.
+    pub fn case(id: &str, panics: ::core::option::Option<&str>, test: fn()) {
+        record("case", &[id]);
+        install_hook();
+        PANIC.with(|p| *p.borrow_mut() = (::std::string::String::new(), ::core::option::Option::None));
+        FAILURE.with(|f| *f.borrow_mut() = ::core::option::Option::None);
+        MODE.with(|m| m.set(1));
+        let result = ::std::panic::catch_unwind(test);
+        MODE.with(|m| m.set(0));
+        match result {
+            ::core::result::Result::Ok(()) => match panics {
+                ::core::option::Option::None => record("pass", &[]),
+                ::core::option::Option::Some(_) => record("nopanic", &[]),
+            },
+            ::core::result::Result::Err(payload) => {
+                if payload.is::<CheckFailed>() {
+                    let failure = FAILURE.with(|f| f.borrow_mut().take());
+                    if let ::core::option::Option::Some([expr, expected, actual]) = failure {
+                        record("fail", &[cap(&expr), cap(&expected), cap(&actual)]);
+                    } else {
+                        record("fail", &["", "", ""]);
+                    }
+                    return;
+                }
+                let (mut message, line) = PANIC.with(|p| p.borrow().clone());
+                if message.is_empty() {
+                    message = payload_text(&*payload);
+                }
+                if let ::core::option::Option::Some(wanted) = panics {
+                    if message.contains(wanted) {
+                        record("pass", &[]);
+                        return;
+                    }
+                }
+                let line = match line {
+                    ::core::option::Option::Some(n) => ::std::format!("{n}"),
+                    ::core::option::Option::None => ::std::string::String::new(),
+                };
+                record("panic", &[cap(&message), &line]);
+            }
+        }
+    }
+
+    /// Runs the learner's `main`, between `main` and `mainend` records.
+    pub fn main(run: fn()) {
+        record("main", &[]);
+        install_hook();
+        PANIC.with(|p| *p.borrow_mut() = (::std::string::String::new(), ::core::option::Option::None));
+        MODE.with(|m| m.set(2));
+        let result = ::std::panic::catch_unwind(run);
+        MODE.with(|m| m.set(0));
+        match result {
+            ::core::result::Result::Ok(()) => record("mainend", &["ok"]),
+            ::core::result::Result::Err(payload) => {
+                let (mut message, line) = PANIC.with(|p| p.borrow().clone());
+                if message.is_empty() {
+                    message = payload_text(&*payload);
+                }
+                let line = match line {
+                    ::core::option::Option::Some(n) => ::std::format!("{n}"),
+                    ::core::option::Option::None => ::std::string::String::new(),
+                };
+                record("mainend", &["panic", cap(&message), &line]);
+            }
+        }
+    }
+
+    /// The last record: every test and `main` have been handled.
+    pub fn done() {
+        record("done", &[]);
+    }

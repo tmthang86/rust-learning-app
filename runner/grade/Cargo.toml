@@ -1,0 +1,16 @@
+[package]
+name = "rr-grade"
+version = "0.1.0"
+edition = "2024"
+description = "Grades Rust exercises with several tests: builds the test harness, reads its results and classifies compile errors. Used by the runner and by tool/check_lessons.py."
+
+[lib]
+name = "rr_grade"
+
+[[bin]]
+name = "rr-grade"
+path = "src/bin/rr-grade.rs"
+
+[dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
