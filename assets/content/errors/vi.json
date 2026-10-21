@@ -1,0 +1,503 @@
+{
+  "E0382": {
+    "title": "Dùng một giá trị sau khi nó đã được di chuyển",
+    "explanation": "Một giá trị chỉ có thể có một chủ sở hữu. Gán một String cho biến khác, hoặc truyền nó vào một hàm, sẽ di chuyển (move) nó sang chủ sở hữu mới. Sau đó, biến cũ không thể dùng được nữa. Các kiểu đơn giản như i32 thì được sao chép, nên không bao giờ bị di chuyển.",
+    "fixes": [
+      "Hãy mượn thay vì di chuyển: viết &name để chủ sở hữu ban đầu vẫn giữ giá trị.",
+      "Hãy tạo một bản sao riêng bằng .clone() nếu bạn thực sự cần hai giá trị."
+    ]
+  },
+  "E0499": {
+    "title": "Hai tham chiếu có thể thay đổi (&mut) cùng lúc",
+    "explanation": "Bạn có thể có nhiều tham chiếu chia sẻ hoặc một tham chiếu có thể thay đổi tới một giá trị, không bao giờ có hai tham chiếu có thể thay đổi (&mut) cùng lúc. Rust đã dừng lại vì một &mut thứ hai được tạo ra trong khi &mut đầu tiên vẫn sẽ còn được dùng.",
+    "fixes": [
+      "Hãy dùng xong &mut đầu tiên trước khi tạo cái thứ hai. Một lần mượn kết thúc sau lần dùng cuối cùng của nó."
+    ]
+  },
+  "E0502": {
+    "title": "Vừa mượn chia sẻ (&) vừa mượn &mut cùng lúc",
+    "explanation": "Một giá trị đã được mượn dưới dạng chia sẻ (&) và dưới dạng có thể thay đổi (&mut) cùng lúc. Rust cho phép nhiều lần mượn chia sẻ hoặc một lần mượn có thể thay đổi, nhưng không bao giờ cả hai khi lần mượn đầu tiên vẫn còn được dùng.",
+    "fixes": [
+      "Hãy dùng tham chiếu đầu tiên lần cuối trước khi bạn thay đổi giá trị.",
+      "Hãy giữ một bản sao thay vì một tham chiếu, ví dụ bằng .clone(), để không có gì còn bị mượn khi bạn thay đổi bản gốc."
+    ]
+  },
+  "E0505": {
+    "title": "Di chuyển một giá trị đang bị mượn",
+    "explanation": "Một giá trị đã bị di chuyển (ví dụ vào một hàm) trong khi một tham chiếu tới nó vẫn sẽ còn được dùng. Tham chiếu đó sẽ trỏ tới thứ đã không còn, nên Rust đã dừng lại.",
+    "fixes": [
+      "Hãy dùng tham chiếu trước khi di chuyển, để lần mượn kết thúc trước.",
+      "Hãy đổi hàm để nó nhận một tham chiếu (&String) và gọi nó với &s, hoặc đưa cho nó s.clone()."
+    ]
+  },
+  "E0506": {
+    "title": "Thay đổi một giá trị đang bị mượn",
+    "explanation": "Một tham chiếu tới biến này vẫn sẽ còn được dùng, nên biến chưa thể nhận giá trị mới. Giá trị mới sẽ làm tham chiếu trở nên sai.",
+    "fixes": [
+      "Hãy dùng tham chiếu lần cuối trước khi gán giá trị mới. Một lần mượn kết thúc sau lần dùng cuối cùng của nó."
+    ]
+  },
+  "E0507": {
+    "title": "Di chuyển một giá trị ra khỏi chỗ đang mượn",
+    "explanation": "Bạn chỉ mượn giá trị này, nên bạn không thể lấy quyền sở hữu nó. Chủ sở hữu của nó vẫn cần nó. Điều này cũng xảy ra khi bạn lấy một String ra khỏi một Vec bằng chỉ số, như v[0].",
+    "fixes": [
+      "Hãy mượn phần bạn cần thay vì lấy nó đi: viết &r.name hoặc &v[0].",
+      "Hãy tạo bản sao của riêng bạn bằng .clone()."
+    ]
+  },
+  "E0515": {
+    "title": "Trả về tham chiếu tới một biến cục bộ",
+    "explanation": "Biến cục bộ bị drop khi hàm kết thúc. Một tham chiếu tới nó sẽ không trỏ tới đâu cả, nên Rust không cho phép bạn trả về nó.",
+    "fixes": [
+      "Hãy trả về giá trị sở hữu thay vì một tham chiếu, ví dụ một String thay vì một &str.",
+      "Nếu bạn cần một tham chiếu, hãy mượn từ dữ liệu sống lâu hơn, chẳng hạn một tham số."
+    ]
+  },
+  "E0597": {
+    "title": "Giá trị không sống đủ lâu",
+    "explanation": "Một giá trị đã bị drop ở cuối khối của nó trong khi một tham chiếu tới nó vẫn sẽ còn được dùng. Tham chiếu đó sẽ trỏ tới thứ đã không còn.",
+    "fixes": [
+      "Hãy khai báo giá trị ở khối bên ngoài, để nó sống lâu bằng tham chiếu.",
+      "Hãy dùng tham chiếu bên trong khối, trước khi giá trị bị drop."
+    ]
+  },
+  "E0716": {
+    "title": "Một giá trị tạm thời đã bị drop",
+    "explanation": "Một giá trị không được lưu trong biến, như kết quả của String::from(\"hi\"), là một giá trị tạm thời (temporary). Các giá trị tạm thời thường bị drop ở cuối câu lệnh, nên một tham chiếu tới chúng không tồn tại lâu.",
+    "fixes": [
+      "Hãy lưu giá trị vào một biến trước bằng let, rồi mượn biến đó.",
+      "Hãy giữ giá trị sở hữu (ví dụ String) thay vì mượn từ một giá trị tạm thời."
+    ]
+  },
+  "E0106": {
+    "title": "Thiếu chỉ định lifetime (lifetime specifier)",
+    "explanation": "Rust cần biết một tham chiếu sống bao lâu. Một hàm trả về tham chiếu phải nói rõ nó mượn từ đầu vào nào, và Rust không thể đoán điều đó khi có nhiều đầu vào là tham chiếu (trừ trong phương thức) hoặc không có đầu vào nào. Một trường struct giữ tham chiếu cũng cần một tên lifetime.",
+    "fixes": [
+      "Với nhiều đầu vào là tham chiếu, hãy đặt tên một lifetime: fn longest<'a>(a: &'a str, b: &'a str) -> &'a str.",
+      "Nếu không có gì được truyền vào để mượn, hãy trả về một giá trị sở hữu như String thay vì một tham chiếu.",
+      "Với một trường struct, hãy đặt lifetime lên struct: struct Holder<'a> { name: &'a str }. Hoặc lưu một String."
+    ]
+  },
+  "E0384": {
+    "title": "Thay đổi một biến không phải mut",
+    "explanation": "Biến mặc định là bất biến, nên một giá trị không thể được gán hai lần. Rust đã dừng lại vì biến này đã có giá trị và không được khai báo với mut.",
+    "fixes": [
+      "Hãy thêm mut khi khai báo: let mut x = 5; (với tham số hàm, hãy viết mut x: i32).",
+      "Hoặc tạo một biến mới cùng tên bằng let (shadowing): let x = 6;"
+    ]
+  },
+  "E0596": {
+    "title": "Mượn dạng &mut khi biến không có mut",
+    "explanation": "Code này cần thay đổi một giá trị, ví dụ v.push(1) mượn v dưới dạng có thể thay đổi. Nhưng biến không được khai báo với mut, hoặc nó chỉ là một tham chiếu chia sẻ (&).",
+    "fixes": [
+      "Nếu bạn sở hữu giá trị, hãy khai báo nó với let mut (hoặc mut v cho một tham số).",
+      "Nếu nó đến qua một tham số tham chiếu, hãy đổi kiểu thành &mut, như &mut Vec<i32>."
+    ]
+  },
+  "E0594": {
+    "title": "Gán cho thứ không phải mut",
+    "explanation": "Một giá trị không thể thay đổi đã được gán giá trị mới. Các trường của một struct chỉ có thể thay đổi khi cả biến được khai báo với mut.",
+    "fixes": [
+      "Hãy khai báo biến với let mut.",
+      "Nếu bạn gán thông qua một tham chiếu, tham chiếu đó phải là một &mut.",
+      "Nếu giá trị nằm trong một RefCell, hãy thay đổi nó thông qua borrow_mut()."
+    ]
+  },
+  "E0308": {
+    "title": "Kiểu không khớp",
+    "explanation": "Rust mong đợi một kiểu nhưng tìm thấy kiểu khác. Điều này thường xảy ra khi bạn truyền một giá trị có kiểu khác với kiểu hàm yêu cầu, hoặc khi hai vế của một let hoặc một if/else không khớp nhau.",
+    "fixes": [
+      "Hãy đọc các dòng \"expected\" và \"found\" trong thông báo, rồi đổi giá trị sang kiểu được mong đợi.",
+      "Hãy chuyển đổi có chủ đích khi hợp lý, chẳng hạn as f64 cho số hoặc .to_string() cho văn bản.",
+      "Nếu một hàm kết thúc bằng ; sau giá trị cuối cùng, hãy bỏ ; để giá trị được trả về."
+    ]
+  },
+  "E0277": {
+    "title": "Một kiểu thiếu trait cần thiết",
+    "explanation": "Rust cần một kiểu có một khả năng (một trait), nhưng nó không có. Thông báo cho biết đó là trait nào. Các trường hợp thường gặp: in một Vec bằng {}, cộng một i32 với một f64, hoặc dùng một i32 làm chỉ số.",
+    "fixes": [
+      "Để in một Vec hoặc struct của riêng bạn, hãy dùng {:?} và đặt #[derive(Debug)] phía trên struct.",
+      "Hãy làm cho các kiểu số khớp nhau: chuyển đổi bằng as, và lập chỉ số cho Vec bằng một usize, không phải một i32.",
+      "Trong một hàm generic, hãy thêm ràng buộc mà code cần, như fn show<T: std::fmt::Debug>(x: T)."
+    ]
+  },
+  "E0599": {
+    "title": "Không tìm thấy phương thức hoặc hàm",
+    "explanation": "Một phương thức, hàm hoặc variant của enum đã được dùng nhưng kiểu đó không có. Rust đã xem xét kiểu và không tìm thấy gì có tên đó.",
+    "fixes": [
+      "Hãy kiểm tra chính tả và kiểu: phương thức (d.bark()), hàm (String::new()) hoặc variant (Light::Red) phải tồn tại cho kiểu đó.",
+      "Với kiểu của riêng bạn, hãy viết nó trong một khối impl, hoặc thêm variant vào enum."
+    ]
+  },
+  "E0425": {
+    "title": "Không tìm thấy tên",
+    "explanation": "Rust không tìm thấy gì có tên này ở đây. Có thể nó bị viết sai chính tả, chưa bao giờ được khai báo, hoặc nằm ở nơi khác. Lỗi này cũng bao gồm cả các kiểu, khi đó hiện ra là \"cannot find type\".",
+    "fixes": [
+      "Hãy đối chiếu chính tả với nơi nó được khai báo.",
+      "Hãy chắc rằng nó được khai báo trước dòng này và bạn vẫn đang ở trong khối nơi nó tồn tại.",
+      "Nếu nó được định nghĩa trong một module khác, hãy đưa nó vào bằng use."
+    ]
+  },
+  "E0433": {
+    "title": "Kiểu hoặc module chưa được import",
+    "explanation": "Một crate, module hoặc kiểu đã được dùng mà Rust không biết ở chỗ này. Thường đó là một kiểu từ thư viện chuẩn, như HashMap, cần một dòng use trước.",
+    "fixes": [
+      "Hãy import nó ở đầu file, ví dụ use std::collections::HashMap;",
+      "Hãy kiểm tra chính tả của tên và của từng phần trong đường dẫn.",
+      "Để dùng một module từ crate của chính bạn, hãy bắt đầu đường dẫn bằng crate::"
+    ]
+  },
+  "E0432": {
+    "title": "Không tìm thấy mục import",
+    "explanation": "Một dòng use trỏ tới thứ mà Rust không tìm thấy. Đường dẫn có thể bị viết sai chính tả, hoặc mục đó không tồn tại trong module đó.",
+    "fixes": [
+      "Hãy kiểm tra chính tả của từng phần trong đường dẫn.",
+      "Hãy kiểm tra mục đó thực sự tồn tại trong module đó.",
+      "Đường dẫn tới code của chính bạn có thể bắt đầu bằng crate::, self:: hoặc super::"
+    ]
+  },
+  "E0061": {
+    "title": "Sai số lượng đối số",
+    "explanation": "Số đối số trong một lời gọi phải khớp với số trong định nghĩa của hàm. Rust không có đối số tùy chọn, nên mọi đối số đều phải được truyền vào.",
+    "fixes": [
+      "Hãy đếm các tham số của hàm và truyền đúng chừng đó.",
+      "Nếu hàm nên nhận một số lượng khác, hãy đổi định nghĩa của nó."
+    ]
+  },
+  "E0369": {
+    "title": "Toán tử không được hỗ trợ cho kiểu này",
+    "explanation": "Một toán tử như + hoặc == đã được dùng trên một kiểu không hỗ trợ nó. Rust chỉ cho phép một toán tử khi kiểu implement trait tương ứng. Ví dụ, hai giá trị &str không thể cộng với nhau.",
+    "fixes": [
+      "Để nối văn bản, hãy bắt đầu từ một String: \"a\".to_owned() + \"b\", hoặc dùng format!(\"{}{}\", a, b).",
+      "Với struct của riêng bạn, hãy đặt #[derive(PartialEq)] phía trên nó để dùng ==, hoặc implement Add từ std::ops để dùng +.",
+      "Trong một hàm generic, hãy thêm một ràng buộc: T: PartialOrd cho >, hoặc T: std::ops::Add<Output = T> cho +."
+    ]
+  },
+  "E0381": {
+    "title": "Dùng một biến chưa có giá trị",
+    "explanation": "Một biến đã được khai báo nhưng chưa bao giờ được gán giá trị, rồi sau đó nó được dùng. Rust không cho phép bạn đọc một biến không chứa gì.",
+    "fixes": [
+      "Hãy gán cho biến một giá trị trước khi dùng, ví dụ let x: i32 = 0;",
+      "Nếu bạn gán nó trong các nhánh như if và else, hãy đảm bảo mọi nhánh đều gán giá trị cho nó."
+    ]
+  },
+  "E0282": {
+    "title": "Cần khai báo kiểu",
+    "explanation": "Rust không thể suy ra một kiểu duy nhất từ code, nên cần bạn giúp. Ví dụ, Vec::new() không cho biết vector sẽ chứa gì.",
+    "fixes": [
+      "Hãy viết kiểu trên biến: let v: Vec<i32> = Vec::new();",
+      "Hoặc đưa kiểu vào lời gọi: Vec::<i32>::new()",
+      "Hoặc dùng giá trị theo cách cho thấy kiểu của nó, chẳng hạn push một i32 vào đó."
+    ]
+  },
+  "E0283": {
+    "title": "Rust không thể chọn kiểu nào để tạo",
+    "explanation": "Một số phương thức, như collect(), có thể tạo ra nhiều kiểu khác nhau, chẳng hạn một Vec hoặc một String. Rust không thể biết bạn muốn kiểu nào, nên yêu cầu bạn chỉ rõ.",
+    "fixes": [
+      "Hãy viết kiểu trên biến: let d: Vec<i32> = ... .collect(); Chỉ cần viết Vec<_> là đủ.",
+      "Hoặc đặt kiểu trong lời gọi: .collect::<Vec<_>>()"
+    ]
+  },
+  "E0284": {
+    "title": "Rust không thể chọn kiểu kết quả",
+    "explanation": "Một số phương thức, như parse(), có thể cho ra nhiều kiểu khác nhau. Rust không thể chắc bạn muốn kiểu nào, nên yêu cầu bạn chỉ rõ.",
+    "fixes": [
+      "Hãy viết kiểu trên biến: let n: i32 = \"5\".parse().unwrap();",
+      "Hoặc đặt kiểu trong lời gọi: \"5\".parse::<i32>()"
+    ]
+  },
+  "E0004": {
+    "title": "match không bao phủ mọi trường hợp",
+    "explanation": "Một match phải xử lý mọi giá trị có thể có. Rust tìm thấy ít nhất một giá trị mà không nhánh nào khớp, và lỗi cho biết giá trị đó.",
+    "fixes": [
+      "Hãy thêm một nhánh cho mỗi trường hợp còn thiếu, chẳng hạn variant được nêu trong thông báo.",
+      "Hoặc thêm _ => làm nhánh cuối để khớp với mọi thứ còn lại."
+    ]
+  },
+  "E0063": {
+    "title": "Thiếu một trường của struct",
+    "explanation": "Một giá trị struct phải đưa ra giá trị cho mọi trường. Ít nhất một trường đã bị bỏ sót trong struct literal này.",
+    "fixes": [
+      "Hãy thêm trường còn thiếu, dùng tên được hiển thị trong thông báo.",
+      "Hoặc sao chép phần còn lại từ một giá trị khác: Point { x: 1, ..other }"
+    ]
+  },
+  "E0560": {
+    "title": "Trường không xác định trong một giá trị struct",
+    "explanation": "Một tên trường đã được dùng mà struct không có. Có thể nó bị viết sai chính tả.",
+    "fixes": [
+      "Hãy đối chiếu chính tả của trường với định nghĩa struct.",
+      "Nếu struct thực sự cần trường này, hãy thêm nó vào định nghĩa struct."
+    ]
+  },
+  "E0609": {
+    "title": "Không có trường như vậy",
+    "explanation": "Giá trị này không có trường nào với tên đó. Có thể tên bị viết sai chính tả, hoặc giá trị có kiểu khác với kiểu bạn mong đợi.",
+    "fixes": [
+      "Hãy đối chiếu chính tả của trường với định nghĩa struct.",
+      "Hãy kiểm tra kiểu của giá trị: một struct khác có thể có trường bạn muốn.",
+      "Nếu trường bị thiếu trong struct, hãy thêm nó vào định nghĩa."
+    ]
+  },
+  "E0615": {
+    "title": "Phương thức bị dùng như một trường",
+    "explanation": "Một phương thức đã được viết không có dấu ngoặc, nên Rust coi nó như một trường. Một phương thức cần dấu ngoặc tròn () sau tên để chạy.",
+    "fixes": [
+      "Hãy thêm dấu ngoặc tròn: s.len() thay vì s.len.",
+      "Nếu bạn muốn dùng một trường của struct của riêng mình, hãy kiểm tra chính tả của nó."
+    ]
+  },
+  "E0616": {
+    "title": "Trường riêng tư",
+    "explanation": "Trường này là riêng tư, nên chỉ code trong module định nghĩa struct (và các module bên trong nó) mới dùng được. Các kiểu của chính Rust, như Vec, giữ các trường của chúng ở chế độ riêng tư.",
+    "fixes": [
+      "Nếu bạn muốn dùng một phương thức, hãy thêm dấu ngoặc tròn: v.len() thay vì v.len. Bạn không thể thay đổi các trường của các kiểu của chính Rust.",
+      "Với struct của riêng bạn, hãy làm cho trường công khai bằng cách viết pub trước tên của nó.",
+      "Hoặc thêm một phương thức công khai trả về giá trị (một getter)."
+    ]
+  },
+  "E0603": {
+    "title": "Mục riêng tư",
+    "explanation": "Mục này là riêng tư, nghĩa là nó chỉ có thể được dùng bên trong module của chính nó (và các module trong nó). Rust đã dừng lại vì nó bị dùng từ bên ngoài.",
+    "fixes": [
+      "Hãy làm cho mục công khai bằng từ khóa pub.",
+      "Hoặc gọi nó từ bên trong module của nó, ví dụ thông qua một hàm công khai."
+    ]
+  },
+  "E0624": {
+    "title": "Phương thức riêng tư",
+    "explanation": "Phương thức này là riêng tư, nên nó chỉ có thể được dùng trong phạm vi nơi nó được định nghĩa.",
+    "fixes": [
+      "Với kiểu của riêng bạn, hãy làm cho phương thức công khai bằng cách viết pub trước fn, hoặc chỉ gọi nó bên trong module của nó.",
+      "Nếu kiểu đó không phải của bạn, phương thức có thể thuộc về giá trị bên trong nó. Ví dụ, v.get(0) trả về một Option, nên hãy unwrap nó hoặc dùng match trước."
+    ]
+  },
+  "E0046": {
+    "title": "Thiếu các phương thức của trait",
+    "explanation": "Một khối impl cho một trait phải cung cấp mọi phương thức không có thân mặc định. Ít nhất một phương thức bị thiếu, và lỗi cho biết tên của nó.",
+    "fixes": [
+      "Hãy thêm từng phương thức còn thiếu được nêu trong thông báo vào khối impl.",
+      "Hãy sao chép chữ ký phương thức từ trait, rồi viết phần thân."
+    ]
+  },
+  "E0373": {
+    "title": "Closure có thể sống lâu hơn dữ liệu mà nó mượn",
+    "explanation": "Theo mặc định, một closure mượn các biến. Một thread hoặc một closure được trả về có thể chạy sau khi các biến đó đã không còn, nên Rust đã dừng lại.",
+    "fixes": [
+      "Hãy thêm move trước closure, như move || { ... }, để nó lấy quyền sở hữu những gì nó dùng.",
+      "Nếu bạn vẫn cần giá trị sau đó, hãy đưa cho closure một .clone() (hoặc một Arc) và giữ bản gốc."
+    ]
+  },
+  "E0614": {
+    "title": "Không thể giải tham chiếu kiểu này",
+    "explanation": "Toán tử * đã được dùng trên một giá trị không phải tham chiếu hay con trỏ khác. Chỉ các kiểu như &T mới có thể được giải tham chiếu theo cách này.",
+    "fixes": [
+      "Hãy bỏ * khi giá trị không phải là tham chiếu.",
+      "Hãy chỉ dùng * với tham chiếu và con trỏ thông minh (smart pointer) như &i32 hoặc Box<i32>."
+    ]
+  },
+  "E0728": {
+    "title": "await bên ngoài code async",
+    "explanation": "await đợi một future hoàn thành. Nó chỉ có thể được dùng bên trong một async fn hoặc một khối async.",
+    "fixes": [
+      "Hãy chuyển .await vào một async fn hoặc một khối async.",
+      "Một hàm thông thường, kể cả main, không thể await. Một thứ như hàm trợ giúp block_on của khóa học, hoặc một runtime như tokio, phải chạy future đó."
+    ]
+  },
+  "E0601": {
+    "title": "Không có hàm main",
+    "explanation": "Một chương trình cần một hàm main. Đó là nơi nó bắt đầu, và Rust không tìm thấy hàm nào.",
+    "fixes": [
+      "Hãy thêm fn main() { ... }",
+      "Hãy kiểm tra main được viết đúng như vậy, bằng chữ thường."
+    ]
+  },
+  "E0072": {
+    "title": "Một kiểu chứa chính nó",
+    "explanation": "Một struct hoặc enum không thể chứa trực tiếp chính nó. Nó sẽ cần không gian vô hạn. Phần bên trong phải nằm sau một con trỏ như Box, vốn có kích thước đã biết.",
+    "fixes": [
+      "Hãy đặt giá trị bên trong vào một Box: dùng Option<Box<Node>> thay vì Option<Node>."
+    ]
+  },
+  "E0023": {
+    "title": "Sai số trường trong một mẫu",
+    "explanation": "Một mẫu (pattern) cho variant của enum phải có một mẫu con cho mỗi trường mà variant có. Mẫu này có số lượng khác.",
+    "fixes": [
+      "Hãy đếm các trường trong định nghĩa của variant và khớp tất cả chúng.",
+      "Hãy dùng _ cho trường bạn không cần, như Shape::Rect(w, _)."
+    ]
+  },
+  "E0317": {
+    "title": "if không có else được dùng như một giá trị",
+    "explanation": "Một if không có else có kiểu (), nghĩa là không có giá trị. Khi cần một giá trị, như trong một let, Rust cũng cần một else.",
+    "fixes": [
+      "Hãy thêm một khối else cho giá trị cùng kiểu với khối if."
+    ]
+  },
+  "E0423": {
+    "title": "Tên được dùng sai cách",
+    "explanation": "Một tên đã được dùng như một hàm (hoặc cần một giá trị), nhưng nó là thứ khác. Nguyên nhân thường gặp là quên ! khi gọi một macro: println(\"hi\") thay vì println!(\"hi\").",
+    "fixes": [
+      "Hãy thêm ! sau tên macro: println!(\"hi\")",
+      "Nếu không, hãy kiểm tra tên đó là hàm hoặc giá trị bạn muốn."
+    ]
+  },
+  "E0606": {
+    "title": "Ép kiểu không hợp lệ",
+    "explanation": "Từ khóa as chỉ chuyển đổi giữa các kiểu đơn giản như số. Ép kiểu thứ khác, như văn bản hoặc tham chiếu, không hoạt động.",
+    "fixes": [
+      "Để biến văn bản thành số, hãy dùng parse: \"5\".parse::<i32>().unwrap()",
+      "Nếu bạn có một tham chiếu tới một số, hãy giải tham chiếu nó trước: *x as u32"
+    ]
+  },
+  "E0368": {
+    "title": "Toán tử không thể thay đổi kiểu này",
+    "explanation": "Một toán tử gán như += đã được dùng trên một kiểu không hỗ trợ nó. Một &str không thể lớn lên, nên nó không có +=.",
+    "fixes": [
+      "Hãy dùng String thay vào đó: let mut s = String::from(\"hi\"); s += \" there\";",
+      "Hoặc gọi s.push_str(\" there\") trên một String."
+    ]
+  },
+  "E0435": {
+    "title": "Dùng một biến ở nơi cần hằng số",
+    "explanation": "Độ dài mảng và giá trị const phải được biết khi chương trình được biên dịch. Một giá trị lưu trong một biến let chỉ được biết khi chương trình chạy.",
+    "fixes": [
+      "Hãy dùng một hằng số: const N: usize = 3; rồi [0; N]",
+      "Nếu kích thước chỉ được biết khi chương trình chạy, hãy dùng một Vec: vec![0; n]"
+    ]
+  },
+  "E0605": {
+    "title": "Không cho phép ép kiểu này",
+    "explanation": "Từ khóa as chỉ chuyển đổi giữa các kiểu đơn giản như số. Một String không phải là một trong số đó, nên as không thể biến nó thành số.",
+    "fixes": [
+      "Để biến văn bản thành số, hãy dùng parse: s.parse::<i32>().unwrap()"
+    ]
+  },
+  "E0765": {
+    "title": "Văn bản trong dấu nháy không được đóng",
+    "explanation": "Một đoạn văn bản bắt đầu bằng dấu nháy kép nhưng không bao giờ kết thúc bằng một dấu nháy kép. Rust tiếp tục đọc cho đến hết file.",
+    "fixes": [
+      "Hãy thêm dấu nháy kép đóng còn thiếu ở cuối đoạn văn bản."
+    ]
+  },
+  "syntax-missing-semicolon": {
+    "title": "Thiếu dấu chấm phẩy",
+    "explanation": "Hầu hết các câu lệnh trong Rust kết thúc bằng ;. Rust đã đến đầu câu lệnh kế tiếp trước khi thấy phần kết thúc của câu lệnh này. Mũi tên trong thông báo chỉ vào dòng cần ;.",
+    "fixes": [
+      "Hãy thêm ; vào cuối dòng mà mũi tên chỉ tới."
+    ]
+  },
+  "syntax-unclosed-delimiter": {
+    "title": "Dấu ngoặc chưa đóng",
+    "explanation": "Mỗi {, ( hoặc [ cần một dấu đóng tương ứng. Code đã kết thúc trong khi một dấu vẫn còn mở.",
+    "fixes": [
+      "Hãy tìm dấu ngoặc mà thông báo gọi là \"unclosed\", hoặc nói là \"might not be properly closed\", rồi thêm dấu đóng tương ứng của nó ở nơi khối đó nên kết thúc.",
+      "Hãy kiểm tra mỗi { có } riêng của nó. Việc thụt lề đúng giúp bạn thấy khối nên kết thúc ở đâu."
+    ]
+  },
+  "syntax-mismatched-delimiter": {
+    "title": "Dấu ngoặc không khớp",
+    "explanation": "Một dấu đóng đã được tìm thấy không khớp với dấu ngoặc cuối cùng đã mở, chẳng hạn ( bị đóng bằng ].",
+    "fixes": [
+      "Hãy đổi dấu đóng thành dấu tương ứng của dấu mở: ( với ), [ với ], { với }."
+    ]
+  },
+  "syntax-unexpected-closing": {
+    "title": "Thừa dấu đóng ngoặc",
+    "explanation": "Một dấu đóng đã được tìm thấy mà không có dấu mở tương ứng. Có thể một khối đã bị đóng hai lần.",
+    "fixes": [
+      "Hãy bỏ dấu đóng thừa, hoặc thêm dấu mở còn thiếu."
+    ]
+  },
+  "syntax-expected-expression": {
+    "title": "Thiếu một giá trị",
+    "explanation": "Rust mong đợi một giá trị (một biểu thức), nhưng tìm thấy thứ khác, chẳng hạn ;. Ví dụ, let x = ; không có giá trị nào sau dấu =.",
+    "fixes": [
+      "Hãy viết giá trị thuộc về chỗ đó, chẳng hạn let x = 5;",
+      "Hãy kiểm tra xem có thiếu một giá trị hoặc thừa một ký hiệu ngay trước mũi tên không."
+    ]
+  },
+  "syntax-increment": {
+    "title": "Rust không có ++",
+    "explanation": "Rust không có toán tử ++, dù đặt trước hay sau một biến. Để cộng thêm 1, hãy viết đầy đủ bằng +=.",
+    "fixes": [
+      "Hãy viết i += 1; thay vì i++ hoặc ++i. Biến phải được khai báo với let mut."
+    ]
+  },
+  "syntax-decrement": {
+    "title": "Rust không có --",
+    "explanation": "Rust không có toán tử --, dù đặt trước hay sau một biến. Để trừ đi 1, hãy viết đầy đủ bằng -=.",
+    "fixes": [
+      "Hãy viết i -= 1; thay vì i--. Biến phải được khai báo với let mut."
+    ]
+  },
+  "syntax-unknown-macro": {
+    "title": "Macro không xác định",
+    "explanation": "Rust không tìm thấy macro nào có tên này. Macro được viết với ! ở cuối, như println!, và tên có thể bị viết sai chính tả.",
+    "fixes": [
+      "Hãy kiểm tra chính tả của tên, ví dụ println! hoặc vec!"
+    ]
+  },
+  "syntax-format-args": {
+    "title": "Không đủ giá trị cho {}",
+    "explanation": "Mỗi {} trong một chuỗi định dạng (format string) như println!(\"{} {}\", a) cần một giá trị sau chuỗi. Ở đây có nhiều {} hơn giá trị.",
+    "fixes": [
+      "Hãy thêm một giá trị cho mỗi {}.",
+      "Hoặc bỏ {} thừa."
+    ]
+  },
+  "syntax-argument-never-used": {
+    "title": "Một giá trị không có {} để đặt vào",
+    "explanation": "Một giá trị đã được đưa vào println! (hoặc format!) nhưng chuỗi định dạng không có {} cho nó, nên nó sẽ không bao giờ được hiển thị.",
+    "fixes": [
+      "Hãy thêm một {} cho giá trị trong văn bản, chẳng hạn println!(\"{}\", 5).",
+      "Hoặc bỏ giá trị thừa."
+    ]
+  },
+  "syntax-format-literal": {
+    "title": "Văn bản định dạng phải nằm trong dấu nháy",
+    "explanation": "Thứ đầu tiên trong println! phải là văn bản viết trong dấu nháy kép. Một biến không thể được dùng làm văn bản định dạng.",
+    "fixes": [
+      "Hãy bắt đầu bằng một chuỗi trong dấu nháy và in biến thông qua {}: println!(\"{}\", s)"
+    ]
+  },
+  "syntax-unused-formatting-arguments": {
+    "title": "Nhiều giá trị không có {} để đặt vào",
+    "explanation": "Một số giá trị đã được đưa vào println! (hoặc format!) nhưng chuỗi định dạng không có {} cho chúng, nên chúng sẽ không bao giờ được hiển thị.",
+    "fixes": [
+      "Hãy thêm một {} cho mỗi giá trị trong văn bản, chẳng hạn println!(\"{} {}\", 1, 2).",
+      "Hoặc bỏ các giá trị thừa."
+    ]
+  },
+  "syntax-invalid-format-string": {
+    "title": "Văn bản không hợp lệ bên trong {}",
+    "explanation": "Bên trong {} bạn chỉ có thể đặt một tên biến (hoặc một vị trí hay một tùy chọn định dạng), không phải một phép tính. Rust không đọc được thứ nằm giữa các dấu ngoặc nhọn.",
+    "fixes": [
+      "Hãy tính trước: let next = age + 1; rồi println!(\"{next}\").",
+      "Hoặc để {} trống và truyền phép tính sau văn bản: println!(\"{}\", age + 1)."
+    ]
+  },
+  "syntax-char-literal": {
+    "title": "Quá nhiều ký tự trong dấu nháy đơn",
+    "explanation": "Dấu nháy đơn chứa đúng một ký tự, như 'a'. Văn bản có nhiều ký tự hơn cần dấu nháy kép, như \"ab\".",
+    "fixes": [
+      "Hãy dùng dấu nháy kép cho văn bản: \"ab\"",
+      "Hoặc chỉ giữ một ký tự giữa các dấu nháy đơn."
+    ]
+  },
+  "syntax-unknown-token": {
+    "title": "Ký hiệu không xác định",
+    "explanation": "Rust tìm thấy một ký hiệu không hợp lệ trong code. Điều này thường xảy ra với dấu nháy cong, vốn đến từ việc sao chép văn bản từ một tài liệu hoặc trang web. Code cần dấu nháy thẳng. Các lỗi sau lỗi này thường biến mất khi nó được sửa.",
+    "fixes": [
+      "Hãy gõ lại ký hiệu bằng bàn phím của bạn. Dùng dấu nháy thẳng: \" và '"
+    ]
+  },
+  "syntax-literal-out-of-range": {
+    "title": "Số quá lớn so với kiểu của nó",
+    "explanation": "Mỗi kiểu số chỉ chứa các giá trị đến một giới hạn. Ví dụ, u8 chứa từ 0 đến 255. Số được viết ở đây nằm ngoài phạm vi của kiểu của nó.",
+    "fixes": [
+      "Hãy dùng một kiểu đủ lớn, chẳng hạn u16 hoặc i32.",
+      "Hoặc dùng số nhỏ hơn."
+    ]
+  }
+}
