@@ -85,13 +85,15 @@ Google account and an Apple developer account.
 
 ## How sync works
 
-- Data lives in `users/{uid}`: `track`, `completedLessons`, `updatedAt`.
-  `firestore.rules` lets each person read, write and delete only their own
-  document, and only with these three fields: `track` must be `starter` or
-  `fast`, `completedLessons` a list of at most 1000 entries, and
-  `updatedAt` the server time of the write. Any other field is refused, so
-  nothing that must be trusted (purchases, for example) can be stored here;
-  that will go in a document only the server writes.
+- Data lives in `users/{uid}`: `track`, `completedLessons`, `dailyXp`,
+  `updatedAt`. `firestore.rules` lets each person read, write and delete only
+  their own document, and only with these four fields: `track` must be
+  `starter` or `fast`, `completedLessons` a list of at most 1000 entries,
+  `dailyXp` a map (day to XP, see
+  [streaks-and-reminders.md](streaks-and-reminders.md)) of at most 4000 days,
+  and `updatedAt` the server time of the write. Any other field is refused,
+  so nothing that must be trusted (purchases, for example) can be stored
+  here; that will go in a document only the server writes.
 - The device remembers which account its progress was last synced with.
 - When someone signs in, lessons finished on this device while signed out
   are added to their account, so nobody loses progress by signing in.

@@ -15,13 +15,25 @@ enum Track {
 }
 
 class LessonRef {
-  const LessonRef({required this.id, required this.title});
+  const LessonRef({
+    required this.id,
+    required this.title,
+    this.checkpoint = false,
+  });
 
   final String id;
   final String title;
 
-  factory LessonRef.fromJson(Map<String, dynamic> json) =>
-      LessonRef(id: json['id'] as String, title: json['title'] as String);
+  /// True for a unit's end-of-unit challenge (`"checkpoint": true` in
+  /// course.json). It is a normal lesson otherwise: same id rules, same
+  /// completion tracking and counts.
+  final bool checkpoint;
+
+  factory LessonRef.fromJson(Map<String, dynamic> json) => LessonRef(
+        id: json['id'] as String,
+        title: json['title'] as String,
+        checkpoint: json['checkpoint'] as bool? ?? false,
+      );
 }
 
 class Unit {
@@ -82,6 +94,7 @@ class Course {
               for (final lesson in unit.lessons)
                 LessonRef(
                   id: lesson.id,
+                  checkpoint: lesson.checkpoint,
                   title:
                       t.lessons
                           .where((l) => l.id == lesson.id)

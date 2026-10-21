@@ -9,7 +9,9 @@ For every lesson in assets/content/lessons/:
 - each exercise's solution must print the expected output, without warnings,
 - each exercise's starter code must NOT already print it,
 - each exercise needs 1 to 3 non-empty hints (strings),
-- each quiz answer index must point at a real option.
+- each quiz answer index must point at a real option,
+- every lesson id in course.json has a file, and every file is in course.json,
+- a course.json entry with `"checkpoint": true` has an exercise with a solution.
 
 Translations (assets/content/<lang>/course.json and
 assets/content/<lang>/lessons/<id>.json) are checked against their English
@@ -96,7 +98,7 @@ def output_comment(code):
 
 def check(path):
     problems = []
-    lesson = json.load(open(path))
+    lesson = read_json(path)
     lid = lesson["id"]
 
     for i, section in enumerate(lesson["sections"]):
@@ -235,6 +237,58 @@ _TRAILING_PUNCTUATION = ".,?:"
 _QUOTED = re.compile(r'"((?:[^"\\]|\\.)*)"')
 _MACRO_CALL = re.compile(r"\b([a-z_][a-z0-9_]*)!\s*[(\[{]")
 _NUMBER = re.compile(r"^-?[0-9][0-9_.]*$")
+
+
+def read_json(path):
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def check_course():
+    """Cross-checks course.json against the lesson files."""
+    problems = []
+    course = read_json(os.path.join(ROOT, "assets", "content", "course.json"))
+    listed = {}
+    for unit in course["units"]:
+        uid = unit["id"]
+        lessons = unit["lessons"]
+        checkpoints = []
+        for i, ref in enumerate(lessons):
+            if ref["id"] in listed:
+                problems.append(f"course.json: lesson id {ref['id']} is listed twice")
+            listed[ref["id"]] = ref
+            flag = ref.get("checkpoint", False)
+            if not isinstance(flag, bool):
+                problems.append(
+                    f"course.json: {ref['id']} has checkpoint {flag!r}; it must be true or false"
+                )
+            elif flag:
+                checkpoints.append(ref)
+                if i != len(lessons) - 1:
+                    problems.append(f"course.json: checkpoint {ref['id']} must be the last lesson of {uid}")
+                if ref["id"] != uid + "-check":
+                    problems.append(f"course.json: checkpoint {ref['id']} must have id {uid}-check")
+        if lessons and len(checkpoints) != 1:
+            problems.append(
+                f"course.json: unit {uid} has {len(checkpoints)} checkpoints, expected exactly 1"
+            )
+    files = {
+        os.path.splitext(os.path.basename(p))[0]
+        for p in glob.glob(os.path.join(LESSONS, "*.json"))
+    }
+    for lid in sorted(set(listed) - files):
+        problems.append(f"course.json lists {lid} but assets/content/lessons/{lid}.json is missing")
+    for lid in sorted(files - set(listed)):
+        problems.append(f"assets/content/lessons/{lid}.json is not listed in course.json")
+    for lid in sorted(files):
+        lesson = read_json(os.path.join(LESSONS, lid + ".json"))
+        if lesson.get("id") != lid:
+            problems.append(f"{lid}.json: lesson id is {lesson.get('id')!r}, expected {lid!r}")
+        if listed.get(lid, {}).get("checkpoint") is True:
+            exercise = lesson.get("exercise")
+            if not exercise or not exercise.get("solution"):
+                problems.append(f"{lid}: checkpoint needs an exercise with a solution")
+    return problems
 
 
 def _looks_like_code(comment):
@@ -655,7 +709,7 @@ def check_translations(content=CONTENT):
 
 def main():
     paths = sorted(glob.glob(os.path.join(LESSONS, "*.json")))
-    problems = [p for path in paths for p in check(path)]
+    problems = check_course() + [p for path in paths for p in check(path)]
     translation_problems, summary = check_translations()
     problems += translation_problems
     for p in problems:

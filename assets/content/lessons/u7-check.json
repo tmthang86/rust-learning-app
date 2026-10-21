@@ -1,0 +1,73 @@
+{
+  "id": "u7-check",
+  "title": "Checkpoint: Storage inventory",
+  "sections": [
+    {
+      "type": "text",
+      "text": "This checkpoint brings the whole unit together. You will use a generic struct (Generic structs and enums), a trait with a default method (Traits), a trait bound (Trait bounds) and a lifetime annotation (Lifetimes) in one small program. You do not write main. It is already there, and it calls your code on several inputs, including an empty inventory and a tie."
+    },
+    {
+      "type": "text",
+      "text": "The starter compiles, but every missing piece is marked with todo!(). todo!() is a placeholder: the program builds, and it panics with \"not yet implemented\" if that line runs. Replace the todo!() calls one at a time and run the program after each change. The compiler shows warnings about unused variables until you are done. That is expected."
+    },
+    {
+      "type": "text",
+      "text": "The starter has one line you have not seen in a lesson: impl<T: Describe> Inventory<T>. A bound on an impl block works like a bound on a function. Inside the block, every method may call the methods of Describe on a T, such as item.size(). Without the bound, that call would not compile, because T could be any type."
+    },
+    {
+      "type": "note",
+      "text": "Start with Barrel. Copy the shape of impl Describe for Crate above it. Then write total_size: loop over &self.items and add up item.size(). You may call size() because the impl block says T: Describe. Last, write bigger.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "bigger needs a lifetime, because it returns a reference and has two reference inputs. Use the same 'a on a, on b and on the result, as longest did in the Lifetimes lesson. To return the first value on a tie, switch to b only when its size is strictly greater: if b.size() > a.size() { b } else { a }.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Signatures to match: impl Describe for Barrel (name, size, and an override of summary), Inventory<T>::total_size(&self) -> u32, and bigger<'a, T: Describe>(a: &'a T, b: &'a T) -> &'a T. Edge cases the main function checks: an empty inventory has total size 0, and on equal sizes bigger returns its first argument.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Finish the inventory program. The trait Describe, the structs Crate and Barrel, and Inventory<T> are written, but three pieces are marked todo!().\n\n(1) Write impl Describe for Barrel. name returns the text barrel, a space, and the label (for example barrel wine). size returns the liters. Also override summary so a Barrel gives its name, then the text holding, then the liters, then the text liters (for example barrel wine holding 50 liters). Crate keeps the default summary.\n\n(2) In impl<T: Describe> Inventory<T>, write fn total_size(&self) -> u32. It returns the sum of the sizes of all items, and 0 when there are none.\n\n(3) Write fn bigger<'a, T: Describe>(a: &'a T, b: &'a T) -> &'a T. It returns the item with the larger size. If the sizes are equal, it returns a, the first one. You may assume that sizes and totals fit in a u32.\n\nDo not change main. It should print:\n\nbarrel wine holding 50 liters\nbarrel wine\nbarrel water\ntotal: 0\ntotal: 35\ncrate of size 27",
+    "starter": "trait Describe {\n    fn name(&self) -> String;\n    fn size(&self) -> u32;\n\n    fn summary(&self) -> String {\n        format!(\"{} of size {}\", self.name(), self.size())\n    }\n}\n\nstruct Crate {\n    side: u32,\n}\n\nstruct Barrel {\n    label: &'static str,\n    liters: u32,\n}\n\nimpl Describe for Crate {\n    fn name(&self) -> String {\n        String::from(\"crate\")\n    }\n\n    fn size(&self) -> u32 {\n        self.side * self.side * self.side\n    }\n}\n\nimpl Describe for Barrel {\n    // TODO: name is \"barrel \" followed by the label, size is the liters.\n    // Also override summary (see the exercise text).\n    fn name(&self) -> String {\n        todo!()\n    }\n\n    fn size(&self) -> u32 {\n        todo!()\n    }\n}\n\nstruct Inventory<T> {\n    items: Vec<T>,\n}\n\nimpl<T: Describe> Inventory<T> {\n    fn new() -> Inventory<T> {\n        Inventory { items: Vec::new() }\n    }\n\n    fn add(&mut self, item: T) {\n        self.items.push(item);\n    }\n\n    fn total_size(&self) -> u32 {\n        todo!()\n    }\n}\n\nfn bigger<'a, T: Describe>(a: &'a T, b: &'a T) -> &'a T {\n    todo!()\n}\n\nfn main() {\n    let wine = Barrel { label: \"wine\", liters: 50 };\n    let oil = Barrel { label: \"oil\", liters: 50 };\n    let water = Barrel { label: \"water\", liters: 80 };\n    println!(\"{}\", wine.summary());\n    println!(\"{}\", bigger(&wine, &oil).name());\n    println!(\"{}\", bigger(&oil, &water).name());\n\n    let mut crates: Inventory<Crate> = Inventory::new();\n    println!(\"total: {}\", crates.total_size());\n    crates.add(Crate { side: 2 });\n    crates.add(Crate { side: 3 });\n    println!(\"total: {}\", crates.total_size());\n    println!(\"{}\", bigger(&crates.items[0], &crates.items[1]).summary());\n}",
+    "expectedOutput": "barrel wine holding 50 liters\nbarrel wine\nbarrel water\ntotal: 0\ntotal: 35\ncrate of size 27",
+    "solution": "trait Describe {\n    fn name(&self) -> String;\n    fn size(&self) -> u32;\n\n    fn summary(&self) -> String {\n        format!(\"{} of size {}\", self.name(), self.size())\n    }\n}\n\nstruct Crate {\n    side: u32,\n}\n\nstruct Barrel {\n    label: &'static str,\n    liters: u32,\n}\n\nimpl Describe for Crate {\n    fn name(&self) -> String {\n        String::from(\"crate\")\n    }\n\n    fn size(&self) -> u32 {\n        self.side * self.side * self.side\n    }\n}\n\nimpl Describe for Barrel {\n    fn name(&self) -> String {\n        format!(\"barrel {}\", self.label)\n    }\n\n    fn size(&self) -> u32 {\n        self.liters\n    }\n\n    fn summary(&self) -> String {\n        format!(\"{} holding {} liters\", self.name(), self.liters)\n    }\n}\n\nstruct Inventory<T> {\n    items: Vec<T>,\n}\n\nimpl<T: Describe> Inventory<T> {\n    fn new() -> Inventory<T> {\n        Inventory { items: Vec::new() }\n    }\n\n    fn add(&mut self, item: T) {\n        self.items.push(item);\n    }\n\n    fn total_size(&self) -> u32 {\n        let mut total = 0;\n        for item in &self.items {\n            total += item.size();\n        }\n        total\n    }\n}\n\nfn bigger<'a, T: Describe>(a: &'a T, b: &'a T) -> &'a T {\n    if b.size() > a.size() { b } else { a }\n}\n\nfn main() {\n    let wine = Barrel { label: \"wine\", liters: 50 };\n    let oil = Barrel { label: \"oil\", liters: 50 };\n    let water = Barrel { label: \"water\", liters: 80 };\n    println!(\"{}\", wine.summary());\n    println!(\"{}\", bigger(&wine, &oil).name());\n    println!(\"{}\", bigger(&oil, &water).name());\n\n    let mut crates: Inventory<Crate> = Inventory::new();\n    println!(\"total: {}\", crates.total_size());\n    crates.add(Crate { side: 2 });\n    crates.add(Crate { side: 3 });\n    println!(\"total: {}\", crates.total_size());\n    println!(\"{}\", bigger(&crates.items[0], &crates.items[1]).summary());\n}",
+    "hints": [
+      "Start with Barrel: copy the shape of the Crate impl, and write summary again to show the liters. total_size loops over the items. bigger picks one of two items by size, and on a tie it picks the first.",
+      "Write summary in Barrel as format!(\"{} holding {} liters\", self.name(), self.liters). In bigger, compare b.size() with a.size(). Use b only when its size is strictly greater, because on a tie you must give back a.",
+      "The body of bigger is if b.size() > a.size() { b } else { a }. For total_size, write let mut total = 0;, add item.size() in a loop over &self.items, and put total on the last line."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "In fn total<T: Describe>(items: &[T]) -> u32, what does the bound : Describe do?",
+      "options": [
+        "It turns T into a struct named Describe",
+        "It limits T to types that implement Describe, so the body can call methods such as item.size()",
+        "It lets the body compare two items with > and <"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "The trait Describe has a method summary with a body. What happens in an impl that does not write summary?",
+      "options": [
+        "The code does not compile, because every method must be written in each impl",
+        "The method returns the default value of its return type",
+        "The type uses the default body from the trait"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Why does bigger need the lifetime 'a?",
+      "options": [
+        "It tells Rust the result is valid only as long as both inputs, because it can return either one",
+        "It makes the two inputs live longer than the function call",
+        "It lets bigger return a new value instead of a reference"
+      ],
+      "answer": 0
+    }
+  ]
+}

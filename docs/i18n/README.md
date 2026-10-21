@@ -209,6 +209,19 @@ gets Vietnamese, not English. `AppState.locale` goes to
 `MaterialApp.router(locale: ...)`, and `AppState` reloads the course when the
 language changes, and open lesson and quiz screens reload their lesson.
 
+**Reminder notifications** are scheduled outside any widget, so there is no
+`BuildContext` to ask. `StudyReminders` takes an `AppLocalizations Function()`
+(`AppState` passes `() => lookupAppLocalizations(locale)`) and calls it each
+time it plans, so the text is in the app language at scheduling time. When the
+language changes, `AppState` calls `reminders.refresh()`, which cancels the
+waiting notifications and plans them again in the new language.
+
+**Checkpoints.** A unit's checkpoint (`uN-check`, `"checkpoint": true` in
+`course.json`) is translated like any lesson: its title in `<locale>/course.json`
+and its file in `<locale>/lessons/`. Until the file exists the learner sees the
+English checkpoint, under the translated title, and `check_lessons.py` counts it
+as untranslated (not an error).
+
 ## Hints, solutions and compiler-error explanations
 
 - The labels and buttons around hints, the solution and the explanation cards

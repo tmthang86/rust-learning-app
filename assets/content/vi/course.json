@@ -11,7 +11,8 @@
         { "id": "u0-l2", "title": "Giá trị và biến" },
         { "id": "u0-l3", "title": "Đưa ra quyết định" },
         { "id": "u0-l4", "title": "Lặp lại với vòng lặp" },
-        { "id": "u0-l5", "title": "Hàm" }
+        { "id": "u0-l5", "title": "Hàm" },
+        { "id": "u0-check", "title": "Checkpoint: Heo đất", "checkpoint": true }
       ]
     },
     {
@@ -25,7 +26,8 @@
         { "id": "u1-l2", "title": "Cargo, công cụ build của Rust" },
         { "id": "u1-l3", "title": "In ra màn hình với println!" },
         { "id": "u1-l4", "title": "Biến và tính có thể thay đổi" },
-        { "id": "u1-l5", "title": "Shadowing" }
+        { "id": "u1-l5", "title": "Shadowing" },
+        { "id": "u1-check", "title": "Checkpoint: Quầy trái cây", "checkpoint": true }
       ]
     },
     {
@@ -39,7 +41,8 @@
         { "id": "u2-l2", "title": "Tuple và mảng" },
         { "id": "u2-l3", "title": "if là một biểu thức" },
         { "id": "u2-l4", "title": "loop, while và for" },
-        { "id": "u2-l5", "title": "Hàm và giá trị trả về" }
+        { "id": "u2-l5", "title": "Hàm và giá trị trả về" },
+        { "id": "u2-check", "title": "Checkpoint: Máy tính điểm", "checkpoint": true }
       ]
     },
     {
@@ -53,7 +56,8 @@
         { "id": "u3-l2", "title": "Copy và Clone" },
         { "id": "u3-l3", "title": "Mượn (borrowing) và tham chiếu" },
         { "id": "u3-l4", "title": "Tham chiếu có thể thay đổi (&mut)" },
-        { "id": "u3-l5", "title": "Slice" }
+        { "id": "u3-l5", "title": "Slice" },
+        { "id": "u3-check", "title": "Checkpoint: Hàm trợ giúp mượn dữ liệu", "checkpoint": true }
       ]
     },
     {
@@ -67,7 +71,8 @@
         { "id": "u4-l2", "title": "Phương thức" },
         { "id": "u4-l3", "title": "Enum" },
         { "id": "u4-l4", "title": "Option" },
-        { "id": "u4-l5", "title": "match và if let" }
+        { "id": "u4-l5", "title": "match và if let" },
+        { "id": "u4-check", "title": "Checkpoint: Bãi đỗ xe nhiều tầng", "checkpoint": true }
       ]
     },
     {
@@ -79,7 +84,8 @@
       "lessons": [
         { "id": "u5-l1", "title": "Vector" },
         { "id": "u5-l2", "title": "String và &str" },
-        { "id": "u5-l3", "title": "HashMap" }
+        { "id": "u5-l3", "title": "HashMap" },
+        { "id": "u5-check", "title": "Checkpoint: Bộ đếm từ", "checkpoint": true }
       ]
     },
     {
@@ -92,7 +98,8 @@
         { "id": "u6-l1", "title": "panic!" },
         { "id": "u6-l2", "title": "Result" },
         { "id": "u6-l3", "title": "Toán tử ?" },
-        { "id": "u6-l4", "title": "Kiểu lỗi tùy chỉnh" }
+        { "id": "u6-l4", "title": "Kiểu lỗi tùy chỉnh" },
+        { "id": "u6-check", "title": "Checkpoint: Bộ kiểm tra đơn hàng", "checkpoint": true }
       ]
     },
     {
@@ -106,7 +113,8 @@
         { "id": "u7-l2", "title": "Struct và enum generic" },
         { "id": "u7-l3", "title": "Trait" },
         { "id": "u7-l4", "title": "Ràng buộc trait (trait bound)" },
-        { "id": "u7-l5", "title": "Lifetime" }
+        { "id": "u7-l5", "title": "Lifetime" },
+        { "id": "u7-check", "title": "Checkpoint: Kho dữ liệu", "checkpoint": true }
       ]
     },
     {
@@ -120,7 +128,8 @@
         { "id": "u8-l2", "title": "Capture và move" },
         { "id": "u8-l3", "title": "Trait Iterator" },
         { "id": "u8-l4", "title": "Iterator adapter" },
-        { "id": "u8-l5", "title": "Tiêu thụ iterator" }
+        { "id": "u8-l5", "title": "Tiêu thụ iterator" },
+        { "id": "u8-check", "title": "Checkpoint: Đường ống xử lý số", "checkpoint": true }
       ]
     },
     {
@@ -133,7 +142,8 @@
         { "id": "u9-l1", "title": "Module" },
         { "id": "u9-l2", "title": "Visibility và use" },
         { "id": "u9-l3", "title": "Package, crate và Cargo" },
-        { "id": "u9-l4", "title": "Viết test" }
+        { "id": "u9-l4", "title": "Viết test" },
+        { "id": "u9-check", "title": "Checkpoint: Module bảng điểm", "checkpoint": true }
       ]
     },
     {
@@ -146,7 +156,8 @@
         { "id": "u10-l1", "title": "Box<T>" },
         { "id": "u10-l2", "title": "Deref và Drop" },
         { "id": "u10-l3", "title": "Rc<T>" },
-        { "id": "u10-l4", "title": "RefCell<T> và interior mutability" }
+        { "id": "u10-l4", "title": "RefCell<T> và interior mutability" },
+        { "id": "u10-check", "title": "Checkpoint: Nhật ký dùng chung", "checkpoint": true }
       ]
     },
     {
@@ -159,7 +170,8 @@
         { "id": "u11-l1", "title": "Thread" },
         { "id": "u11-l2", "title": "Channel" },
         { "id": "u11-l3", "title": "Trạng thái chia sẻ với Arc và Mutex" },
-        { "id": "u11-l4", "title": "Giới thiệu về async" }
+        { "id": "u11-l4", "title": "Giới thiệu về async" },
+        { "id": "u11-check", "title": "Checkpoint: Các hàm trợ giúp song song", "checkpoint": true }
       ]
     },
     {
@@ -172,7 +184,8 @@
         { "id": "u12-l1", "title": "Một công cụ dòng lệnh" },
         { "id": "u12-l2", "title": "Trò phiêu lưu bằng văn bản" },
         { "id": "u12-l3", "title": "Máy chủ web mini, phần 1" },
-        { "id": "u12-l4", "title": "Máy chủ web mini, phần 2" }
+        { "id": "u12-l4", "title": "Máy chủ web mini, phần 2" },
+        { "id": "u12-check", "title": "Checkpoint: Người giữ kho", "checkpoint": true }
       ]
     }
   ]

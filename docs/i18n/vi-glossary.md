@@ -209,6 +209,12 @@ this).
 | Run / Reset | Chạy / Đặt lại |
 | Remove ads / Restore purchases | Gỡ quảng cáo / Khôi phục giao dịch mua |
 | Language: System / English / Tiếng Việt | Hệ thống / English / Tiếng Việt |
+| streak (days in a row) | Chuỗi ngày học (UI); "streak" is not used in the app |
+| streak freeze | bảo vệ chuỗi |
+| XP | XP (kept: short, common in apps; always with a number, "20 XP") |
+| daily goal | mục tiêu hằng ngày; levels Casual / Regular / Serious = Thong thả / Đều đặn / Nghiêm túc |
+| daily reminder | lời nhắc hằng ngày |
+| Checkpoint (end-of-unit challenge) | Checkpoint (kept, with the topic: "Checkpoint: Heo đất"); "Checkpoint của unit" as a spoken label |
 
 ## Where these choices come from
 

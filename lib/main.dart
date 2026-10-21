@@ -19,6 +19,8 @@ import 'monetization/monetization.dart';
 import 'monetization/platform_services.dart';
 import 'monetization/purchase_controller.dart';
 import 'monetization/purchase_service.dart';
+import 'reminders/local_notifications_scheduler.dart';
+import 'reminders/reminder_scheduler.dart';
 import 'runner/code_runner.dart';
 import 'runner/firebase_runner_auth.dart';
 
@@ -36,6 +38,10 @@ Future<void> main() async {
     prefs: await SharedPreferences.getInstance(),
     accounts: firebase ? FirebaseAccountService() : const DisabledAccountService(),
     sync: firebase ? FirestoreProgressSync() : null,
+    // The web can't schedule reminders; there the UI hides them.
+    reminderScheduler: kIsWeb
+        ? const NoopReminderScheduler()
+        : LocalNotificationsScheduler(),
   );
   await state.load();
   final services = createPlatformServices();
@@ -55,6 +61,9 @@ Future<void> main() async {
   // Not awaited: the consent form and store run alongside the UI and
   // never block lessons.
   unawaited(monetization.start());
+  // Plans the reminders again (does nothing unless the learner turned them
+  // on). Not awaited, and never asks for permission.
+  unawaited(state.reminders.refresh());
 }
 
 /// Starts Firebase if this build is configured for it (see
@@ -146,7 +155,10 @@ class _RustLearnAppState extends State<RustLearnApp>
 
   /// Store and consent retries when the app comes back to the foreground.
   late final AppLifecycleListener _lifecycle = AppLifecycleListener(
-    onResume: () => _monetization.onResume(),
+    onResume: () {
+      _monetization.onResume();
+      widget.state.onResume();
+    },
   );
 
   @override

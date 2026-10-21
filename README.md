@@ -12,6 +12,8 @@ with a one-time "Remove ads" purchase.
 3. **Core app and first content** (in progress): Units 0 to 12 written (58 lessons, every example and exercise checked by the compiler); Google/Apple sign-in and progress sync via Firebase, off until a Firebase project is connected ([setup](docs/firebase-setup.md)).
 4. **Ads, purchase and launch** (in progress): AdMob banners and a capped interstitial on Android and iOS with Google's consent (UMP), a neutral first-launch age screen (no ads and no accounts for under-13s, child-treated, G-rated ads for 13–17), a "Report an ad" entry for App Store guideline 2.5.18, and a one-time "Remove ads" purchase with Restore, all using Google test ids until real ones are passed ([setup](docs/ads-and-purchases.md)). The web launches ad-free. Still to do: AdMob/store setup, device testing, store release.
 
+Learning habits: XP, a daily goal, streaks with freezes and optional study reminders (opt-in, local notifications, no pressure wording) are described in [docs/streaks-and-reminders.md](docs/streaks-and-reminders.md).
+
 Continuous integration (what runs on every push, and how to run it locally): [docs/ci.md](docs/ci.md).
 
 See [docs/course-map.md](docs/course-map.md) for the course outline and lesson format.
@@ -23,10 +25,12 @@ The app is available in English and Vietnamese; to translate or add a language, 
 ```
 lib/
   app/        theme, routing, responsive navigation shell
-  data/       models, content loading, app state and progress, age band
+  data/       models, content loading, app state and progress, age band, XP and streak rules
   runner/     CodeRunner: talks to the runner service
   monetization/ ads, consent (UMP), ad reports, "Remove ads" purchase
-  features/   onboarding (age, track), home, lesson, editor/playground, quiz, progress
+  reminders/  study reminder settings, schedule and notification plugin wrapper
+  l10n/       user-facing strings of the streak and reminder features
+  features/   onboarding (age, track), home, lesson, editor/playground, quiz, progress, streak widgets
 assets/content/
   course.json         units and lesson list
   lessons/<id>.json   lesson content

@@ -8,6 +8,7 @@ import '../../l10n/l10n.dart';
 import '../../monetization/ad_banner.dart';
 import '../../monetization/ads_service.dart';
 import '../../monetization/monetization.dart';
+import '../streak/streak_widgets.dart';
 import 'exercise_panel.dart';
 
 /// One lesson: explanation, examples, an exercise and a link to the quiz.
@@ -150,6 +151,8 @@ class _LessonBody extends StatelessWidget {
     final l10n = context.l10n;
     final exercise = lesson.exercise;
     final sections = lesson.sections.where((s) => s.visibleTo(track)).toList();
+    // Taken now: the snackbar for a finished lesson must outlive the screen.
+    final messenger = ScaffoldMessenger.of(context);
     // The banner goes after the first section, and only when at least one
     // more section follows, so reading text always separates it from the
     // exercise's editor and Run output further down.
@@ -157,72 +160,83 @@ class _LessonBody extends StatelessWidget {
 
     return DeepLinkScope(
       child: Scaffold(
-      appBar: lessonAppBar(
-        context,
-        // The course map's title, so the map and the lesson agree even when
-        // only one of them is translated.
-        title: Text(state.course?.lessonTitle(lesson.id) ?? lesson.title),
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 760),
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              for (final (i, section) in sections.indexed) ...[
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: _Section(section: section),
-                ),
-                if (i == bannerAfter)
-                  const AdBannerSlot(placement: AdPlacement.lessonReading),
+        appBar: lessonAppBar(
+          context,
+          // The course map's title, so the map and the lesson agree even when
+          // only one of them is translated.
+          title: Text(state.course?.lessonTitle(lesson.id) ?? lesson.title),
+        ),
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                for (final (i, section) in sections.indexed) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: _Section(section: section),
+                  ),
+                  if (i == bannerAfter)
+                    const AdBannerSlot(placement: AdPlacement.lessonReading),
+                ],
+                if (exercise != null) ...[
+                  Text(l10n.tryIt, style: theme.textTheme.titleLarge),
+                  const SizedBox(height: 8),
+                  Text(exercise.prompt),
+                  const SizedBox(height: 12),
+                  ExercisePanel(
+                    key: ValueKey(lesson.id),
+                    lessonId: lesson.id,
+                    exercise: exercise,
+                    // Solving the exercise completes the lesson, as does
+                    // passing the quiz.
+                    onSolved: () => state
+                        .markCompleted(lesson.id)
+                        .then(
+                          (award) => showXpSnackBar(messenger, award, l10n),
+                        ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+                if (state.isCompleted(lesson.id)) ...[
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(l10n.lessonComplete),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (lesson.quiz.isNotEmpty)
+                  FilledButton(
+                    onPressed: () => context.push('/lesson/${lesson.id}/quiz'),
+                    child: Text(l10n.takeQuiz),
+                  )
+                else if (exercise == null)
+                  FilledButton(
+                    onPressed: () {
+                      state
+                          .markCompleted(lesson.id)
+                          .then(
+                            (award) => showXpSnackBar(messenger, award, l10n),
+                          );
+                      final monetization = MonetizationScope.read(context);
+                      leaveLesson(context);
+                      // A natural break: the lesson is done and closed.
+                      // Repeat finishes are ignored there.
+                      monetization.onLessonFinished(lesson.id);
+                    },
+                    child: Text(l10n.markAsDone),
+                  ),
               ],
-              if (exercise != null) ...[
-                Text(l10n.tryIt, style: theme.textTheme.titleLarge),
-                const SizedBox(height: 8),
-                Text(exercise.prompt),
-                const SizedBox(height: 12),
-                ExercisePanel(
-                  key: ValueKey(lesson.id),
-                  lessonId: lesson.id,
-                  exercise: exercise,
-                  // Solving the exercise completes the lesson, as does
-                  // passing the quiz.
-                  onSolved: () => state.markCompleted(lesson.id),
-                ),
-                const SizedBox(height: 24),
-              ],
-              if (state.isCompleted(lesson.id)) ...[
-                Row(
-                  children: [
-                    Icon(Icons.check_circle, color: theme.colorScheme.primary),
-                    const SizedBox(width: 8),
-                    Text(l10n.lessonComplete),
-                  ],
-                ),
-                const SizedBox(height: 12),
-              ],
-              if (lesson.quiz.isNotEmpty)
-                FilledButton(
-                  onPressed: () => context.push('/lesson/${lesson.id}/quiz'),
-                  child: Text(l10n.takeQuiz),
-                )
-              else if (exercise == null)
-                FilledButton(
-                  onPressed: () {
-                    state.markCompleted(lesson.id);
-                    final monetization = MonetizationScope.read(context);
-                    leaveLesson(context);
-                    // A natural break: the lesson is done and closed.
-                    // Repeat finishes are ignored there.
-                    monetization.onLessonFinished(lesson.id);
-                  },
-                  child: Text(l10n.markAsDone),
-                ),
-            ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }

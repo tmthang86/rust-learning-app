@@ -6,6 +6,7 @@ import '../../data/models.dart';
 import '../../l10n/l10n.dart';
 import '../account/account_widgets.dart';
 import '../settings/language_picker.dart';
+import '../streak/streak_widgets.dart';
 import 'monetization_widgets.dart';
 
 /// Sign in to sync progress, or shows who is signed in.
@@ -32,9 +33,7 @@ class _AccountCardState extends State<_AccountCard> {
     final messenger = ScaffoldMessenger.of(context);
     final l10n = context.l10n;
     if (await confirmAndDeleteAccount(context)) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.accountDeletedSnack)),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(l10n.accountDeletedSnack)));
     }
   }
 
@@ -54,9 +53,11 @@ class _AccountCardState extends State<_AccountCard> {
                 children: [
                   Row(
                     children: [
-                      Icon(state.syncFailed
-                          ? Icons.cloud_off_outlined
-                          : Icons.cloud_done_outlined),
+                      Icon(
+                        state.syncFailed
+                            ? Icons.cloud_off_outlined
+                            : Icons.cloud_done_outlined,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -66,9 +67,11 @@ class _AccountCardState extends State<_AccountCard> {
                               user.name ?? l10n.signedInFallback,
                               style: theme.textTheme.titleMedium,
                             ),
-                            Text(state.syncFailed
-                                ? l10n.accountSyncFailed
-                                : l10n.accountSynced),
+                            Text(
+                              state.syncFailed
+                                  ? l10n.accountSyncFailed
+                                  : l10n.accountSynced,
+                            ),
                           ],
                         ),
                       ),
@@ -91,7 +94,8 @@ class _AccountCardState extends State<_AccountCard> {
                     alignment: Alignment.centerLeft,
                     child: TextButton.icon(
                       style: TextButton.styleFrom(
-                          foregroundColor: theme.colorScheme.error),
+                        foregroundColor: theme.colorScheme.error,
+                      ),
                       onPressed: _busy ? null : _deleteAccount,
                       icon: const Icon(Icons.delete_forever_outlined),
                       label: Text(l10n.deleteAccount),
@@ -102,7 +106,10 @@ class _AccountCardState extends State<_AccountCard> {
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(l10n.saveProgressTitle, style: theme.textTheme.titleMedium),
+                  Text(
+                    l10n.saveProgressTitle,
+                    style: theme.textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 4),
                   Text(l10n.saveProgressBody),
                   const SizedBox(height: 12),
@@ -194,8 +201,10 @@ class ProgressScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(l10n.lessonsDoneProgress(done, total),
-                          style: theme.textTheme.titleLarge),
+                      Text(
+                        l10n.lessonsDoneProgress(done, total),
+                        style: theme.textTheme.titleLarge,
+                      ),
                       const SizedBox(height: 12),
                       LinearProgressIndicator(
                         value: total == 0 ? 0 : done / total,
@@ -206,6 +215,8 @@ class ProgressScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+              const StreakStatsCard(),
               if (!state.accountsAllowed) ...[
                 const SizedBox(height: 16),
                 const _DeviceOnlyCard(),
@@ -243,6 +254,10 @@ class ProgressScreen extends StatelessWidget {
                   if (s.isNotEmpty) state.chooseTrack(s.first);
                 },
               ),
+              const Divider(height: 32),
+              const DailyGoalPicker(),
+              const SizedBox(height: 8),
+              const ReminderSettings(),
               const SizedBox(height: 24),
               const LanguageSetting(),
               const SizedBox(height: 24),

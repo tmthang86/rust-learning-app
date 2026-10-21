@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import '../../data/app_state.dart';
 import '../../data/models.dart';
 import '../../l10n/l10n.dart';
+import '../../data/streaks.dart';
 import '../../monetization/monetization.dart';
 import '../lesson/lesson_screen.dart';
+import '../streak/streak_widgets.dart';
 
 /// Multiple-choice quiz at the end of a lesson. Passing marks it done.
 class QuizScreen extends StatefulWidget {
@@ -27,6 +29,9 @@ class _QuizScreenState extends State<QuizScreen> {
   int _correct = 0;
   int? _picked;
   bool _checked = false;
+
+  /// What passing earned, shown on the summary.
+  XpAward? _award;
 
   @override
   void didChangeDependencies() {
@@ -56,7 +61,9 @@ class _QuizScreenState extends State<QuizScreen> {
     });
     if (_index == lesson.quiz.length &&
         _correct / lesson.quiz.length >= QuizScreen.passMark) {
-      AppScope.read(context).markCompleted(lesson.id);
+      AppScope.read(context).markCompleted(lesson.id).then((award) {
+        if (mounted) setState(() => _award = award);
+      });
     }
   }
 
@@ -188,6 +195,10 @@ class _QuizScreenState extends State<QuizScreen> {
         ),
         const SizedBox(height: 8),
         Text(passed ? l10n.quizLessonComplete : l10n.quizTryAgain),
+        if (passed) ...[
+          const SizedBox(height: 16),
+          XpEarnedNote(award: _award),
+        ],
         const SizedBox(height: 24),
         FilledButton(
           onPressed: () {

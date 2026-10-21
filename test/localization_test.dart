@@ -58,6 +58,11 @@ CourseRepository viCourse({Map<String, String> extraFiles = const {}}) {
               {'id': 'plain', 'title': 'Bài plain'},
               {'id': 'exercise', 'title': 'Bài exercise'},
               {'id': 'quiz', 'title': 'Bài quiz'},
+              {
+                'id': 'u1-check',
+                'title': 'Checkpoint: Thử thách',
+                'checkpoint': true,
+              },
             ],
           },
         ],
@@ -281,14 +286,69 @@ void main() {
       expect(state.course!.units.single.title, 'Cơ bản');
     });
 
-    test('picking the language that is already in use changes nothing', () async {
-      final state = await make();
-      await state.load();
-      var notified = 0;
-      state.addListener(() => notified++);
-      await state.setLanguage(AppLanguage.system);
-      expect(notified, 0);
+    group('reminders', () {
+      Future<(AppState, FakeReminderScheduler)> reminding(
+        Map<String, Object> prefs,
+      ) async {
+        mockPrefs({'reminderEnabled': true, ...prefs});
+        final scheduler = FakeReminderScheduler();
+        final state = AppState(
+          repository: viCourse(),
+          runner: const PlaceholderCodeRunner(),
+          prefs: await SharedPreferences.getInstance(),
+          deviceLocales: const [Locale('en', 'US')],
+          clock: () => DateTime(2026, 3, 18, 10),
+          reminderScheduler: scheduler,
+        );
+        await state.load();
+        state.onResume(); // what the app does on start
+        await pumpEventQueue();
+        return (state, scheduler);
+      }
+
+      test('are written in the app language when they are scheduled', () async {
+        final (state, scheduler) = await reminding({'language': 'vietnamese'});
+        final vi = lookupAppLocalizations(const Locale('vi'));
+        expect(scheduler.scheduled, isNotEmpty);
+        expect(scheduler.scheduled.first.text.title, vi.reminderTitle);
+        expect(scheduler.scheduled.first.text.body, vi.reminderBody);
+        expect(scheduler.l10n!.localeName, 'vi');
+        state.dispose();
+      });
+
+      test('are scheduled again in the new language when it changes', () async {
+        final (state, scheduler) = await reminding({});
+        final en = lookupAppLocalizations(const Locale('en'));
+        final vi = lookupAppLocalizations(const Locale('vi'));
+        expect(scheduler.scheduled.first.text.title, en.reminderTitle);
+        final before = scheduler.schedules.length;
+
+        await state.setLanguage(AppLanguage.vietnamese);
+        await pumpEventQueue();
+        expect(scheduler.schedules.length, greaterThan(before));
+        expect(scheduler.scheduled.length, 7);
+        for (final r in scheduler.scheduled) {
+          expect(r.text.title, vi.reminderTitle);
+        }
+
+        await state.setLanguage(AppLanguage.english);
+        await pumpEventQueue();
+        expect(scheduler.scheduled.first.text.title, en.reminderTitle);
+        state.dispose();
+      });
     });
+
+    test(
+      'picking the language that is already in use changes nothing',
+      () async {
+        final state = await make();
+        await state.load();
+        var notified = 0;
+        state.addListener(() => notified++);
+        await state.setLanguage(AppLanguage.system);
+        expect(notified, 0);
+      },
+    );
 
     test('device language changes matter only for System', () async {
       final state = await make();
@@ -318,7 +378,7 @@ void main() {
       expect(state.track, Track.fast);
       expect(state.isCompleted('quiz'), isTrue);
       expect(state.completedCount, 1);
-      expect(state.totalLessons, 3);
+      expect(state.totalLessons, 4);
     });
   });
 
@@ -328,11 +388,24 @@ void main() {
       final unit = course.units.single;
       expect(unit.title, 'Cơ bản');
       expect(unit.summary, 'Những điều cơ bản');
-      expect(unit.lessons.map((l) => l.id), ['plain', 'exercise', 'quiz']);
+      expect(unit.lessons.map((l) => l.id), [
+        'plain',
+        'exercise',
+        'quiz',
+        'u1-check',
+      ]);
       expect(unit.lessons.map((l) => l.title), [
         'Bài plain',
         'Bài exercise',
         'Bài quiz',
+        'Checkpoint: Thử thách',
+      ]);
+      // The checkpoint flag comes from the English structure.
+      expect(unit.lessons.map((l) => l.checkpoint), [
+        false,
+        false,
+        false,
+        true,
       ]);
       expect(unit.number, 1);
       expect(unit.tracks, {Track.starter, Track.fast});
@@ -353,46 +426,51 @@ void main() {
       expect(course.units.single.title, 'Basics');
     });
 
-    test('units and lessons the translation lacks keep their English', () async {
-      final repo = fakeCourse(
-        extraFiles: {
-          'assets/content/vi/course.json': jsonEncode({
-            'units': [
-              {
-                'id': 'u1',
-                'number': 1,
-                'title': 'Cơ bản',
-                'summary': 'Tóm tắt',
-                'tracks': ['starter'],
-                'lessons': [
-                  {'id': 'plain', 'title': 'Bài plain'},
-                  // exercise and quiz are not translated here
-                  {'id': 'only-in-vi', 'title': 'Không có trong tiếng Anh'},
-                ],
-              },
-              {
-                'id': 'u-extra',
-                'number': 9,
-                'title': 'Không có',
-                'summary': '',
-                'tracks': ['starter'],
-                'lessons': <Object>[],
-              },
-            ],
-          }),
-        },
-      );
-      final course = await repo.loadCourse(language: 'vi');
-      expect(course.units, hasLength(1)); // structure is the English one
-      final unit = course.units.single;
-      expect(unit.title, 'Cơ bản');
-      expect(unit.tracks, {Track.starter, Track.fast}); // not from vi
-      expect(unit.lessons.map((l) => l.title), [
-        'Bài plain',
-        'Lesson exercise',
-        'Lesson quiz',
-      ]);
-    });
+    test(
+      'units and lessons the translation lacks keep their English',
+      () async {
+        final repo = fakeCourse(
+          extraFiles: {
+            'assets/content/vi/course.json': jsonEncode({
+              'units': [
+                {
+                  'id': 'u1',
+                  'number': 1,
+                  'title': 'Cơ bản',
+                  'summary': 'Tóm tắt',
+                  'tracks': ['starter'],
+                  'lessons': [
+                    {'id': 'plain', 'title': 'Bài plain'},
+                    // exercise and quiz are not translated here
+                    {'id': 'only-in-vi', 'title': 'Không có trong tiếng Anh'},
+                  ],
+                },
+                {
+                  'id': 'u-extra',
+                  'number': 9,
+                  'title': 'Không có',
+                  'summary': '',
+                  'tracks': ['starter'],
+                  'lessons': <Object>[],
+                },
+              ],
+            }),
+          },
+        );
+        final course = await repo.loadCourse(language: 'vi');
+        expect(course.units, hasLength(1)); // structure is the English one
+        final unit = course.units.single;
+        expect(unit.title, 'Cơ bản');
+        expect(unit.tracks, {Track.starter, Track.fast}); // not from vi
+        expect(unit.lessons.map((l) => l.title), [
+          'Bài plain',
+          'Lesson exercise',
+          'Lesson quiz',
+          'Checkpoint challenge', // not translated: English title, still a checkpoint
+        ]);
+        expect(unit.lessons.last.checkpoint, isTrue);
+      },
+    );
 
     test('a broken translated course falls back to English', () async {
       final repo = fakeCourse(
@@ -621,6 +699,12 @@ void main() {
         'languageVietnamese',
         // A code and a title: "E0382: Using a value after it was moved".
         'errorTitle',
+        // Only numbers, names and 'XP' (kept in English) around punctuation.
+        'xpProgress',
+        'xpEarned',
+        'homeSemanticsJoin',
+        'xpEarnedWithGoalJoin',
+        'goalOption',
       };
       for (final key in keys(en).difference(same)) {
         expect(vi[key], isNot(en[key]), reason: '$key is not translated');
@@ -721,10 +805,7 @@ void main() {
       // Course map.
       expect(find.text('Cơ bản'), findsOneWidget);
       expect(find.text('Basics'), findsNothing);
-      expect(
-        find.textContaining('Đã hoàn thành 0/3 bài học'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Đã hoàn thành 0/4 bài học'), findsOneWidget);
       expect(find.text('Học'), findsOneWidget); // navigation
 
       await tester.tap(find.text('Cơ bản'));
@@ -749,14 +830,14 @@ void main() {
         location: '/progress',
       );
       expect(find.text('Language'), findsOneWidget);
-      expect(find.text('0 of 3 lessons done'), findsOneWidget);
+      expect(find.text('0 of 4 lessons done'), findsOneWidget);
 
       await tester.tap(find.text('Tiếng Việt'));
       await tester.pumpAndSettle();
       expect(state.languageCode, 'vi');
       expect(find.text('Ngôn ngữ'), findsOneWidget);
       expect(find.text('Lộ trình học'), findsOneWidget);
-      expect(find.text('Đã hoàn thành 0/3 bài học'), findsOneWidget);
+      expect(find.text('Đã hoàn thành 0/4 bài học'), findsOneWidget);
       expect(find.text('Tiến độ'), findsWidgets);
 
       await tester.tap(find.text('English'));
