@@ -418,6 +418,23 @@ class CodeInProse(unittest.TestCase):
         self.assertFalse(c.is_code_option("Before fn", vocab))
         self.assertFalse(c.is_code_option("It lets you", vocab))
 
+    def test_declaration_options_need_the_declaration_shape(self):
+        vocab = c.lesson_vocabulary(CODE_LESSON)
+        for option in ("let x = 1;", "let mut x = 1;", "const x = 1;", "static N: u32 = 5;",
+                       "let (a, b) = t;", "let Some(x) = o;", "let x: i32;", "let x = 1"):
+            self.assertTrue(c.is_code_option(option, vocab), option)
+        # Words that happen to contain let/mut and "=".
+        for option in ("let mut and then =", "let mut and then", "let it be = true"):
+            self.assertFalse(c.is_code_option(option, vocab), option)
+        # So a prose option is translated, but must still keep let mut and =.
+        self.assertEqual(
+            c.compare_code_text(["let mut and then ="], ["let mut rồi đến ="], "t", vocab,
+                                "$.options", option=True),
+            [],
+        )
+        found = c.missing_code("let mut and then =", "từ khóa rồi dấu bằng", vocab)
+        self.assertTrue(found)
+
     def test_prose_in_parentheses_is_not_an_argument_list(self):
         vocab = c.lesson_vocabulary(CODE_LESSON)
         self.assertFalse(c.code_tokens("Some(that variable) holds it", vocab))

@@ -455,6 +455,16 @@ def missing_code(en, tr, vocab):
     return sorted(set(missing))
 
 
+# let/const/static, optional mut, one name / tuple / variant pattern, an
+# optional ": type", then "=" or ";". Not just any text before an "=": the
+# prose option "let mut and then =" is words.
+_DECLARATION = re.compile(
+    r"(let|const|static)\s+(mut\s+)?"
+    r"(\w+(\([^()=;]*\))?|\([^()=;]*\))"
+    r"(\s*:\s*[^=;]+)?\s*[=;]"
+)
+
+
 def is_code_option(option, vocab):
     """A quiz option that is code or program output, not words: it must be
     byte-identical in a translation."""
@@ -467,7 +477,7 @@ def is_code_option(option, vocab):
         return True
     # A declaration or a command: "let mut x = 1;", "fn greet", "cargo new".
     if (
-        re.match(r"(let|const|static)\s[\x20-\x7e]*[=;]", text)
+        _DECLARATION.match(text)
         or re.match(r"(fn|struct|enum|impl|mod)\s+\w+$", text)
         or re.match(r"(fn|struct|enum|impl|mod)\s[\x20-\x7e]*[{(<;]", text)
         or re.match(r"(cargo|rustc)\s[\x20-\x7e]+$", text)
