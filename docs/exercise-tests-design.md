@@ -568,6 +568,12 @@ At risk:
    is empty). Keep each test under ~100 ms.
 8. Run `python3 tool/check_lessons.py`: the solution passes everything and
    the starter fails something.
+9. Limits that differ from `/run`: inside an `output_of` closure, file
+   writes over 64 KB fail (`EFBIG`) and printing over 64 KB panics; keep
+   to ≤ 20 threads per test (the 16 MiB grading thread shares the 320 MB
+   cap); a learner `forbid` of one of the lints the harness allows is a
+   `harness` error. A check inside a spawned thread whose `join` result is
+   ignored is lost.
 
 ## 11. Risks and open questions
 
