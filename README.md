@@ -16,6 +16,8 @@ Continuous integration (what runs on every push, and how to run it locally): [do
 
 See [docs/course-map.md](docs/course-map.md) for the course outline and lesson format.
 
+The app is available in English and Vietnamese; to translate or add a language, see [docs/i18n/README.md](docs/i18n/README.md).
+
 ## Project layout
 
 ```

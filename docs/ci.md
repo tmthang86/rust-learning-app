@@ -11,7 +11,7 @@ newer action or a newer `functions/` npm package exists.
 | Job | What it checks | Run it locally |
 | --- | --- | --- |
 | `flutter` | `flutter analyze` and `flutter test` on Flutter 3.47.7 | `flutter pub get && flutter analyze && flutter test` |
-| `lessons` | Every lesson example and exercise solution compiles (edition 2024) | `python3 tool/check_lessons.py` |
+| `lessons` | Every lesson example and exercise solution compiles (edition 2024); every translated file under `assets/content/<lang>/` matches its English source; the checker's own tests | `python3 tool/check_lessons.py && python3 tool/test_check_lessons.py` |
 | `runner` | `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test` | in `runner/`: `cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test` |
 | `runner-sandbox` | Builds the sandbox image and runs the Docker test (limits, no network) | in `runner/`: `docker build -t rust-runner-sandbox -f sandbox.Dockerfile . && cargo test -- --ignored` |
 | `firebase` | Firestore rules against the emulator, and the account-deletion Cloud Function against the Auth, Firestore and Functions emulators | `sh test/firestore_rules/run.sh`, then `cd functions && npm ci && npm test` |
@@ -20,6 +20,12 @@ The Firebase tests need Node 22 and Java 21. The first run downloads the
 emulators.
 
 ## Notes
+
+- **Generated localizations are not committed.** `lib/l10n/app_localizations*.dart`
+  come from the ARB files; `flutter pub get` generates them (`generate: true`
+  in `pubspec.yaml`, settings in `l10n.yaml`), so `flutter analyze` and
+  `flutter test` need nothing extra. If an IDE or `dart analyze` shows missing
+  `AppLocalizations`, run `flutter pub get` (or `flutter gen-l10n`).
 
 - **gVisor is not on CI.** GitHub's runners have Docker with the default
   `runc` runtime, so `runner-sandbox` leaves `RUNNER_DOCKER_RUNTIME` unset.

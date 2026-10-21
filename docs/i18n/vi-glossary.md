@@ -173,7 +173,7 @@ first use in a lesson (and, in titles, where the table says so).
 - **No other authoritative Vietnamese source found.** MDN's Vietnamese pages
   redirect to the English ones, so there is no MDN glossary to follow. I found
   no Vietnamese translation of the Python documentation with a published
-  glossary (a 2026 discuss.python.org thread announces one at a very early stage:
+  glossary (a discuss.python.org thread announces one at a very early stage:
   https://discuss.python.org/t/starting-vietnamese-translation/107028), and my
   searches for an accepted Vietnamese term for *closure* or *iterator* found
   nothing authoritative. Vietnamese Wikipedia pages I tried were not reachable.
