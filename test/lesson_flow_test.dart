@@ -8,6 +8,7 @@ import 'dart:async';
 
 import 'package:rust_learn/data/course_repository.dart';
 import 'package:rust_learn/features/editor/code_editor.dart';
+import 'package:rust_learn/l10n/app_localizations_en.dart';
 import 'package:rust_learn/main.dart';
 import 'package:rust_learn/runner/code_runner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -385,6 +386,7 @@ void main() {
   test('compile errors and failures are announced too (F5)', () {
     expect(
       runAnnouncement(
+        AppLocalizationsEn(),
         const RunResult(
           success: false,
           stage: RunStage.compile,
@@ -395,6 +397,7 @@ void main() {
     );
     expect(
       runAnnouncement(
+        AppLocalizationsEn(),
         const RunResult(success: true, stage: RunStage.run, warnings: 'w'),
       ),
       'Your program ran with no output. There are compiler warnings.',

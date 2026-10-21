@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/app_state.dart';
 import '../../data/models.dart';
+import '../../l10n/l10n.dart';
 import '../../monetization/monetization.dart';
 import '../lesson/lesson_screen.dart';
 
@@ -21,6 +22,7 @@ class QuizScreen extends StatefulWidget {
 
 class _QuizScreenState extends State<QuizScreen> {
   Future<Lesson?>? _lesson;
+  String? _language;
   int _index = 0;
   int _correct = 0;
   int? _picked;
@@ -29,7 +31,16 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _lesson ??= AppScope.read(context).repository.loadLesson(widget.lessonId);
+    // Loaded again when the language changes; the quiz has the same
+    // questions and answers in every language, so progress through it stays.
+    final state = AppScope.of(context);
+    if (_language != state.languageCode) {
+      _language = state.languageCode;
+      _lesson = state.repository.loadLesson(
+        widget.lessonId,
+        language: state.languageCode,
+      );
+    }
   }
 
   void _check(QuizQuestion q) => setState(() {
@@ -54,7 +65,8 @@ class _QuizScreenState extends State<QuizScreen> {
     return FutureBuilder<Lesson?>(
       future: _lesson,
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
+        if (snapshot.connectionState != ConnectionState.done &&
+            snapshot.data == null) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
@@ -63,19 +75,20 @@ class _QuizScreenState extends State<QuizScreen> {
           debugPrint(
             'Quiz ${widget.lessonId} failed to load: ${snapshot.error}',
           );
-          return const LessonMessage(
-            "This quiz couldn't be opened. Please update the app or try again later.",
-          );
+          return LessonMessage(context.l10n.quizLoadError);
         }
         final lesson = snapshot.data;
         if (lesson == null) {
-          return const LessonMessage('This lesson is still being written.');
+          return LessonMessage(context.l10n.lessonNotWritten);
         }
         if (lesson.quiz.isEmpty) {
-          return const LessonMessage("This lesson doesn't have a quiz.");
+          return LessonMessage(context.l10n.quizMissing);
         }
         return Scaffold(
-          appBar: lessonAppBar(context, title: Text('Quiz: ${lesson.title}')),
+          appBar: lessonAppBar(
+            context,
+            title: Text(context.l10n.quizTitle(lesson.title)),
+          ),
           body: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 640),
@@ -95,13 +108,14 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget _question(Lesson lesson) {
     final q = lesson.quiz[_index];
     final scheme = Theme.of(context).colorScheme;
+    final l10n = context.l10n;
     final rightAnswer = _checked && _picked == q.answer;
 
     return ListView(
       children: [
         LinearProgressIndicator(
           value: _index / lesson.quiz.length,
-          semanticsLabel: 'Question ${_index + 1} of ${lesson.quiz.length}',
+          semanticsLabel: l10n.quizQuestionOf(_index + 1, lesson.quiz.length),
         ),
         const SizedBox(height: 24),
         Text(q.question, style: Theme.of(context).textTheme.titleLarge),
@@ -129,8 +143,8 @@ class _QuizScreenState extends State<QuizScreen> {
             liveRegion: true,
             child: Text(
               rightAnswer
-                  ? 'Correct!'
-                  : 'Not quite. The answer is: ${q.options[q.answer]}',
+                  ? l10n.quizCorrect
+                  : l10n.quizNotQuite(q.options[q.answer]),
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 color: rightAnswer ? scheme.primary : scheme.error,
@@ -145,13 +159,14 @@ class _QuizScreenState extends State<QuizScreen> {
               : _checked
               ? () => _next(lesson)
               : () => _check(q),
-          child: Text(_checked ? 'Next' : 'Check'),
+          child: Text(_checked ? l10n.quizNext : l10n.quizCheck),
         ),
       ],
     );
   }
 
   Widget _summary(Lesson lesson) {
+    final l10n = context.l10n;
     final total = lesson.quiz.length;
     final passed = _correct / total >= QuizScreen.passMark;
     return Column(
@@ -162,12 +177,12 @@ class _QuizScreenState extends State<QuizScreen> {
         Semantics(
           liveRegion: true,
           child: Text(
-            '$_correct of $total correct',
+            l10n.quizScore(_correct, total),
             style: Theme.of(context).textTheme.headlineSmall,
           ),
         ),
         const SizedBox(height: 8),
-        Text(passed ? 'Lesson complete!' : 'Review the lesson and try again.'),
+        Text(passed ? l10n.quizLessonComplete : l10n.quizTryAgain),
         const SizedBox(height: 24),
         FilledButton(
           onPressed: () {
@@ -178,7 +193,7 @@ class _QuizScreenState extends State<QuizScreen> {
             // completed the lesson (onLessonFinished ignores repeats).
             if (passed) monetization.onLessonFinished(lesson.id);
           },
-          child: const Text('Back to lessons'),
+          child: Text(l10n.backToLessons),
         ),
       ],
     );
@@ -206,15 +221,16 @@ class _OptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final (Color? color, String? status, IconData icon) = switch (verdict) {
       _Verdict.correct => (
         scheme.primaryContainer,
-        picked ? 'Correct, your answer' : 'Correct answer',
+        picked ? l10n.optionCorrectYours : l10n.optionCorrect,
         Icons.check_circle,
       ),
       _Verdict.wrong => (
         scheme.errorContainer,
-        'Wrong, your answer',
+        l10n.optionWrongYours,
         Icons.cancel,
       ),
       null => (

@@ -17,10 +17,16 @@ const adReportEmail = String.fromEnvironment(
 );
 const adReportUrl = String.fromEnvironment('AD_REPORT_URL');
 
+const _defaultSubject = 'Report an ad';
+const _defaultIntro =
+    'Please describe the ad (what it showed, why it seems inappropriate):';
+
 /// The link that opens a report for an ad seen on [screen] at [time].
 ///
 /// A mailto link with the details filled in, or [url] with them as query
-/// parameters. Spaces are written as %20, not +, since some mail apps
+/// parameters. [subject] and [intro] are the email's subject and first
+/// line, in the learner's language; the details after them stay in English
+/// for whoever reads the report. Spaces are written as %20, not +, since some mail apps
 /// show a + literally.
 Uri adReportUri({
   required DateTime time,
@@ -28,6 +34,8 @@ Uri adReportUri({
   required List<String> adUnits,
   String email = adReportEmail,
   String url = adReportUrl,
+  String? subject,
+  String? intro,
 }) {
   final when = time.toUtc().toIso8601String();
   final units = adUnits.join(', ');
@@ -43,12 +51,11 @@ Uri adReportUri({
     );
   }
   final body =
-      'Please describe the ad (what it showed, why it seems '
-      'inappropriate):\n\n\n'
+      '${intro ?? _defaultIntro}\n\n\n'
       '---\nTime: $when\nScreen: $screen\nAd units: $units\n';
   return Uri.parse(
     'mailto:$email'
-    '?subject=${Uri.encodeComponent('Report an ad')}'
+    '?subject=${Uri.encodeComponent(subject ?? _defaultSubject)}'
     '&body=${Uri.encodeComponent(body)}',
   );
 }

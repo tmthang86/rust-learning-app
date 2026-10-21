@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show Locale, PlatformDispatcher;
 
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,6 +9,7 @@ import '../account/progress_sync.dart';
 import '../runner/code_runner.dart';
 import 'age.dart';
 import 'course_repository.dart';
+import 'language.dart';
 import 'models.dart';
 
 /// App-wide state: the course, the learner's track and their progress.
@@ -33,9 +35,12 @@ class AppState extends ChangeNotifier {
     this.accounts = const DisabledAccountService(),
     this.sync,
     AgeStore? age,
+    List<Locale>? deviceLocales,
   }) : age = age ?? AgeStore(prefs) {
     _track = Track.fromName(prefs.getString(_trackKey));
     _completed = (prefs.getStringList(_completedKey) ?? const []).toSet();
+    _language = AppLanguage.fromName(prefs.getString(_languageKey));
+    _deviceLocales = deviceLocales ?? PlatformDispatcher.instance.locales;
     _user = accounts.currentUser;
     _userSub = accounts.userChanges.listen(_onUserChanged);
     this.age.addListener(_onAgeChanged);
@@ -48,6 +53,7 @@ class AppState extends ChangeNotifier {
 
   static const _trackKey = 'track';
   static const _completedKey = 'completedLessons';
+  static const _languageKey = 'language';
 
   /// The account the device progress was last synced with; absent when the
   /// progress was never synced.
@@ -82,6 +88,12 @@ class AppState extends ChangeNotifier {
 
   Course? _course;
   Track? _track;
+  late AppLanguage _language;
+  late List<Locale> _deviceLocales;
+
+  /// Counts course reloads, so a slow load for a language the learner has
+  /// already switched away from is dropped.
+  int _courseLoad = 0;
   Set<String> _completed = {};
   AccountUser? _user;
   bool _sawAuthEvent = false;
@@ -118,6 +130,17 @@ class AppState extends ChangeNotifier {
   Future<void> syncing = Future.value();
 
   Course? get course => _course;
+
+  /// The language setting (stored on this device, not synced).
+  AppLanguage get language => _language;
+
+  /// The language in use: the setting, or the device's language when the
+  /// setting is [AppLanguage.system]. Always one of [supportedLanguageCodes].
+  String get languageCode => resolveLanguageCode(_language, _deviceLocales);
+
+  /// The locale the whole app is shown in.
+  Locale get locale => Locale(languageCode);
+
   Track? get track => _track;
   Set<String> get completedLessons => Set.unmodifiable(_completed);
   AccountUser? get user => _user;
@@ -237,8 +260,41 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> load() async {
-    _course = await repository.loadCourse();
+    final load = ++_courseLoad;
+    final course = await repository.loadCourse(language: languageCode);
+    if (load != _courseLoad) return;
+    _course = course;
     notifyListeners();
+  }
+
+  /// Saves the language setting and shows the app, and the course, in it.
+  Future<void> setLanguage(AppLanguage language) async {
+    if (language == _language) return;
+    final before = languageCode;
+    _language = language;
+    await prefs.setString(_languageKey, language.name);
+    notifyListeners();
+    if (languageCode != before) unawaited(_reloadCourse());
+  }
+
+  /// Called when the device's preferred languages change. Matters only
+  /// while the setting is [AppLanguage.system].
+  void updateDeviceLocales(List<Locale> locales) {
+    final before = languageCode;
+    _deviceLocales = List.unmodifiable(locales);
+    if (languageCode == before) return;
+    notifyListeners();
+    unawaited(_reloadCourse());
+  }
+
+  /// Loads the course again in the current language. The old course stays
+  /// on screen until the new one is ready, so the map doesn't flash.
+  Future<void> _reloadCourse() async {
+    try {
+      await load();
+    } catch (e) {
+      debugPrint('Reloading the course failed: $e');
+    }
   }
 
   Future<void> chooseTrack(Track track) async {

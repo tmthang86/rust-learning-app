@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import 'ad_report.dart';
 import 'ads_service.dart';
 import 'monetization.dart';
@@ -7,14 +8,19 @@ import 'monetization.dart';
 /// Opens the ad report; if nothing can open it, says where to write.
 Future<void> reportAdFrom(BuildContext context, String screen) async {
   final messenger = ScaffoldMessenger.of(context);
-  final opened = await MonetizationScope.read(context).reportAd(screen);
+  final l10n = context.l10n;
+  final opened = await MonetizationScope.read(context).reportAd(
+    screen,
+    subject: l10n.adReportSubject,
+    intro: l10n.adReportIntro,
+  );
   if (!opened) {
     messenger.showSnackBar(
       SnackBar(
         content: Text(
           adReportUrl.isNotEmpty
-              ? 'Please report the ad at $adReportUrl'
-              : 'Please email $adReportEmail to report the ad.',
+              ? l10n.adReportViaUrl(adReportUrl)
+              : l10n.adReportViaEmail(adReportEmail),
         ),
       ),
     );
@@ -78,7 +84,7 @@ class _AdBannerSlotState extends State<AdBannerSlot>
         children: [
           Align(
             alignment: Alignment.centerLeft,
-            child: Text('Advertisement', style: label),
+            child: Text(context.l10n.advertisement, style: label),
           ),
           const SizedBox(height: 4),
           SizedBox(

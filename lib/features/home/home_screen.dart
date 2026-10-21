@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/app_state.dart';
 import '../../data/models.dart';
+import '../../l10n/l10n.dart';
 import '../../monetization/ad_banner.dart';
 import '../../monetization/ads_service.dart';
 
@@ -16,7 +17,7 @@ class HomeScreen extends StatelessWidget {
     final units = state.visibleUnits;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Learn Rust')),
+      appBar: AppBar(title: Text(context.l10n.appTitle)),
       body: state.course == null
           ? const Center(child: CircularProgressIndicator())
           : Center(
@@ -50,6 +51,7 @@ class _UnitCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final done = unit.lessons.where((l) => state.isCompleted(l.id)).length;
 
     return Card(
@@ -60,8 +62,9 @@ class _UnitCard extends StatelessWidget {
         title: Text(unit.title),
         subtitle: Text(
           unit.comingSoon
-              ? 'Coming soon'
-              : '${unit.summary}\n$done of ${unit.lessons.length} lessons done',
+              ? l10n.comingSoon
+              : '${unit.summary}\n'
+                    '${l10n.lessonsDoneProgress(done, unit.lessons.length)}',
         ),
         children: [
           for (final lesson in unit.lessons)
