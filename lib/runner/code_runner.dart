@@ -4,6 +4,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../data/models.dart';
+import '../l10n/exercise_test_strings.dart';
+
 /// How far a run got.
 enum RunStage {
   /// The code didn't compile; `stderr` holds the compiler errors.
@@ -64,9 +67,168 @@ class RunResult {
       RunResult(success: false, stage: RunStage.unavailable, stderr: message);
 }
 
+/// How one test ended, as the runner reports it.
+enum TestStatus {
+  pass,
+  fail,
+  panic,
+  nopanic,
+  error,
+  timeout,
+  crashed,
+  notRun;
+
+  static TestStatus? fromWire(Object? name) => switch (name) {
+        'pass' => pass,
+        'fail' => fail,
+        'panic' => panic,
+        'nopanic' => nopanic,
+        'error' => error,
+        'timeout' => timeout,
+        'crashed' => crashed,
+        'not_run' => notRun,
+        _ => null,
+      };
+}
+
+/// The result of one test of a graded run.
+class TestResult {
+  const TestResult({
+    required this.id,
+    required this.status,
+    this.expr,
+    this.expected,
+    this.actual,
+    this.output,
+    this.message,
+    this.line,
+    this.reason,
+  });
+
+  final String id;
+  final TestStatus status;
+
+  /// A failed check: what was checked, what it should be, what it was.
+  final String? expr;
+  final String? expected;
+  final String? actual;
+
+  /// What the test printed.
+  final String? output;
+
+  /// A panic message, or a compiler diagnostic's one-line message.
+  final String? message;
+
+  /// The learner's source line of a panic.
+  final int? line;
+
+  /// A machine code (`mem_limit`, `exit:3`, `tests_dont_fit`, ...).
+  final String? reason;
+
+  /// Throws [FormatException] when [json] isn't a test result.
+  factory TestResult.fromJson(Map<String, dynamic> json) {
+    final id = json['id'];
+    final status = TestStatus.fromWire(json['status']);
+    if (id is! String || status == null) {
+      throw const FormatException('test result without an id or status');
+    }
+    String? text(String key) {
+      final v = json[key];
+      return v is String ? v : null;
+    }
+
+    final line = json['line'];
+    return TestResult(
+      id: id,
+      status: status,
+      expr: text('expr'),
+      expected: text('expected'),
+      actual: text('actual'),
+      output: text('output'),
+      message: text('message'),
+      line: line is int ? line : null,
+      reason: text('reason'),
+    );
+  }
+}
+
+/// The answer to a graded run: the run itself plus one [TestResult] per test
+/// of the exercise.
+class GradeResult extends RunResult {
+  const GradeResult({
+    required super.success,
+    required super.stage,
+    super.stdout,
+    super.stderr,
+    super.warnings,
+    this.tests = const [],
+    this.compileErrorsIn,
+    this.reason,
+  });
+
+  /// In the order the tests were sent; empty when the runner was unavailable.
+  final List<TestResult> tests;
+
+  /// `code`: the learner's own code doesn't compile (the errors are in
+  /// `stderr`). `tests`: it compiles, but the tests can't use it.
+  final String? compileErrorsIn;
+
+  /// A machine code for a problem that isn't about one test.
+  final String? reason;
+
+  /// Throws [FormatException] when [json] isn't a graded run.
+  factory GradeResult.fromJson(Map<String, dynamic> json) {
+    final base = RunResult.fromJson(json);
+    final tests = json['tests'];
+    if (tests is! List) {
+      throw const FormatException('graded run without "tests"');
+    }
+    final where = json['compileErrorsIn'];
+    final reason = json['reason'];
+    return GradeResult(
+      success: base.success,
+      stage: base.stage,
+      stdout: base.stdout,
+      stderr: base.stderr,
+      warnings: base.warnings,
+      tests: tests
+          .map((t) => TestResult.fromJson(t as Map<String, dynamic>))
+          .toList(),
+      compileErrorsIn: where is String ? where : null,
+      reason: reason is String ? reason : null,
+    );
+  }
+
+  factory GradeResult.unavailable(String message) => GradeResult(
+        success: false,
+        stage: RunStage.unavailable,
+        stderr: message,
+      );
+
+  /// The result of the test with [id], if the runner sent one.
+  TestResult? testById(String id) {
+    for (final t in tests) {
+      if (t.id == id) return t;
+    }
+    return null;
+  }
+
+  /// Whether every one of [exercise] passed, hidden tests included. Never
+  /// true when the runner couldn't be reached or sent fewer results.
+  bool solves(List<ExerciseTest> exercise) =>
+      stage != RunStage.unavailable &&
+      exercise.isNotEmpty &&
+      exercise.every((t) => testById(t.id)?.status == TestStatus.pass);
+}
+
 /// Compiles and runs Rust source code outside the app.
 abstract class CodeRunner {
   Future<RunResult> run(String source);
+
+  /// Compiles [source] together with [tests] and reports each one. Unlike
+  /// [run] the answer always has `tests`; a runner that can't be reached
+  /// answers with [GradeResult.unavailable].
+  Future<GradeResult> grade(String source, List<ExerciseTest> tests);
 }
 
 /// Proves to the runner that a request comes from this app.
@@ -108,20 +270,54 @@ class HttpCodeRunner implements CodeRunner {
   static const requestTimeout = Duration(seconds: 45);
 
   @override
-  Future<RunResult> run(String source) async {
+  Future<RunResult> run(String source) => _request(
+        'run',
+        {'code': source},
+        parse: RunResult.fromJson,
+        unavailable: RunResult.unavailable,
+      );
+
+  @override
+  Future<GradeResult> grade(String source, List<ExerciseTest> tests) =>
+      _request(
+        'grade',
+        {
+          'code': source,
+          'tests': [for (final t in tests) t.toRequestJson()],
+        },
+        parse: GradeResult.fromJson,
+        unavailable: GradeResult.unavailable,
+      );
+
+  Future<T> _request<T extends RunResult>(
+    String path,
+    Map<String, Object?> body, {
+    required T Function(Map<String, dynamic>) parse,
+    required T Function(String) unavailable,
+  }) async {
     try {
-      return await _runWithRetry(source).timeout(requestTimeout);
+      return await _requestWithRetry(
+        path,
+        body,
+        parse,
+        unavailable,
+      ).timeout(requestTimeout);
     } on TimeoutException {
-      return RunResult.unavailable('The code runner took too long to answer.');
+      return unavailable('The code runner took too long to answer.');
     } catch (_) {
-      return RunResult.unavailable(
+      return unavailable(
         "Couldn't reach the code runner. Check your connection and try again.",
       );
     }
   }
 
-  Future<RunResult> _runWithRetry(String source) async {
-    var response = await _post(source, await auth.appCheckToken());
+  Future<T> _requestWithRetry<T extends RunResult>(
+    String path,
+    Map<String, Object?> body,
+    T Function(Map<String, dynamic>) parse,
+    T Function(String) unavailable,
+  ) async {
+    var response = await _post(path, body, await auth.appCheckToken());
 
     // A token the runner rejected may just be stale, and a missing one may
     // be available by now. Ask for a fresh one, once, and send once more.
@@ -129,33 +325,37 @@ class HttpCodeRunner implements CodeRunner {
       final code = _errorCode(response.body);
       if (code == 'app_check_invalid' || code == 'app_check_missing') {
         final fresh = await auth.appCheckToken(refresh: true);
-        if (fresh != null) response = await _post(source, fresh);
+        if (fresh != null) response = await _post(path, body, fresh);
       }
     }
 
     if (response.statusCode != 200) {
-      return RunResult.unavailable(errorMessage(response));
+      return unavailable(errorMessage(response, grade: path == 'grade'));
     }
     try {
-      final body = jsonDecode(response.body);
-      if (body is! Map<String, dynamic>) throw const FormatException();
-      return RunResult.fromJson(body);
+      final json = jsonDecode(response.body);
+      if (json is! Map<String, dynamic>) throw const FormatException();
+      return parse(json);
     } on FormatException {
-      return RunResult.unavailable(
+      return unavailable(
         'The code runner sent an answer the app could not read. '
         'Please try again.',
       );
     }
   }
 
-  Future<http.Response> _post(String source, String? appCheckToken) {
+  Future<http.Response> _post(
+    String path,
+    Map<String, Object?> body,
+    String? appCheckToken,
+  ) {
     return _client.post(
-      baseUrl.resolve('run'),
+      baseUrl.resolve(path),
       headers: {
         'content-type': 'application/json',
         appCheckHeader: ?appCheckToken,
       },
-      body: jsonEncode({'code': source}),
+      body: jsonEncode(body),
     );
   }
 
@@ -166,15 +366,22 @@ class HttpCodeRunner implements CodeRunner {
   ///
   /// The 401 text depends on where the app runs: a debug build, the web and
   /// each store need different advice. [debug], [web] and [platform] default
-  /// to the real environment; tests pass them.
+  /// to the real environment; tests pass them. With [grade] set, the answer
+  /// came from `/grade`: a 404 means a runner that doesn't have it yet, and
+  /// `tests_invalid` means an exercise this app version can't send.
   static String errorMessage(
     http.Response response, {
     bool debug = kDebugMode,
     bool web = kIsWeb,
     TargetPlatform? platform,
+    bool grade = false,
   }) {
     final status = response.statusCode;
     final wait = _retryAfterSeconds(response);
+    if (grade && status == 404) return ExerciseTestStrings.runnerNeedsUpdate;
+    if (grade && status == 400 && _errorCode(response.body) == 'tests_invalid') {
+      return ExerciseTestStrings.testsInvalid;
+    }
     switch (status) {
       case 401:
         return _unverifiedMessage(
@@ -274,11 +481,16 @@ class HttpCodeRunner implements CodeRunner {
 class PlaceholderCodeRunner implements CodeRunner {
   const PlaceholderCodeRunner();
 
+  static const _notSetUp = 'Running code is not set up in this build. '
+      'Build with --dart-define=RUNNER_URL=<runner address>.';
+
   @override
-  Future<RunResult> run(String source) async => RunResult.unavailable(
-        'Running code is not set up in this build. '
-        'Build with --dart-define=RUNNER_URL=<runner address>.',
-      );
+  Future<RunResult> run(String source) async =>
+      RunResult.unavailable(_notSetUp);
+
+  @override
+  Future<GradeResult> grade(String source, List<ExerciseTest> tests) async =>
+      GradeResult.unavailable(_notSetUp);
 }
 
 /// Picks the runner from the RUNNER_URL build setting. [auth] adds the App

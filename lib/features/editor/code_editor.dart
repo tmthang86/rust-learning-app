@@ -4,13 +4,17 @@ import 'package:flutter/services.dart';
 
 import '../../app/theme.dart';
 import '../../data/app_state.dart';
+import '../../data/models.dart';
 import '../../runner/code_runner.dart';
 import 'error_explanation_cards.dart';
+import 'tests_panel.dart';
 
 /// A Rust code editor with a Run button and an output panel.
 ///
-/// When [expectedOutput] is set, the output is checked against it and
-/// [onSolved] is called on a match.
+/// When [tests] is set (or the legacy [expectedOutput], read as one output
+/// test), Run grades the code with the runner's `/grade`: a tests panel shows
+/// each test, and [onSolved] is called when every test passes. Without
+/// either (the playground), Run just runs the code.
 ///
 /// A caller that needs to read or replace the code passes a [controller];
 /// [onRunFinished] reports every finished run.
@@ -19,6 +23,7 @@ class CodeEditor extends StatefulWidget {
     super.key,
     required this.initialCode,
     this.expectedOutput,
+    this.tests,
     this.onSolved,
     this.minLines = 8,
     this.controller,
@@ -28,6 +33,9 @@ class CodeEditor extends StatefulWidget {
 
   final String initialCode;
   final String? expectedOutput;
+
+  /// What grades the exercise, hidden tests included. Null: no grading.
+  final List<ExerciseTest>? tests;
   final VoidCallback? onSolved;
   final int minLines;
 
@@ -86,27 +94,45 @@ class _CodeEditorState extends State<CodeEditor>
     super.dispose();
   }
 
-  static bool _matches(RunResult? r, String? expected) =>
-      expected != null &&
-      r != null &&
-      r.success &&
-      r.stdout.trim() == expected.trim();
+  /// The tests that grade a run: [CodeEditor.tests], else the legacy
+  /// expected output as one output test, else none.
+  List<ExerciseTest>? get _tests =>
+      widget.tests ??
+      (widget.expectedOutput == null
+          ? null
+          : [ExerciseTest.legacy(widget.expectedOutput!)]);
 
-  bool get _solved => _matches(_result, widget.expectedOutput);
+  /// Solved means every test passed, hidden ones included; a runner that
+  /// couldn't be reached never solves anything.
+  static bool _matches(RunResult? r, List<ExerciseTest>? tests) =>
+      tests != null && r is GradeResult && r.solves(tests);
+
+  bool get _solved => _matches(_result, _tests);
+
+  /// What a screen reader says when a run finishes.
+  String _announcement(RunResult r, bool solved) {
+    final tests = _tests;
+    if (tests != null && r is GradeResult && showsTestsPanel(r)) {
+      return gradeAnnouncement(r, tests, solved: solved);
+    }
+    return runAnnouncement(r, solved: tests == null ? null : solved);
+  }
 
   Future<void> _run() async {
     if (_running) return;
     final state = AppScope.read(context);
     // Captured now: the result may arrive after the learner left the lesson,
     // and solving still counts then.
-    final expected = widget.expectedOutput;
+    final tests = _tests;
     final onSolved = widget.onSolved;
     // ...but only for the same person: not after a sign-out, a switch to
     // another account, or during account deletion.
     final epoch = state.accountEpoch;
     setState(() => _running = true);
-    final result = await state.runner.run(_controller.text);
-    final solved = _matches(result, expected);
+    final RunResult result = tests == null
+        ? await state.runner.run(_controller.text)
+        : await state.runner.grade(_controller.text, tests);
+    final solved = _matches(result, tests);
     if (solved && state.accountEpoch == epoch) onSolved?.call();
     if (!mounted) return;
     setState(() {
@@ -121,7 +147,7 @@ class _CodeEditorState extends State<CodeEditor>
     if (MediaQuery.supportsAnnounceOf(context)) {
       SemanticsService.sendAnnouncement(
         View.of(context),
-        runAnnouncement(result, solved: expected == null ? null : solved),
+        _announcement(result, solved),
         Directionality.of(context),
       );
     }
@@ -231,17 +257,22 @@ class _CodeEditorState extends State<CodeEditor>
         ),
         ?widget.belowRunRow,
         if (result != null) ...[
+          if (result is GradeResult && showsTestsPanel(result)) ...[
+            const SizedBox(height: 8),
+            TestsPanel(tests: _tests ?? const [], result: result),
+          ],
           const SizedBox(height: 8),
           _RunOutput(
             result: result,
+            // The tests' own message says why there are no compiler errors.
+            showOutput: !testsCouldNotUseCode(result),
             // Fallback when announcements aren't supported: a live region
             // whose label changes on every run, so repeats are read too.
             liveLabel: MediaQuery.supportsAnnounceOf(context)
                 ? null
-                : 'Run $_runCount. ${runAnnouncement(result, solved: widget.expectedOutput == null ? null : _solved)}',
+                : 'Run $_runCount. ${_announcement(result, _solved)}',
           ),
-          if (widget.expectedOutput != null &&
-              result.stage != RunStage.unavailable) ...[
+          if (_tests != null && result.stage != RunStage.unavailable) ...[
             const SizedBox(height: 8),
             // Its own node, so it isn't read as part of the code field. The
             // verdict is also part of the run announcement.
@@ -269,7 +300,7 @@ class _CodeEditorState extends State<CodeEditor>
               ),
             ),
           ],
-          if (result.stage == RunStage.compile)
+          if (result.stage == RunStage.compile && !testsCouldNotUseCode(result))
             ErrorExplanationCards(stderr: result.stderr),
         ],
       ],
@@ -415,10 +446,17 @@ String runAnnouncement(RunResult r, {bool? solved}) {
 /// runner couldn't be used), then any compiler warnings, kept apart and
 /// folded away because the program ran anyway.
 class _RunOutput extends StatelessWidget {
-  const _RunOutput({required this.result, this.liveLabel});
+  const _RunOutput({
+    required this.result,
+    this.liveLabel,
+    this.showOutput = true,
+  });
 
   final RunResult result;
   final String? liveLabel;
+
+  /// False when there is nothing to show but the live region.
+  final bool showOutput;
 
   @override
   Widget build(BuildContext context) {
@@ -455,6 +493,7 @@ class _RunOutput extends StatelessWidget {
             label: liveLabel,
             child: const SizedBox(width: 1, height: 1),
           ),
+        if (showOutput)
         Semantics(
           container: true,
           child: Container(

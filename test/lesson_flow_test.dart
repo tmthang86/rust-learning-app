@@ -7,6 +7,7 @@ import 'package:rust_learn/data/app_state.dart';
 import 'dart:async';
 
 import 'package:rust_learn/data/course_repository.dart';
+import 'package:rust_learn/data/models.dart';
 import 'package:rust_learn/features/editor/code_editor.dart';
 import 'package:rust_learn/main.dart';
 import 'package:rust_learn/runner/code_runner.dart';
@@ -371,9 +372,10 @@ void main() {
       await tester.pumpAndSettle();
 
       final said = tester.takeAnnouncements().map((a) => a.message).toList();
+      // A lesson with only `expectedOutput` is graded as one output test.
       expect(said, [
-        'Output: hi Correct! Nice work.',
-        'Output: hi Correct! Nice work.',
+        '1 of 1 test passed. Correct! Nice work.',
+        '1 of 1 test passed. Correct! Nice work.',
       ]);
 
       final verdict = tester.getSemantics(find.text('Correct! Nice work.'));
@@ -614,4 +616,25 @@ class _GatedRunner implements CodeRunner {
   final gate = Completer<RunResult>();
   @override
   Future<RunResult> run(String source) => gate.future;
+
+  /// Grades the gated result as a program that printed it (output tests).
+  @override
+  Future<GradeResult> grade(String source, List<ExerciseTest> tests) async {
+    final r = await gate.future;
+    return GradeResult(
+      success: r.success,
+      stage: r.stage,
+      stdout: r.stdout,
+      stderr: r.stderr,
+      tests: [
+        for (final t in tests)
+          TestResult(
+            id: t.id,
+            status: r.success && r.stdout.trim() == t.output?.trim()
+                ? TestStatus.pass
+                : TestStatus.fail,
+          ),
+      ],
+    );
+  }
 }
