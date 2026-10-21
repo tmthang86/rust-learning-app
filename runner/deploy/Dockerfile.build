@@ -1,0 +1,79 @@
+# Cross-build for the serving VM (Ubuntu 24.04, glibc 2.39). The CPU is a
+# build argument: aarch64-unknown-linux-gnu for Oracle Ampere A1 (the default
+# provider), x86_64-unknown-linux-gnu for Compute Engine. push.sh passes
+# --build-arg RUST_TARGET=... from PROVIDER in vars.sh.
+#
+# Nothing here is compiled on the VM. This file is the one build recipe for
+# the laptop and for a later CI job. `push.sh` runs it like this:
+#
+#   git archive --format=tar HEAD runner | \
+#     docker buildx build -f runner/deploy/Dockerfile.build --target export \
+#       --build-arg RUST_TARGET=aarch64-unknown-linux-gnu -o type=local,dest=dist -
+#
+# The build context is the tar of `runner/`, so paths below start with
+# `runner/`.
+#
+# The build stage runs natively on the machine that builds (`$BUILDPLATFORM`:
+# arm64 on Apple Silicon, x86_64 elsewhere), so there is no QEMU. Only the
+# target differs. cargo-zigbuild uses `zig cc` as C compiler and linker.
+# The `.2.36` suffix links against glibc 2.36 symbol versions, which any
+# glibc >= 2.36 (Ubuntu 24.04 has 2.39) provides.
+#
+# Base image: rust:1.99.1-slim-bookworm from Google's Docker Hub mirror,
+# pinned by digest (the multi-arch index). It must be the same digest as
+# runner/sandbox.Dockerfile and RUNNER_IMAGE in production.env: push.sh checks.
+#
+# Zig comes from the official `ziglang` wheel on PyPI, pinned by version and sha256 per CPU. It is the
+# same Zig that ziglang.org ships. The wheel is used because PyPI is easier
+# to reach than ziglang.org from locked-down networks.
+
+FROM --platform=$BUILDPLATFORM mirror.gcr.io/library/rust:1.99.1-slim-bookworm@sha256:a24e292b4af7bdee351a31d3a6379972a5652f0ea22a1b6d6883324ac4f5097c AS zigbuild
+
+ARG ZIG_VERSION=0.15.2
+ARG ZIG_WHEEL_X86_64_URL=https://files.pythonhosted.org/packages/db/81/f9f5c7fd68d80b8edff2a641a1c95ac4125356387d298374227040b8e1e8/ziglang-0.15.2-py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.musllinux_1_1_x86_64.whl
+ARG ZIG_WHEEL_X86_64_SHA256=806316453d1ede7174ed3fefb8e5348154629089c3bb5fe812dfd0e172fac130
+ARG ZIG_WHEEL_AARCH64_URL=https://files.pythonhosted.org/packages/53/7d/8c277208250ffa72f12a10f52dfc1d45850f08244093065b40c5f4628260/ziglang-0.15.2-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl
+ARG ZIG_WHEEL_AARCH64_SHA256=edc0aa60ec964a4cf462d40f68d7de242ddf37fd9a80f2afaee6397059463230
+ARG CARGO_ZIGBUILD_VERSION=0.23.4
+ARG RUST_TARGET=x86_64-unknown-linux-gnu
+ARG GLIBC_BASELINE=2.36
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl unzip jq ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN set -eu; \
+    case "$(uname -m)" in \
+      x86_64)  url="$ZIG_WHEEL_X86_64_URL";  sha="$ZIG_WHEEL_X86_64_SHA256" ;; \
+      aarch64) url="$ZIG_WHEEL_AARCH64_URL"; sha="$ZIG_WHEEL_AARCH64_SHA256" ;; \
+      *) echo "no pinned zig for $(uname -m)" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSLo /tmp/zig.whl "$url"; \
+    echo "$sha  /tmp/zig.whl" | sha256sum -c -; \
+    mkdir /opt/zig; \
+    unzip -q /tmp/zig.whl 'ziglang/*' -d /opt/zig; \
+    rm /tmp/zig.whl; \
+    ln -s /opt/zig/ziglang/zig /usr/local/bin/zig; \
+    test "$(zig version)" = "$ZIG_VERSION"
+
+RUN cargo install cargo-zigbuild --version "$CARGO_ZIGBUILD_VERSION" --locked \
+ && rustup target add "$RUST_TARGET"
+
+WORKDIR /app
+COPY runner/ ./
+
+# Release binary, then the integration-test binary (`tests/api.rs`) that
+# smoke.sh runs on the VM, so the VM needs no Rust toolchain.
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    set -eu; \
+    target="$RUST_TARGET.$GLIBC_BASELINE"; \
+    cargo zigbuild --release --locked --target "$target"; \
+    cargo zigbuild --release --locked --target "$target" --tests --message-format=json > /tmp/tests.json; \
+    mkdir /out; \
+    cp "target/$RUST_TARGET/release/rust-runner" /out/rust-runner; \
+    exe="$(jq -r 'select(.reason=="compiler-artifact" and .profile.test==true and .target.name=="api" and .executable!=null) | .executable' /tmp/tests.json | head -n 1)"; \
+    test -n "$exe"; \
+    cp "$exe" /out/rust-runner-tests
+
+FROM scratch AS export
+COPY --from=zigbuild /out/ /

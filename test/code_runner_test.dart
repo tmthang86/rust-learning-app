@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -144,4 +145,302 @@ void main() {
   test('waits long enough for a queued job (F10)', () {
     expect(HttpCodeRunner.requestTimeout, greaterThanOrEqualTo(const Duration(seconds: 45)));
   });
+
+  group('App Check', () {
+    final okBody = jsonEncode({
+      'success': true,
+      'stage': 'run',
+      'stdout': 'hi',
+    });
+    String errorBody(String code) => jsonEncode({'error': 'x', 'code': code});
+
+    test('sends the token in X-Firebase-AppCheck', () async {
+      late http.Request sent;
+      final auth = _FakeAuth(['token-1']);
+      final runner = HttpCodeRunner(
+        base,
+        auth: auth,
+        client: MockClient((req) async {
+          sent = req;
+          return http.Response(okBody, 200);
+        }),
+      );
+
+      final result = await runner.run('fn main() {}');
+
+      expect(result.success, isTrue);
+      expect(sent.headers['X-Firebase-AppCheck'], 'token-1');
+      expect(sent.headers['content-type'], 'application/json');
+      expect(auth.refreshFlags, [false]);
+    });
+
+    test('sends no header without a token or with NoRunnerAuth', () async {
+      final sent = <http.Request>[];
+      http.Client client() => MockClient((req) async {
+        sent.add(req);
+        return http.Response(okBody, 200);
+      });
+
+      await HttpCodeRunner(base, client: client()).run('x');
+      await HttpCodeRunner(
+        base,
+        auth: const NoRunnerAuth(),
+        client: client(),
+      ).run('x');
+      await HttpCodeRunner(
+        base,
+        auth: _FakeAuth([null]),
+        client: client(),
+      ).run('x');
+
+      expect(sent, hasLength(3));
+      for (final req in sent) {
+        expect(
+          req.headers.keys.map((k) => k.toLowerCase()),
+          isNot(contains('x-firebase-appcheck')),
+        );
+      }
+    });
+
+    test(
+      'a bad token is refreshed and the request is sent once more',
+      () async {
+        final tokens = <String?>[];
+        final auth = _FakeAuth(['stale', 'fresh']);
+        final runner = HttpCodeRunner(
+          base,
+          auth: auth,
+          client: MockClient((req) async {
+            final token = req.headers['X-Firebase-AppCheck'];
+            tokens.add(token);
+            return token == 'fresh'
+                ? http.Response(okBody, 200)
+                : http.Response(errorBody('app_check_invalid'), 401);
+          }),
+        );
+
+        final result = await runner.run('x');
+
+        expect(result.success, isTrue);
+        expect(tokens, ['stale', 'fresh']);
+        expect(auth.refreshFlags, [false, true]);
+      },
+    );
+
+    test('a missing token is fetched again if one is available now', () async {
+      final tokens = <String?>[];
+      final auth = _FakeAuth([null, 'late']);
+      final runner = HttpCodeRunner(
+        base,
+        auth: auth,
+        client: MockClient((req) async {
+          final token = req.headers['X-Firebase-AppCheck'];
+          tokens.add(token);
+          return token == null
+              ? http.Response(errorBody('app_check_missing'), 401)
+              : http.Response(okBody, 200);
+        }),
+      );
+
+      expect((await runner.run('x')).success, isTrue);
+      expect(tokens, [null, 'late']);
+    });
+
+    test('a missing token that stays missing is not retried', () async {
+      var requests = 0;
+      final auth = _FakeAuth([null, null]);
+      final runner = HttpCodeRunner(
+        base,
+        auth: auth,
+        client: MockClient((_) async {
+          requests++;
+          return http.Response(errorBody('app_check_missing'), 401);
+        }),
+      );
+
+      final result = await runner.run('x');
+
+      expect(requests, 1);
+      expect(result.stage, RunStage.unavailable);
+      expect(result.stderr, contains("couldn't be verified"));
+    });
+
+    test('a second 401 gives the message and no third request', () async {
+      var requests = 0;
+      final auth = _FakeAuth(['a', 'b', 'c']);
+      final runner = HttpCodeRunner(
+        base,
+        auth: auth,
+        client: MockClient((_) async {
+          requests++;
+          return http.Response(errorBody('app_check_invalid'), 401);
+        }),
+      );
+
+      final result = await runner.run('x');
+
+      expect(requests, 2);
+      expect(auth.refreshFlags, [false, true]);
+      expect(result.stage, RunStage.unavailable);
+      expect(result.stderr, contains("couldn't be verified"));
+    });
+
+    group('the 401 message fits where the app runs', () {
+      String message({
+        bool debug = false,
+        bool web = false,
+        TargetPlatform platform = TargetPlatform.android,
+      }) => HttpCodeRunner.errorMessage(
+        http.Response(errorBody('app_check_invalid'), 401),
+        debug: debug,
+        web: web,
+        platform: platform,
+      );
+
+      const start = "This copy of the app couldn't be verified, so code can't "
+          'run right now. ';
+
+      test('every variant starts the same way', () {
+        for (final text in [
+          message(debug: true),
+          message(web: true),
+          message(platform: TargetPlatform.iOS),
+          message(platform: TargetPlatform.android),
+          message(platform: TargetPlatform.macOS),
+        ]) {
+          expect(text, startsWith(start));
+        }
+      });
+
+      test('a debug build is told about the debug token, not a store', () {
+        final text = message(debug: true, platform: TargetPlatform.iOS);
+        expect(text, contains('debug token'));
+        expect(text, contains('Firebase console'));
+        expect(text, isNot(contains('App Store')));
+        expect(text, isNot(contains('Google Play')));
+      });
+
+      test('the web is told to reload', () {
+        final text = message(web: true);
+        expect(text, contains('Reload the page'));
+        expect(text, isNot(contains('App Store')));
+        expect(text, isNot(contains('Google Play')));
+      });
+
+      test('iOS names the App Store and Android names Google Play', () {
+        final ios = message(platform: TargetPlatform.iOS);
+        expect(ios, contains('App Store'));
+        expect(ios, isNot(contains('Google Play')));
+        final android = message(platform: TargetPlatform.android);
+        expect(android, contains('Google Play'));
+        expect(android, isNot(contains('App Store')));
+      });
+
+      test('other platforms get store-neutral advice', () {
+        final text = message(platform: TargetPlatform.linux);
+        expect(text, contains('up to date'));
+        expect(text, isNot(contains('App Store')));
+        expect(text, isNot(contains('Google Play')));
+      });
+
+      test('the default follows the real environment (a debug build here)', () {
+        final text = HttpCodeRunner.errorMessage(
+          http.Response(errorBody('app_check_invalid'), 401),
+        );
+        expect(text, contains(kDebugMode ? 'debug token' : 'up to date'));
+      });
+    });
+
+    test('403 and 401 without a known code are not retried', () async {
+      var requests = 0;
+      final auth = _FakeAuth(['a', 'b']);
+      final forbidden = await HttpCodeRunner(
+        base,
+        auth: auth,
+        client: MockClient((_) async {
+          requests++;
+          return http.Response(errorBody('app_not_allowed'), 403);
+        }),
+      ).run('x');
+      expect(requests, 1);
+      expect(
+        forbidden.stderr,
+        "This version of the app can't run code. Please update the app.",
+      );
+
+      requests = 0;
+      final proxy401 = await HttpCodeRunner(
+        base,
+        auth: _FakeAuth(['a', 'b']),
+        client: MockClient((_) async {
+          requests++;
+          return http.Response('Unauthorized', 401);
+        }),
+      ).run('x');
+      expect(requests, 1);
+      expect(proxy401.stderr, contains("couldn't be verified"));
+    });
+
+    test('429 rate_limited says how long to wait', () async {
+      final waits = await answering(
+        http.Response(
+          errorBody('rate_limited'),
+          429,
+          headers: {'retry-after': '12'},
+        ),
+      ).run('x');
+      expect(waits.stage, RunStage.unavailable);
+      expect(
+        waits.stderr,
+        "You're running code very quickly. Try again in 12 seconds.",
+      );
+
+      final noHeader = await answering(
+        http.Response(errorBody('rate_limited'), 429),
+      ).run('x');
+      expect(
+        noHeader.stderr,
+        "You're running code very quickly. Try again in a minute.",
+      );
+
+      // Nonsense values are ignored.
+      for (final bad in ['soon', '0', '-3', '99999']) {
+        final r = await answering(
+          http.Response(
+            errorBody('rate_limited'),
+            429,
+            headers: {'retry-after': bad},
+          ),
+        ).run('x');
+        expect(r.stderr, endsWith('Try again in a minute.'), reason: bad);
+      }
+    });
+
+    test('503 busy and auth_unavailable keep the busy message', () async {
+      for (final code in ['busy', 'auth_unavailable']) {
+        final r = await answering(
+          http.Response(errorBody(code), 503, headers: {'retry-after': '5'}),
+        ).run('x');
+        expect(r.stderr, 'The code runner is busy. Try again in 5 seconds.');
+      }
+    });
+
+    test('the 45 s budget covers the token fetch and the retry', () async {
+      expect(HttpCodeRunner.requestTimeout, const Duration(seconds: 45));
+    });
+  });
+}
+
+/// Hands out the given tokens in order and records how each was asked for.
+class _FakeAuth implements RunnerAuth {
+  _FakeAuth(this._tokens);
+
+  final List<String?> _tokens;
+  final refreshFlags = <bool>[];
+
+  @override
+  Future<String?> appCheckToken({bool refresh = false}) async {
+    refreshFlags.add(refresh);
+    return _tokens.isEmpty ? null : _tokens.removeAt(0);
+  }
 }

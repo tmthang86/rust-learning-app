@@ -76,6 +76,12 @@ Google account and an Apple developer account.
    - Google lists Node.js 22 as deprecated from 2027-04-30. Raise
      `engines.node` in `functions/package.json` (and the Node version in
      `.github/workflows/ci.yml`) before then.
+8. **App Check for the code runner (only if you run your own runner).** The
+   production runner accepts requests only from your genuine app, proved with
+   Firebase App Check. Register each app and its debug tokens as described in
+   [runner/deploy/README.md](../runner/deploy/README.md) (steps 8 to 11).
+   Without Firebase the app still works, but it sends no token, so only a
+   development runner accepts its code runs.
 
 ## How sync works
 
