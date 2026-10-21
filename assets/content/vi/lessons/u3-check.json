@@ -1,0 +1,78 @@
+{
+  "id": "u3-check",
+  "title": "Checkpoint: Hàm trợ giúp mượn dữ liệu",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Checkpoint này luyện tập Unit 3: move, Copy và Clone, mượn (borrowing), tham chiếu có thể thay đổi và slice. Bạn sẽ viết ba hàm nhỏ. Mỗi hàm nhận đầu vào theo một cách khác nhau: theo giá trị, qua một tham chiếu có thể thay đổi và dưới dạng một slice."
+    },
+    {
+      "type": "text",
+      "text": "Nó dựa trên các bài học Quyền sở hữu và việc di chuyển (move), Copy và Clone, Tham chiếu có thể thay đổi (&mut) và Slice. Hãy xem main gọi từng hàm như thế nào. Cách một giá trị được truyền cho thấy ai sở hữu nó sau đó."
+    },
+    {
+      "type": "note",
+      "text": "todo!() là một placeholder. Nếu chương trình chạy tới nó, chương trình sẽ dừng với thông báo \"not yet implemented\". Hãy thay mỗi todo!() bằng code của riêng bạn. Cho đến khi bạn làm xong, trình biên dịch có thể cảnh báo rằng một số tên không được dùng. Điều đó là bình thường."
+    },
+    {
+      "type": "note",
+      "text": "Gợi ý cho double_up: hàm sở hữu word. Bạn cần văn bản hai lần, nên hãy tạo một bản sao sở hữu bằng word.clone() và xây kết quả trong đó. Sau đó thêm một dấu cách bằng push_str(\" \") và thêm bản gốc bằng push_str(&word). Dòng cuối trả về kết quả."
+    },
+    {
+      "type": "note",
+      "text": "Trong main, double_up(word.clone()) đưa cho hàm một bản sao. Nếu không có .clone(), word sẽ được move vào hàm và main không thể in nó sau đó."
+    },
+    {
+      "type": "note",
+      "text": "Gợi ý cho apply_bonus: score là một &mut u32, một tham chiếu đến một con số. Hãy viết *score để chạm tới chính con số đó, ví dụ *score += 10;. Nếu con số khi đó lớn hơn 100, hãy đặt nó thành 100."
+    },
+    {
+      "type": "note",
+      "text": "Trong main, let mut score = start; sao chép con số, vì số nguyên là Copy. Đó là lý do start vẫn có thể được in sau đó."
+    },
+    {
+      "type": "note",
+      "text": "Gợi ý cho first_half: s.len() là độ dài tính bằng byte. Các ví dụ dùng chữ cái tiếng Anh thông thường, trong đó mỗi chữ cái là một byte. Hãy lấy một slice từ đầu đến một nửa độ dài: &s[..end]. Phép chia số nguyên bỏ phần dư, nên 9 / 2 là 4."
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy thay mỗi todo!() bằng code chạy được. Đừng thay đổi main.\n\nfn double_up(word: String) -> String\nTrả về từ đó hai lần với một dấu cách ở giữa: \"ha\" trở thành \"ha ha\".\n\nfn apply_bonus(score: &mut u32)\nCộng 10 vào con số mà score trỏ tới. Kết quả không bao giờ được lớn hơn 100. Con số bắt đầu từ 100 trở xuống.\n\nfn first_half(s: &str) -> &str\nTrả về một slice gồm s.len() / 2 byte đầu tiên của s. Văn bản s chỉ chứa chữ cái tiếng Anh thông thường, nên mỗi chữ cái là một byte. Với 9 chữ cái thì đó là 4 chữ đầu. Với một chữ cái hoặc một văn bản rỗng thì kết quả là văn bản rỗng.\n\nChương trình phải in ra:\nha -> ha ha\n40 -> 50\n90 -> 100\n100 -> 100\n[Owne]\n[h]\n[]\n[]",
+    "starter": "fn double_up(word: String) -> String {\n    todo!()\n}\n\nfn apply_bonus(score: &mut u32) {\n    todo!()\n}\n\nfn first_half(s: &str) -> &str {\n    todo!()\n}\n\nfn main() {\n    let word = String::from(\"ha\");\n    let laugh = double_up(word.clone());\n    println!(\"{word} -> {laugh}\");\n\n    for start in [40, 90, 100] {\n        let mut score = start;\n        apply_bonus(&mut score);\n        println!(\"{start} -> {score}\");\n    }\n\n    let title = String::from(\"Ownership\");\n    println!(\"[{}]\", first_half(&title));\n    println!(\"[{}]\", first_half(\"hi\"));\n    println!(\"[{}]\", first_half(\"a\"));\n    println!(\"[{}]\", first_half(\"\"));\n}",
+    "expectedOutput": "ha -> ha ha\n40 -> 50\n90 -> 100\n100 -> 100\n[Owne]\n[h]\n[]\n[]",
+    "solution": "fn double_up(word: String) -> String {\n    let mut result = word.clone();\n    result.push_str(\" \");\n    result.push_str(&word);\n    result\n}\n\nfn apply_bonus(score: &mut u32) {\n    *score += 10;\n    if *score > 100 {\n        *score = 100;\n    }\n}\n\nfn first_half(s: &str) -> &str {\n    &s[..s.len() / 2]\n}\n\nfn main() {\n    let word = String::from(\"ha\");\n    let laugh = double_up(word.clone());\n    println!(\"{word} -> {laugh}\");\n\n    for start in [40, 90, 100] {\n        let mut score = start;\n        apply_bonus(&mut score);\n        println!(\"{start} -> {score}\");\n    }\n\n    let title = String::from(\"Ownership\");\n    println!(\"[{}]\", first_half(&title));\n    println!(\"[{}]\", first_half(\"hi\"));\n    println!(\"[{}]\", first_half(\"a\"));\n    println!(\"[{}]\", first_half(\"\"));\n}",
+    "hints": [
+      "double_up sở hữu word, nên bạn cần một bản sao để xây kết quả mà vẫn dùng được word. apply_bonus thay đổi một con số qua một tham chiếu &mut. first_half trả về một slice của s, không phải một String mới.",
+      "Trong double_up, hãy tạo let mut result = word.clone(); rồi push_str một dấu cách và sau đó là &word. Trong apply_bonus, hãy viết *score để chạm tới con số. Trong first_half, một slice trông như &s[..end], trong đó end là một nửa của s.len().",
+      "Trong apply_bonus, hãy viết *score += 10; rồi if *score > 100 { *score = 100; }. Trong first_half, dòng cuối là &s[..s.len() / 2], không có dấu chấm phẩy."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Tại sao main gọi double_up(word.clone()) mà không gọi double_up(word)?",
+      "options": [
+        "clone làm cho hàm nhanh hơn",
+        "Truyền word sẽ move nó, nên main không thể in nó sau đó",
+        "Một hàm không bao giờ có thể nhận một String"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Sau let mut score = start; trong đó start là một u32, bạn có còn dùng được start không?",
+      "options": [
+        "Có, vì số nguyên là Copy",
+        "Không, nó đã bị move",
+        "Chỉ khi bạn thêm .clone()"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "&s[..3] có kiểu gì khi s là một String?",
+      "options": [
+        "String",
+        "&String",
+        "&str"
+      ],
+      "answer": 2
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "id": "u10-check",
+  "title": "Checkpoint: Nhật ký dùng chung",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Checkpoint này luyện tập cả unit. Một cây đệ quy cần Box để có kích thước đã biết (Box<T>). Một giá trị Guard dọn dẹp bằng Drop, và với Deref nó có thể được dùng ở nơi cần một &str (Deref và Drop). Nhiều guard chia sẻ một nhật ký bằng Rc (Rc<T>), và nhật ký được thay đổi qua RefCell (RefCell<T> và interior mutability). Bạn không viết main."
+    },
+    {
+      "type": "text",
+      "text": "Code khởi đầu biên dịch được, nhưng bốn thân hàm được đánh dấu todo!(), một placeholder gây ra panic với thông báo \"not yet implemented\" khi nó chạy. Trình biên dịch hiển thị cảnh báo về biến không dùng cho đến khi bạn làm xong. Điều đó là bình thường. Deref impl của bạn là thứ làm cho shout(&db) hoạt động trong main: Rust biến &Guard thành &String, rồi thành &str mà shout muốn. Chương trình in nhật ký ở cuối, nên các thông điệp cho bạn thấy thứ tự các giá trị được tạo ra và bị drop."
+    },
+    {
+      "type": "note",
+      "text": "depth: hãy match trên tree. Một Leaf có độ sâu 1. Với một Node, hãy gọi depth trên cả hai nhánh con (chúng là Box<Tree>, và Rust cho phép bạn truyền chúng ở nơi cần một &Tree, như trong ví dụ sum), rồi trả về giá trị lớn hơn cộng 1. Guard::new: hãy push thông điệp trước, bằng log.borrow_mut().push(...), rồi tạo Guard bằng Rc::clone(log). Drop: hãy push một thông điệp closed theo cách tương tự. deref: hãy trả về một tham chiếu đến trường name.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Các signature cần khớp: depth(tree: &Tree) -> u32, Guard::new(name: &str, log: &Rc<RefCell<Vec<String>>>) -> Guard, Drop::drop(&mut self) và Deref::deref(&self) -> &String. Nhật ký là một Vec<String> bên trong một RefCell bên trong một Rc. Rc::strong_count trong main kiểm tra rằng new thực sự thêm một chủ sở hữu. Thứ tự drop trong main: drop(cache) chạy sớm, và db bị drop ở cuối khối của nó.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hoàn thành chương trình. Bốn thân hàm được đánh dấu todo!().\n\n(1) fn depth(tree: &Tree) -> u32: một Leaf có độ sâu 1, và một Node có độ sâu bằng 1 cộng độ sâu của nhánh con sâu hơn.\n\n(2) Guard::new(name: &str, log: &Rc<RefCell<Vec<String>>>) -> Guard push văn bản opened NAME vào nhật ký (ví dụ opened db), và trả về một Guard giữ tên của nó và một chủ sở hữu mới của cùng nhật ký đó (đừng sao chép Vec).\n\n(3) impl Drop for Guard push văn bản closed NAME vào nhật ký khi một Guard biến mất.\n\n(4) Trong impl Deref for Guard, fn deref(&self) -> &String trả về một tham chiếu đến tên của guard.\n\nĐừng thay đổi main. Chương trình phải in ra:\n\ndepths: 1 2 4\nowners: 3\nDB\nowners: 2\nowners: 1\nopened db\nopened cache\nclosed cache\nworking\nclosed db",
+    "starter": "use std::cell::RefCell;\nuse std::ops::Deref;\nuse std::rc::Rc;\n\nenum Tree {\n    Leaf,\n    Node(Box<Tree>, Box<Tree>),\n}\n\nfn depth(tree: &Tree) -> u32 {\n    todo!()\n}\n\nstruct Guard {\n    name: String,\n    log: Rc<RefCell<Vec<String>>>,\n}\n\nimpl Guard {\n    fn new(name: &str, log: &Rc<RefCell<Vec<String>>>) -> Guard {\n        todo!()\n    }\n}\n\nimpl Drop for Guard {\n    fn drop(&mut self) {\n        todo!()\n    }\n}\n\nimpl Deref for Guard {\n    type Target = String;\n\n    fn deref(&self) -> &String {\n        todo!()\n    }\n}\n\nfn shout(text: &str) -> String {\n    text.to_uppercase()\n}\n\nfn main() {\n    let leaf = Tree::Leaf;\n    let pair = Tree::Node(Box::new(Tree::Leaf), Box::new(Tree::Leaf));\n    let lopsided = Tree::Node(\n        Box::new(Tree::Leaf),\n        Box::new(Tree::Node(\n            Box::new(Tree::Leaf),\n            Box::new(Tree::Node(Box::new(Tree::Leaf), Box::new(Tree::Leaf))),\n        )),\n    );\n    println!(\"depths: {} {} {}\", depth(&leaf), depth(&pair), depth(&lopsided));\n\n    let log = Rc::new(RefCell::new(Vec::new()));\n    {\n        let db = Guard::new(\"db\", &log);\n        let cache = Guard::new(\"cache\", &log);\n        println!(\"owners: {}\", Rc::strong_count(&log));\n        println!(\"{}\", shout(&db));\n        drop(cache);\n        println!(\"owners: {}\", Rc::strong_count(&log));\n        log.borrow_mut().push(String::from(\"working\"));\n    }\n    println!(\"owners: {}\", Rc::strong_count(&log));\n    for line in log.borrow().iter() {\n        println!(\"{line}\");\n    }\n}",
+    "expectedOutput": "depths: 1 2 4\nowners: 3\nDB\nowners: 2\nowners: 1\nopened db\nopened cache\nclosed cache\nworking\nclosed db",
+    "solution": "use std::cell::RefCell;\nuse std::ops::Deref;\nuse std::rc::Rc;\n\nenum Tree {\n    Leaf,\n    Node(Box<Tree>, Box<Tree>),\n}\n\nfn depth(tree: &Tree) -> u32 {\n    match tree {\n        Tree::Leaf => 1,\n        Tree::Node(left, right) => {\n            let l = depth(left);\n            let r = depth(right);\n            if l > r { l + 1 } else { r + 1 }\n        }\n    }\n}\n\nstruct Guard {\n    name: String,\n    log: Rc<RefCell<Vec<String>>>,\n}\n\nimpl Guard {\n    fn new(name: &str, log: &Rc<RefCell<Vec<String>>>) -> Guard {\n        log.borrow_mut().push(format!(\"opened {name}\"));\n        Guard { name: String::from(name), log: Rc::clone(log) }\n    }\n}\n\nimpl Drop for Guard {\n    fn drop(&mut self) {\n        self.log.borrow_mut().push(format!(\"closed {}\", self.name));\n    }\n}\n\nimpl Deref for Guard {\n    type Target = String;\n\n    fn deref(&self) -> &String {\n        &self.name\n    }\n}\n\nfn shout(text: &str) -> String {\n    text.to_uppercase()\n}\n\nfn main() {\n    let leaf = Tree::Leaf;\n    let pair = Tree::Node(Box::new(Tree::Leaf), Box::new(Tree::Leaf));\n    let lopsided = Tree::Node(\n        Box::new(Tree::Leaf),\n        Box::new(Tree::Node(\n            Box::new(Tree::Leaf),\n            Box::new(Tree::Node(Box::new(Tree::Leaf), Box::new(Tree::Leaf))),\n        )),\n    );\n    println!(\"depths: {} {} {}\", depth(&leaf), depth(&pair), depth(&lopsided));\n\n    let log = Rc::new(RefCell::new(Vec::new()));\n    {\n        let db = Guard::new(\"db\", &log);\n        let cache = Guard::new(\"cache\", &log);\n        println!(\"owners: {}\", Rc::strong_count(&log));\n        println!(\"{}\", shout(&db));\n        drop(cache);\n        println!(\"owners: {}\", Rc::strong_count(&log));\n        log.borrow_mut().push(String::from(\"working\"));\n    }\n    println!(\"owners: {}\", Rc::strong_count(&log));\n    for line in log.borrow().iter() {\n        println!(\"{line}\");\n    }\n}",
+    "hints": [
+      "depth là một match trên tree, và một Node yêu cầu độ sâu của cả hai nhánh con. Nhật ký được chia sẻ, nên Guard::new phải thêm một chủ sở hữu, không phải sao chép Vec. new và drop đều push một thông điệp vào nhật ký.",
+      "Hãy ghi vào nhật ký bằng log.borrow_mut().push(format!(...)). Trong new, hãy push thông điệp opened trước, rồi tạo Guard { name: String::from(name), log: Rc::clone(log) }. Trong drop, hãy push thông điệp closed qua self.log. deref trả về &self.name.",
+      "Trong depth, Tree::Leaf cho 1. Với Tree::Node(left, right), hãy viết let l = depth(left); và let r = depth(right); rồi trả về if l > r { l + 1 } else { r + 1 }."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Tại sao variant được viết là Node(Box<Tree>, Box<Tree>) mà không phải Node(Tree, Tree)?",
+      "options": [
+        "Nếu không có Box, một Tree sẽ chứa một Tree và có kích thước vô hạn",
+        "Một Box làm cho cây đọc nhanh hơn",
+        "Một variant của enum không thể chứa một enum khác"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Rc::clone(&log) sao chép cái gì?",
+      "options": [
+        "Toàn bộ Vec các thông điệp",
+        "Chỉ một con trỏ, và nó cộng 1 vào số chủ sở hữu",
+        "Không gì cả, và số chủ sở hữu giữ nguyên"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Điều gì xảy ra nếu bạn gọi log.borrow_mut() trong khi một guard borrow_mut() khác trên cùng RefCell vẫn còn sống?",
+      "options": [
+        "Trình biên dịch báo lỗi",
+        "Lần gọi thứ hai chờ cho đến khi guard đầu tiên bị drop",
+        "Chương trình bị panic lúc chạy"
+      ],
+      "answer": 2
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "id": "u4-check",
+  "title": "Checkpoint: Bãi đỗ xe",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Checkpoint này luyện tập Unit 4: struct, phương thức, enum mang dữ liệu, Option và match với guard. Một bãi đỗ xe tính phí theo giờ. Mức phí phụ thuộc vào loại phương tiện."
+    },
+    {
+      "type": "text",
+      "text": "Nó dựa trên các bài học Struct, Phương thức, Enum, Option và match và if let. Các kiểu Vehicle và Ticket đã được viết sẵn. Bạn viết các hàm."
+    },
+    {
+      "type": "note",
+      "text": "todo!() là một placeholder. Nếu chương trình chạy tới nó, chương trình sẽ dừng với thông báo \"not yet implemented\". Hãy thay mỗi todo!() bằng code của riêng bạn. Cho đến khi bạn làm xong, trình biên dịch có thể cảnh báo rằng một số tên không được dùng. Điều đó là bình thường."
+    },
+    {
+      "type": "note",
+      "text": "Gợi ý cho hourly_rate: hãy dùng match trên vehicle. Truck(axles) chứa một con số. Vì vehicle là một tham chiếu, axles là một tham chiếu đến con số, nên hãy viết *axles để lấy con số. Một guard như Vehicle::Truck(axles) if *axles >= 4 phải đứng trước nhánh Truck thường, vì các nhánh được thử từ trên xuống dưới."
+    },
+    {
+      "type": "note",
+      "text": "Gợi ý cho cost: nó là một phương thức, nên nó nằm bên trong khối impl. Hãy gọi hourly_rate(&self.vehicle) và nhân kết quả với self.hours."
+    },
+    {
+      "type": "note",
+      "text": "Gợi ý cho most_expensive: hãy giữ let mut best = None; và đi qua các ticket bằng vòng lặp for. Với mỗi ticket, hãy tính cost của nó. Nếu best là None, hoặc cost lớn hơn con số bên trong best, hãy đặt best thành Some(cost). Một match hoặc một if let trên best có thể thực hiện phép kiểm tra này. Dòng cuối trả về best."
+    }
+  ],
+  "exercise": {
+    "prompt": "Các kiểu Vehicle và Ticket đã được viết sẵn cho bạn. Hãy thay mỗi todo!() bằng code chạy được. Đừng thay đổi main.\n\nfn hourly_rate(vehicle: &Vehicle) -> u32\nMột Bike tốn 1 mỗi giờ và một Car tốn 3. Một Truck tốn 5 cho mỗi trục, nhưng một Truck có từ 4 trục trở lên tốn 20 mỗi giờ.\n\nfn cost(&self) -> u32   (một phương thức của Ticket)\nTrả về mức phí theo giờ của phương tiện trên ticket nhân với số giờ.\n\nfn most_expensive(tickets: &[Ticket]) -> Option<u32>\nTrả về Some chứa chi phí cao nhất trong các ticket, hoặc None nếu không có ticket nào.\n\nSố trục và số giờ tối đa là 1000.\n\nChương trình phải in ra:\nBike: 1 per hour, 4 in total\nCar: 3 per hour, 6 in total\nTruck(2): 10 per hour, 30 in total\nTruck(5): 20 per hour, 20 in total\nSome(30)\nSome(4)\nNone",
+    "starter": "#[derive(Debug)]\nenum Vehicle {\n    Bike,\n    Car,\n    Truck(u32), // the number of axles\n}\n\nstruct Ticket {\n    vehicle: Vehicle,\n    hours: u32,\n}\n\nfn hourly_rate(vehicle: &Vehicle) -> u32 {\n    todo!()\n}\n\nimpl Ticket {\n    fn cost(&self) -> u32 {\n        todo!()\n    }\n}\n\nfn most_expensive(tickets: &[Ticket]) -> Option<u32> {\n    todo!()\n}\n\nfn main() {\n    let tickets = [\n        Ticket { vehicle: Vehicle::Bike, hours: 4 },\n        Ticket { vehicle: Vehicle::Car, hours: 2 },\n        Ticket { vehicle: Vehicle::Truck(2), hours: 3 },\n        Ticket { vehicle: Vehicle::Truck(5), hours: 1 },\n    ];\n    for t in &tickets {\n        println!(\"{:?}: {} per hour, {} in total\", t.vehicle, hourly_rate(&t.vehicle), t.cost());\n    }\n    println!(\"{:?}\", most_expensive(&tickets));\n    println!(\"{:?}\", most_expensive(&tickets[..1]));\n    println!(\"{:?}\", most_expensive(&tickets[..0]));\n}",
+    "expectedOutput": "Bike: 1 per hour, 4 in total\nCar: 3 per hour, 6 in total\nTruck(2): 10 per hour, 30 in total\nTruck(5): 20 per hour, 20 in total\nSome(30)\nSome(4)\nNone",
+    "solution": "#[derive(Debug)]\nenum Vehicle {\n    Bike,\n    Car,\n    Truck(u32), // the number of axles\n}\n\nstruct Ticket {\n    vehicle: Vehicle,\n    hours: u32,\n}\n\nfn hourly_rate(vehicle: &Vehicle) -> u32 {\n    match vehicle {\n        Vehicle::Bike => 1,\n        Vehicle::Car => 3,\n        Vehicle::Truck(axles) if *axles >= 4 => 20,\n        Vehicle::Truck(axles) => 5 * axles,\n    }\n}\n\nimpl Ticket {\n    fn cost(&self) -> u32 {\n        hourly_rate(&self.vehicle) * self.hours\n    }\n}\n\nfn most_expensive(tickets: &[Ticket]) -> Option<u32> {\n    let mut best = None;\n    for ticket in tickets {\n        let cost = ticket.cost();\n        match best {\n            Some(b) if b >= cost => {}\n            _ => best = Some(cost),\n        }\n    }\n    best\n}\n\nfn main() {\n    let tickets = [\n        Ticket { vehicle: Vehicle::Bike, hours: 4 },\n        Ticket { vehicle: Vehicle::Car, hours: 2 },\n        Ticket { vehicle: Vehicle::Truck(2), hours: 3 },\n        Ticket { vehicle: Vehicle::Truck(5), hours: 1 },\n    ];\n    for t in &tickets {\n        println!(\"{:?}: {} per hour, {} in total\", t.vehicle, hourly_rate(&t.vehicle), t.cost());\n    }\n    println!(\"{:?}\", most_expensive(&tickets));\n    println!(\"{:?}\", most_expensive(&tickets[..1]));\n    println!(\"{:?}\", most_expensive(&tickets[..0]));\n}",
+    "hints": [
+      "hourly_rate là một match trên vehicle. Một Truck chứa số trục của nó, và 4 trục trở lên là một trường hợp đặc biệt. cost là một phương thức, nên nó nằm trong khối impl. most_expensive giữ một giá trị best bắt đầu là None.",
+      "Trong hourly_rate, một nhánh có guard như Vehicle::Truck(axles) if *axles >= 4 => 20 phải đứng trước nhánh Truck thường. Cần có dấu * vì vehicle là một tham chiếu. Trong cost, hãy nhân hourly_rate(&self.vehicle) với self.hours.",
+      "Trong most_expensive, hãy viết let mut best = None; và lặp qua tickets. Hãy viết let cost = ticket.cost(); rồi match best { Some(b) if b >= cost => {} _ => best = Some(cost), }. Đặt best ở dòng cuối."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Guard trong Vehicle::Truck(axles) if *axles >= 4 làm gì?",
+      "options": [
+        "Nó làm cho nhánh khớp với mọi truck",
+        "Nó đếm số truck",
+        "Nhánh chỉ khớp nếu điều kiện thêm đó cũng đúng"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Một hàm có thể không tìm được câu trả lời, như chi phí cao nhất của không ticket nào. Kiểu trả về nào phù hợp?",
+      "options": [
+        "Option<u32>",
+        "u32, với 0 là mã bí mật cho việc không có câu trả lời",
+        "bool"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "&self nghĩa là gì trong fn cost(&self) -> u32?",
+      "options": [
+        "Phương thức nhận quyền sở hữu của ticket",
+        "Phương thức mượn ticket để đọc nó",
+        "Phương thức thay đổi ticket"
+      ],
+      "answer": 1
+    }
+  ]
+}

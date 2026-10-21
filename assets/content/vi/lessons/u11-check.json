@@ -1,0 +1,69 @@
+{
+  "id": "u11-check",
+  "title": "Checkpoint: Các hàm trợ giúp song song",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Checkpoint này luyện tập ba bài học đầu của unit, và bài học cuối trong phần câu hỏi. Bạn sẽ khởi động các thread và join chúng theo thứ tự (bài Thread), thu thập kết quả từ nhiều sender qua một channel (bài Channel), và cộng các số vào một tổng chia sẻ phía sau Arc và Mutex (bài Trạng thái chia sẻ với Arc và Mutex). Bạn không viết main."
+    },
+    {
+      "type": "text",
+      "text": "Code khởi đầu biên dịch được, nhưng ba thân hàm được đánh dấu todo!(), một placeholder gây ra panic với thông báo \"not yet implemented\" khi nó chạy. Trình biên dịch hiển thị cảnh báo về import và biến không dùng cho đến khi bạn làm xong. Điều đó là bình thường. Kết quả của chương trình phải giống nhau ở mọi lần chạy, dù các thread chạy cùng một lúc. Đó là lý do mỗi hàm hoặc join các thread theo thứ tự đã khởi động chúng, hoặc sắp xếp những gì nó nhận được, trước khi trả về bất cứ thứ gì."
+    },
+    {
+      "type": "note",
+      "text": "word_counts: hãy khởi động một thread cho mỗi văn bản bằng thread::spawn(move || ...), giữ các handle trong một Vec, rồi join chúng theo cùng thứ tự và push từng kết quả. squares: hãy tạo channel, đưa cho mỗi thread một tx.clone() riêng, rồi drop(tx) trước vòng lặp nhận. Vòng lặp chỉ kết thúc khi mọi sender đã biến mất, và tx gốc cũng được tính, nên nếu không có drop(tx) nó không bao giờ kết thúc, với mọi n (kể cả n = 0, khi không có thread nào được khởi động). Hãy thu thập các cặp, sắp xếp chúng, rồi trả về.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "parallel_total: hãy tạo let total = Arc::new(Mutex::new(0)). Trong vòng lặp, hãy tạo let total = Arc::clone(&total) và move nó vào thread. Bên trong thread, hãy viết let part: u32 = chunk.iter().sum(); rồi cộng nó bằng *total.lock().unwrap() += part. Sau khi bạn join mọi handle, hãy đọc giá trị bằng *total.lock().unwrap(). Một chunk có thể rỗng, và danh sách các chunk cũng có thể rỗng.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Các signature cần khớp: word_counts(texts: Vec<String>) -> Vec<usize> (cùng thứ tự với đầu vào), squares(n: u32) -> Vec<(u32, u32)> (đã sắp xếp), và parallel_total(chunks: Vec<Vec<u32>>) -> u32. Các trường hợp biên trong main: văn bản rỗng, dấu cách thừa, không có văn bản nào, n = 0, chunk rỗng, không có chunk nào.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hoàn thành ba hàm được đánh dấu todo!().\n\n(1) fn word_counts(texts: Vec<String>) -> Vec<usize> khởi động một thread cho mỗi văn bản. Mỗi thread đếm số từ trong văn bản của nó (split_whitespace().count()). Kết quả có một số đếm cho mỗi văn bản, theo cùng thứ tự với texts.\n\n(2) fn squares(n: u32) -> Vec<(u32, u32)> khởi động một thread cho mỗi số từ 1 đến n. Mỗi thread gửi cặp (number, number * number) qua một channel duy nhất. Hàm trả về tất cả các cặp đã sắp xếp, và trả về một Vec rỗng khi n là 0.\n\n(3) fn parallel_total(chunks: Vec<Vec<u32>>) -> u32 khởi động một thread cho mỗi chunk. Mỗi thread cộng tổng của chunk của nó vào một tổng duy nhất mà tất cả các thread chia sẻ qua Arc<Mutex<u32>>. Hàm trả về tổng cuối cùng (0 nếu không có chunk nào). Bạn có thể giả định rằng mọi số và mọi tổng đều vừa trong một u32.\n\nĐừng thay đổi main. Chương trình phải in ra:\n\n[3, 0, 2, 5]\n[]\n[(1, 1), (2, 4), (3, 9), (4, 16)]\n[]\n136\n0",
+    "starter": "use std::sync::mpsc;\nuse std::sync::{Arc, Mutex};\nuse std::thread;\n\n// One thread per text. The answers come back in the same order as the texts.\nfn word_counts(texts: Vec<String>) -> Vec<usize> {\n    todo!()\n}\n\n// One thread per number from 1 to n. Each sends (number, square) through a channel.\nfn squares(n: u32) -> Vec<(u32, u32)> {\n    todo!()\n}\n\n// One thread per chunk. Each thread adds its chunk's sum to one shared total.\nfn parallel_total(chunks: Vec<Vec<u32>>) -> u32 {\n    todo!()\n}\n\nfn main() {\n    let texts = vec![\n        String::from(\"one two three\"),\n        String::new(),\n        String::from(\"  spaced   out  \"),\n        String::from(\"the quick brown fox jumps\"),\n    ];\n    println!(\"{:?}\", word_counts(texts));\n    println!(\"{:?}\", word_counts(Vec::new()));\n\n    println!(\"{:?}\", squares(4));\n    println!(\"{:?}\", squares(0));\n\n    println!(\"{}\", parallel_total(vec![vec![1, 2, 3], vec![10, 20], vec![], vec![100]]));\n    println!(\"{}\", parallel_total(Vec::new()));\n}",
+    "expectedOutput": "[3, 0, 2, 5]\n[]\n[(1, 1), (2, 4), (3, 9), (4, 16)]\n[]\n136\n0",
+    "solution": "use std::sync::mpsc;\nuse std::sync::{Arc, Mutex};\nuse std::thread;\n\n// One thread per text. The answers come back in the same order as the texts.\nfn word_counts(texts: Vec<String>) -> Vec<usize> {\n    let mut handles = Vec::new();\n    for text in texts {\n        handles.push(thread::spawn(move || text.split_whitespace().count()));\n    }\n    let mut counts = Vec::new();\n    for handle in handles {\n        counts.push(handle.join().unwrap());\n    }\n    counts\n}\n\n// One thread per number from 1 to n. Each sends (number, square) through a channel.\nfn squares(n: u32) -> Vec<(u32, u32)> {\n    let (tx, rx) = mpsc::channel();\n    for id in 1..=n {\n        let tx = tx.clone();\n        thread::spawn(move || {\n            tx.send((id, id * id)).unwrap();\n        });\n    }\n    drop(tx);\n\n    let mut results = Vec::new();\n    for pair in rx {\n        results.push(pair);\n    }\n    results.sort();\n    results\n}\n\n// One thread per chunk. Each thread adds its chunk's sum to one shared total.\nfn parallel_total(chunks: Vec<Vec<u32>>) -> u32 {\n    let total = Arc::new(Mutex::new(0));\n    let mut handles = Vec::new();\n    for chunk in chunks {\n        let total = Arc::clone(&total);\n        handles.push(thread::spawn(move || {\n            let part: u32 = chunk.iter().sum();\n            *total.lock().unwrap() += part;\n        }));\n    }\n    for handle in handles {\n        handle.join().unwrap();\n    }\n    let answer = *total.lock().unwrap();   // copy the number out of the guard\n    answer\n}\n\nfn main() {\n    let texts = vec![\n        String::from(\"one two three\"),\n        String::new(),\n        String::from(\"  spaced   out  \"),\n        String::from(\"the quick brown fox jumps\"),\n    ];\n    println!(\"{:?}\", word_counts(texts));\n    println!(\"{:?}\", word_counts(Vec::new()));\n\n    println!(\"{:?}\", squares(4));\n    println!(\"{:?}\", squares(0));\n\n    println!(\"{}\", parallel_total(vec![vec![1, 2, 3], vec![10, 20], vec![], vec![100]]));\n    println!(\"{}\", parallel_total(Vec::new()));\n}",
+    "hints": [
+      "Mỗi hàm khởi động các thread và phải chờ chúng. word_counts giữ các handle và join chúng theo thứ tự. squares gửi kết quả qua một channel. parallel_total chia sẻ một tổng giữa các thread.",
+      "Trong parallel_total, hãy viết let total = Arc::new(Mutex::new(0)); và trong vòng lặp let total = Arc::clone(&total);. Trong mỗi thread, hãy viết let part: u32 = chunk.iter().sum(); rồi *total.lock().unwrap() += part;. Hãy join tất cả các handle, rồi đọc tổng.",
+      "Trong squares, hãy đưa cho mỗi thread một sender riêng bằng let tx = tx.clone(); và gửi (id, id * id). Hãy viết drop(tx); trước vòng lặp đọc rx. Vòng lặp đó chỉ kết thúc khi mọi sender đã biến mất, kể cả tx đầu tiên."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Trong squares, điều gì xảy ra nếu bạn quên drop(tx) sau vòng lặp khởi động các thread?",
+      "options": [
+        "Code không biên dịch được",
+        "Vòng lặp trên rx không bao giờ kết thúc, vì sender gốc vẫn còn sống",
+        "Các cặp đến theo thứ tự ngẫu nhiên và không thể sắp xếp"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Tại sao Mutex được chia sẻ bằng Arc mà không phải Rc?",
+      "options": [
+        "Arc đếm các chủ sở hữu của nó theo cách an toàn giữa các thread, còn Rc không thể được gửi sang thread khác",
+        "Arc khóa dữ liệu bên trong, còn Rc thì không",
+        "Rc không thể chứa một Mutex"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Bạn gọi một async fn nhưng không bao giờ dùng .await trên future mà nó trả về và không bao giờ đưa nó cho một bộ chạy. Cái gì chạy?",
+      "options": [
+        "Toàn bộ thân hàm chạy cùng một lúc, và kết quả bị vứt đi",
+        "Chỉ code trước .await đầu tiên chạy",
+        "Không gì chạy cả: một future là lazy cho đến khi có thứ gì đó poll nó"
+      ],
+      "answer": 2
+    }
+  ]
+}

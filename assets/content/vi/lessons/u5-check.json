@@ -1,0 +1,74 @@
+{
+  "id": "u5-check",
+  "title": "Checkpoint: Bộ đếm từ",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Checkpoint này luyện tập Unit 5: vector, String và &str, và HashMap. Bạn sẽ viết ba hàm tách một văn bản thành các từ và đếm chúng."
+    },
+    {
+      "type": "text",
+      "text": "Nó dựa trên các bài học Vector, String và &str và HashMap. HashMap<String, u32> là một map với khóa String và giá trị u32, giống như Vec<String> là một danh sách các String."
+    },
+    {
+      "type": "note",
+      "text": "todo!() là một placeholder. Nếu chương trình chạy tới nó, chương trình sẽ dừng với thông báo \"not yet implemented\". Hãy thay mỗi todo!() bằng code của riêng bạn. Cho đến khi bạn làm xong, trình biên dịch có thể cảnh báo rằng một số tên không được dùng. Điều đó là bình thường."
+    },
+    {
+      "type": "note",
+      "text": "Gợi ý cho split_words: hãy tạo một vector rỗng bằng let mut words = Vec::new();. Sau đó lặp qua text.split_whitespace(). Nó trả các từ dưới dạng &str và bỏ qua dấu cách thừa. word.to_lowercase() tạo một String mới, bạn có thể push vào vector."
+    },
+    {
+      "type": "note",
+      "text": "Gợi ý cho word_counts: một HashMap sở hữu các khóa của nó, nên mỗi khóa phải là một String. Trong vòng lặp, word là một &String, nên hãy đưa word.clone() cho entry. Sau đó dùng or_insert(0) và cộng 1, như trong bài học HashMap. Dòng cuối trả về map."
+    },
+    {
+      "type": "note",
+      "text": "Gợi ý cho count_of: get trả về một Option chứa một tham chiếu đến con số. Hãy dùng unwrap_or(&0) cho một từ không có, và * để lấy con số ra. get chấp nhận một &str dù các khóa là String."
+    },
+    {
+      "type": "note",
+      "text": "Một HashMap không giữ các khóa của nó theo thứ tự cố định. Đó là lý do main sắp xếp các khóa trước khi in chúng."
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy thay mỗi todo!() bằng code chạy được. Đừng thay đổi main.\n\nfn split_words(text: &str) -> Vec<String>\nTrả về các từ của text, theo thứ tự, mỗi từ viết thường. Các từ được ngăn cách bởi khoảng trắng (dấu cách, tab hoặc dòng mới), và khoảng trắng thừa bị bỏ qua. Dấu câu vẫn là một phần của từ. Một văn bản không có từ nào cho ra một Vec rỗng.\n\nfn word_counts(words: &[String]) -> HashMap<String, u32>\nTrả về một map từ mỗi từ khác nhau đến số lần nó xuất hiện. Nó dùng các từ đúng như được cho và không thay đổi chữ hoa chữ thường của chúng.\n\nfn count_of(counts: &HashMap<String, u32>, word: &str) -> u32\nTrả về số lần word xuất hiện trong counts, hoặc 0 nếu nó không có ở đó. Nó tra cứu word đúng như được cho.\n\nChương trình phải in ra:\n8 words\nand: 2\ncat: 1\nend: 1\nhat: 1\nthe: 3\nthe appears 3 times\ndog appears 0 times\n[spaced]\n[out]\n0 words, 0 different",
+    "starter": "use std::collections::HashMap;\n\nfn split_words(text: &str) -> Vec<String> {\n    todo!()\n}\n\nfn word_counts(words: &[String]) -> HashMap<String, u32> {\n    todo!()\n}\n\nfn count_of(counts: &HashMap<String, u32>, word: &str) -> u32 {\n    todo!()\n}\n\nfn main() {\n    let words = split_words(\"The cat and the hat and THE end\");\n    println!(\"{} words\", words.len());\n\n    let counts = word_counts(&words);\n    let mut keys: Vec<_> = counts.keys().collect();\n    keys.sort();\n    for key in keys {\n        println!(\"{key}: {}\", counts[key]);\n    }\n    println!(\"the appears {} times\", count_of(&counts, \"the\"));\n    println!(\"dog appears {} times\", count_of(&counts, \"dog\"));\n\n    let spaced = split_words(\"  spaced   out \");\n    for word in &spaced {\n        println!(\"[{word}]\");\n    }\n    let empty = split_words(\"\");\n    println!(\"{} words, {} different\", empty.len(), word_counts(&empty).len());\n}",
+    "expectedOutput": "8 words\nand: 2\ncat: 1\nend: 1\nhat: 1\nthe: 3\nthe appears 3 times\ndog appears 0 times\n[spaced]\n[out]\n0 words, 0 different",
+    "solution": "use std::collections::HashMap;\n\nfn split_words(text: &str) -> Vec<String> {\n    let mut words = Vec::new();\n    for word in text.split_whitespace() {\n        words.push(word.to_lowercase());\n    }\n    words\n}\n\nfn word_counts(words: &[String]) -> HashMap<String, u32> {\n    let mut counts = HashMap::new();\n    for word in words {\n        *counts.entry(word.clone()).or_insert(0) += 1;\n    }\n    counts\n}\n\nfn count_of(counts: &HashMap<String, u32>, word: &str) -> u32 {\n    *counts.get(word).unwrap_or(&0)\n}\n\nfn main() {\n    let words = split_words(\"The cat and the hat and THE end\");\n    println!(\"{} words\", words.len());\n\n    let counts = word_counts(&words);\n    let mut keys: Vec<_> = counts.keys().collect();\n    keys.sort();\n    for key in keys {\n        println!(\"{key}: {}\", counts[key]);\n    }\n    println!(\"the appears {} times\", count_of(&counts, \"the\"));\n    println!(\"dog appears {} times\", count_of(&counts, \"dog\"));\n\n    let spaced = split_words(\"  spaced   out \");\n    for word in &spaced {\n        println!(\"[{word}]\");\n    }\n    let empty = split_words(\"\");\n    println!(\"{} words, {} different\", empty.len(), word_counts(&empty).len());\n}",
+    "hints": [
+      "split_words xây một Vec trong một vòng lặp qua split_whitespace(), và to_lowercase() tạo từng String mới. word_counts điền một HashMap bằng entry và or_insert. count_of dùng get, trả về một Option vì từ đó có thể không có.",
+      "Một HashMap sở hữu các khóa của nó, nên hãy đưa cho entry một String: word.clone(). Hãy cộng 1 vào giá trị mà or_insert(0) trả về. Trong count_of, unwrap_or(&0) trả về một tham chiếu, nên hãy đặt một * ở phía trước để lấy con số.",
+      "Trong word_counts, thân vòng lặp là *counts.entry(word.clone()).or_insert(0) += 1; và dòng cuối là counts. Trong count_of, toàn bộ thân hàm là *counts.get(word).unwrap_or(&0)."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Tại sao word_counts đưa word.clone() cho entry?",
+      "options": [
+        "clone cần thiết cho mọi lời gọi HashMap",
+        "Map sở hữu các khóa của nó, nhưng word chỉ là một tham chiếu được mượn",
+        "Các khóa phải là số"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "len() đếm gì đối với một String?",
+      "options": [
+        "Từ",
+        "Ký tự",
+        "Byte"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "counts.get(\"dog\") trả về gì khi \"dog\" không có trong map?",
+      "options": [
+        "None",
+        "0",
+        "Nó gây ra panic"
+      ],
+      "answer": 0
+    }
+  ]
+}

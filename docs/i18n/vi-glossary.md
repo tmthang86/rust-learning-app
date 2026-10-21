@@ -214,7 +214,7 @@ this).
 | XP | XP (kept: short, common in apps; always with a number, "20 XP") |
 | daily goal | mục tiêu hằng ngày; levels Casual / Regular / Serious = Thong thả / Đều đặn / Nghiêm túc |
 | daily reminder | lời nhắc hằng ngày |
-| Checkpoint (end-of-unit challenge) | Checkpoint (kept, with the topic: "Checkpoint: Heo đất"); "Checkpoint của unit" as a spoken label |
+| Checkpoint (end-of-unit challenge) | Checkpoint (kept, with the topic in the title: "Checkpoint: Heo đất"; the spoken label is just "Checkpoint") |
 
 ## Where these choices come from
 

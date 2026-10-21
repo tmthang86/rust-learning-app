@@ -38,7 +38,9 @@ abstract class ReminderScheduler {
   /// False where reminders can't work (the web): the UI hides them.
   bool get supported;
 
-  /// Prepares the plugin and takes the app's language for the channel name.
+  /// Prepares the plugin and takes the app's language. The Android channel
+  /// name and description are written with each schedule (the channel is
+  /// updated, so a language change renames it).
   /// Never asks for permission. Safe to call again.
   Future<void> initialize(AppLocalizations l10n);
 

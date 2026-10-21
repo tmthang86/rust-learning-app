@@ -1,0 +1,69 @@
+{
+  "id": "u8-check",
+  "title": "Checkpoint: Đường ống xử lý số",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Checkpoint này luyện tập cả unit. Bạn sẽ trả về một closure sở hữu một biến và thay đổi nó (các bài Closure, Capture và move), nhận một closure thay đổi một biến (bài Capture và move), viết một iterator của riêng bạn (bài Trait Iterator) rồi dùng adapter và consumer trên nó (các bài Iterator adapter, Tiêu thụ iterator). Bạn không viết main. Nó gọi code của bạn và in ra các kết quả."
+    },
+    {
+      "type": "text",
+      "text": "Code khởi đầu biên dịch được, nhưng ba phần được đánh dấu todo!(), một placeholder gây ra panic với thông báo \"not yet implemented\" khi nó chạy. Trình biên dịch hiển thị cảnh báo về biến không dùng cho đến khi bạn làm xong. Điều đó là bình thường. Quy tắc Collatz hoạt động như sau: từ một số n, số tiếp theo là n / 2 nếu n chẵn, và 3 * n + 1 nếu n lẻ. Dãy kết thúc sau khi nó đạt tới 1, và số 1 được bao gồm. Ví dụ, 6 cho ra 6, 3, 10, 5, 16, 8, 4, 2, 1."
+    },
+    {
+      "type": "note",
+      "text": "make_counter: trước hết hãy tạo một biến cho tổng đang chạy, với let mut total = 0;. Sau đó trả về một closure với move. Bên trong nó, cộng step vào total và trả total về làm biểu thức cuối. Mỗi lần gọi make_counter tạo ra total riêng của nó, nên hai bộ đếm không chia sẻ nó. sum_where: values.iter() đưa ra các &i32, và filter đưa cho closure của bạn một tham chiếu đến phần tử đó, nên closure thấy một &&i32. Hãy viết keep(**n) để gọi keep với một i32 thuần, và kết thúc pipeline bằng .sum().",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Collatz::next: nếu done là true, trả về None ngay lập tức. Nếu không, hãy lưu self.current vào một biến, tính số tiếp theo (và đặt done khi giá trị là 1), rồi trả về Some của giá trị đã lưu. Thứ tự rất quan trọng: bạn phải trả về giá trị đã lưu, không phải giá trị mới.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Các signature cần khớp: make_counter(step: i32) -> impl FnMut() -> i32, sum_where(values: &[i32], mut keep: impl FnMut(i32) -> bool) -> i32, và Iterator::next cho Collatz với type Item = u64. keep là FnMut, nên main có thể truyền một closure đếm số lần nó được gọi. Các trường hợp biên trong main: một slice rỗng, và giá trị bắt đầu là 1.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hoàn thành chương trình. Ba phần được đánh dấu todo!().\n\n(1) fn make_counter(step: i32) -> impl FnMut() -> i32 trả về một closure có tổng đang chạy riêng của nó, bắt đầu từ 0. Mỗi lần gọi closure cộng step vào tổng và trả về tổng mới. Hai bộ đếm tạo bởi hai lần gọi make_counter không chia sẻ tổng.\n\n(2) fn sum_where(values: &[i32], mut keep: impl FnMut(i32) -> bool) -> i32 trả về tổng các giá trị mà keep trả về true. Hãy dùng một iterator pipeline, và gọi keep đúng một lần cho mỗi giá trị. Tổng của không giá trị nào là 0.\n\n(3) Hãy viết fn next(&mut self) -> Option<u64> trong impl Iterator for Collatz. Phần tử đầu tiên là giá trị bắt đầu. Sau mỗi phần tử, phần tử kế tiếp là item / 2 nếu nó chẵn, và item * 3 + 1 nếu nó lẻ. Sau khi phần tử 1 đã được đưa ra, next trả về None. Giá trị bắt đầu luôn từ 1 trở lên.\n\nTrong bài tập này bạn có thể giả định rằng không phép tính nào bị tràn số.\n\nĐừng thay đổi main. Chương trình phải in ra:\n\n3 6 9\n10 12\n32\neven total 10, checked 6\n0\n[6, 3, 10, 5, 16, 8, 4, 2, 1]\n[1]\nlength from 27: 112\npeak from 27: Some(9232)\n[800, 400, 200, 100]",
+    "starter": "fn make_counter(step: i32) -> impl FnMut() -> i32 {\n    // TODO: make a variable for the running total, then return a move closure\n    move || todo!()\n}\n\nfn sum_where(values: &[i32], mut keep: impl FnMut(i32) -> bool) -> i32 {\n    todo!()\n}\n\nstruct Collatz {\n    current: u64,\n    done: bool,\n}\n\nimpl Collatz {\n    fn new(start: u64) -> Collatz {\n        Collatz { current: start, done: false }\n    }\n}\n\nimpl Iterator for Collatz {\n    type Item = u64;\n\n    fn next(&mut self) -> Option<u64> {\n        todo!()\n    }\n}\n\nfn main() {\n    let mut by_three = make_counter(3);\n    let mut by_ten = make_counter(10);\n    let first = by_three();\n    let second = by_three();\n    let third = by_three();\n    println!(\"{first} {second} {third}\");\n    let ten = by_ten();\n    let fourth = by_three();\n    println!(\"{ten} {fourth}\");\n\n    let numbers = [4, 9, -2, 15, 8, 0];\n    let limit = 5;\n    println!(\"{}\", sum_where(&numbers, |n| n > limit));\n\n    let mut checked = 0;\n    let even_total = sum_where(&numbers, |n| {\n        checked += 1;\n        n % 2 == 0\n    });\n    println!(\"even total {even_total}, checked {checked}\");\n    println!(\"{}\", sum_where(&[], |_| true));\n\n    let steps: Vec<u64> = Collatz::new(6).collect();\n    println!(\"{:?}\", steps);\n    println!(\"{:?}\", Collatz::new(1).collect::<Vec<u64>>());\n    println!(\"length from 27: {}\", Collatz::new(27).count());\n    println!(\"peak from 27: {:?}\", Collatz::new(27).max());\n    let scaled: Vec<u64> = Collatz::new(6).skip(5).map(|n| n * 100).collect();\n    println!(\"{:?}\", scaled);\n}",
+    "expectedOutput": "3 6 9\n10 12\n32\neven total 10, checked 6\n0\n[6, 3, 10, 5, 16, 8, 4, 2, 1]\n[1]\nlength from 27: 112\npeak from 27: Some(9232)\n[800, 400, 200, 100]",
+    "solution": "fn make_counter(step: i32) -> impl FnMut() -> i32 {\n    let mut total = 0;\n    move || {\n        total += step;\n        total\n    }\n}\n\nfn sum_where(values: &[i32], mut keep: impl FnMut(i32) -> bool) -> i32 {\n    values.iter().filter(|n| keep(**n)).sum()\n}\n\nstruct Collatz {\n    current: u64,\n    done: bool,\n}\n\nimpl Collatz {\n    fn new(start: u64) -> Collatz {\n        Collatz { current: start, done: false }\n    }\n}\n\nimpl Iterator for Collatz {\n    type Item = u64;\n\n    fn next(&mut self) -> Option<u64> {\n        if self.done {\n            return None;\n        }\n        let value = self.current;\n        if value == 1 {\n            self.done = true;\n        } else if value % 2 == 0 {\n            self.current = value / 2;\n        } else {\n            self.current = value * 3 + 1;\n        }\n        Some(value)\n    }\n}\n\nfn main() {\n    let mut by_three = make_counter(3);\n    let mut by_ten = make_counter(10);\n    let first = by_three();\n    let second = by_three();\n    let third = by_three();\n    println!(\"{first} {second} {third}\");\n    let ten = by_ten();\n    let fourth = by_three();\n    println!(\"{ten} {fourth}\");\n\n    let numbers = [4, 9, -2, 15, 8, 0];\n    let limit = 5;\n    println!(\"{}\", sum_where(&numbers, |n| n > limit));\n\n    let mut checked = 0;\n    let even_total = sum_where(&numbers, |n| {\n        checked += 1;\n        n % 2 == 0\n    });\n    println!(\"even total {even_total}, checked {checked}\");\n    println!(\"{}\", sum_where(&[], |_| true));\n\n    let steps: Vec<u64> = Collatz::new(6).collect();\n    println!(\"{:?}\", steps);\n    println!(\"{:?}\", Collatz::new(1).collect::<Vec<u64>>());\n    println!(\"length from 27: {}\", Collatz::new(27).count());\n    println!(\"peak from 27: {:?}\", Collatz::new(27).max());\n    let scaled: Vec<u64> = Collatz::new(6).skip(5).map(|n| n * 100).collect();\n    println!(\"{:?}\", scaled);\n}",
+    "hints": [
+      "make_counter cần một total sống bên trong closure, nên hãy dùng move. sum_where dùng iter, filter và sum. Collatz::next phải trả về số hiện tại, không phải số kế tiếp, nên hãy lưu nó trước khi bạn thay đổi nó.",
+      "Trong sum_where, filter đưa cho closure của bạn một tham chiếu đến một tham chiếu, nên hãy gọi keep(**n) và kết thúc bằng .sum(). Trong next, hãy viết let value = self.current; trước khi bạn thay đổi self.current, và trả về Some(value).",
+      "Trong next, hãy bắt đầu với if self.done { return None; }. Sau khi bạn lưu value, hãy đặt self.done = true khi value là 1. Nếu không, hãy đặt self.current thành value / 2 nếu chẵn, hoặc value * 3 + 1 nếu lẻ."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Tại sao closure mà make_counter trả về phải được viết với move?",
+      "options": [
+        "move làm cho closure chạy nhanh hơn",
+        "move cho phép closure được gọi nhiều hơn một lần",
+        "Nếu không có move, closure chỉ mượn step và total, vốn đã biến mất khi make_counter trả về"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "let it = Collatz::new(6).map(|n| n * 100); làm gì nếu sau đó nó không bao giờ được dùng?",
+      "options": [
+        "Nó chạy closure cho mọi phần tử ngay lập tức",
+        "Không gì cả: map là lazy, nên không có phần tử nào được tạo ra và closure không bao giờ chạy",
+        "Nó gây ra panic khi chương trình kết thúc"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Tại sao sum_where yêu cầu mut keep: impl FnMut(i32) -> bool thay vì impl Fn?",
+      "options": [
+        "Để bên gọi có thể truyền một closure thay đổi một biến mà nó đã capture, chẳng hạn một bộ đếm",
+        "Vì một closure Fn không thể trả về bool",
+        "Vì các closure FnMut luôn gọi nhanh hơn"
+      ],
+      "answer": 0
+    }
+  ]
+}

@@ -38,6 +38,21 @@ class LocalNotificationsScheduler implements ReminderScheduler {
   @override
   bool get supported => _platformSupported;
 
+  /// The Android details for a notification. The channel name and
+  /// description are shown in the system settings; with `update` the plugin
+  /// renames an existing channel, so they follow a language change (the
+  /// default, `createIfNotExists`, would keep the first language forever).
+  @visibleForTesting
+  static AndroidNotificationDetails androidDetails(AppLocalizations? l10n) =>
+      AndroidNotificationDetails(
+        _channelId,
+        l10n?.reminderChannelName ?? 'Study reminders',
+        channelDescription: l10n?.reminderChannelDescription,
+        importance: Importance.defaultImportance,
+        priority: Priority.defaultPriority,
+        channelAction: AndroidNotificationChannelAction.update,
+      );
+
   @override
   Future<void> initialize(AppLocalizations l10n) async {
     _l10n = l10n;
@@ -104,13 +119,7 @@ class LocalNotificationsScheduler implements ReminderScheduler {
     if (!supported) return;
     await _plugin.cancelAll();
     final details = NotificationDetails(
-      android: AndroidNotificationDetails(
-        _channelId,
-        _l10n?.reminderChannelName ?? 'Study reminders',
-        channelDescription: _l10n?.reminderChannelDescription,
-        importance: Importance.defaultImportance,
-        priority: Priority.defaultPriority,
-      ),
+      android: androidDetails(_l10n),
       iOS: const DarwinNotificationDetails(presentBadge: false),
     );
     for (final r in reminders) {

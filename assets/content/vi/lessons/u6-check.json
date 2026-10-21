@@ -1,0 +1,74 @@
+{
+  "id": "u6-check",
+  "title": "Checkpoint: Bộ kiểm tra đơn hàng",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Checkpoint này luyện tập Unit 6: Result, toán tử ?, kiểu lỗi tùy chỉnh và expect. Một cửa hàng nhận đơn hàng từ 1 đến 10 món. Bạn sẽ kiểm tra văn bản khách hàng đã gõ và báo chính xác điều gì sai với nó."
+    },
+    {
+      "type": "text",
+      "text": "Nó dựa trên các bài học panic!, Result, Toán tử ? và Kiểu lỗi tùy chỉnh. Kiểu enum OrderError và From impl của nó đã được viết sẵn. Kiểu enum đó cũng derive PartialEq, giúp so sánh hai giá trị bằng ==. Bạn viết Display impl và hai hàm."
+    },
+    {
+      "type": "note",
+      "text": "todo!() là một placeholder. Nếu chương trình chạy tới nó, chương trình sẽ dừng với thông báo \"not yet implemented\". Hãy thay mỗi todo!() bằng code của riêng bạn. Cho đến khi bạn làm xong, trình biên dịch có thể cảnh báo rằng một số tên không được dùng. Điều đó là bình thường."
+    },
+    {
+      "type": "note",
+      "text": "Gợi ý cho fmt: hãy dùng match trên self, như trong bài học LoginError, và dùng write! trong mỗi nhánh. BadNumber(e) chứa ParseIntError, và bạn có thể in nó bằng {e}. Các nhánh không có dấu chấm phẩy, vì write! trả về fmt::Result mà phương thức phải trả về."
+    },
+    {
+      "type": "note",
+      "text": "Gợi ý cho parse_quantity: hãy viết let quantity: u32 = text.parse()?;. Nếu parse thất bại, ? trả về lỗi từ hàm của bạn và biến nó thành một OrderError::BadNumber bằng From impl. Sau đó, hãy kiểm tra 0 và kiểm tra lớn hơn MAX_QUANTITY bằng if, và trả về Err(...) trong những trường hợp đó. Kết thúc bằng Ok(quantity)."
+    },
+    {
+      "type": "note",
+      "text": "Gợi ý cho total_price: hãy gọi parse_quantity trên cả hai văn bản và đặt ? sau mỗi lời gọi. Nếu lời gọi đầu thất bại, hàm trả về lỗi đó ngay và không bao giờ xem văn bản thứ hai. Giá là (a + b) * UNIT_PRICE."
+    },
+    {
+      "type": "note",
+      "text": "Hãy nhìn dòng cuối của main. expect trả về con số khi parse_quantity trả về Ok, và dừng chương trình với thông báo của bạn nếu nó trả về Err. Chỉ dùng nó khi bạn chắc chắn giá trị có ở đó."
+    }
+  ],
+  "exercise": {
+    "prompt": "Các hằng số, enum và From impl đã được viết sẵn cho bạn. Hãy thay mỗi todo!() bằng code chạy được. Đừng thay đổi main.\n\nfn fmt in impl fmt::Display for OrderError\nCác thông báo là đúng đoạn văn bản nằm giữa các dấu nháy kép:\nBadNumber(e) hiển thị \"not a number (e)\", trong đó e là ParseIntError, ví dụ \"not a number (invalid digit found in string)\".\nZero hiển thị \"quantity must be at least 1\".\nTooMany(n) hiển thị \"n is more than the limit of 10\", ví dụ \"11 is more than the limit of 10\". Hãy dùng MAX_QUANTITY cho số 10.\n\nfn parse_quantity(text: &str) -> Result<u32, OrderError>\nBiến text thành một u32. Nếu parse thất bại, nó trả về Err(OrderError::BadNumber(..)). Số lượng 0 cho ra Err(OrderError::Zero). Số lượng lớn hơn MAX_QUANTITY cho ra Err(OrderError::TooMany(quantity)). Mọi trường hợp khác cho ra Ok(quantity). Hãy parse văn bản đúng như được cho và không trim nó. Giống như với parse, \"+5\" được tính là 5, và một dấu cách ở bất kỳ đâu trong văn bản cho ra BadNumber.\n\nfn total_price(first: &str, second: &str) -> Result<u32, OrderError>\nKiểm tra cả hai số lượng bằng parse_quantity. Nếu cả hai đều ổn, nó trả về Ok((first + second) * UNIT_PRICE). Nếu một trong hai không ổn, nó trả về lỗi đó. Văn bản đầu tiên được kiểm tra trước.\n\nChương trình phải in ra:\n[3] quantity 3\n[10] quantity 10\n[11] error: 11 is more than the limit of 10\n[0] error: quantity must be at least 1\n[-1] error: not a number (invalid digit found in string)\n[abc] error: not a number (invalid digit found in string)\n[] error: not a number (cannot parse integer from empty string)\n2 and 3: total 20\n9 and 9: total 72\n2 and many: error: not a number (invalid digit found in string)\n0 and 3: error: quantity must be at least 1\nexpect gave 5",
+    "starter": "use std::fmt;\nuse std::num::ParseIntError;\n\nconst MAX_QUANTITY: u32 = 10;\nconst UNIT_PRICE: u32 = 4;\n\n#[derive(Debug, PartialEq)]\nenum OrderError {\n    BadNumber(ParseIntError),\n    Zero,\n    TooMany(u32),\n}\n\n// Already written: this lets ? turn a ParseIntError into an OrderError.\nimpl From<ParseIntError> for OrderError {\n    fn from(e: ParseIntError) -> OrderError {\n        OrderError::BadNumber(e)\n    }\n}\n\nimpl fmt::Display for OrderError {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        todo!()\n    }\n}\n\nfn parse_quantity(text: &str) -> Result<u32, OrderError> {\n    todo!()\n}\n\nfn total_price(first: &str, second: &str) -> Result<u32, OrderError> {\n    todo!()\n}\n\nfn main() {\n    for text in [\"3\", \"10\", \"11\", \"0\", \"-1\", \"abc\", \"\"] {\n        match parse_quantity(text) {\n            Ok(q) => println!(\"[{text}] quantity {q}\"),\n            Err(e) => println!(\"[{text}] error: {e}\"),\n        }\n    }\n\n    for (a, b) in [(\"2\", \"3\"), (\"9\", \"9\"), (\"2\", \"many\"), (\"0\", \"3\")] {\n        match total_price(a, b) {\n            Ok(total) => println!(\"{a} and {b}: total {total}\"),\n            Err(e) => println!(\"{a} and {b}: error: {e}\"),\n        }\n    }\n\n    let five = parse_quantity(\"5\").expect(\"5 is a valid quantity\");\n    println!(\"expect gave {five}\");\n}",
+    "expectedOutput": "[3] quantity 3\n[10] quantity 10\n[11] error: 11 is more than the limit of 10\n[0] error: quantity must be at least 1\n[-1] error: not a number (invalid digit found in string)\n[abc] error: not a number (invalid digit found in string)\n[] error: not a number (cannot parse integer from empty string)\n2 and 3: total 20\n9 and 9: total 72\n2 and many: error: not a number (invalid digit found in string)\n0 and 3: error: quantity must be at least 1\nexpect gave 5",
+    "solution": "use std::fmt;\nuse std::num::ParseIntError;\n\nconst MAX_QUANTITY: u32 = 10;\nconst UNIT_PRICE: u32 = 4;\n\n#[derive(Debug, PartialEq)]\nenum OrderError {\n    BadNumber(ParseIntError),\n    Zero,\n    TooMany(u32),\n}\n\nimpl From<ParseIntError> for OrderError {\n    fn from(e: ParseIntError) -> OrderError {\n        OrderError::BadNumber(e)\n    }\n}\n\nimpl fmt::Display for OrderError {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        match self {\n            OrderError::BadNumber(e) => write!(f, \"not a number ({e})\"),\n            OrderError::Zero => write!(f, \"quantity must be at least 1\"),\n            OrderError::TooMany(n) => write!(f, \"{n} is more than the limit of {MAX_QUANTITY}\"),\n        }\n    }\n}\n\nfn parse_quantity(text: &str) -> Result<u32, OrderError> {\n    let quantity: u32 = text.parse()?;\n    if quantity == 0 {\n        return Err(OrderError::Zero);\n    }\n    if quantity > MAX_QUANTITY {\n        return Err(OrderError::TooMany(quantity));\n    }\n    Ok(quantity)\n}\n\nfn total_price(first: &str, second: &str) -> Result<u32, OrderError> {\n    let a = parse_quantity(first)?;\n    let b = parse_quantity(second)?;\n    Ok((a + b) * UNIT_PRICE)\n}\n\nfn main() {\n    for text in [\"3\", \"10\", \"11\", \"0\", \"-1\", \"abc\", \"\"] {\n        match parse_quantity(text) {\n            Ok(q) => println!(\"[{text}] quantity {q}\"),\n            Err(e) => println!(\"[{text}] error: {e}\"),\n        }\n    }\n\n    for (a, b) in [(\"2\", \"3\"), (\"9\", \"9\"), (\"2\", \"many\"), (\"0\", \"3\")] {\n        match total_price(a, b) {\n            Ok(total) => println!(\"{a} and {b}: total {total}\"),\n            Err(e) => println!(\"{a} and {b}: error: {e}\"),\n        }\n    }\n\n    let five = parse_quantity(\"5\").expect(\"5 is a valid quantity\");\n    println!(\"expect gave {five}\");\n}",
+    "hints": [
+      "fmt là một match trên self với một write! trong mỗi nhánh. parse_quantity kiểm tra con số đã parse bằng if. total_price gọi parse_quantity hai lần. From impl cho phép ? đổi kiểu lỗi.",
+      "Trong parse_quantity, hãy viết let quantity: u32 = text.parse()?; Nếu parse thất bại, ? trả về OrderError::BadNumber. Sau đó dùng if để trả về Err(OrderError::Zero) cho 0, và Err(OrderError::TooMany(quantity)) khi vượt quá MAX_QUANTITY. Kết thúc bằng Ok(quantity).",
+      "Trong fmt, mỗi nhánh là một write! không có dấu chấm phẩy, ví dụ OrderError::BadNumber(e) => write!(f, \"not a number ({e})\"). Các nhánh Zero và TooMany(n) trông giống như vậy. Hãy dùng {MAX_QUANTITY} trong văn bản của TooMany."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "? làm gì khi text.parse() thất bại bên trong parse_quantity?",
+      "options": [
+        "Gây ra panic với một thông báo",
+        "Trả về lỗi từ hàm, sau khi From biến nó thành một OrderError",
+        "Thay lỗi bằng 0"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Trong total_price, điều gì xảy ra nếu văn bản đầu tiên sai còn văn bản thứ hai thì ổn?",
+      "options": [
+        "Lỗi đầu tiên được trả về và văn bản thứ hai không bao giờ được kiểm tra",
+        "Cả hai lỗi được trả về cùng nhau",
+        "Chương trình bị panic"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "expect làm gì khi nó nhận một Err?",
+      "options": [
+        "Biến nó thành None",
+        "Trả về lỗi dưới dạng một String",
+        "Dừng chương trình và hiển thị thông báo của bạn"
+      ],
+      "answer": 2
+    }
+  ]
+}

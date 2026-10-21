@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rust_learn/data/app_state.dart';
 import 'package:rust_learn/data/course_repository.dart';
@@ -14,6 +15,7 @@ import 'package:rust_learn/features/editor/error_explanation_cards.dart';
 import 'package:rust_learn/features/settings/language_picker.dart';
 import 'package:rust_learn/l10n/app_localizations.dart';
 import 'package:rust_learn/main.dart';
+import 'package:rust_learn/reminders/local_notifications_scheduler.dart';
 import 'package:rust_learn/runner/code_runner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -314,6 +316,18 @@ void main() {
         expect(scheduler.scheduled.first.text.body, vi.reminderBody);
         expect(scheduler.l10n!.localeName, 'vi');
         state.dispose();
+      });
+
+      test('rename the Android channel in the new language', () {
+        final vi = lookupAppLocalizations(const Locale('vi'));
+        final en = lookupAppLocalizations(const Locale('en'));
+        for (final l10n in [vi, en]) {
+          final d = LocalNotificationsScheduler.androidDetails(l10n);
+          expect(d.channelName, l10n.reminderChannelName);
+          expect(d.channelDescription, l10n.reminderChannelDescription);
+          // The default (create if missing) would keep the first language.
+          expect(d.channelAction, AndroidNotificationChannelAction.update);
+        }
       });
 
       test('are scheduled again in the new language when it changes', () async {
@@ -705,6 +719,8 @@ void main() {
         'homeSemanticsJoin',
         'xpEarnedWithGoalJoin',
         'goalOption',
+        // A loanword kept as is (see the glossary).
+        'checkpointLabel',
       };
       for (final key in keys(en).difference(same)) {
         expect(vi[key], isNot(en[key]), reason: '$key is not translated');

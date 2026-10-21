@@ -42,7 +42,7 @@
         { "id": "u2-l3", "title": "if là một biểu thức" },
         { "id": "u2-l4", "title": "loop, while và for" },
         { "id": "u2-l5", "title": "Hàm và giá trị trả về" },
-        { "id": "u2-check", "title": "Checkpoint: Máy tính điểm", "checkpoint": true }
+        { "id": "u2-check", "title": "Checkpoint: Bộ tính điểm", "checkpoint": true }
       ]
     },
     {
@@ -72,7 +72,7 @@
         { "id": "u4-l3", "title": "Enum" },
         { "id": "u4-l4", "title": "Option" },
         { "id": "u4-l5", "title": "match và if let" },
-        { "id": "u4-check", "title": "Checkpoint: Bãi đỗ xe nhiều tầng", "checkpoint": true }
+        { "id": "u4-check", "title": "Checkpoint: Bãi đỗ xe", "checkpoint": true }
       ]
     },
     {
@@ -114,7 +114,7 @@
         { "id": "u7-l3", "title": "Trait" },
         { "id": "u7-l4", "title": "Ràng buộc trait (trait bound)" },
         { "id": "u7-l5", "title": "Lifetime" },
-        { "id": "u7-check", "title": "Checkpoint: Kho dữ liệu", "checkpoint": true }
+        { "id": "u7-check", "title": "Checkpoint: Hàng tồn trong kho", "checkpoint": true }
       ]
     },
     {
@@ -185,7 +185,7 @@
         { "id": "u12-l2", "title": "Trò phiêu lưu bằng văn bản" },
         { "id": "u12-l3", "title": "Máy chủ web mini, phần 1" },
         { "id": "u12-l4", "title": "Máy chủ web mini, phần 2" },
-        { "id": "u12-check", "title": "Checkpoint: Người giữ kho", "checkpoint": true }
+        { "id": "u12-check", "title": "Checkpoint: Thủ kho", "checkpoint": true }
       ]
     }
   ]
