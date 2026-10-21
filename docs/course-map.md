@@ -35,7 +35,8 @@ checkpoint challenge.
 
 Lessons live in `assets/content/lessons/<lesson-id>.json`; the unit list lives in
 `assets/content/course.json`. A lesson is a list of sections (`text`, `code`,
-`note`) plus an optional `exercise` (starter code + expected output) and `quiz`.
+`note`) plus an optional `exercise` (prompt, starter, solution, hints and tests)
+and `quiz`.
 Sections can be tagged `"track": "fast"` or `"track": "starter"` so one lesson
 can show extra explanation to beginners and a "coming from X" comparison to
 experienced developers.
@@ -45,6 +46,35 @@ editor and the Playground tab. So when the text talks about what an example
 prints, the example ends with a `// Output:` comment holding that output (most
 Unit 7–12 examples have one), and `tool/check_lessons.py` checks the comment
 against the real output.
+
+### Exercise tests
+
+An exercise is graded by `exercise.tests`, a list of 1 to 50 tests that run in
+order on the runner's `POST /grade` (design: `exercise-tests-design.md`). The
+exercise is solved when every test passes, hidden ones included. Lessons not
+yet migrated keep `expectedOutput`, which the app and the checker read as one
+output test (`tests` and `expectedOutput` are never both present).
+
+| Field | Meaning |
+|---|---|
+| `id` | `^[a-z0-9][a-z0-9-]{0,39}$`, unique in the exercise; never shown |
+| `label` | Prose, at most 80 characters. Required on visible tests (it is translated); optional on hidden ones (a note for reviewers, never shown) |
+| `hidden` | `true` shows the test only as a count. Code tests only. Hidden tests ship in the app bundle: hidden in the UI, not secret |
+| `code` | A **code test**: Rust statements run inside the learner's crate, with `check_eq!(actual, expected);`, `check!(cond);`, `check_near!(a, b, tolerance);` and `output_of(\|\| ...)` for what a function prints. Actual comes first. They can call private items |
+| `panics` | With `code`: passes only if the code panics with a message containing this text (`""` = any panic) |
+| `output` | An **output test**: what `main` must print (compared after trimming trailing whitespace and blank edge lines). One at most, never hidden |
+
+Write tests for what the learner writes: a function, with its signature fixed
+in the starter (stub bodies use `todo!()`), visible tests for the prompt's
+examples and hidden tests for edge cases. Use an output test only where
+printing is the skill (Units 0-2). `python3 tool/check_lessons.py` grades the
+solution (must pass everything) and the starter (must fail something) with the
+runner's own grading crate. Minimums: a print-only exercise needs 1 visible
+output test (Units 0-2 only); a function exercise needs 2 visible and 2 hidden
+code tests; an exercise restructured so a function holds the learner's change
+needs 1 visible and 2 hidden; a checkpoint challenge needs 3 and 3. `--strict`
+(turned on once every lesson is migrated) makes `expectedOutput` and the
+minimums errors.
 
 ## Release scope
 
