@@ -51,6 +51,16 @@ void main() {
     }
   });
 
+  test('every unit ends with exactly one checkpoint, id <unit>-check', () async {
+    final course = await CourseRepository().loadCourse();
+    for (final unit in course.units.where((u) => !u.comingSoon)) {
+      final checkpoints = unit.lessons.where((l) => l.checkpoint).toList();
+      expect(checkpoints, hasLength(1), reason: '${unit.id} checkpoints');
+      expect(unit.lessons.last.checkpoint, isTrue, reason: '${unit.id} last');
+      expect(unit.lessons.last.id, '${unit.id}-check');
+    }
+  });
+
   testWidgets('first launch asks for a birth year and a track, then shows '
       'the course', (tester) async {
     tester.view.physicalSize = const Size(390, 844);

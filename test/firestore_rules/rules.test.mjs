@@ -52,6 +52,8 @@ const cases = [
   ['owner sets track', true, () => setDoc(mine(), { track: 'fast', updatedAt: now }, merge)],
   ['owner adds lessons', true, () =>
     setDoc(mine(), { completedLessons: arrayUnion('u1-l1'), updatedAt: now }, merge)],
+  ['owner adds a checkpoint id', true, () =>
+    setDoc(mine(), { completedLessons: arrayUnion('u3-check'), updatedAt: now }, merge)],
   ['owner reads', true, () => getDoc(mine())],
   ['other user reads', false, () => getDoc(mine(other))],
   ['other user writes', false, () => setDoc(mine(other), { track: 'fast', updatedAt: now }, merge)],

@@ -6,6 +6,7 @@ import '../../data/models.dart';
 import '../../monetization/ad_banner.dart';
 import '../../monetization/ads_service.dart';
 import '../streak/streak_widgets.dart';
+import 'checkpoint_strings.dart';
 
 /// The course map: units for the learner's track, each with its lessons.
 class HomeScreen extends StatelessWidget {
@@ -71,14 +72,24 @@ class _UnitCard extends StatelessWidget {
           for (final lesson in unit.lessons)
             ListTile(
               leading: Icon(
-                state.isCompleted(lesson.id)
-                    ? Icons.check_circle
-                    : Icons.circle_outlined,
+                lesson.checkpoint
+                    ? (state.isCompleted(lesson.id)
+                        ? Icons.emoji_events
+                        : Icons.emoji_events_outlined)
+                    : (state.isCompleted(lesson.id)
+                        ? Icons.check_circle
+                        : Icons.circle_outlined),
                 color: state.isCompleted(lesson.id)
                     ? theme.colorScheme.primary
                     : null,
+                semanticLabel: state.isCompleted(lesson.id)
+                    ? CheckpointStrings.completed
+                    : CheckpointStrings.notStarted,
               ),
               title: Text(lesson.title),
+              subtitle: lesson.checkpoint
+                  ? const Text(CheckpointStrings.label)
+                  : null,
               onTap: () => context.push('/lesson/${lesson.id}'),
             ),
         ],

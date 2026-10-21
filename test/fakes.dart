@@ -443,6 +443,11 @@ CourseRepository fakeCourse({Map<String, String> extraFiles = const {}}) {
               {'id': 'plain', 'title': 'Lesson plain'},
               {'id': 'exercise', 'title': 'Lesson exercise'},
               {'id': 'quiz', 'title': 'Lesson quiz'},
+              {
+                'id': 'u1-check',
+                'title': 'Checkpoint challenge',
+                'checkpoint': true,
+              },
             ],
           },
         ],
@@ -453,6 +458,7 @@ CourseRepository fakeCourse({Map<String, String> extraFiles = const {}}) {
         exercise: true,
       ),
       'assets/content/lessons/quiz.json': lesson('quiz', quiz: true),
+      'assets/content/lessons/u1-check.json': lesson('u1-check', exercise: true),
       ...extraFiles,
     }),
   );
