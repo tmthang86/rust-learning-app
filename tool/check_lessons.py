@@ -47,6 +47,7 @@ TRANSLATABLE_KEYS = {
     "options",
     "hints",
     "explanation",
+    "label",
 }
 
 # A translation folder is named by a plain language code (assets/content/vi).

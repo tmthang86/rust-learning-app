@@ -19,7 +19,11 @@ A translated file is the English file with only the texts changed.
 
 Translatable keys (the only values a translation may change):
 `title`, `summary`, `text`, `prompt`, `question`, `options`, `hints`,
-`explanation`.
+`explanation`, `label`.
+
+`label` is `exercise.tests[].label`, the name of a test case. Translate the label
+of a visible test. A hidden test's label is copied unchanged: the checker allows
+a translatable value to differ or to match the English one.
 
 Everything else must be **byte-identical** to the English file: `id`, `number`,
 `tracks`, `type`, `track`, `code`, `starter`, `solution`, `expectedOutput`,
@@ -139,3 +143,12 @@ language changes, and open lesson and quiz screens reload their lesson.
   repository fallback, the Vietnamese screens, ARB key and placeholder parity).
 - `python3 tool/check_lessons.py` (English compile checks and the translation
   checks) and `python3 tool/test_check_lessons.py`.
+
+## Other files that live nearby
+
+- `lib/l10n` holds the generated `app_localizations*.dart` (gitignored) and
+  hand-written Dart files such as `l10n.dart`. More hand-written files, for
+  example `help_strings.dart`, can sit beside them; only the generated files are
+  ignored.
+- `assets/content/errors/<lang>.json` (compiler-error help text) is a separate
+  feature, not a lesson mirror. The lesson checker does not look at it.

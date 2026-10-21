@@ -51,6 +51,20 @@ class CompareTranslation(unittest.TestCase):
     def test_texts_may_change(self):
         self.assertEqual(self.problems(translated()), [])
 
+    def test_test_labels_are_translatable(self):
+        base = copy.deepcopy(LESSON)
+        base["exercise"]["tests"] = [
+            {"label": "Prints hi", "expectedOutput": "hi"},
+            {"label": "Hidden case", "hidden": True, "expectedOutput": "yo"},
+        ]
+        tr = copy.deepcopy(base)
+        tr["exercise"]["tests"][0]["label"] = "In ra hi"  # visible: translated
+        self.assertEqual(c.compare_translation(base, tr, "t"), [])  # hidden: copied
+        tr["exercise"]["tests"][0]["expectedOutput"] = "xin chao"
+        self.assertTrue(
+            any("tests[0].expectedOutput" in p for p in c.compare_translation(base, tr, "t"))
+        )
+
     def test_identical_copy_is_fine(self):
         self.assertEqual(self.problems(copy.deepcopy(LESSON)), [])
 
