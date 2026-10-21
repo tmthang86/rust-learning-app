@@ -41,7 +41,12 @@
     "prompt": "Push 4 and 5 onto the vector, then print it. It should print: [1, 2, 3, 4, 5]",
     "starter": "fn main() {\n    let mut numbers = vec![1, 2, 3];   // keep mut: you'll push onto it\n    println!(\"{:?}\", numbers);\n}",
     "expectedOutput": "[1, 2, 3, 4, 5]",
-    "solution": "fn main() {\n    let mut numbers = vec![1, 2, 3];\n    numbers.push(4);\n    numbers.push(5);\n    println!(\"{:?}\", numbers);\n}"
+    "solution": "fn main() {\n    let mut numbers = vec![1, 2, 3];\n    numbers.push(4);\n    numbers.push(5);\n    println!(\"{:?}\", numbers);\n}",
+    "hints": [
+      "The vector needs two more items before it is printed. Which method adds one item at the end?",
+      "Use the push method, one call for each value. Do it on a line before the println!.",
+      "Write numbers.push(4); and numbers.push(5); before the println!."
+    ]
   },
   "quiz": [
     {

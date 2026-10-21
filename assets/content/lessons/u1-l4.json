@@ -64,7 +64,11 @@
     "prompt": "This program doesn't compile. Fix it so it prints: score is 15",
     "starter": "fn main() {\n    let score = 10;\n    score = score + 5;\n    println!(\"score is {score}\");\n}",
     "expectedOutput": "score is 15",
-    "solution": "fn main() {\n    let mut score = 10;\n    score = score + 5;\n    println!(\"score is {score}\");\n}"
+    "solution": "fn main() {\n    let mut score = 10;\n    score = score + 5;\n    println!(\"score is {score}\");\n}",
+    "hints": [
+      "Variables can't change unless you say so. Which keyword from this lesson allows a variable to change?",
+      "Add mut after let, so the line reads let mut score. It goes on the line where score is first created."
+    ]
   },
   "quiz": [
     {

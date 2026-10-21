@@ -57,7 +57,12 @@
     "prompt": "Counter should give out the numbers from 1 up to max. Fill in next so that it returns None once current is greater than max. Until then it returns Some of the current value, and moves current up by 1 for the next call. It should print 1, 2, 3 and 4 on four lines. The starter shows warnings that current and max are never read; they go away when you write next. Hint: save self.current in a variable, add 1 to self.current, then return Some(that variable).",
     "starter": "struct Counter {\n    current: u32,\n    max: u32,\n}\n\nimpl Iterator for Counter {\n    type Item = u32;\n\n    fn next(&mut self) -> Option<u32> {\n        // write the logic here; for now it always says \"no more items\"\n        None\n    }\n}\n\nfn main() {\n    let counter = Counter { current: 1, max: 4 };\n    for n in counter {\n        println!(\"{n}\");\n    }\n}",
     "expectedOutput": "1\n2\n3\n4",
-    "solution": "struct Counter {\n    current: u32,\n    max: u32,\n}\n\nimpl Iterator for Counter {\n    type Item = u32;\n\n    fn next(&mut self) -> Option<u32> {\n        if self.current > self.max {\n            None\n        } else {\n            let value = self.current;\n            self.current += 1;\n            Some(value)\n        }\n    }\n}\n\nfn main() {\n    let counter = Counter { current: 1, max: 4 };\n    for n in counter {\n        println!(\"{n}\");\n    }\n}"
+    "solution": "struct Counter {\n    current: u32,\n    max: u32,\n}\n\nimpl Iterator for Counter {\n    type Item = u32;\n\n    fn next(&mut self) -> Option<u32> {\n        if self.current > self.max {\n            None\n        } else {\n            let value = self.current;\n            self.current += 1;\n            Some(value)\n        }\n    }\n}\n\nfn main() {\n    let counter = Counter { current: 1, max: 4 };\n    for n in counter {\n        println!(\"{n}\");\n    }\n}",
+    "hints": [
+      "Each call to next should give out the current number and then move on. When current is past max, there is nothing left to give out.",
+      "Check the end first: if self.current > self.max, return None. Otherwise return Some of a number. next takes &mut self, so it may change self.current.",
+      "In the else part, first save the number: let value = self.current; then do self.current += 1; and finish with Some(value)."
+    ]
   },
   "quiz": [
     {

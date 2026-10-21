@@ -40,7 +40,12 @@
     "prompt": "This program doesn't compile. Fix it so it prints: 212",
     "starter": "fn celsius_to_fahrenheit(c: f64) -> f64 {\n    c * 9.0 / 5.0 + 32.0;\n}\n\nfn main() {\n    println!(\"{}\", celsius_to_fahrenheit(100.0));\n}",
     "expectedOutput": "212",
-    "solution": "fn celsius_to_fahrenheit(c: f64) -> f64 {\n    c * 9.0 / 5.0 + 32.0\n}\n\nfn main() {\n    println!(\"{}\", celsius_to_fahrenheit(100.0));\n}"
+    "solution": "fn celsius_to_fahrenheit(c: f64) -> f64 {\n    c * 9.0 / 5.0 + 32.0\n}\n\nfn main() {\n    println!(\"{}\", celsius_to_fahrenheit(100.0));\n}",
+    "hints": [
+      "The function should give back a number, but one tiny character at the end of its last line stops that.",
+      "The last line of a function is its result only when it has no semicolon. Look at the line with c * 9.0 / 5.0 + 32.0.",
+      "Delete the semicolon at the end of the line c * 9.0 / 5.0 + 32.0 inside the function."
+    ]
   },
   "quiz": [
     {

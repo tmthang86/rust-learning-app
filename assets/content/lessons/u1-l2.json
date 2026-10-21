@@ -41,7 +41,11 @@
     "prompt": "The program Cargo generates prints \"Hello, world!\". Make it print: Built with Cargo",
     "starter": "fn main() {\n    println!(\"Hello, world!\");\n}",
     "expectedOutput": "Built with Cargo",
-    "solution": "fn main() {\n    println!(\"Built with Cargo\");\n}"
+    "solution": "fn main() {\n    println!(\"Built with Cargo\");\n}",
+    "hints": [
+      "Look at the text inside the quotes of println!. You only need to change what it says.",
+      "Replace Hello, world! with Built with Cargo, and keep the quote marks around it."
+    ]
   },
   "quiz": [
     {

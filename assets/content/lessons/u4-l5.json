@@ -53,7 +53,12 @@
     "prompt": "Replace the _ arm with one arm for Weather::Rain that gives \"Take an umbrella\" and one for Weather::Snow that gives \"Wear a warm coat\". It should print: Wear sunscreen\nTake an umbrella\nWear a warm coat",
     "starter": "enum Weather {\n    Sun,\n    Rain,\n    Snow,\n}\n\nfn advice(w: Weather) -> &'static str {\n    match w {\n        Weather::Sun => \"Wear sunscreen\",\n        _ => \"Stay inside\",\n    }\n}\n\nfn main() {\n    for w in [Weather::Sun, Weather::Rain, Weather::Snow] {\n        println!(\"{}\", advice(w));\n    }\n}",
     "expectedOutput": "Wear sunscreen\nTake an umbrella\nWear a warm coat",
-    "solution": "enum Weather {\n    Sun,\n    Rain,\n    Snow,\n}\n\nfn advice(w: Weather) -> &'static str {\n    match w {\n        Weather::Sun => \"Wear sunscreen\",\n        Weather::Rain => \"Take an umbrella\",\n        Weather::Snow => \"Wear a warm coat\",\n    }\n}\n\nfn main() {\n    for w in [Weather::Sun, Weather::Rain, Weather::Snow] {\n        println!(\"{}\", advice(w));\n    }\n}"
+    "solution": "enum Weather {\n    Sun,\n    Rain,\n    Snow,\n}\n\nfn advice(w: Weather) -> &'static str {\n    match w {\n        Weather::Sun => \"Wear sunscreen\",\n        Weather::Rain => \"Take an umbrella\",\n        Weather::Snow => \"Wear a warm coat\",\n    }\n}\n\nfn main() {\n    for w in [Weather::Sun, Weather::Rain, Weather::Snow] {\n        println!(\"{}\", advice(w));\n    }\n}",
+    "hints": [
+      "The _ arm catches every other case. Replace it with one arm for each case you want to handle.",
+      "Each arm is written Weather::Name => value, followed by a comma. Write one for Rain and one for Snow.",
+      "Delete the _ line. In its place write two arms: Weather::Rain => \"Take an umbrella\", and on the next line Weather::Snow => \"Wear a warm coat\","
+    ]
   },
   "quiz": [
     {

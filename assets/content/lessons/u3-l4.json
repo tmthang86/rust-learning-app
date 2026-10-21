@@ -37,7 +37,12 @@
     "prompt": "Finish double so it doubles the number through the mutable reference (use *n). It should print: 42",
     "starter": "fn double(n: &mut i32) {\n    // change n here\n}\n\nfn main() {\n    let mut value = 21;\n    double(&mut value);\n    println!(\"{value}\");\n}",
     "expectedOutput": "42",
-    "solution": "fn double(n: &mut i32) {\n    *n *= 2;\n}\n\nfn main() {\n    let mut value = 21;\n    double(&mut value);\n    println!(\"{value}\");\n}"
+    "solution": "fn double(n: &mut i32) {\n    *n *= 2;\n}\n\nfn main() {\n    let mut value = 21;\n    double(&mut value);\n    println!(\"{value}\");\n}",
+    "hints": [
+      "The parameter n is a reference, not a number. To change the value it points to, follow the reference first.",
+      "Use * to follow a reference, as in the lesson's *r += 5. Then do the doubling on the value behind it.",
+      "Inside double write *n = *n * 2; (or the shorter *n *= 2;, which works like +=)."
+    ]
   },
   "quiz": [
     {

@@ -45,7 +45,12 @@
     "prompt": "Change total_length to borrow both Strings instead of taking ownership, so main can still print a. It should print: 9\ngood",
     "starter": "fn total_length(x: String, y: String) -> usize {\n    x.len() + y.len()\n}\n\nfn main() {\n    let a = String::from(\"good\");\n    let b = String::from(\"night\");\n    println!(\"{}\", total_length(a, b));\n    println!(\"{a}\");\n}",
     "expectedOutput": "9\ngood",
-    "solution": "fn total_length(x: &String, y: &String) -> usize {\n    x.len() + y.len()\n}\n\nfn main() {\n    let a = String::from(\"good\");\n    let b = String::from(\"night\");\n    println!(\"{}\", total_length(&a, &b));\n    println!(\"{a}\");\n}"
+    "solution": "fn total_length(x: &String, y: &String) -> usize {\n    x.len() + y.len()\n}\n\nfn main() {\n    let a = String::from(\"good\");\n    let b = String::from(\"night\");\n    println!(\"{}\", total_length(&a, &b));\n    println!(\"{a}\");\n}",
+    "hints": [
+      "Passing a String to a function moves it. Change the function so it only borrows both of them.",
+      "Use & in two places: before String in each parameter type, and before each variable in the call.",
+      "Write x: &String and y: &String in the function. In main call total_length(&a, &b)."
+    ]
   },
   "quiz": [
     {

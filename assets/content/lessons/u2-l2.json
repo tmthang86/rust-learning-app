@@ -41,7 +41,11 @@
     "prompt": "Print the third score in the array using an index. It should print: 88",
     "starter": "fn main() {\n    let scores = [72, 95, 88, 61];\n    println!(\"{}\", scores[0]);\n}",
     "expectedOutput": "88",
-    "solution": "fn main() {\n    let scores = [72, 95, 88, 61];\n    println!(\"{}\", scores[2]);\n}"
+    "solution": "fn main() {\n    let scores = [72, 95, 88, 61];\n    println!(\"{}\", scores[2]);\n}",
+    "hints": [
+      "Look at which index the println! uses. Remember that counting starts at 0, not 1.",
+      "The third item is at index 2. Change the number inside the square brackets after scores."
+    ]
   },
   "quiz": [
     {

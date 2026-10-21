@@ -29,7 +29,11 @@
     "prompt": "Change the program so it prints: Hello, Rust!",
     "starter": "fn main() {\n    println!(\"Hello, world!\");\n}",
     "expectedOutput": "Hello, Rust!",
-    "solution": "fn main() {\n    println!(\"Hello, Rust!\");\n}"
+    "solution": "fn main() {\n    println!(\"Hello, Rust!\");\n}",
+    "hints": [
+      "Look at the text inside the quotes of println!. That text is what gets printed.",
+      "Change the word world to Rust. Keep the comma and the exclamation mark."
+    ]
   },
   "quiz": [
     {

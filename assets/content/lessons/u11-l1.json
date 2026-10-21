@@ -61,7 +61,11 @@
     "prompt": "Each thread currently returns n. Change the closure so it returns n * n. The program should print: [1, 4, 9]",
     "starter": "use std::thread;\n\nfn main() {\n    let mut handles = Vec::new();\n    for n in 1..=3 {\n        handles.push(thread::spawn(move || n));\n    }\n    let mut results = Vec::new();\n    for handle in handles {\n        results.push(handle.join().unwrap());\n    }\n    println!(\"{:?}\", results);\n}",
     "expectedOutput": "[1, 4, 9]",
-    "solution": "use std::thread;\n\nfn main() {\n    let mut handles = Vec::new();\n    for n in 1..=3 {\n        handles.push(thread::spawn(move || n * n));\n    }\n    let mut results = Vec::new();\n    for handle in handles {\n        results.push(handle.join().unwrap());\n    }\n    println!(\"{:?}\", results);\n}"
+    "solution": "use std::thread;\n\nfn main() {\n    let mut handles = Vec::new();\n    for n in 1..=3 {\n        handles.push(thread::spawn(move || n * n));\n    }\n    let mut results = Vec::new();\n    for handle in handles {\n        results.push(handle.join().unwrap());\n    }\n    println!(\"{:?}\", results);\n}",
+    "hints": [
+      "The closure returns its last expression, and join() hands that value back. Right now the closure returns just n.",
+      "The closure is the part after move ||. Its body is just n, so write n * n there. Keep move: each thread needs its own copy of n."
+    ]
   },
   "quiz": [
     {

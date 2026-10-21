@@ -69,7 +69,12 @@
     "prompt": "longest is already written. Add a function shorter that returns the shorter of two &str values (the first one if they are the same length). Then, at the end of main, print what shorter gives for tree and forest. It should print two lines: forest and tree. Hint: shorter needs the same lifetime annotations as longest.",
     "starter": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\n// add shorter here\n\nfn main() {\n    println!(\"{}\", longest(\"tree\", \"forest\"));\n}",
     "expectedOutput": "forest\ntree",
-    "solution": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\nfn shorter<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() <= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\nfn main() {\n    println!(\"{}\", longest(\"tree\", \"forest\"));\n    println!(\"{}\", shorter(\"tree\", \"forest\"));\n}"
+    "solution": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\nfn shorter<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() <= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\nfn main() {\n    println!(\"{}\", longest(\"tree\", \"forest\"));\n    println!(\"{}\", shorter(\"tree\", \"forest\"));\n}",
+    "hints": [
+      "shorter has the same problem as longest: the result borrows from x or y, and Rust needs to be told how long it stays valid. Copy the shape of longest.",
+      "Give shorter the same lifetime annotations as longest: fn shorter<'a>(x: &'a str, y: &'a str) -> &'a str. In the body, change >= to <=, so a tie still gives x.",
+      "Return x when x.len() <= y.len(), otherwise y. The <= makes a tie give the first one. Then print shorter(\"tree\", \"forest\") at the end of main."
+    ]
   },
   "quiz": [
     {

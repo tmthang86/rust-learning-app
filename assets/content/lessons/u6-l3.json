@@ -45,7 +45,12 @@
     "prompt": "Set x and y with a.parse()? and b.parse()? instead of 0, so the function adds the numbers. It should print: Ok(30)",
     "starter": "use std::num::ParseIntError;\n\nfn total(a: &str, b: &str) -> Result<i32, ParseIntError> {\n    let x: i32 = 0;\n    let y: i32 = 0;\n    Ok(x + y)\n}\n\nfn main() {\n    println!(\"{:?}\", total(\"10\", \"20\"));\n}",
     "expectedOutput": "Ok(30)",
-    "solution": "use std::num::ParseIntError;\n\nfn total(a: &str, b: &str) -> Result<i32, ParseIntError> {\n    let x: i32 = a.parse()?;\n    let y: i32 = b.parse()?;\n    Ok(x + y)\n}\n\nfn main() {\n    println!(\"{:?}\", total(\"10\", \"20\"));\n}"
+    "solution": "use std::num::ParseIntError;\n\nfn total(a: &str, b: &str) -> Result<i32, ParseIntError> {\n    let x: i32 = a.parse()?;\n    let y: i32 = b.parse()?;\n    Ok(x + y)\n}\n\nfn main() {\n    println!(\"{:?}\", total(\"10\", \"20\"));\n}",
+    "hints": [
+      "Right now x and y are always 0, so it prints Ok(0). They should come from the text in a and b.",
+      "Call a.parse() to turn the text into a number. Write ? right after it. If parsing fails, the function returns the error early.",
+      "Change the two lines to let x: i32 = a.parse()?; and let y: i32 = b.parse()?;"
+    ]
   },
   "quiz": [
     {
