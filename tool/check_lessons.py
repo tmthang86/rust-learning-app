@@ -8,6 +8,7 @@ For every lesson in assets/content/lessons/:
   in the app, so this comment is how learners see the output),
 - each exercise's solution must print the expected output, without warnings,
 - each exercise's starter code must NOT already print it,
+- each exercise needs 1 to 3 non-empty hints (strings),
 - each quiz answer index must point at a real option.
 
 Usage: python3 tool/check_lessons.py   (needs rustc on PATH)
@@ -95,6 +96,13 @@ def check(path):
                 problems.append(f"{lid}: solution printed {out!r}, expected {expected!r}\n{err[:500]}")
             elif warnings:
                 problems.append(f"{lid}: solution has compiler warnings\n{warnings[:500]}")
+        hints = exercise.get("hints")
+        if (
+            not isinstance(hints, list)
+            or not 1 <= len(hints) <= 3
+            or not all(isinstance(h, str) and h.strip() for h in hints)
+        ):
+            problems.append(f"{lid}: exercise needs 1 to 3 non-empty hints (strings)")
         out, _, _ = run(exercise["starter"])
         if out is not None and out.strip() == expected:
             problems.append(f"{lid}: starter code already solves the exercise")

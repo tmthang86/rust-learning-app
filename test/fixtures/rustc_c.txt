@@ -1,0 +1,32 @@
+error[E0425]: cannot find value `undefined_name` in this scope
+ --> c.rs:3:13
+  |
+3 |     let b = undefined_name;
+  |             ^^^^^^^^^^^^^^ not found in this scope
+
+error[E0308]: mismatched types
+ --> c.rs:2:18
+  |
+2 |     let a: i32 = "x";
+  |            ---   ^^^ expected `i32`, found `&str`
+  |            |
+  |            expected due to this
+
+error[E0425]: cannot find function `missing_fn` in this scope
+ --> c.rs:4:13
+  |
+4 |     let c = missing_fn();
+  |             ^^^^^^^^^^ not found in this scope
+
+error[E0308]: mismatched types
+ --> c.rs:5:17
+  |
+5 |     let d: u8 = 1.5;
+  |            --   ^^^ expected `u8`, found floating-point number
+  |            |
+  |            expected due to this
+
+error: aborting due to 4 previous errors
+
+Some errors have detailed explanations: E0308, E0425.
+For more information about an error, try `rustc --explain E0308`.
