@@ -28,6 +28,7 @@ import re
 import subprocess
 import sys
 import tempfile
+from collections import Counter
 
 # Same flags the code runner uses (runner/src/sandbox.rs).
 RUSTC_FLAGS = ["--edition", "2024", "-C", "opt-level=1", "-C", "overflow-checks=on"]
@@ -53,7 +54,10 @@ TRANSLATABLE_KEYS = {
 
 # Keys whose English text may mention code ("Read let x = 5; as ..."). The
 # code in them has to stay as written in the translation (see code_tokens).
-PROSE_KEYS = {"text", "prompt", "question", "options", "hints", "label", "explanation"}
+PROSE_KEYS = {
+    "title", "summary", "text", "prompt", "question", "options", "hints", "label",
+    "explanation",
+}
 
 # A translation folder is named by a language code (assets/content/vi) or a
 # language with a region (assets/content/pt-BR, pt_BR). Other folders in
@@ -184,7 +188,7 @@ _CODE_WORD = re.compile(
     re.VERBOSE,
 )
 # Rust keywords that are never ordinary English words.
-_CODE_KEYWORDS = {"let", "mut", "fn", "const", "struct", "enum", "impl", "mod", "pub", "dyn", "unsafe"}
+_CODE_KEYWORDS = {"let", "mut", "fn", "const", "struct", "enum", "impl", "mod", "pub", "dyn"}
 # Words that make an option code ("for x in &v") when nothing else is prose.
 _RUST_KEYWORDS = _CODE_KEYWORDS | {
     "for", "in", "if", "else", "new", "break", "return", "loop", "while",
@@ -258,19 +262,17 @@ def _clean_token(word):
     return word
 
 
-def code_tokens(text, vocab):
-    """The pieces of `text` that are code and must survive translation, as a
-    set. Quoted text counts only when the lesson's code or output has it."""
-    tokens = set()
-    for m in _QUOTED.finditer(text):
-        inside = m.group(1)
-        if inside in vocab["literals"] or not inside.strip() or inside in ("...", "{}"):
-            tokens.add(m.group(0))
-    unquoted = _QUOTED.sub(" ", text)
-    for out in vocab["printed"]:
-        if re.search(r"(?<![\w])" + re.escape(out) + r"(?![\w])", unquoted):
-            tokens.add(out)
-    for word in unquoted.split():
+# Where program output counts as code in prose: after "prints"/"output"/a
+# colon ("it should print: Even"), not wherever the same words happen to occur
+# ("the end of main" is not the output "end of main").
+_AFTER_PRINT = r"(?i:\bprint(?:s|ed|ing)?\s+(?:the\s+(?:text|word|line|message)\s+)?|\boutput\s+|:\s*)"
+
+
+def word_tokens(text, vocab):
+    """Code pieces found by their shape, as a Counter (each occurrence counts:
+    `==` twice in the English text must be twice in the translation)."""
+    tokens = Counter()
+    for word in _QUOTED.sub(" ", text).split():
         word = _clean_token(word)
         if not word:
             continue
@@ -282,8 +284,47 @@ def code_tokens(text, vocab):
             or (macro and macro.group(1) in vocab["macros"])
             or _NUMBER.match(word)
         ):
-            tokens.add(word)
+            tokens[word] += 1
     return tokens
+
+
+def text_tokens(text, vocab):
+    """Code pieces that are text, found by what the lesson's code prints:
+    quoted strings the code has, and output right after "prints"/a colon.
+    Looked for as is in the translation, since its own words around them
+    change."""
+    tokens = Counter()
+    for m in _QUOTED.finditer(text):
+        inside = m.group(1)
+        if inside in vocab["literals"] or not inside.strip() or inside in ("...", "{}"):
+            tokens[m.group(0)] += 1
+    unquoted = _QUOTED.sub(" ", text)
+    for out in vocab["printed"]:
+        found = re.findall(
+            _AFTER_PRINT + re.escape(out) + r"(?![\w])", unquoted
+        )
+        if found:
+            tokens[out] += len(found)
+    return tokens
+
+
+def code_tokens(text, vocab):
+    """All code tokens of `text` (a Counter)."""
+    return word_tokens(text, vocab) + text_tokens(text, vocab)
+
+
+def missing_code(en, tr, vocab):
+    """Code tokens of the English `en` that the translation `tr` lacks or has
+    fewer times, as sorted names."""
+    missing = []
+    have = word_tokens(tr, vocab)
+    for token, n in word_tokens(en, vocab).items():
+        if have[token] < n:
+            missing.append(token)
+    for token, n in text_tokens(en, vocab).items():
+        if tr.count(token) < n:
+            missing.append(token)
+    return sorted(set(missing))
 
 
 def is_code_option(option, vocab):
@@ -352,7 +393,7 @@ def compare_code_text(en, tr, where, vocab, path, option=False):
                 f"{en!r}, got {tr!r}"
             ]
         return []
-    missing = sorted(t for t in code_tokens(en, vocab) if t not in tr)
+    missing = missing_code(en, tr, vocab)
     if missing:
         return [
             f"{where}: {path} changes code from the English text: "
@@ -478,6 +519,10 @@ def check_translations(content=CONTENT):
             tr = load_json(course_path, lang, problems)
             if en is not None and tr is not None:
                 found = compare_translation(en, tr, f"{lang}/course.json")
+                if not found:
+                    found = compare_code(
+                        en, tr, f"{lang}/course.json", lesson_vocabulary({})
+                    )
                 problems += found
                 if not found:
                     course_titles = lesson_titles(tr)

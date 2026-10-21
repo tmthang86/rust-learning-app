@@ -188,6 +188,20 @@ class CheckTranslations(unittest.TestCase):
             problems, _ = c.check_translations(d)
             self.assertTrue(any("course.json" in p and "title" in p for p in problems))
 
+    def test_course_titles_are_scanned_for_code(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.tree(d)
+            with open(os.path.join(d, "course.json"), encoding="utf-8") as f:
+                en = json.load(f)
+            en["units"][0]["title"] = "Box<T> and println!"
+            self.write(d, "course.json", en)
+            with open(os.path.join(d, "vi/course.json"), encoding="utf-8") as f:
+                vi = json.load(f)
+            vi["units"][0]["title"] = "Box và println"
+            self.write(d, "vi/course.json", vi)
+            problems, _ = c.check_translations(d)
+            self.assertTrue(any("vi/course.json" in p and "Box<T>" in p for p in problems))
+
     def test_region_folders_are_checked(self):
         with tempfile.TemporaryDirectory() as d:
             self.tree(d)
@@ -326,6 +340,44 @@ class CodeInProse(unittest.TestCase):
         section["text"] = section["text"].replace("==", "=")  # if age = 18
         self.assertTrue(c.compare_code(en, t, "t", vocab))
 
+    def test_ordinary_prose_is_not_flagged(self):
+        # From the real lessons: output-like words and "unsafe" as plain English.
+        def real(lid):
+            with open(os.path.join(c.CONTENT, "lessons", lid + ".json"), encoding="utf-8") as f:
+                en = json.load(f)
+            return en, c.lesson_vocabulary(en)
+
+        en, v = real("u11-l3")
+        text = "Rc's counter is unsafe across threads, so the compiler rejects Rc there"
+        self.assertEqual(c.missing_code(text, "Bộ đếm của Rc không an toàn giữa các thread, nên compiler từ chối Rc ở đó", v), [])
+        en, v = real("u6-l1")
+        self.assertEqual(c.missing_code("It gives back a Result, not a number.", "Nó trả về một Result, không phải một con số.", v), [])
+        en, v = real("u10-l2")
+        self.assertEqual(c.missing_code("At the end of main the values drop.", "Ở cuối main, các giá trị bị drop.", v), [])
+        # ...but output after "prints" or a colon is still output.
+        en, v = real("u0-l3")
+        self.assertEqual(c.missing_code("it prints Even when ok", "nó in ra Chẵn khi đúng", v), ["Even"])
+        self.assertEqual(c.missing_code("It should print: Even", "Nó nên in: Even", v), [])
+
+    def test_token_counts_matter(self):
+        vocab = c.lesson_vocabulary(CODE_LESSON)
+        en = "Use if age == 18 { ... } else if age == 19 { ... } to decide."
+        ok = "Dùng if age == 18 { ... } else if age == 19 { ... } để quyết định."
+        bad = "Dùng if age == 18 { ... } else if age = 19 { ... } để quyết định."
+        self.assertEqual(c.missing_code(en, ok, vocab), [])
+        self.assertEqual(c.missing_code(en, bad, vocab), ["=="])
+        self.assertEqual(c.missing_code("Use = and ==", "Dùng == và ==", vocab), ["="])
+
+    def test_titles_are_scanned(self):
+        en = copy.deepcopy(CODE_LESSON)
+        en["title"] = "Using Box<T> and println!"
+        vocab = c.lesson_vocabulary(en)
+        ok = dict(copy.deepcopy(en), title="Dùng Box<T> và println!")
+        bad = dict(copy.deepcopy(en), title="Dùng Box và println")
+        self.assertEqual(c.compare_code(en, ok, "t", vocab), [])
+        found = c.compare_code(en, bad, "t", vocab)
+        self.assertTrue(found and "Box<T>" in found[0])
+
     def test_ordinary_words_are_not_code(self):
         vocab = c.lesson_vocabulary(CODE_LESSON)
         for text in (
@@ -333,7 +385,7 @@ class CodeInProse(unittest.TestCase):
             "Think of it as a box (called a variable) that holds one value.",
             "Use a loop when you repeat something - again and again.",
         ):
-            self.assertEqual(c.code_tokens(text, vocab), set(), text)
+            self.assertFalse(c.code_tokens(text, vocab), text)
 
     def test_real_code_is_found(self):
         vocab = c.lesson_vocabulary(CODE_LESSON)

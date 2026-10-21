@@ -14,7 +14,7 @@
     "starter": "fn main() {\n    let number = 8;\n    // print Even or Odd here\n}",
     "expectedOutput": "Even",
     "solution": "fn main() {\n    let number = 8;\n    if number % 2 == 0 {\n        println!(\"Even\");\n    } else {\n        println!(\"Odd\");\n    }\n}",
-    "hints": ["Bạn cần đưa ra một lựa chọn, và bài học này có công cụ cho việc đó. Câu hỏi cần đặt ra là phần dư có bằng 0 hay không.", "Hãy dùng if với điều kiện so sánh number % 2 bằng ==. Thêm else phía sau cho trường hợp còn lại.", "Hãy viết if number % 2 == 0 { ... } else { ... }. Đặt một println! trong mỗi khối: Even ở khối đầu, Odd ở khối else."]
+    "hints": ["Bạn cần đưa ra một lựa chọn, và bài học này có công cụ cho việc đó. Câu hỏi cần đặt ra là phần dư có bằng 0 hay không.", "Hãy dùng if với điều kiện so sánh number % 2 dùng ==. Thêm else phía sau cho trường hợp còn lại.", "Hãy viết if number % 2 == 0 { ... } else { ... }. Đặt một println! trong mỗi khối: Even ở khối đầu, Odd ở khối else."]
   },
   "quiz": [
     {

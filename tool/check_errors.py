@@ -33,7 +33,7 @@ import subprocess
 import sys
 import tempfile
 
-from check_lessons import code_tokens, lesson_vocabulary
+from check_lessons import lesson_vocabulary, missing_code
 
 # Same flags the code runner uses (runner/src/sandbox.rs).
 RUSTC_FLAGS = ["--edition", "2024", "-C", "opt-level=1", "-C", "overflow-checks=on"]
@@ -114,7 +114,7 @@ def check_translation(key, english, tr, name, problems):
     for field, en_text, tr_text in pairs:
         if not (isinstance(en_text, str) and isinstance(tr_text, str)):
             continue
-        missing = sorted(t for t in code_tokens(en_text, vocab) if t not in tr_text)
+        missing = missing_code(en_text, tr_text, vocab)
         if missing:
             problems.append(
                 f"{key}: {name} {field} changes code from the English text: "

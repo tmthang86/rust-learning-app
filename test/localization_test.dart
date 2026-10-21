@@ -595,6 +595,20 @@ void main() {
       }
     });
 
+    test('the English template has no Vietnamese letters', () {
+      final en = arb('en');
+      // Letters used only in Vietnamese (Latin Extended Additional, plus
+      // the letters with a horn or a bar).
+      final vietnamese = RegExp(r'[\u1EA0-\u1EF9ăâêôơưđĂÂÊÔƠƯĐ]');
+      for (final key in keys(en).difference({'languageVietnamese'})) {
+        expect(
+          vietnamese.hasMatch(en[key] as String),
+          isFalse,
+          reason: '$key in app_en.arb has Vietnamese text: ${en[key]}',
+        );
+      }
+    });
+
     test('no Vietnamese message is just a copy of the English one', () {
       final en = arb('en'), vi = arb('vi');
       // Brand names and language names are the same in both languages.

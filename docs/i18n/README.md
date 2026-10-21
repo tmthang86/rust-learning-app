@@ -50,8 +50,9 @@ Everything else must be **byte-identical** to the English file: `id`, `number`,
 English prose and quiz options mention code without marking it ("Read
 `let apples = 5;` as ...", the option `==`, the option `Grade A`). A translation
 may reword the sentence, but the checker requires every *code token* of the
-English text (in `text`, `prompt`, `question`, `options`, `hints`, `label` and
-`explanation`) to be in the translated text, character for character. A code
+English text (in `title`, `summary`, `text`, `prompt`, `question`, `options`, `hints`,
+`label` and `explanation`, in lessons and in `course.json`) to be in the
+translated text, character for character, as many times as in English. A code
 token is one of:
 
 - an operator or punctuation of code: `=`, `==`, `!=`, `<=`, `+=`, `->`, `=>`,
@@ -61,17 +62,28 @@ token is one of:
 - a macro known from the lesson's code (`println!`, `vec!`), a `snake_case`
   name, a number type (`i32`, `u8`, `f64`), an error code (`E0308`), a file name
   (`Cargo.toml`, `src/main.rs`), a flag (`--words`), a Rust-only keyword (`let`,
-  `mut`, `fn`, `const`, `struct`, `enum`, `impl`, `mod`, `pub`), a bare number;
-- a quoted string, or a line of output, that the lesson's own code or expected
-  output prints (`"Grade A"`, `Even`). Quoted words that are not in the lesson's
-  code (`"store this value"`) are ordinary words and may be translated.
+  `mut`, `fn`, `const`, `struct`, `enum`, `impl`, `mod`, `pub`, `dyn`), a bare
+  number;
+- a quoted string that the lesson's own code or expected output has
+  (`"Grade A"`), and a line of that output written right after "prints",
+  "print:" or a colon (`it should print: Even`). Quoted words that are not in
+  the lesson's code (`"store this value"`), and the same words elsewhere in a
+  sentence ("the end of main"), are ordinary words and may be translated.
 
 A quiz option that is *only* code or program output (`==`, `greet();`, `"7"`,
 `Grade A`, `let mut x = 1;`, `for x in &v`) must be byte-identical to English.
-Ordinary English words are never code tokens, so a sentence can be translated
-freely around them. The scan is a heuristic: when it flags something that is
-not code, rewrite the English or the translation so the token appears as is
-(a translator can always keep the English token in the sentence).
+Words around code tokens can be translated freely. The scan is a heuristic:
+when it flags something that is not code, rewrite the English or the
+translation so the token appears as is (a translator can always keep the
+English token in the sentence).
+
+**The checker is a safety net, not a proof.** It cannot see that an
+identifier was renamed (`let apples = 5;` -> `let táo = 5;`, "a function called
+`add`" -> another name), that output was reordered ("First, then Second" ->
+"Second, then First"), that lowercase one-word output was translated, or that a
+sentence now says something false around intact code. Every translation batch
+therefore also gets an independent reviewer who checks the code in the prose
+by hand, line by line, against the English.
 
 `python3 tool/check_lessons.py` enforces this for every `assets/content/<code>/`
 folder (a folder named by a 2-3 letter language code, with an optional region

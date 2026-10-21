@@ -337,7 +337,7 @@
   },
   "showSolution": "Show solution",
   "solutionHeading": "Solution",
-  "solutionNote": "Show solution không có nghĩa là bạn đã hoàn thành bài học. Hãy chạy code của bạn để hoàn thành.",
+  "solutionNote": "Seeing the solution does not finish the lesson. Run your code to complete it.",
   "copyToEditor": "Copy to editor",
   "copiedToEditor": "Solution copied to the editor",
   "putMyCodeBack": "Put my code back",
