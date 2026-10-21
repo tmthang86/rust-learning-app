@@ -9,7 +9,7 @@
     {
       "type": "text",
       "track": "starter",
-      "text": "Build nghĩa là biến code của bạn thành một chương trình mà máy tính có thể chạy. Rust là một ngôn ngữ được biên dịch (compiled language): trình biên dịch (compiler) thực hiện việc chuyển đổi đó và kiểm tra toàn bộ chương trình của bạn xem có lỗi không trước khi nó chạy."
+      "text": "Build nghĩa là biến code của bạn thành một chương trình mà máy tính có thể chạy. Rust là một ngôn ngữ được biên dịch (compiled language): trình biên dịch (compiler) thực hiện việc chuyển đổi đó và kiểm tra toàn bộ chương trình của bạn xem có lỗi không trước khi nó kịp chạy."
     },
     {
       "type": "note",

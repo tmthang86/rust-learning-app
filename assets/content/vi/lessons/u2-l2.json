@@ -8,7 +8,7 @@
     },
     {
       "type": "text",
-      "text": "Một tuple gom một số lượng giá trị cố định, các giá trị đó có thể thuộc những kiểu khác nhau. Hãy lấy các phần bằng .0, .1 và cứ thế, hoặc tách chúng ra bằng let (việc này gọi là destructuring):"
+      "text": "Một tuple gom một số lượng giá trị cố định, các giá trị đó có thể thuộc những kiểu khác nhau. Hãy lấy các phần bằng .0, .1 v.v., hoặc tách chúng ra bằng let (việc này gọi là destructuring):"
     },
     {
       "type": "code",
@@ -24,7 +24,7 @@
     },
     {
       "type": "text",
-      "text": "{:?} là định dạng debug. Nó in được cả tuple và mảng, điều mà {} thường không làm được."
+      "text": "{:?} là định dạng debug. Nó in được trọn vẹn tuple và mảng, điều mà {} đơn thuần không làm được."
     },
     {
       "type": "note",

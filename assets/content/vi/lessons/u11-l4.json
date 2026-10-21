@@ -12,7 +12,7 @@
     },
     {
       "type": "text",
-      "text": "Thư viện chuẩn của Rust định nghĩa future là gì (trait Future) nhưng không có runtime để chạy chúng. Các chương trình thực tế thêm một crate như tokio cho việc đó. Ứng dụng này không thể dùng crate, nên chương trình bên dưới mang theo một bộ chạy nhỏ xíu gọi là block_on, chỉ xây dựng từ std. Nó hỏi future \"bạn xong chưa?\" (việc này gọi là polling). Nếu câu trả lời là \"chưa\", nó park thread cho đến khi future báo là đã sẵn sàng để được hỏi lại. Hãy chỉ đọc phần helper nếu bạn tò mò. Nó cũng chứa PauseOnce, một future nhỏ trả lời \"not ready yet\" (chưa sẵn sàng) ở lần đầu tiên được hỏi, để bạn có thể quan sát một .await tạm dừng."
+      "text": "Thư viện chuẩn của Rust định nghĩa future là gì (trait Future) nhưng không có runtime để chạy chúng. Các chương trình thực tế thêm một crate như tokio cho việc đó. Ứng dụng này không thể dùng crate, nên chương trình bên dưới mang theo một bộ chạy nhỏ xíu gọi là block_on, chỉ xây dựng từ std. Nó hỏi future \"bạn xong chưa?\" (việc này gọi là polling). Nếu câu trả lời là \"chưa\", nó cho thread tạm ngủ (park) cho đến khi future báo là đã sẵn sàng để được hỏi lại. Bạn chỉ cần đọc phần helper nếu tò mò. Nó cũng chứa PauseOnce, một future nhỏ trả lời \"not ready yet\" (chưa sẵn sàng) ở lần đầu tiên được hỏi, để bạn có thể quan sát một .await tạm dừng."
     },
     {
       "type": "code",
@@ -29,7 +29,7 @@
     },
     {
       "type": "text",
-      "text": "Một runtime như tokio có thể chạy hàng nghìn future trên vài thread: khi một future chờ, runtime chuyển sang future khác. Đây là chỗ .await thực sự phát huy tác dụng. Với tokio, bạn đặt #[tokio::main] phía trên hàm main async của mình, khởi động task bằng tokio::spawn, và chạy các future cùng lúc bên cạnh nhau bằng tokio::join!. Đoạn code bên dưới cho thấy một async fn dùng nó. Nó chỉ để xem, vì cần crate tokio:"
+      "text": "Một runtime như tokio có thể chạy hàng nghìn future trên vài thread: khi một future chờ, runtime chuyển sang future khác. Đây là chỗ .await thực sự phát huy tác dụng. Với tokio, bạn đặt #[tokio::main] phía trên hàm main async của mình, khởi động task bằng tokio::spawn, và chạy các future song song bằng tokio::join!. Đoạn code bên dưới cho thấy một async fn dùng nó. Nó chỉ để xem, vì cần crate tokio:"
     },
     {
       "type": "code",
@@ -46,7 +46,7 @@
     }
   ],
   "exercise": {
-    "prompt": "run() gọi add_one một lần. Hãy làm cho nó gọi add_one lần thứ hai trên kết quả, với .await, rồi trả về giá trị đó. Chương trình sẽ in ra: 3",
+    "prompt": "run() gọi add_one một lần. Hãy làm cho nó gọi add_one lần thứ hai trên kết quả, với .await, rồi trả về giá trị đó. Chương trình phải in ra: 3",
     "starter": "use std::future::Future;\nuse std::pin::pin;\nuse std::sync::Arc;\nuse std::task::{Context, Poll, Wake, Waker};\nuse std::thread::{self, Thread};\n\n// ---- You don't need to understand this helper. ----\n// Rust's standard library has no runtime, so this tiny one runs a future\n// to the end by polling it. Real programs use a crate such as tokio.\nstruct ThreadWaker(Thread);\n\nimpl Wake for ThreadWaker {\n    fn wake(self: Arc<Self>) {\n        self.0.unpark();\n    }\n}\n\nfn block_on<F: Future>(future: F) -> F::Output {\n    let mut future = pin!(future);\n    let waker = Waker::from(Arc::new(ThreadWaker(thread::current())));\n    let mut cx = Context::from_waker(&waker);\n    loop {\n        match future.as_mut().poll(&mut cx) {\n            Poll::Ready(value) => return value,\n            Poll::Pending => thread::park(),\n        }\n    }\n}\n// ---- End of helper. ----\n\nasync fn add_one(x: i32) -> i32 {\n    x + 1\n}\n\nasync fn run() -> i32 {\n    let first = add_one(1).await;\n    first\n}\n\nfn main() {\n    println!(\"{}\", block_on(run()));\n}",
     "expectedOutput": "3",
     "solution": "use std::future::Future;\nuse std::pin::pin;\nuse std::sync::Arc;\nuse std::task::{Context, Poll, Wake, Waker};\nuse std::thread::{self, Thread};\n\n// ---- You don't need to understand this helper. ----\n// Rust's standard library has no runtime, so this tiny one runs a future\n// to the end by polling it. Real programs use a crate such as tokio.\nstruct ThreadWaker(Thread);\n\nimpl Wake for ThreadWaker {\n    fn wake(self: Arc<Self>) {\n        self.0.unpark();\n    }\n}\n\nfn block_on<F: Future>(future: F) -> F::Output {\n    let mut future = pin!(future);\n    let waker = Waker::from(Arc::new(ThreadWaker(thread::current())));\n    let mut cx = Context::from_waker(&waker);\n    loop {\n        match future.as_mut().poll(&mut cx) {\n            Poll::Ready(value) => return value,\n            Poll::Pending => thread::park(),\n        }\n    }\n}\n// ---- End of helper. ----\n\nasync fn add_one(x: i32) -> i32 {\n    x + 1\n}\n\nasync fn run() -> i32 {\n    let first = add_one(1).await;\n    let second = add_one(first).await;\n    second\n}\n\nfn main() {\n    println!(\"{}\", block_on(run()));\n}",

@@ -33,7 +33,7 @@
     },
     {
       "type": "note",
-      "text": "Rust không có class hay kế thừa (inheritance). Dữ liệu nằm trong struct và enum, hành vi nằm trong các khối impl (bài tiếp theo), và hành vi dùng chung đến từ trait. Tuple struct như struct Meters(f64); cho một giá trị thông thường kiểu riêng của nó.",
+      "text": "Rust không có class hay kế thừa (inheritance). Dữ liệu nằm trong struct và enum, hành vi nằm trong các khối impl (bài tiếp theo), và hành vi dùng chung đến từ trait. Tuple struct như struct Meters(f64); giúp một giá trị đơn thuần có kiểu riêng của nó.",
       "track": "fast"
     }
   ],

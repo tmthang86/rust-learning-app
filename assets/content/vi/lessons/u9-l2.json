@@ -36,7 +36,7 @@
     },
     {
       "type": "text",
-      "text": "Có một thói quen phổ biến: đưa trực tiếp các kiểu vào (use std::collections::HashMap;), nhưng với hàm thì đưa module cha vào (use zoo::show, rồi show::line). Như vậy một lời gọi như show::line cho thấy hàm đến từ đâu. Dấu ngoặc nhọn nhóm các tên từ một đường dẫn: use std::collections::{HashMap, HashSet};. Dấu * (use std::collections::*;) nhập mọi thứ công khai, nhưng che giấu các tên đến từ đâu, nên hiếm khi được dùng."
+      "text": "Có một thói quen phổ biến: đưa trực tiếp các kiểu vào (use std::collections::HashMap;), nhưng với hàm thì đưa module cha vào (use zoo::show, rồi show::line). Như vậy một lời gọi như show::line cho thấy hàm đến từ đâu. Dấu ngoặc nhọn nhóm các tên từ một đường dẫn: use std::collections::{HashMap, HashSet};. Dấu * (use std::collections::*;) nhập mọi thứ công khai, nhưng khiến người đọc không thấy được mỗi tên đến từ đâu, nên hiếm khi được dùng."
     },
     {
       "type": "text",
@@ -53,7 +53,7 @@
     },
     {
       "type": "note",
-      "text": "use trông giống import trong Python hoặc JavaScript, nhưng nó chỉ tạo một lối tắt. Mọi mục đều có thể được truy cập bằng đường dẫn đầy đủ mà không cần nó, và không có gì được tải hay chạy. as giống như import ... as. Không như Python, nơi mọi thứ đều có thể được import và _name chỉ là một quy ước, Rust thực thi tính riêng tư: tác giả của module quyết định chia sẻ gì bằng pub, khá giống export trong JS. Cũng có những mức chi tiết hơn. pub(crate) nghĩa là hiển thị ở bất cứ đâu bên trong crate này nhưng không hiển thị với các crate khác; pub(super) nghĩa là hiển thị với module cha. pub use xuất lại một tên, để người dùng thư viện của bạn thấy một đường dẫn gọn gàng hơn. Những thứ này phát huy tác dụng khi bạn viết thư viện.",
+      "text": "use trông giống import trong Python hoặc JavaScript, nhưng nó chỉ tạo một lối tắt. Mọi mục đều có thể được truy cập bằng đường dẫn đầy đủ mà không cần nó, và không có gì được tải hay chạy. as giống như import ... as. Không như Python, nơi mọi thứ đều có thể được import và _name chỉ là một quy ước, Rust thực thi tính riêng tư: tác giả của module quyết định chia sẻ gì bằng pub, khá giống export trong JS. Cũng có những mức chi tiết hơn. pub(crate) nghĩa là dùng được ở bất cứ đâu bên trong crate này nhưng các crate khác không thấy được; pub(super) nghĩa là module cha thấy được. pub use xuất lại (re-export) một tên, để người dùng thư viện của bạn thấy một đường dẫn gọn gàng hơn. Những thứ này phát huy tác dụng khi bạn viết thư viện.",
       "track": "fast"
     }
   ],
@@ -64,7 +64,7 @@
     "solution": "mod bank {\n    pub struct Account {\n        pub owner: String,\n        balance: i64,\n    }\n\n    impl Account {\n        pub fn new(owner: &str) -> Account {\n            Account { owner: String::from(owner), balance: 0 }\n        }\n\n        pub fn deposit(&mut self, amount: i64) {\n            self.balance += amount;\n        }\n\n        pub fn balance(&self) -> i64 {\n            self.balance\n        }\n\n        pub fn withdraw(&mut self, amount: i64) {\n            self.balance -= amount;\n        }\n    }\n}\n\nuse bank::Account;\n\nfn main() {\n    let mut acc = Account::new(\"Ada\");\n    acc.deposit(40);\n    acc.withdraw(10);\n    println!(\"{}: {}\", acc.owner, acc.balance());\n}",
     "hints": [
       "Có ba thay đổi nhỏ: một phương thức bên trong impl, một dòng use phía trên main, và một lời gọi trong main. Hãy bắt đầu với phương thức. Nó trông rất giống deposit.",
-      "Viết pub fn withdraw(&mut self, amount: i64) bên trong impl, có cùng dạng với deposit nhưng thực hiện phép trừ. Nó cần pub để main có thể gọi nó.",
+      "Hãy viết pub fn withdraw(&mut self, amount: i64) bên trong impl, có cùng dạng với deposit nhưng thực hiện phép trừ. Nó cần pub để main có thể gọi nó.",
       "Bên trong withdraw, hãy viết self.balance -= amount; (deposit dùng +=). Sau đó thêm use bank::Account; phía trên main, dùng Account::new(\"Ada\"), và gọi acc.withdraw(10); ngay sau acc.deposit(40);"
     ]
   },

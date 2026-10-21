@@ -32,7 +32,7 @@
     },
     {
       "type": "note",
-      "text": "Hãy nghĩ về module như các thư mục trên máy tính của bạn. Một đường dẫn như /home/docs/notes.txt gọi tên một file bên trong các thư mục; greetings::formal::hello gọi tên một hàm bên trong các module. crate:: giống như dấu / ở đầu: điểm trên cùng nhất.",
+      "text": "Hãy nghĩ về module như các thư mục trên máy tính của bạn. Một đường dẫn như /home/docs/notes.txt gọi tên một file bên trong các thư mục; greetings::formal::hello gọi tên một hàm bên trong các module. crate:: giống như dấu / ở đầu: điểm cao nhất.",
       "track": "starter"
     },
     {
@@ -42,14 +42,14 @@
     }
   ],
   "exercise": {
-    "prompt": "Thêm một hàm double(n: i32) -> i32 vào module math trả về n * 2. Nhớ pub. Sau đó thêm một println! thứ hai trong main in ra math::double(21). Chương trình phải in ra hai dòng: 36 và sau đó là 42",
+    "prompt": "Hãy thêm một hàm double(n: i32) -> i32 vào module math, trả về n * 2. Đừng quên pub. Sau đó hãy thêm một println! thứ hai trong main in ra math::double(21). Chương trình phải in ra hai dòng: 36 và sau đó là 42",
     "starter": "mod math {\n    pub fn square(n: i32) -> i32 {\n        n * n\n    }\n\n    // add pub fn double here\n}\n\nfn main() {\n    println!(\"{}\", math::square(6));\n}",
     "expectedOutput": "36\n42",
     "solution": "mod math {\n    pub fn square(n: i32) -> i32 {\n        n * n\n    }\n\n    pub fn double(n: i32) -> i32 {\n        n * 2\n    }\n}\n\nfn main() {\n    println!(\"{}\", math::square(6));\n    println!(\"{}\", math::double(21));\n}",
     "hints": [
       "double thuộc về bên trong module math, cạnh square. Hãy xem square được viết thế nào, và main cần gì để có thể gọi nó.",
       "main nằm ngoài module, nên hàm cần pub: pub fn double(n: i32) -> i32. Phần thân là n * 2.",
-      "Thêm hàm vào chỗ có chú thích. Sau đó, trong main, thêm một println! thứ hai gọi nó bằng đường dẫn của nó: math::double(21)."
+      "Hãy thêm hàm vào chỗ có chú thích. Sau đó, trong main, hãy thêm một println! thứ hai gọi nó bằng đường dẫn của nó: math::double(21)."
     ]
   },
   "quiz": [

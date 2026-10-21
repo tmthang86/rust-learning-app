@@ -56,21 +56,21 @@
     },
     {
       "type": "text",
-      "text": "Comment Output cho thấy a và b in ra giống nhau, và a vẫn dùng được sau let b = a, vì Point là Copy. Point::default() cho x và y giá trị mặc định của chúng, 0, nên origin không bằng a."
+      "text": "Chú thích Output cho thấy a và b in ra giống nhau, và a vẫn dùng được sau let b = a, vì Point là Copy. Point::default() cho x và y giá trị mặc định của chúng, 0, nên origin không bằng a."
     },
     {
       "type": "note",
-      "text": "Một ràng buộc giống như một yêu cầu trong tin tuyển dụng: \"ai làm được X và Y đều có thể ứng tuyển\". Trình biên dịch kiểm tra rằng mọi kiểu bạn truyền vào đều đáp ứng nó, nên sai sót hiện ra dưới dạng lỗi biên dịch, không phải crash.",
+      "text": "Một ràng buộc giống như một yêu cầu trong tin tuyển dụng: \"ai làm được X và Y đều có thể ứng tuyển\". Trình biên dịch kiểm tra rằng mọi kiểu bạn truyền vào đều đáp ứng nó, nên sai sót hiện ra dưới dạng lỗi biên dịch, không phải sập chương trình (crash).",
       "track": "starter"
     },
     {
       "type": "note",
-      "text": "T: Trait là <T extends Comparable<T>> của Java, concept của C++20, hay một constraint của Go. impl Trait ở vị trí đối số là cú pháp rút gọn của generic: bạn không thể gọi tên kiểu, nên hãy dùng <T: Trait> khi hai đối số phải cùng kiểu (a: T, b: T). Lưu ý rằng derive(PartialEq) so sánh từng trường một, giống equals của một record trong Java.",
+      "text": "T: Trait là <T extends Comparable<T>> của Java, concept của C++20, hay một constraint của Go. impl Trait ở vị trí đối số là cú pháp rút gọn của generic: bạn không thể nêu tên kiểu đó, nên hãy dùng <T: Trait> khi hai đối số phải cùng kiểu (a: T, b: T). Lưu ý rằng derive(PartialEq) so sánh từng trường một, giống equals của một record trong Java.",
       "track": "fast"
     }
   ],
   "exercise": {
-    "prompt": "show chỉ nhận một i32. Hãy làm cho nó hoạt động với bất kỳ kiểu nào có thể được in bằng {}, và thêm một lệnh gọi với một chuỗi ở cuối main. Chương trình sẽ in ra hai dòng: <5> và <hi>. Gợi ý: thêm use std::fmt::Display; ở đầu, và viết fn show<T: Display>(item: T).",
+    "prompt": "show chỉ nhận một i32. Hãy làm cho nó hoạt động với bất kỳ kiểu nào có thể được in bằng {}, và thêm một lệnh gọi với một chuỗi ở cuối main. Chương trình phải in ra hai dòng: <5> và <hi>. Gợi ý: thêm use std::fmt::Display; ở đầu, và viết fn show<T: Display>(item: T).",
     "starter": "fn show(item: i32) {\n    println!(\"<{item}>\");\n}\n\nfn main() {\n    show(5);\n}",
     "expectedOutput": "<5>\n<hi>",
     "solution": "use std::fmt::Display;\n\nfn show<T: Display>(item: T) {\n    println!(\"<{item}>\");\n}\n\nfn main() {\n    show(5);\n    show(\"hi\");\n}",
@@ -93,7 +93,7 @@
     {
       "question": "#[derive(Debug)] làm gì?",
       "options": [
-        "Nó chuyển chương trình sang chế độ debug, để các kiểm tra bổ sung chạy lúc chạy",
+        "Nó chuyển chương trình sang chế độ debug, để các kiểm tra bổ sung được thực hiện lúc chạy",
         "Nó yêu cầu trình biên dịch viết impl Debug, để {:?} hoạt động trên kiểu đó",
         "Nó in struct ra màn hình mỗi khi một giá trị được tạo"
       ],
@@ -102,7 +102,7 @@
     {
       "question": "fn make() -> impl Speak có thể trả về Dog ở một nhánh và Robot ở nhánh khác không?",
       "options": [
-        "Không, nó phải luôn trả về một kiểu cụ thể",
+        "Không, nó phải luôn trả về một kiểu cụ thể duy nhất",
         "Có, bất kỳ kiểu nào implement Speak đều có thể được trả về từ các nhánh khác nhau",
         "Có, miễn là cả hai kiểu có cùng số trường"
       ],

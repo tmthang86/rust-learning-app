@@ -16,7 +16,7 @@
     },
     {
       "type": "text",
-      "text": "Xử lý cả hai trường hợp bằng match. Trình biên dịch sẽ không cho phép bạn dùng giá trị trước khi xử lý lỗi:"
+      "text": "Hãy xử lý cả hai trường hợp bằng match. Trình biên dịch sẽ không cho phép bạn dùng giá trị trước khi xử lý lỗi:"
     },
     {
       "type": "code",
@@ -42,13 +42,13 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy hoàn thành check_age để nó trả về Err(String::from(\"too young\")) khi age nhỏ hơn 18, và Ok(age) trong các trường hợp còn lại. Với 15, chương trình sẽ in ra: error: too young",
+    "prompt": "Hãy hoàn thành check_age để nó trả về Err(String::from(\"too young\")) khi age nhỏ hơn 18, và Ok(age) trong các trường hợp còn lại. Với 15, chương trình phải in ra: error: too young",
     "starter": "fn check_age(age: u32) -> Result<u32, String> {\n    Ok(age)\n}\n\nfn main() {\n    match check_age(15) {\n        Ok(a) => println!(\"welcome, age {a}\"),\n        Err(e) => println!(\"error: {e}\"),\n    }\n}",
     "expectedOutput": "error: too young",
     "solution": "fn check_age(age: u32) -> Result<u32, String> {\n    if age < 18 {\n        Err(String::from(\"too young\"))\n    } else {\n        Ok(age)\n    }\n}\n\nfn main() {\n    match check_age(15) {\n        Ok(a) => println!(\"welcome, age {a}\"),\n        Err(e) => println!(\"error: {e}\"),\n    }\n}",
     "hints": [
       "Bạn cần kiểm tra tuổi rồi trả về một trong hai kết quả. Công cụ nào trong Unit 2 chọn giữa hai trường hợp?",
-      "Hãy dùng if age < 18. Trong trường hợp đó trả về Err(String::from(\"too young\")), còn Ok(age) nằm trong khối else.",
+      "Hãy dùng if age < 18. Trong trường hợp đó, hãy trả về Err(String::from(\"too young\")), và trả về Ok(age) trong khối else.",
       "Hãy thay dòng Ok(age) bằng: if age < 18 { Err(String::from(\"too young\")) } else { Ok(age) } và không có dấu chấm phẩy sau nó."
     ]
   },

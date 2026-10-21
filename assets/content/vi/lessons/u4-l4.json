@@ -12,7 +12,7 @@
     },
     {
       "type": "text",
-      "text": "Option<i32> nghĩa là \"một Option có thể chứa một i32\". Trong định nghĩa, T đại diện cho kiểu bất kỳ, nên bạn có thể có Option<String>, Option<bool> và cứ thế. Cách viết với dấu ngoặc góc đó cũng xuất hiện trong Vec<i32> và HashMap<char, i32> ở phần sau. Unit 7 giải thích đầy đủ."
+      "text": "Option<i32> nghĩa là \"một Option có thể chứa một i32\". Trong định nghĩa, T đại diện cho kiểu bất kỳ, nên bạn có thể có Option<String>, Option<bool> v.v. Cách viết với dấu ngoặc góc đó cũng xuất hiện trong Vec<i32> và HashMap<char, i32> ở phần sau. Unit 7 giải thích đầy đủ."
     },
     {
       "type": "text",

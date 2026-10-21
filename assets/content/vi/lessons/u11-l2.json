@@ -16,7 +16,7 @@
     },
     {
       "type": "text",
-      "text": "Vòng lặp kết thúc vì tx đã được move vào thread và bị drop khi thread kết thúc. (Chúng ta không bao giờ join thread này. Ở đây điều đó không sao, vì main chờ trong vòng lặp cho đến khi channel đóng.) Các thông điệp từ một sender luôn đến theo đúng thứ tự chúng được gửi. send() trả về một Result (nó thất bại nếu receiver đã biến mất), nên chúng ta unwrap nó."
+      "text": "Vòng lặp kết thúc vì tx đã được move vào thread và bị drop khi thread kết thúc. (Chúng ta không bao giờ join thread này. Ở đây điều đó không sao, vì main chờ trong vòng lặp cho đến khi channel đóng.) Các thông điệp từ cùng một sender luôn đến theo đúng thứ tự chúng được gửi. send() trả về một Result (nó thất bại nếu receiver đã biến mất), nên chúng ta unwrap nó."
     },
     {
       "type": "text",
@@ -49,12 +49,12 @@
     },
     {
       "type": "note",
-      "text": "Nếu bạn đến từ Go: điều này rất giống một chan, và lời khuyên của Rust cũng giống vậy: đừng giao tiếp bằng cách chia sẻ bộ nhớ, hãy chia sẻ bộ nhớ bằng cách giao tiếp. mpsc::channel của Rust không giới hạn dung lượng và là kiểu nhiều bên gửi, một bên nhận; mpsc::sync_channel(n) là phiên bản có giới hạn, trong đó send bị chặn khi bộ đệm đầy. make(chan T) của Go không có bộ đệm, tương ứng với sync_channel(0), và make(chan T, n) tương ứng với sync_channel(n). Khác với channel của Go, nơi số goroutine bất kỳ có thể nhận từ nó, một Receiver của mpsc có đúng một chủ sở hữu. Với nhiều bên nhận hoặc code kiểu select, người ta thường dùng đến crate crossbeam-channel.",
+      "text": "Nếu bạn đến từ Go: điều này rất giống một chan, và lời khuyên của Rust cũng giống vậy: đừng giao tiếp bằng cách chia sẻ bộ nhớ, hãy chia sẻ bộ nhớ bằng cách giao tiếp. mpsc::channel của Rust không giới hạn dung lượng và là kiểu nhiều bên gửi, một bên nhận; mpsc::sync_channel(n) là phiên bản có giới hạn, trong đó send bị chặn khi bộ đệm đầy. make(chan T) của Go không có bộ đệm, tương ứng với sync_channel(0), và make(chan T, n) tương ứng với sync_channel(n). Khác với channel của Go, nơi bao nhiêu goroutine cũng có thể nhận, một Receiver của mpsc có đúng một chủ sở hữu. Với nhiều bên nhận hoặc code kiểu select, người ta thường dùng đến crate crossbeam-channel.",
       "track": "fast"
     }
   ],
   "exercise": {
-    "prompt": "Mỗi thread gửi i. Hãy sửa lại để mỗi thread gửi i * 10. Chương trình sẽ in ra: total: 60",
+    "prompt": "Mỗi thread gửi i. Hãy sửa lại để mỗi thread gửi i * 10. Chương trình phải in ra: total: 60",
     "starter": "use std::sync::mpsc;\nuse std::thread;\n\nfn main() {\n    let (tx, rx) = mpsc::channel();\n    for i in 1..=3 {\n        let tx = tx.clone();\n        thread::spawn(move || {\n            tx.send(i).unwrap();\n        });\n    }\n    drop(tx);\n    let mut total = 0;\n    for value in rx {\n        total += value;\n    }\n    println!(\"total: {total}\");\n}",
     "expectedOutput": "total: 60",
     "solution": "use std::sync::mpsc;\nuse std::thread;\n\nfn main() {\n    let (tx, rx) = mpsc::channel();\n    for i in 1..=3 {\n        let tx = tx.clone();\n        thread::spawn(move || {\n            tx.send(i * 10).unwrap();\n        });\n    }\n    drop(tx);\n    let mut total = 0;\n    for value in rx {\n        total += value;\n    }\n    println!(\"total: {total}\");\n}",

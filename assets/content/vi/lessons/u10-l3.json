@@ -16,7 +16,7 @@
     },
     {
       "type": "text",
-      "text": "Ba Rc trỏ tới một Owner: biến owner và hai gadget. Bạn có thể đọc qua một Rc giống như qua một Box, nên g1.owner.name hoạt động. Nếu chúng ta đặt Owner trực tiếp vào cả hai gadget, dữ liệu đã bị di chuyển vào cái đầu tiên."
+      "text": "Ba Rc trỏ tới một Owner: biến owner và hai gadget. Bạn có thể đọc qua một Rc giống như qua một Box, nên g1.owner.name hoạt động. Nếu chúng ta đặt Owner trực tiếp vào cả hai gadget, thì dữ liệu sẽ bị di chuyển vào gadget đầu tiên."
     },
     {
       "type": "text",
@@ -32,7 +32,7 @@
     },
     {
       "type": "text",
-      "text": "Có một điểm vướng. Một Rc chỉ cho quyền truy cập chia sẻ, chỉ đọc. Nếu nhiều chủ sở hữu có thể thay đổi giá trị cùng lúc, điều đó sẽ phá vỡ các quy tắc mượn. Code này không biên dịch được. Rust báo E0594: cannot assign to data in an Rc. Bài sau cho thấy cách để vừa chia sẻ vừa có thể thay đổi. Ngoài ra, Rc chỉ dành cho một thread. Unit 11 giới thiệu Arc, anh em an toàn với thread của nó."
+      "text": "Có một điểm cần lưu ý. Một Rc chỉ cho quyền truy cập chia sẻ, chỉ đọc. Nếu nhiều chủ sở hữu có thể thay đổi giá trị cùng lúc, điều đó sẽ phá vỡ các quy tắc mượn. Code này không biên dịch được. Rust báo E0594: cannot assign to data in an Rc. Bài sau cho thấy cách để vừa chia sẻ vừa có thể thay đổi. Ngoài ra, Rc chỉ dành cho một thread. Unit 11 giới thiệu Arc, anh em an toàn với thread của nó."
     },
     {
       "type": "code",
@@ -57,7 +57,7 @@
     "hints": [
       "b phải là một chủ sở hữu khác của cùng String đó, không phải một bản sao. Hàm Rc nào thêm một chủ sở hữu, và hàm nào cho bạn biết có bao nhiêu chủ sở hữu?",
       "Rc::clone(&a) tạo một chủ sở hữu mới và cộng 1 vào bộ đếm. Rc::strong_count(&a) cho giá trị đếm hiện tại.",
-      "Viết let b = Rc::clone(&a); rồi println!(\"count = {}\", Rc::strong_count(&a));. Cuối cùng đổi println! cuối cùng để in a và b với một dấu cách ở giữa: \"{a} {b}\"."
+      "Hãy viết let b = Rc::clone(&a); rồi println!(\"count = {}\", Rc::strong_count(&a));. Cuối cùng, hãy đổi println! ở cuối để in a và b với một dấu cách ở giữa: \"{a} {b}\"."
     ]
   },
   "quiz": [

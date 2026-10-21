@@ -43,7 +43,7 @@
     "solution": "fn celsius_to_fahrenheit(c: f64) -> f64 {\n    c * 9.0 / 5.0 + 32.0\n}\n\nfn main() {\n    println!(\"{}\", celsius_to_fahrenheit(100.0));\n}",
     "hints": [
       "Hàm này lẽ ra phải trả về một con số, nhưng một ký tự rất nhỏ ở cuối dòng cuối cùng của nó đã ngăn điều đó.",
-      "Dòng cuối của một hàm chỉ là kết quả của nó khi không có dấu chấm phẩy. Hãy nhìn dòng có c * 9.0 / 5.0 + 32.0.",
+      "Dòng cuối của một hàm chỉ trở thành kết quả của hàm khi nó không có dấu chấm phẩy. Hãy nhìn dòng có c * 9.0 / 5.0 + 32.0.",
       "Hãy xóa dấu chấm phẩy ở cuối dòng c * 9.0 / 5.0 + 32.0 bên trong hàm."
     ]
   },
@@ -61,7 +61,7 @@
       "question": "Kiểu trả về được đặt ở đâu?",
       "options": [
         "Trước fn",
-        "Sau -> theo sau các tham số",
+        "Sau ->, phía sau danh sách tham số",
         "Bên trong cặp dấu ngoặc nhọn"
       ],
       "answer": 1

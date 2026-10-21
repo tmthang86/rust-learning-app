@@ -4,7 +4,7 @@
   "sections": [
     {
       "type": "text",
-      "text": "Bài học trước chúng ta đã viết các hàm thuần túy từ văn bản request sang văn bản response. Bây giờ chúng ta kết nối chúng với mạng bằng std: TcpListener chờ các kết nối, và TcpStream là một kết nối đang mở mà bạn có thể đọc và ghi. Chúng ta bind vào \"127.0.0.1:0\". 127.0.0.1 là địa chỉ loopback (chỉ máy tính của chính bạn, và là loại duy nhất mà sandbox này cho phép). Cổng (port) 0 nghĩa là \"chọn giúp tôi một cổng rảnh bất kỳ\"."
+      "text": "Ở bài học trước, chúng ta đã viết các hàm thuần túy từ văn bản request sang văn bản phản hồi. Bây giờ chúng ta kết nối chúng với mạng bằng std: TcpListener chờ các kết nối, và TcpStream là một kết nối đang mở mà bạn có thể đọc và ghi. Chúng ta bind vào \"127.0.0.1:0\". 127.0.0.1 là địa chỉ loopback (chỉ máy tính của chính bạn, và là loại duy nhất mà sandbox này cho phép). Cổng (port) 0 nghĩa là \"chọn giúp tôi một cổng rảnh bất kỳ\"."
     },
     {
       "type": "text",
@@ -12,7 +12,7 @@
     },
     {
       "type": "text",
-      "text": "Chương trình thực hiện toàn bộ cuộc trò chuyện trong một tiến trình. Một thread server chấp nhận đúng ba kết nối và khởi động một thread mới cho mỗi kết nối. Ba thread client kết nối, gửi một request GET và đọc câu trả lời. Chúng ta join các client theo thứ tự đã khởi động chúng, nên kết quả luôn giống nhau."
+      "text": "Chương trình thực hiện toàn bộ cuộc trò chuyện trong một tiến trình. Một thread máy chủ chấp nhận đúng ba kết nối và khởi động một thread mới cho mỗi kết nối. Ba thread client kết nối, gửi một request GET và đọc câu trả lời. Chúng ta join các client theo thứ tự đã khởi động chúng, nên kết quả luôn giống nhau."
     },
     {
       "type": "code",
@@ -34,13 +34,13 @@
     }
   ],
   "exercise": {
-    "prompt": "Máy chủ echo này gửi thẳng dòng của client trở lại. Hãy sửa để máy chủ hét lên: nó phải trả lời cùng dòng đó bằng chữ hoa. Chương trình sẽ in ra: HELLO. Gợi ý: tạo câu trả lời bằng line.trim().to_uppercase().",
+    "prompt": "Máy chủ echo này gửi thẳng dòng của client trở lại. Hãy sửa để máy chủ hét lên: nó phải trả lời cùng dòng đó bằng chữ hoa. Chương trình phải in ra: HELLO. Gợi ý: tạo câu trả lời bằng line.trim().to_uppercase().",
     "starter": "use std::io::{BufRead, BufReader, Write};\nuse std::net::{TcpListener, TcpStream};\nuse std::thread;\n\nfn main() {\n    let listener = TcpListener::bind(\"127.0.0.1:0\").unwrap();\n    let addr = listener.local_addr().unwrap();\n\n    let server = thread::spawn(move || {\n        // accept gives back the stream and the client's address; we ignore the address\n        let (mut stream, _) = listener.accept().unwrap();\n        let mut line = String::new();\n        BufReader::new(&stream).read_line(&mut line).unwrap();\n        let reply = line.trim().to_string();\n        writeln!(stream, \"{reply}\").unwrap();\n    });\n\n    let mut client = TcpStream::connect(addr).unwrap();\n    writeln!(client, \"hello\").unwrap();\n    let mut reply = String::new();\n    BufReader::new(&client).read_line(&mut reply).unwrap();\n    println!(\"{}\", reply.trim());\n    server.join().unwrap();\n}",
     "expectedOutput": "HELLO",
     "solution": "use std::io::{BufRead, BufReader, Write};\nuse std::net::{TcpListener, TcpStream};\nuse std::thread;\n\nfn main() {\n    let listener = TcpListener::bind(\"127.0.0.1:0\").unwrap();\n    let addr = listener.local_addr().unwrap();\n\n    let server = thread::spawn(move || {\n        let (mut stream, _) = listener.accept().unwrap();\n        let mut line = String::new();\n        BufReader::new(&stream).read_line(&mut line).unwrap();\n        let reply = line.trim().to_uppercase();\n        writeln!(stream, \"{reply}\").unwrap();\n    });\n\n    let mut client = TcpStream::connect(addr).unwrap();\n    writeln!(client, \"hello\").unwrap();\n    let mut reply = String::new();\n    BufReader::new(&client).read_line(&mut reply).unwrap();\n    println!(\"{}\", reply.trim());\n    server.join().unwrap();\n}",
     "hints": [
-      "Chỉ có một dòng trong server cần thay đổi: dòng tạo reply. Hiện giờ nó chỉ sao chép dòng đã được trim.",
-      "Hãy dùng to_uppercase() thay cho to_string(). Nó trả về một String mới viết hoa. Giữ trim() phía trước nó, để ký tự xuống dòng ở cuối được bỏ đi trước."
+      "Chỉ có một dòng trong phần máy chủ cần thay đổi: dòng tạo reply. Hiện giờ nó chỉ sao chép dòng đã được trim.",
+      "Hãy dùng to_uppercase() thay cho to_string(). Nó trả về một String mới viết hoa. Hãy giữ trim() phía trước nó, để ký tự xuống dòng ở cuối được bỏ đi trước."
     ]
   },
   "quiz": [
@@ -56,14 +56,14 @@
     {
       "question": "Tại sao read_to_string của client chúng ta kết thúc?",
       "options": [
-        "Server đóng kết nối khi TcpStream của nó bị drop",
+        "Máy chủ đóng kết nối khi TcpStream của nó bị drop",
         "Nó bỏ cuộc sau khi chờ một giây mà không có thêm dữ liệu đến",
         "Nó dừng ngay khi nhận được dòng đầu tiên của câu trả lời"
       ],
       "answer": 0
     },
     {
-      "question": "Tại sao server xử lý mỗi kết nối trong một thread riêng?",
+      "question": "Tại sao máy chủ xử lý mỗi kết nối trong một thread riêng?",
       "options": [
         "Rust yêu cầu một thread riêng cho mỗi TcpStream bạn tạo",
         "Khi đó một client chậm không thể chặn việc phục vụ các client khác",

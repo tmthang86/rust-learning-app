@@ -48,11 +48,11 @@
     },
     {
       "type": "text",
-      "text": "Rust có thể suy ra T từ các lệnh gọi push phía sau, nên annotation Stack<String> ở đây không thật sự cần thiết. Viết nó làm code rõ ràng hơn, và bạn bắt buộc phải viết khi không có gì phía sau cho biết T là gì. last() trên một Vec trả về một Option chứa tham chiếu tới phần tử cuối, hoặc None nếu Vec rỗng. peek dùng lại điều đó."
+      "text": "Rust có thể suy ra T từ các lệnh gọi push phía sau, nên khai báo kiểu Stack<String> ở đây không thật sự cần thiết. Viết nó làm code rõ ràng hơn, và bạn bắt buộc phải viết khi không có gì phía sau cho biết T là gì. last() trên một Vec trả về một Option chứa tham chiếu tới phần tử cuối, hoặc None nếu Vec rỗng. peek tận dụng phương thức đó."
     },
     {
       "type": "note",
-      "text": "Stack<T> là generic trên bất kỳ T nào, kể cả những kiểu bạn chưa thấy. Đó chính là mục đích: một định nghĩa, và trình biên dịch tạo đúng phiên bản cho mỗi T bạn dùng. Nếu giúp ích được, hãy hình dung Vec<T> như một chiếc hộp có nhãn \"T đi vào đây\".",
+      "text": "Stack<T> là generic trên bất kỳ T nào, kể cả những kiểu bạn chưa thấy. Đó chính là mục đích: một định nghĩa, và trình biên dịch tạo đúng phiên bản cho mỗi T bạn dùng. Nếu thấy dễ hình dung hơn, hãy hình dung Vec<T> như một chiếc hộp có nhãn \"T đặt ở đây\".",
       "track": "starter"
     },
     {
@@ -62,7 +62,7 @@
     }
   ],
   "exercise": {
-    "prompt": "Pair chỉ chứa các giá trị i32. Hãy làm nó generic để nó chứa được bất kỳ kiểu nào, và giữ cho swapped vẫn hoạt động. Sau đó, ở cuối main, tạo một Pair gồm hai từ (a và b), hoán đổi nó, và in các trường left và right của nó cách nhau bởi một dấu cách. Chương trình sẽ in ra hai dòng: 2 1 và b a. Gợi ý: struct Pair<T>, impl<T> Pair<T>, và fn swapped(self) -> Pair<T>.",
+    "prompt": "Pair chỉ chứa các giá trị i32. Hãy làm nó generic để nó chứa được bất kỳ kiểu nào, và giữ cho swapped vẫn hoạt động. Sau đó, ở cuối main, tạo một Pair gồm hai từ (a và b), hoán đổi nó, và in các trường left và right của nó cách nhau bởi một dấu cách. Chương trình phải in ra hai dòng: 2 1 và b a. Gợi ý: struct Pair<T>, impl<T> Pair<T>, và fn swapped(self) -> Pair<T>.",
     "starter": "struct Pair {\n    left: i32,\n    right: i32,\n}\n\nimpl Pair {\n    fn swapped(self) -> Pair {\n        Pair { left: self.right, right: self.left }\n    }\n}\n\nfn main() {\n    let numbers = Pair { left: 1, right: 2 }.swapped();\n    println!(\"{} {}\", numbers.left, numbers.right);\n}",
     "expectedOutput": "2 1\nb a",
     "solution": "struct Pair<T> {\n    left: T,\n    right: T,\n}\n\nimpl<T> Pair<T> {\n    fn swapped(self) -> Pair<T> {\n        Pair { left: self.right, right: self.left }\n    }\n}\n\nfn main() {\n    let numbers = Pair { left: 1, right: 2 }.swapped();\n    println!(\"{} {}\", numbers.left, numbers.right);\n    let words = Pair { left: \"a\", right: \"b\" }.swapped();\n    println!(\"{} {}\", words.left, words.right);\n}",

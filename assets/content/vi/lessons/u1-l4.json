@@ -26,7 +26,7 @@
     {
       "type": "note",
       "track": "fast",
-      "text": "Nếu bạn đến từ một ngôn ngữ khác: điều này ngược lại với hầu hết các ngôn ngữ, nơi biến có thể thay đổi trừ khi bạn ghi const hoặc final. Bất biến theo mặc định giúp dễ thấy giá trị nào thay đổi, và trình biên dịch bắt buộc điều đó."
+      "text": "Nếu bạn đến từ một ngôn ngữ khác: điều này ngược lại với hầu hết các ngôn ngữ, nơi biến có thể thay đổi trừ khi bạn ghi const hoặc final. Bất biến theo mặc định giúp dễ thấy giá trị nào thay đổi, và trình biên dịch đảm bảo điều đó."
     },
     {
       "type": "text",
@@ -43,7 +43,7 @@
     },
     {
       "type": "text",
-      "text": "Hằng số dùng const và luôn cần một kiểu được viết ra. Chúng không bao giờ thay đổi. Theo quy ước, tên của chúng được viết hoa, như MAX_SCORE."
+      "text": "Hằng số dùng const và luôn phải ghi rõ kiểu. Chúng không bao giờ thay đổi. Theo quy ước, tên của chúng được viết hoa, như MAX_SCORE."
     },
     {
       "type": "code",
@@ -92,7 +92,7 @@
     {
       "question": "Một const luôn phải có gì?",
       "options": [
-        "Một kiểu được viết ra",
+        "Kiểu được ghi rõ",
         "Từ khóa mut",
         "Một cái tên viết thường"
       ],

@@ -24,7 +24,7 @@
     },
     {
       "type": "note",
-      "text": "Một thread giống như người thợ thứ hai trong bếp. Hai người nấu ăn cùng lúc, và join() là việc bạn đứng chờ ở cửa cho đến khi người kia nói \"xong\". Nếu bạn không bao giờ chờ, có thể bạn sẽ làm xong và rời đi trước họ.",
+      "text": "Một thread giống như một người thứ hai cùng làm bếp. Hai người nấu ăn cùng lúc, và join() là việc bạn đứng chờ ở cửa cho đến khi người kia nói \"xong\". Nếu bạn không bao giờ chờ, có thể bạn sẽ làm xong và rời đi trước họ.",
       "track": "starter"
     },
     {
@@ -37,7 +37,7 @@
     },
     {
       "type": "text",
-      "text": "Đây là cách làm thường gặp: khởi động nhiều thread trong một vòng lặp, giữ các handle trong một Vec, rồi join chúng theo thứ tự. Mỗi thread sở hữu String riêng của nó vì closure là closure move. Vì chúng ta join theo đúng thứ tự đã khởi động, kết quả luôn giống nhau."
+      "text": "Đây là cách làm thường gặp: khởi động nhiều thread trong một vòng lặp, giữ các handle trong một Vec, rồi join chúng theo thứ tự. Mỗi thread sở hữu String riêng của nó vì closure được đánh dấu move. Vì chúng ta join theo đúng thứ tự đã khởi động, kết quả luôn giống nhau."
     },
     {
       "type": "code",
@@ -58,7 +58,7 @@
     }
   ],
   "exercise": {
-    "prompt": "Hiện tại mỗi thread trả về n. Hãy sửa closure để nó trả về n * n. Chương trình sẽ in ra: [1, 4, 9]",
+    "prompt": "Hiện tại mỗi thread trả về n. Hãy sửa closure để nó trả về n * n. Chương trình phải in ra: [1, 4, 9]",
     "starter": "use std::thread;\n\nfn main() {\n    let mut handles = Vec::new();\n    for n in 1..=3 {\n        handles.push(thread::spawn(move || n));\n    }\n    let mut results = Vec::new();\n    for handle in handles {\n        results.push(handle.join().unwrap());\n    }\n    println!(\"{:?}\", results);\n}",
     "expectedOutput": "[1, 4, 9]",
     "solution": "use std::thread;\n\nfn main() {\n    let mut handles = Vec::new();\n    for n in 1..=3 {\n        handles.push(thread::spawn(move || n * n));\n    }\n    let mut results = Vec::new();\n    for handle in handles {\n        results.push(handle.join().unwrap());\n    }\n    println!(\"{:?}\", results);\n}",

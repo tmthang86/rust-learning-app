@@ -12,7 +12,7 @@
     },
     {
       "type": "text",
-      "text": "Bạn cũng sẽ gặp panic từ những việc như đánh chỉ mục vượt quá cuối mảng, chia một số nguyên cho 0, hoặc gọi unwrap trên None."
+      "text": "Bạn cũng sẽ gặp panic từ những việc như truy cập chỉ số vượt quá cuối mảng, chia một số nguyên cho 0, hoặc gọi unwrap trên None."
     },
     {
       "type": "code",
@@ -42,7 +42,7 @@
     }
   ],
   "exercise": {
-    "prompt": "parse trả về một Result. Hãy dùng expect với một thông báo để lấy ra con số, để có thể nhân đôi nó. Chương trình sẽ in ra: 84",
+    "prompt": "parse trả về một Result. Hãy dùng expect với một thông báo để lấy con số ra, nhờ đó có thể nhân đôi nó. Chương trình phải in ra: 84",
     "starter": "fn main() {\n    let n: i32 = \"42\".parse();\n    println!(\"{}\", n * 2);\n}",
     "expectedOutput": "84",
     "solution": "fn main() {\n    let n: i32 = \"42\".parse().expect(\"not a number\");\n    println!(\"{}\", n * 2);\n}",

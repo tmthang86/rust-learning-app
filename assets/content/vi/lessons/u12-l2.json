@@ -16,7 +16,7 @@
     },
     {
       "type": "text",
-      "text": "Hãy đi qua step, từng nhánh một. Look đọc phòng hiện tại và nhắc đến một món đồ nếu có. Go tìm lối ra theo hướng đó, từ chối nếu hầm chứa bị khóa, và nếu không thì di chuyển bạn (vào hầm chứa sẽ đặt trạng thái thành Won). Take chuyển món đồ của phòng vào túi đồ (inventory) của bạn, và Unknown trả lời mọi thứ mà parse không nhận ra. Trong script (xem chú thích Output), go west đầu tiên thất bại (bị khóa), sau đó người chơi đi lấy chìa khóa và go west lần thứ hai thắng."
+      "text": "Hãy cùng xem qua step, từng nhánh một. Look đọc phòng hiện tại và nhắc đến một món đồ nếu có. Go tìm lối ra theo hướng đó, từ chối nếu hầm chứa bị khóa, và nếu không thì di chuyển bạn (vào hầm chứa sẽ đặt trạng thái thành Won). Take chuyển món đồ của phòng vào túi đồ (inventory) của bạn, và Unknown trả lời mọi thứ mà parse không nhận ra. Trong script (xem chú thích Output), go west đầu tiên thất bại (bị khóa), sau đó người chơi đi lấy chìa khóa và go west lần thứ hai thắng."
     },
     {
       "type": "text",
@@ -34,14 +34,14 @@
     }
   ],
   "exercise": {
-    "prompt": "Trong parser nhỏ này, parse chỉ biết look. Hãy dạy nó từ inventory, và cả dạng ngắn i, để cả hai cùng cho ra Command::Inventory. Chương trình sẽ in ra ba dòng: You see a dusty hall., You carry: key, lamp, I don't understand 'dance'. Gợi ý: trong một match, a | b khớp với a hoặc b, nên nhánh có thể là \"inventory\" | \"i\" => Command::Inventory.",
+    "prompt": "Trong parser nhỏ này, parse chỉ biết look. Hãy dạy nó từ inventory, và cả dạng ngắn i, để cả hai cùng cho ra Command::Inventory. Chương trình phải in ra ba dòng: You see a dusty hall., You carry: key, lamp, I don't understand 'dance'. Gợi ý: trong một match, a | b khớp với a hoặc b, nên nhánh có thể là \"inventory\" | \"i\" => Command::Inventory.",
     "starter": "enum Command {\n    Look,\n    Inventory,\n    Unknown(String),\n}\n\nfn parse(input: &str) -> Command {\n    match input {\n        \"look\" => Command::Look,\n        // Until you add the arm for inventory, Command::Inventory is never created,\n        // so the compiler warns about it. The warning goes away when you are done.\n        _ => Command::Unknown(input.to_string()),\n    }\n}\n\nfn main() {\n    let inventory = [\"key\", \"lamp\"];\n    for input in [\"look\", \"i\", \"dance\"] {\n        match parse(input) {\n            Command::Look => println!(\"You see a dusty hall.\"),\n            Command::Inventory => println!(\"You carry: {}\", inventory.join(\", \")),\n            Command::Unknown(text) => println!(\"I don't understand '{text}'.\"),\n        }\n    }\n}",
     "expectedOutput": "You see a dusty hall.\nYou carry: key, lamp\nI don't understand 'dance'.",
     "solution": "enum Command {\n    Look,\n    Inventory,\n    Unknown(String),\n}\n\nfn parse(input: &str) -> Command {\n    match input {\n        \"look\" => Command::Look,\n        \"inventory\" | \"i\" => Command::Inventory,\n        _ => Command::Unknown(input.to_string()),\n    }\n}\n\nfn main() {\n    let inventory = [\"key\", \"lamp\"];\n    for input in [\"look\", \"i\", \"dance\"] {\n        match parse(input) {\n            Command::Look => println!(\"You see a dusty hall.\"),\n            Command::Inventory => println!(\"You carry: {}\", inventory.join(\", \")),\n            Command::Unknown(text) => println!(\"I don't understand '{text}'.\"),\n        }\n    }\n}",
     "hints": [
-      "parse so khớp đầu vào với các từ chính xác. Inventory cần được tới bằng hai từ khác nhau. Một nhánh match có thể có hai mẫu (pattern) không?",
+      "parse so khớp đầu vào với các từ chính xác. Cần có hai từ khác nhau cùng dẫn tới Inventory. Một nhánh match có thể có hai mẫu (pattern) không?",
       "Có: a | b khớp với a hoặc b. Hãy viết cả hai từ trong một mẫu, với | giữa chúng, và gán cho nhánh giá trị Command::Inventory.",
-      "Thêm \"inventory\" | \"i\" => Command::Inventory, phía trên nhánh _, vì nhánh _ khớp với mọi thứ và các nhánh sau nó không bao giờ chạy."
+      "Hãy thêm \"inventory\" | \"i\" => Command::Inventory, phía trên nhánh _, vì nhánh _ khớp với mọi thứ và các nhánh sau nó không bao giờ chạy."
     ]
   },
   "quiz": [
@@ -67,7 +67,7 @@
       "question": "Kiểu enum State mô hình hóa điều gì?",
       "options": [
         "Danh sách mọi phòng mà người chơi đã ghé thăm",
-        "Văn bản người chơi đã gõ ở lần nhắc gần nhất, được giữ cho lượt kế tiếp",
+        "Văn bản người chơi đã gõ ở dấu nhắc lệnh gần nhất, được giữ cho lượt kế tiếp",
         "Giai đoạn mà trò chơi đang ở: đúng một trong Playing hoặc Won tại mỗi thời điểm"
       ],
       "answer": 2

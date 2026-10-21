@@ -4,7 +4,7 @@
   "sections": [
     {
       "type": "text",
-      "text": "Mọi tham chiếu đều trỏ tới một giá trị đang sống ở đâu đó, và một tham chiếu không bao giờ được sống lâu hơn giá trị đó. Khoảng thời gian một tham chiếu còn hợp lệ là lifetime của nó. Phần lớn thời gian Rust tự suy ra lifetime, và bạn vẫn luôn dựa vào điều đó. Bài này cho thấy những trường hợp Rust cần bạn giúp."
+      "text": "Mọi tham chiếu đều trỏ tới một giá trị đang sống ở đâu đó, và một tham chiếu không bao giờ được sống lâu hơn giá trị đó. Khoảng thời gian một tham chiếu còn hợp lệ là lifetime của nó. Trong hầu hết các trường hợp, Rust tự suy ra lifetime, và bạn vẫn luôn dựa vào điều đó. Bài này cho thấy những trường hợp Rust cần bạn giúp."
     },
     {
       "type": "text",
@@ -52,7 +52,7 @@
     },
     {
       "type": "text",
-      "text": "Có một lifetime đặc biệt, 'static. Nó nghĩa là \"hợp lệ trong suốt thời gian chạy của chương trình\". Mọi string literal đều có kiểu này, &'static str, vì văn bản được lưu ngay bên trong chương trình. Đừng thêm 'static chỉ để làm trình biên dịch hết báo lỗi. Nó thường che giấu một vấn đề thật."
+      "text": "Có một lifetime đặc biệt, 'static. Nó nghĩa là \"hợp lệ trong suốt thời gian chạy của chương trình\". Mọi chuỗi literal đều có kiểu này, &'static str, vì văn bản được lưu ngay bên trong chương trình. Đừng thêm 'static chỉ để làm trình biên dịch hết báo lỗi. Nó thường che giấu một vấn đề thật."
     },
     {
       "type": "note",
@@ -61,17 +61,17 @@
     },
     {
       "type": "note",
-      "text": "Đây là phép kiểm tra mà C và C++ để lại cho bạn (một con trỏ được trả về tới một biến cục bộ đã chết là một con trỏ treo (dangling pointer)). Các ngôn ngữ dùng bộ thu gom rác (garbage collector) tránh điều đó bằng cách giữ các đối tượng sống. Trong Rust, lifetime bị xóa sau khi kiểm tra, nên chúng không tốn gì lúc chạy. Các nhãn như 'a chỉ tồn tại cho trình biên dịch.",
+      "text": "Đây là phép kiểm tra mà C và C++ để lại cho bạn (một con trỏ được trả về tới một biến cục bộ đã chết là một con trỏ treo (dangling pointer)). Các ngôn ngữ dùng bộ thu gom rác (garbage collector) tránh điều đó bằng cách giữ cho các đối tượng còn sống. Trong Rust, lifetime bị xóa sau khi kiểm tra, nên chúng không tốn gì lúc chạy. Các nhãn như 'a chỉ tồn tại cho trình biên dịch.",
       "track": "fast"
     }
   ],
   "exercise": {
-    "prompt": "longest đã được viết sẵn. Hãy thêm một hàm shorter trả về giá trị ngắn hơn trong hai giá trị &str (giá trị đầu tiên nếu chúng cùng độ dài). Sau đó, ở cuối main, in ra kết quả mà shorter trả về cho tree và forest. Chương trình sẽ in ra hai dòng: forest và tree. Gợi ý: shorter cần cùng các lifetime annotation như longest.",
+    "prompt": "longest đã được viết sẵn. Hãy thêm một hàm shorter trả về giá trị ngắn hơn trong hai giá trị &str (giá trị đầu tiên nếu chúng cùng độ dài). Sau đó, ở cuối main, in ra kết quả mà shorter trả về cho tree và forest. Chương trình phải in ra hai dòng: forest và tree. Gợi ý: shorter cần cùng các lifetime annotation như longest.",
     "starter": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\n// add shorter here\n\nfn main() {\n    println!(\"{}\", longest(\"tree\", \"forest\"));\n}",
     "expectedOutput": "forest\ntree",
     "solution": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\nfn shorter<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() <= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\nfn main() {\n    println!(\"{}\", longest(\"tree\", \"forest\"));\n    println!(\"{}\", shorter(\"tree\", \"forest\"));\n}",
     "hints": [
-      "shorter có cùng vấn đề như longest: kết quả mượn từ x hoặc y, và Rust cần được cho biết nó còn hợp lệ trong bao lâu. Hãy chép hình dạng của longest.",
+      "shorter có cùng vấn đề như longest: kết quả mượn từ x hoặc y, và Rust cần được cho biết nó còn hợp lệ trong bao lâu. Hãy làm theo khuôn của longest.",
       "Hãy cho shorter cùng các lifetime annotation như longest: fn shorter<'a>(x: &'a str, y: &'a str) -> &'a str. Trong thân hàm, đổi >= thành <=, để khi bằng nhau vẫn trả về x.",
       "Hãy trả về x khi x.len() <= y.len(), nếu không thì trả về y. Dấu <= làm cho khi bằng nhau sẽ cho giá trị đầu tiên. Sau đó hãy in shorter(\"tree\", \"forest\") ở cuối main."
     ]
@@ -90,13 +90,13 @@
       "question": "Vì sao fn first_word(s: &str) -> &str không cần lifetime annotation nào?",
       "options": [
         "Các hàm trả về &str được miễn kiểm tra lifetime",
-        "Vì các giá trị &str được sao chép, nên không gì có thể thành dangling",
+        "Vì các giá trị &str được sao chép, nên không bao giờ có tham chiếu treo (dangling reference)",
         "Quy tắc elision: với đúng một tham chiếu đầu vào, đầu ra nhận lifetime của nó"
       ],
       "answer": 2
     },
     {
-      "question": "Kiểu của một string literal như \"hello\" là gì?",
+      "question": "Kiểu của một chuỗi literal như \"hello\" là gì?",
       "options": [
         "&'static str, hợp lệ trong suốt thời gian chạy của chương trình",
         "String, một giá trị sở hữu bị drop ở cuối khối của nó",

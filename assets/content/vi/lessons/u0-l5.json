@@ -12,7 +12,7 @@
     { "type": "note", "text": "Những hàm được đặt tên tốt giúp chương trình dễ đọc hơn. area(4, 5) cho bạn biết chuyện gì đang diễn ra mà không cần đọc phép tính bên trong." }
   ],
   "exercise": {
-    "prompt": "Viết một hàm tên là add nhận hai tham số i32, a và b, và trả về a + b dưới dạng i32. Sau đó xóa // ở đầu dòng trong main để nó gọi hàm của bạn. Chương trình sẽ in ra: 7",
+    "prompt": "Viết một hàm tên là add nhận hai tham số i32, a và b, và trả về a + b dưới dạng i32. Sau đó xóa // ở đầu dòng trong main để nó gọi hàm của bạn. Chương trình phải in ra: 7",
     "starter": "// write fn add here\n\nfn main() {\n    // println!(\"{}\", add(3, 4));\n}",
     "expectedOutput": "7",
     "solution": "fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\nfn main() {\n    println!(\"{}\", add(3, 4));\n}",

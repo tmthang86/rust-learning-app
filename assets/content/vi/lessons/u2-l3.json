@@ -26,7 +26,7 @@
     },
     {
       "type": "note",
-      "text": "Điều này thay thế toán tử ba ngôi (ternary operator) (cond ? a : b) có trong C, Java và JavaScript. Rust không có toán tử đó, vì if đã làm được việc ấy rồi.",
+      "text": "Điều này thay thế toán tử ba ngôi (ternary operator, cond ? a : b) có trong C, Java và JavaScript. Rust không có toán tử đó, vì if đã làm được việc ấy rồi.",
       "track": "fast"
     },
     {

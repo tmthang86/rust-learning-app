@@ -16,7 +16,7 @@
     },
     {
       "type": "text",
-      "text": "<T> sau tên khai báo ô giữ chỗ. Sau đó, T có thể được dùng như bất kỳ kiểu nào trong các tham số và kiểu trả về. (T, T) là một tuple chứa hai giá trị cùng kiểu, còn pair.0 và pair.1 chọn các phần của nó. Ở lệnh gọi đầu tiên T trở thành i32, ở lệnh gọi thứ hai là &str, ở lệnh gọi thứ ba là String. Bạn không bao giờ viết kiểu thật: Rust tự suy ra từ các đối số. Chú thích Output ở cuối đoạn code cho thấy ba cặp đã được hoán đổi."
+      "text": "<T> đặt sau tên hàm dùng để khai báo ô giữ chỗ. Sau đó, T có thể được dùng như bất kỳ kiểu nào trong các tham số và kiểu trả về. (T, T) là một tuple chứa hai giá trị cùng kiểu, còn pair.0 và pair.1 chọn các phần của nó. Ở lệnh gọi đầu tiên T trở thành i32, ở lệnh gọi thứ hai là &str, ở lệnh gọi thứ ba là String. Bạn không bao giờ viết kiểu thật: Rust tự suy ra từ các đối số. Chú thích Output ở cuối đoạn code cho thấy ba cặp đã được hoán đổi."
     },
     {
       "type": "note",
@@ -50,7 +50,7 @@
     }
   ],
   "exercise": {
-    "prompt": "last_item chỉ hoạt động với slice của i32. Hãy làm cho nó hoạt động với slice của bất kỳ kiểu nào, để nó cũng hoạt động với một danh sách các từ. Sau đó, ở cuối main, tạo một mảng gồm ba từ (red, green và blue) và in phần tử cuối của nó. Chương trình sẽ in ra hai dòng: 15 và blue. Gợi ý: fn last_item<T>(items: &[T]) -> &T, và let words = [\"red\", \"green\", \"blue\"];",
+    "prompt": "last_item chỉ hoạt động với slice của i32. Hãy làm cho nó hoạt động với slice của bất kỳ kiểu nào, để nó cũng hoạt động với một danh sách các từ. Sau đó, ở cuối main, tạo một mảng gồm ba từ (red, green và blue) và in phần tử cuối của nó. Chương trình phải in ra hai dòng: 15 và blue. Gợi ý: fn last_item<T>(items: &[T]) -> &T, và let words = [\"red\", \"green\", \"blue\"];",
     "starter": "fn last_item(items: &[i32]) -> &i32 {\n    &items[items.len() - 1]\n}\n\nfn main() {\n    let numbers = [4, 8, 15];\n    println!(\"{}\", last_item(&numbers));\n}",
     "expectedOutput": "15\nblue",
     "solution": "fn last_item<T>(items: &[T]) -> &T {\n    &items[items.len() - 1]\n}\n\nfn main() {\n    let numbers = [4, 8, 15];\n    println!(\"{}\", last_item(&numbers));\n    let words = [\"red\", \"green\", \"blue\"];\n    println!(\"{}\", last_item(&words));\n}",
@@ -73,14 +73,14 @@
     {
       "question": "Vì sao largest cần T: PartialOrd?",
       "options": [
-        "Vì > chỉ hoạt động trên các kiểu có thể sắp thứ tự, và một T trần không hứa hẹn gì",
+        "Vì > chỉ hoạt động trên các kiểu có thể sắp thứ tự, và một T không có ràng buộc thì không hứa hẹn gì",
         "Vì slice phải được sắp xếp trước khi bạn có thể tìm phần tử lớn nhất trong đó",
         "Vì hàm trả về một tham chiếu, và tham chiếu cần PartialOrd"
       ],
       "answer": 0
     },
     {
-      "question": "Rust quyết định T là kiểu nào bằng cách nào khi bạn gọi swap_pair((\"a\", \"b\"))?",
+      "question": "Khi bạn gọi swap_pair((\"a\", \"b\")), Rust xác định T là kiểu gì bằng cách nào?",
       "options": [
         "Nó dùng i32 trừ khi bạn viết một kiểu khác trong dấu ngoặc góc ở lệnh gọi",
         "Nó suy ra T từ kiểu của các đối số bạn truyền vào",

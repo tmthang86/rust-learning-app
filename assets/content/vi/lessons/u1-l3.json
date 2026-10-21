@@ -22,7 +22,7 @@
     {
       "type": "note",
       "track": "fast",
-      "text": "Nếu bạn đến từ một ngôn ngữ khác: {name} hoạt động giống f-string trong Python hay template literal trong JavaScript, nhưng chuỗi định dạng (format string) được kiểm tra lúc biên dịch. Gõ sai một ô giữ chỗ là lỗi biên dịch, không phải một bất ngờ lúc chạy. Chỉ một tên biến đơn thuần mới đặt vừa trong cặp dấu ngoặc nhọn (khác với f-string và template literal, vốn nhận bất kỳ biểu thức nào): {age + 1} là một lỗi. Với mọi trường hợp khác, hãy dùng {} và truyền giá trị sau chuỗi: println!(\"{}\", age + 1)."
+      "text": "Nếu bạn đến từ một ngôn ngữ khác: {name} hoạt động giống f-string trong Python hay template literal trong JavaScript, nhưng chuỗi định dạng (format string) được kiểm tra lúc biên dịch. Gõ sai một ô giữ chỗ là lỗi biên dịch, không phải một bất ngờ lúc chạy. Bên trong cặp dấu ngoặc nhọn chỉ được đặt một tên biến đơn thuần (khác với f-string và template literal, vốn nhận bất kỳ biểu thức nào): {age + 1} là một lỗi. Với mọi trường hợp khác, hãy dùng {} và truyền giá trị sau chuỗi: println!(\"{}\", age + 1)."
     },
     {
       "type": "text",

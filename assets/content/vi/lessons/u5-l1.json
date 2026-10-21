@@ -12,7 +12,7 @@
     },
     {
       "type": "text",
-      "text": "Đọc các phần tử bằng chỉ mục, hoặc an toàn hơn là dùng get, phương thức trả về một Option phòng khi chỉ mục nằm ngoài giới hạn:"
+      "text": "Đọc các phần tử bằng chỉ số, hoặc an toàn hơn là dùng get, phương thức trả về một Option phòng khi chỉ số nằm ngoài giới hạn:"
     },
     {
       "type": "code",
@@ -38,7 +38,7 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy push 4 và 5 vào vector, rồi in nó ra. Chương trình sẽ in ra: [1, 2, 3, 4, 5]",
+    "prompt": "Hãy dùng push để thêm 4 và 5 vào vector, rồi in nó ra. Chương trình phải in ra: [1, 2, 3, 4, 5]",
     "starter": "fn main() {\n    let mut numbers = vec![1, 2, 3];   // keep mut: you'll push onto it\n    println!(\"{:?}\", numbers);\n}",
     "expectedOutput": "[1, 2, 3, 4, 5]",
     "solution": "fn main() {\n    let mut numbers = vec![1, 2, 3];\n    numbers.push(4);\n    numbers.push(5);\n    println!(\"{:?}\", numbers);\n}",
@@ -61,7 +61,7 @@
     {
       "question": "v.get(99) trả về gì khi v có 3 phần tử?",
       "options": [
-        "Chương trình bị crash",
+        "Chương trình bị sập (crash)",
         "None",
         "0"
       ],

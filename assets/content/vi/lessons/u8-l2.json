@@ -4,7 +4,7 @@
   "sections": [
     {
       "type": "text",
-      "text": "Một closure có thể dùng các biến từ phạm vi nơi nó được viết. Một hàm thông thường thì không. Điều này được gọi là capture. Theo mặc định, một closure capture những gì nó dùng theo cách nhẹ nhất có thể: nó mượn bằng tham chiếu chia sẻ nếu chỉ đọc, mượn có thể thay đổi nếu nó thay đổi giá trị, và lấy quyền sở hữu nếu phần thân của nó di chuyển giá trị đi nơi khác (ví dụ bằng cách trả về nó)."
+      "text": "Một closure có thể dùng các biến từ phạm vi nơi nó được viết. Một hàm thông thường thì không. Điều này được gọi là capture (nắm bắt). Theo mặc định, một closure capture những gì nó dùng theo cách nhẹ nhất có thể: nó mượn bằng tham chiếu chia sẻ nếu chỉ đọc, mượn dưới dạng có thể thay đổi nếu nó thay đổi giá trị, và lấy quyền sở hữu nếu phần thân của nó di chuyển giá trị đi nơi khác (ví dụ bằng cách trả về nó)."
     },
     {
       "type": "code",
@@ -40,7 +40,7 @@
     },
     {
       "type": "text",
-      "text": "Fn: chỉ đọc các giá trị đã capture, nên có thể được gọi bao nhiêu lần tùy ý. FnMut: thay đổi các giá trị đã capture, nên có thể được gọi nhiều lần nhưng cần mut. FnOnce: di chuyển một giá trị đã capture ra ngoài, nên chỉ có thể được gọi một lần. Một closure là Fn thì cũng là FnMut và FnOnce, và mọi closure ít nhất là FnOnce. Khi bạn nhận một closure, hãy yêu cầu mức tối thiểu bạn cần. Nếu bạn chỉ gọi nó một lần, hãy yêu cầu FnOnce. Nếu bạn gọi nó nhiều lần, hãy yêu cầu FnMut. Chỉ yêu cầu Fn nếu nó không được thay đổi bất cứ thứ gì. Mỗi bước đi xuống trong danh sách đó thì càng ít closure được chấp nhận."
+      "text": "Fn: chỉ đọc các giá trị đã capture, nên có thể được gọi bao nhiêu lần tùy ý. FnMut: thay đổi các giá trị đã capture, nên có thể được gọi nhiều lần nhưng cần mut. FnOnce: di chuyển một giá trị đã capture ra ngoài, nên chỉ có thể được gọi một lần. Một closure là Fn thì cũng là FnMut và FnOnce, và mọi closure ít nhất là FnOnce. Khi bạn nhận một closure, hãy yêu cầu mức tối thiểu bạn cần. Nếu bạn chỉ gọi nó một lần, hãy yêu cầu FnOnce. Nếu bạn gọi nó nhiều lần, hãy yêu cầu FnMut. Chỉ yêu cầu Fn nếu nó không được thay đổi bất cứ thứ gì. Càng đi xuống danh sách đó, càng ít closure được chấp nhận."
     },
     {
       "type": "code",
@@ -57,7 +57,7 @@
     },
     {
       "type": "note",
-      "text": "So sánh với các ngôn ngữ khác. C++ bắt bạn chọn một danh sách capture ([&], [=], [x, &y]) và vui vẻ cho phép bạn capture một tham chiếu treo (dangling reference). JavaScript, Python và Java capture biến một cách ngầm (Python cần nonlocal để gán cho một biến; Java yêu cầu chúng phải là effectively final). Rust suy ra chế độ capture từ phần thân, và borrow checker từ chối mọi capture có thể bị treo. move tương đương với [=] theo giá trị, nhưng nó di chuyển các kiểu không phải Copy.",
+      "text": "So sánh với các ngôn ngữ khác. C++ bắt bạn chọn một danh sách capture ([&], [=], [x, &y]) và thản nhiên cho phép bạn capture một tham chiếu treo (dangling reference). JavaScript, Python và Java capture biến một cách ngầm định (Python cần nonlocal để gán cho một biến; Java yêu cầu chúng phải là effectively final). Rust suy ra chế độ capture từ phần thân, và borrow checker (trình kiểm tra mượn) từ chối mọi capture có thể bị treo. move tương đương với [=] theo giá trị, nhưng nó di chuyển các kiểu không phải Copy.",
       "track": "fast"
     }
   ],

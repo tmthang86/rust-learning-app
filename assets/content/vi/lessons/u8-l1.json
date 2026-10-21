@@ -59,7 +59,7 @@
     "expectedOutput": "42\n45",
     "solution": "fn apply(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(value)\n}\n\nfn main() {\n    let doubled = apply(|x| x * 2, 21);\n    println!(\"{doubled}\");\n    let minus_five = |x| x - 5;\n    println!(\"{}\", apply(minus_five, 50));\n}",
     "hints": [
-      "Một closure có thể được lưu trong một biến và truyền cho apply, giống như closure nhân đôi trong code khởi đầu. Hãy tạo một closure trừ thay vào đó.",
+      "Một closure có thể được lưu trong một biến và truyền cho apply, giống như closure nhân đôi trong code khởi đầu. Hãy tạo một closure làm phép trừ thay vì nhân đôi.",
       "Hãy viết tham số giữa hai dấu gạch đứng, rồi đến phần thân: |x| x - 5. Đặt nó vào một biến bằng let, và truyền biến đó cho apply.",
       "Bên dưới println! đầu tiên, hãy viết let minus_five = |x| x - 5; rồi println!(\"{}\", apply(minus_five, 50))."
     ]

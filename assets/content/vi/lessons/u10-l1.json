@@ -20,7 +20,7 @@
     },
     {
       "type": "text",
-      "text": "Rust phải biết một List chiếm bao nhiêu byte. Một Cons chứa một List, mà List đó chứa một Cons, và cứ thế mãi mãi. Cách sửa là lưu phần còn lại của danh sách đằng sau một Box. Một Box luôn có cùng kích thước (nó chỉ là một con trỏ), nên kích thước được biết."
+      "text": "Rust phải biết một List chiếm bao nhiêu byte. Một Cons chứa một List, mà List đó chứa một Cons, và cứ thế mãi mãi. Cách sửa là lưu phần còn lại của danh sách đằng sau một Box. Một Box luôn có cùng kích thước (nó chỉ là một con trỏ), nên kích thước là biết trước."
     },
     {
       "type": "code",
@@ -40,7 +40,7 @@
     },
     {
       "type": "text",
-      "text": "Tình huống thứ ba là di chuyển một giá trị lớn mà không sao chép nó. Di chuyển một Box chỉ sao chép con trỏ, không phải toàn bộ dữ liệu đằng sau nó. Điều này ít quan trọng hơn, nên chỉ cần biết là nó tồn tại."
+      "text": "Tình huống thứ ba là di chuyển một giá trị lớn mà không sao chép nó. Di chuyển một Box chỉ sao chép con trỏ, không phải toàn bộ dữ liệu đằng sau nó. Trường hợp này ít gặp hơn, nên chỉ cần biết là nó tồn tại."
     },
     {
       "type": "note",
@@ -54,14 +54,14 @@
     }
   ],
   "exercise": {
-    "prompt": "Thêm một hàm length(list: &List) -> u32 đếm số phần tử: một Cons tính là 1 cộng với độ dài của phần còn lại, và Nil là 0. Hãy làm theo dạng của sum. Sau đó đổi println! trong main để nó in cả hai: sum = 6, length = 3",
+    "prompt": "Hãy thêm một hàm length(list: &List) -> u32 đếm số phần tử: một Cons tính là 1 cộng với độ dài của phần còn lại, và Nil là 0. Hãy làm theo dạng của sum. Sau đó đổi println! trong main để nó in cả hai: sum = 6, length = 3",
     "starter": "enum List {\n    Cons(i32, Box<List>),\n    Nil,\n}\nuse List::{Cons, Nil};\n\nfn sum(list: &List) -> i32 {\n    match list {\n        Cons(value, rest) => *value + sum(rest),\n        Nil => 0,\n    }\n}\n\n// add fn length here\n\nfn main() {\n    let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));\n    println!(\"sum = {}\", sum(&list));\n}",
     "expectedOutput": "sum = 6, length = 3",
     "solution": "enum List {\n    Cons(i32, Box<List>),\n    Nil,\n}\nuse List::{Cons, Nil};\n\nfn sum(list: &List) -> i32 {\n    match list {\n        Cons(value, rest) => *value + sum(rest),\n        Nil => 0,\n    }\n}\n\nfn length(list: &List) -> u32 {\n    match list {\n        Cons(_, rest) => 1 + length(rest),\n        Nil => 0,\n    }\n}\n\nfn main() {\n    let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));\n    println!(\"sum = {}, length = {}\", sum(&list), length(&list));\n}",
     "hints": [
       "length theo dạng của sum: một match trên danh sách với một nhánh cho Cons và một nhánh cho Nil. Mỗi nhánh nên cho ra gì?",
-      "Viết fn length(list: &List) -> u32 và match list. Nil cho ra 0. Trong nhánh Cons bạn không cần con số, nên hãy viết _ ở đó (nó có nghĩa là \"bất kỳ giá trị nào, bị bỏ qua\") và đặt tên cho phần còn lại.",
-      "Nhánh Cons là 1 + length(rest). Sau đó đổi println! trong main để in cả hai: sum = {}, length = {}, với sum(&list) và length(&list)."
+      "Hãy viết fn length(list: &List) -> u32 và match list. Nil cho ra 0. Trong nhánh Cons bạn không cần con số, nên hãy viết _ ở đó (nó có nghĩa là \"bất kỳ giá trị nào, bị bỏ qua\") và đặt tên cho phần còn lại.",
+      "Nhánh Cons là 1 + length(rest). Sau đó hãy đổi println! trong main để in cả hai: sum = {}, length = {}, với sum(&list) và length(&list)."
     ]
   },
   "quiz": [

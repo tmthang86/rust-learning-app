@@ -14,7 +14,7 @@
     {
       "type": "note",
       "track": "fast",
-      "text": "Nếu bạn đến từ một ngôn ngữ khác: println! là một macro chứ không phải một hàm, vì nó cần nhận số lượng đối số bất kỳ và kiểm tra chuỗi định dạng (format string) của nó với các đối số đó ngay lúc biên dịch. Hàm Rust không làm được cả hai điều này."
+      "text": "Nếu bạn đến từ một ngôn ngữ khác: println! là một macro chứ không phải một hàm, vì nó cần nhận số lượng đối số bất kỳ và kiểm tra chuỗi định dạng (format string) của nó với các đối số đó ngay lúc biên dịch. Hàm Rust không làm được điều nào trong hai điều này."
     },
     {
       "type": "code",

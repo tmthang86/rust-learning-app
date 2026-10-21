@@ -8,7 +8,7 @@
     },
     {
       "type": "text",
-      "text": "Số nguyên là các số tròn. Các kiểu có dấu (signed: i8, i16, i32, i64, i128) có thể âm; các kiểu không dấu (unsigned: u8, u16, u32, u64, u128) thì không. Con số là kích thước tính bằng bit, quyết định phạm vi giá trị: một u8 chứa từ 0 đến 255 và một i8 chứa từ -128 đến 127. i32 là kiểu mặc định. usize được dùng cho số lượng và chỉ số (index)."
+      "text": "Số nguyên là các số không có phần thập phân. Các kiểu có dấu (signed: i8, i16, i32, i64, i128) có thể âm; các kiểu không dấu (unsigned: u8, u16, u32, u64, u128) thì không. Con số là kích thước tính bằng bit, quyết định phạm vi giá trị: một u8 chứa từ 0 đến 255 và một i8 chứa từ -128 đến 127. i32 là kiểu mặc định. usize được dùng cho số lượng và chỉ số (index)."
     },
     {
       "type": "code",
@@ -16,7 +16,7 @@
     },
     {
       "type": "note",
-      "text": "Dấu _ trong 1_250 chỉ để dễ đọc, giống dấu phẩy trong 1,250.",
+      "text": "Dấu _ trong 1_250 chỉ để dễ đọc, giống dấu phân cách hàng nghìn trong 1.250 (tiếng Anh viết 1,250).",
       "track": "starter"
     },
     {
@@ -53,7 +53,7 @@
     },
     {
       "type": "text",
-      "text": "2.9 as i32 là 2, vì phần thập phân bị bỏ đi. 300 quá lớn đối với một u8, và phép ép kiểu số nguyên chỉ giữ lại những bit vừa, nên nó quay vòng thành 300 - 256 = 44. (Số thực thì khác: 300.0 as u8 cho 255, giá trị lớn nhất của u8.) Chỉ dùng as khi bạn biết giá trị vừa. Nó không dùng được với văn bản, nên hãy dùng parse() để biến văn bản thành số."
+      "text": "2.9 as i32 là 2, vì phần thập phân bị bỏ đi. 300 quá lớn đối với một u8, và phép ép kiểu số nguyên chỉ giữ lại những bit vừa với kiểu mới, nên nó quay vòng thành 300 - 256 = 44. (Số thực thì khác: 300.0 as u8 cho 255, giá trị lớn nhất của u8.) Chỉ dùng as khi bạn biết giá trị vừa. Nó không dùng được với văn bản, nên hãy dùng parse() để biến văn bản thành số."
     },
     {
       "type": "note",

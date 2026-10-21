@@ -69,19 +69,19 @@
     },
     {
       "type": "note",
-      "text": "Nếu bạn đến từ Java, Go hoặc C#: một crate là đơn vị mà Rust biên dịch một lần, gần giống một module hoặc JAR của Java, một package của Go hoặc một assembly của .NET (một package Cargo gần với một module của Go hơn). Nếu bạn biết npm hoặc PyPI, thì Cargo.toml giống package.json hoặc pyproject.toml, Cargo.lock giống package-lock.json, và crates.io là registry. Một package có thể có một library crate và nhiều binary crate (các binary bổ sung nằm trong src/bin/). Cargo.lock thường được commit (cargo new thiết lập điều này), kể cả với library. Workspace cho phép nhiều package dùng chung một file lock và một thư mục build. Cách bố trí cũ garden/mod.rs cũng dùng được, nhưng garden.rs nằm cạnh thư mục garden/ là phong cách hiện nay.",
+      "text": "Nếu bạn đến từ Java, Go hoặc C#: một crate là đơn vị mà Rust biên dịch trong một lượt (cùng một lúc), gần giống một module hoặc JAR của Java, một package của Go hoặc một assembly của .NET (một package Cargo gần với một module của Go hơn). Nếu bạn biết npm hoặc PyPI, thì Cargo.toml giống package.json hoặc pyproject.toml, Cargo.lock giống package-lock.json, và crates.io là registry. Một package có thể có một library crate và nhiều binary crate (các binary bổ sung nằm trong src/bin/). Cargo.lock thường được commit (cargo new thiết lập điều này), kể cả với library. Workspace cho phép nhiều package dùng chung một file lock và một thư mục build. Cách bố trí cũ garden/mod.rs cũng dùng được, nhưng garden.rs nằm cạnh thư mục garden/ là phong cách hiện nay.",
       "track": "fast"
     }
   ],
   "exercise": {
-    "prompt": "Hãy giả sử module lồng là file src/shop/fruits.rs. Bên trong mod shop, thêm pub mod fruits với một hàm pub fn count() -> u32 trả về 5. Sau đó thay số 0 trong main bằng shop::fruits::count(). Chương trình phải in ra: shop is open, 5 kinds of fruit",
+    "prompt": "Hãy giả sử module lồng là file src/shop/fruits.rs. Bên trong mod shop, hãy thêm pub mod fruits với một hàm pub fn count() -> u32 trả về 5. Sau đó thay số 0 trong main bằng shop::fruits::count(). Chương trình phải in ra: shop is open, 5 kinds of fruit",
     "starter": "mod shop {\n    pub fn open() -> String {\n        String::from(\"shop is open\")\n    }\n\n    // add pub mod fruits here\n}\n\nfn main() {\n    let count = 0;   // replace 0 with shop::fruits::count()\n    println!(\"{}, {} kinds of fruit\", shop::open(), count);\n}",
     "expectedOutput": "shop is open, 5 kinds of fruit",
     "solution": "mod shop {\n    pub fn open() -> String {\n        String::from(\"shop is open\")\n    }\n\n    pub mod fruits {\n        pub fn count() -> u32 {\n            5\n        }\n    }\n}\n\nfn main() {\n    let count = shop::fruits::count();\n    println!(\"{}, {} kinds of fruit\", shop::open(), count);\n}",
     "hints": [
       "Module shop cần một module lồng bên trong nó, như một thư mục trong một thư mục. Hãy xem formal nằm bên trong greetings như thế nào.",
       "Bên trong mod shop, hãy viết pub mod fruits { ... } và đặt một hàm vào đó: pub fn count() -> u32 trả về 5. Cả hai đều cần pub, vì main nằm bên ngoài.",
-      "Trong main, thay số 0 bằng đường dẫn đầy đủ tới hàm: shop::fruits::count()."
+      "Trong main, hãy thay số 0 bằng đường dẫn đầy đủ tới hàm: shop::fruits::count()."
     ]
   },
   "quiz": [
@@ -97,7 +97,7 @@
     {
       "question": "Phần [dependencies] của Cargo.toml làm gì?",
       "options": [
-        "Nó liệt kê các crate mà package cần, mà Cargo sẽ tải và build",
+        "Nó liệt kê các crate mà package cần, để Cargo tải về và build",
         "Nó liệt kê các hàm mà package công khai cho các crate khác",
         "Nó liệt kê các file nguồn mà trình biên dịch nên đưa vào bản build"
       ],

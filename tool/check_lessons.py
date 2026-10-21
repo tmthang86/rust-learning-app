@@ -187,26 +187,35 @@ _CODE_WORD = re.compile(
     """,
     re.VERBOSE,
 )
-# Rust keywords that are never ordinary English words.
+# Rust keywords that are never ordinary English words: code wherever they
+# appear, as a bare word.
 _CODE_KEYWORDS = {"let", "mut", "fn", "const", "struct", "enum", "impl", "mod", "pub", "dyn"}
-# Many keywords are English words too ("it won't let you", "a struct holds").
-# A keyword is code only in code shape: "let x =", "let mut", "fn name(",
-# "impl Trait for", "struct Name {". A bare word is prose, and translated.
-_KEYWORD_SHAPES = {
-    "let": re.compile(r"\blet\s+(?:mut\b|\w+\s*[=:;]|[A-Z]\w*\(|\()"),
-    "mut": re.compile(r"\bmut\s+\w+\s*[:,)=;]"),
-    "fn": re.compile(r"\bfn\s+(?:\w+\s*[(<]|\|)"),
-    "const": re.compile(r"\bconst\s+[A-Z_0-9]+\s*[:=]"),
-    "struct": re.compile(r"\bstruct\s+[A-Z]\w*\s*[{(;<:]"),
-    "enum": re.compile(r"\benum\s+[A-Z]\w*\s*[{<]"),
-    "impl": re.compile(r"\bimpl(?:<[^>]*>)?\s+[A-Z]\w*(?:<[^>]*>)?\s*(?:for\b|\{)"),
-    "mod": re.compile(r"\bmod\s+[a-z_]\w*\s*[{;]"),
-    "pub": re.compile(r"\bpub\s+(?:fn|struct|enum|mod|use|const)\b"),
-    "dyn": re.compile(r"\bdyn\s+[A-Z]"),
-}
+_BARE_KEYWORDS = _CODE_KEYWORDS - {"let"}
+# "let" is the exception: it is an everyday English word ("it won't let you",
+# "let several threads send"), so it is code only in code shape: "let x =",
+# "let mut", "let (a, b) =", "let Some(x) =".
+_LET_SHAPE = re.compile(r"\blet\s+(?:mut\b|\w+\s*[=:;]|[A-Z]\w*\(|\()")
 # Plain words in parentheses after a name are prose, not arguments:
-# "Some(that variable)".
-_PROSE_ARGS = re.compile(r"\b([A-Za-z_]\w*)\(\s*[A-Za-z]+(?:\s+[A-Za-z]+)+\s*\)")
+# "Some(that variable)". Code made of words ("v.get(i as usize)",
+# "Some(ref x)", "fn rename(mut self)") has keywords or types among them and
+# is kept.
+_PROSE_ARGS = re.compile(r"\b([A-Za-z_]\w*)\(\s*([a-z]+(?:\s+[a-z]+)+)\s*\)")
+_ARG_CODE_WORDS = {
+    "as", "ref", "self", "mut", "dyn", "impl", "fn", "let", "in", "move", "usize",
+    "isize", "bool", "char", "str", "box", "where", "for", "if", "else", "match",
+}
+
+
+def _drop_prose_args(text):
+    def replace(m):
+        words = m.group(2).split()
+        if any(w in _ARG_CODE_WORDS or re.fullmatch(r"[iuf]\d+", w) for w in words):
+            return m.group(0)
+        return m.group(1)
+
+    return _PROSE_ARGS.sub(replace, text)
+
+
 # Words that make an option code ("for x in &v") when nothing else is prose.
 _RUST_KEYWORDS = _CODE_KEYWORDS | {
     "for", "in", "if", "else", "new", "break", "return", "loop", "while",
@@ -223,6 +232,12 @@ _TRAILING_PUNCTUATION = ".,?:"
 _QUOTED = re.compile(r'"((?:[^"\\]|\\.)*)"')
 _MACRO_CALL = re.compile(r"\b([a-z_][a-z0-9_]*)!\s*[(\[{]")
 _NUMBER = re.compile(r"^-?[0-9][0-9_.]*$")
+
+
+def _looks_like_code(comment):
+    """A comment that is commented-out code: it has a `;`, `!(`, `=` or ends
+    in `)`. A sentence about the code does not."""
+    return bool(re.search(r";|!\s*\(|=", comment)) or comment.endswith(")")
 
 
 def _strip_comment(line):
@@ -269,12 +284,18 @@ def lesson_vocabulary(lesson):
             if line.startswith("//"):
                 # Comments are not program output, except the lines of a
                 # "// Output:" block, which show what the program prints.
+                # Commented-out code ("// println!("{a}");") is still code;
+                # a quoted string in a prose comment is not.
                 comment = line[2:].strip()
                 if comment.lower().startswith("output"):
                     in_output_block = True
                 elif in_output_block and comment:
                     literals.add(comment)
                     outputs.add(comment)
+                elif _looks_like_code(comment):
+                    literals.add(comment)
+                    literals.update(m.group(1) for m in _QUOTED.finditer(comment))
+                    outputs.update(m.group(1) for m in _QUOTED.finditer(comment))
                 continue
             in_output_block = False
             code = _strip_comment(line)
@@ -318,11 +339,10 @@ def word_tokens(text, vocab):
     """Code pieces found by their shape, as a Counter (each occurrence counts:
     `==` twice in the English text must be twice in the translation)."""
     tokens = Counter()
-    unquoted = _PROSE_ARGS.sub(r"\1", _QUOTED.sub(" ", text))
-    for keyword, shape in _KEYWORD_SHAPES.items():
-        found = len(shape.findall(unquoted))
-        if found:
-            tokens[keyword] += found
+    unquoted = _drop_prose_args(_QUOTED.sub(" ", text))
+    found = len(_LET_SHAPE.findall(unquoted))
+    if found:
+        tokens["let"] += found
     for word in unquoted.split():
         word = _clean_token(word)
         if not word:
@@ -330,6 +350,7 @@ def word_tokens(text, vocab):
         macro = re.match(r"([a-z_][a-z0-9_]*)!", word)
         if (
             word in _CODE_OPERATORS
+            or word in _BARE_KEYWORDS
             or _CODE_WORD.search(word)
             or (macro and macro.group(1) in vocab["macros"])
             or _NUMBER.match(word)
@@ -396,6 +417,11 @@ def is_code_option(option, vocab):
     ):
         return True
     words = text.split()
+    # Only keywords and one-letter names: "mut", "let", "pub struct", "mut self".
+    if all(w in _RUST_KEYWORDS or re.fullmatch(r"[a-z]\d?", w) for w in words) and any(
+        w in _CODE_KEYWORDS for w in words
+    ):
+        return True
     plain = [w for w in words if not code_tokens(w, vocab)]
     # Every word is code, a Rust keyword or a one-letter name ("for x in &v"),
     # with at least one real code token among them.

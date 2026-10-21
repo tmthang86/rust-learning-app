@@ -29,7 +29,7 @@
     },
     {
       "type": "note",
-      "text": "Bên trong một impl, bạn có thể viết Self thay cho tên kiểu, ví dụ fn new() -> Self. Lời gọi phương thức tự động tham chiếu, nên r.area() hoạt động dù r là một giá trị hay một tham chiếu.",
+      "text": "Bên trong một impl, bạn có thể viết Self thay cho tên kiểu, ví dụ fn new() -> Self. Lời gọi phương thức tự động lấy tham chiếu, nên r.area() hoạt động dù r là một giá trị hay một tham chiếu.",
       "track": "fast"
     }
   ],

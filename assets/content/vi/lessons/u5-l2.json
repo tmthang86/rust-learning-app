@@ -4,7 +4,7 @@
   "sections": [
     {
       "type": "text",
-      "text": "Rust có hai kiểu chuỗi chính. String là văn bản mà nó sở hữu, bạn có thể kéo dài và thay đổi. &str là một khung nhìn được mượn vào một đoạn văn bản nào đó, giống như một chuỗi literal."
+      "text": "Rust có hai kiểu chuỗi chính. String là văn bản có chủ sở hữu (owned), bạn có thể kéo dài và thay đổi nó. &str là một khung nhìn mượn tới một đoạn văn bản nào đó, giống như một chuỗi literal."
     },
     {
       "type": "code",
@@ -32,12 +32,12 @@
     },
     {
       "type": "note",
-      "text": "Toán tử + nhận String ở bên trái theo giá trị: nó di chuyển (move) String đó, thêm &str ở bên phải vào cuối, rồi trả lại chính String ấy. Đó là lý do vế phải phải là một &str (hãy viết a + &b khi b là một String), và cũng là lý do a không thể được dùng sau a + b.",
+      "text": "Toán tử + nhận String ở bên trái theo giá trị: nó di chuyển (move) String đó, thêm &str ở bên phải vào cuối, rồi trả lại chính String ấy. Đó là lý do vế phải phải là một &str (hãy viết a + &b khi b là một String), và cũng là lý do bạn không thể dùng a sau a + b.",
       "track": "fast"
     },
     {
       "type": "text",
-      "text": "String có sẵn nhiều phương thức hữu ích:"
+      "text": "Chuỗi có sẵn nhiều phương thức hữu ích:"
     },
     {
       "type": "code",
@@ -55,7 +55,7 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy tạo câu bằng format! với name và lang. Chương trình sẽ in ra: Thang is learning Rust",
+    "prompt": "Hãy tạo câu bằng format! với name và lang. Chương trình phải in ra: Thang is learning Rust",
     "starter": "fn main() {\n    let name = \"Thang\";\n    let lang = \"Rust\";\n    let sentence = String::new();\n    println!(\"{sentence}\");\n}",
     "expectedOutput": "Thang is learning Rust",
     "solution": "fn main() {\n    let name = \"Thang\";\n    let lang = \"Rust\";\n    let sentence = format!(\"{name} is learning {lang}\");\n    println!(\"{sentence}\");\n}",

@@ -37,7 +37,7 @@
     },
     {
       "type": "text",
-      "text": "Nếu bạn muốn tiếp tục dùng một giá trị sau khi một hàm đã dùng nó thì sao? Thay vì trao nó đi, bạn có thể cho mượn. Đó gọi là mượn (borrowing), và nó nằm ở hai bài nữa."
+      "text": "Nếu bạn muốn tiếp tục dùng một giá trị sau khi một hàm đã dùng nó thì sao? Thay vì trao nó đi, bạn có thể cho mượn. Đó gọi là mượn (borrowing), và bạn sẽ học nó sau hai bài nữa."
     },
     {
       "type": "note",
@@ -46,7 +46,7 @@
     },
     {
       "type": "note",
-      "text": "Một move là một phép sao chép nông (shallow copy) rẻ của con trỏ, độ dài và dung lượng (capacity); dữ liệu trên heap không được sao chép. Vì chỉ tồn tại một chủ sở hữu, nên không có double free và không cần đếm tham chiếu. Dành cho lập trình viên C++: trong Rust, move là mặc định, trình biên dịch cấm mọi lần dùng biến cũ sau đó, và biến cũ không bị drop (chỉ chủ sở hữu mới bị drop). Một đối tượng C++ đã bị move khỏi vẫn còn sống và destructor của nó vẫn chạy sau đó; các kiểu trong thư viện chuẩn được để lại ở trạng thái hợp lệ nhưng không xác định (valid but unspecified).",
+      "text": "Một move là một phép sao chép nông (shallow copy) rẻ của con trỏ, độ dài và dung lượng (capacity); dữ liệu trên heap không được sao chép. Vì chỉ tồn tại một chủ sở hữu, nên không có double free và không cần đếm tham chiếu. Dành cho lập trình viên C++: trong Rust, move là mặc định, trình biên dịch cấm mọi lần dùng biến cũ sau đó, và biến cũ không bị drop (chỉ chủ sở hữu mới đó là bị drop). Một đối tượng C++ sau khi bị move đi vẫn còn sống và destructor của nó vẫn chạy sau đó; các kiểu trong thư viện chuẩn được để lại ở trạng thái hợp lệ nhưng không xác định (valid but unspecified).",
       "track": "fast"
     }
   ],
@@ -56,7 +56,7 @@
     "expectedOutput": "Hello, Ferris\nBye, Ferris",
     "solution": "fn greet(name: &String) {\n    println!(\"Hello, {name}\");\n}\n\nfn main() {\n    let name = String::from(\"Ferris\");\n    greet(&name);\n    println!(\"Bye, {name}\");\n}",
     "hints": [
-      "Truyền name vào greet làm nó bị di chuyển, nên main không thể dùng nó sau đó. Hãy để greet mượn nó thay vì vậy.",
+      "Truyền name vào greet làm nó bị di chuyển, nên main không thể dùng nó sau đó. Thay vào đó, hãy để greet mượn nó.",
       "Một tham chiếu cho phép một hàm mượn một giá trị. Trong danh sách tham số, hãy đặt & trước kiểu. Ở chỗ gọi, hãy đặt & trước biến.",
       "Hãy đổi tham số thành name: &String. Sau đó gọi greet(&name) trong main."
     ]

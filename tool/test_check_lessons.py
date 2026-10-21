@@ -359,28 +359,53 @@ class CodeInProse(unittest.TestCase):
         self.assertEqual(c.missing_code("it prints Even when ok", "nó in ra Chẵn khi đúng", v), ["Even"])
         self.assertEqual(c.missing_code("It should print: Even", "Nó nên in: Even", v), [])
 
-    def test_keywords_are_code_only_in_code_shape(self):
+    def test_let_is_code_only_in_code_shape(self):
         vocab = c.lesson_vocabulary(CODE_LESSON)
         for prose in (
-            "The compiler won't let you do that, and a struct holds fields.",
+            "The compiler won't let you do that.",
+            "How do you let several threads send into one channel?",
             "Use a match when you move on, in a loop; the type is where it lives.",
-            "An enum has variants; impl blocks and mod files come later.",
         ):
             self.assertFalse(c.code_tokens(prose, vocab), prose)
-        shapes = {
-            "let": "Write let x = 5; first",
-            "mut": "Write let mut total = 0;",
-            "fn": "Start with fn add(a: i32) -> i32",
-            "struct": "Declare struct Game { score: u32 } here",
-            "enum": "Declare enum State { On, Off } here",
-            "impl": "Write impl Speak for Robot { ... }",
-            "dyn": "Use Box<dyn Speak> or dyn Speak",
-        }
-        for keyword, text in shapes.items():
-            self.assertIn(keyword, c.code_tokens(text, vocab), text)
-        # ...and dropping the code from a translation is still found.
+        for text in ("Write let x = 5; first", "Use let mut total = 0;", "Try let (a, b) = pair;"):
+            self.assertEqual(c.code_tokens(text, vocab)["let"], 1, text)
         self.assertIn("let", c.missing_code("Write let x = 5; first", "Hãy viết var x = 5; trước", vocab))
         self.assertEqual(c.missing_code("It won't let you", "Nó không cho phép bạn", vocab), [])
+
+    def test_other_keywords_are_code_wherever_they_appear(self):
+        # The review's tampering table: each of these must be found.
+        vocab = c.lesson_vocabulary(CODE_LESSON)
+        cases = [
+            ("Add mut to allow changes:", "Thêm const để cho phép thay đổi:", "mut"),
+            ("Functions are declared with fn.", "Hàm được khai báo bằng def.", "fn"),
+            (
+                "A module has pub struct Account { pub owner: String, balance: i64 }.",
+                "Một module có struct Account { owner: String, balance: i64 }.",
+                "pub",
+            ),
+            ("The word pub in front of an item", "Từ const đặt trước một mục", "pub"),
+            ("Write impl fmt::Display for ShopError", "Viết fmt::Display for ShopError", "impl"),
+            ("The parameter type impl Fn(i32) -> i32", "Kiểu tham số dyn Fn(i32) -> i32", "impl"),
+            ("Why impl<T> Point<T> and not impl Point<T>?", "Vì sao Point<T>?", "impl"),
+            ("Declare struct Player here", "Khai báo enum Player ở đây", "struct"),
+            ("Use for mut x in &v here", "Dùng for x in &v ở đây", "mut"),
+        ]
+        for en, tr, keyword in cases:
+            self.assertIn(keyword, c.missing_code(en, tr, vocab), en)
+        # Kept as loanwords, they pass.
+        self.assertEqual(
+            c.missing_code("Add mut to allow changes:", "Thêm mut để cho phép thay đổi:", vocab), []
+        )
+
+    def test_keyword_only_options_must_be_identical(self):
+        vocab = c.lesson_vocabulary(CODE_LESSON)
+        for option in ("mut", "let", "const", "pub", "fn", "impl", "dyn", "struct", "enum",
+                       "mod", "let mut", "pub struct", "mut self"):
+            self.assertTrue(c.is_code_option(option, vocab), option)
+            found = c.compare_code_text([option], ["từ khóa"], "t", vocab, "$.options", option=True)
+            self.assertTrue(found and "must stay" in found[0], option)
+        self.assertFalse(c.is_code_option("Before fn", vocab))
+        self.assertFalse(c.is_code_option("It lets you", vocab))
 
     def test_prose_in_parentheses_is_not_an_argument_list(self):
         vocab = c.lesson_vocabulary(CODE_LESSON)
@@ -389,6 +414,17 @@ class CodeInProse(unittest.TestCase):
             c.missing_code("Some(that variable) holds it", "Some chứa biến đó", vocab), []
         )
         self.assertTrue(c.code_tokens("Use Some(value) or add(2, 3)", vocab))
+
+    def test_code_made_of_words_in_parentheses_is_kept(self):
+        vocab = c.lesson_vocabulary(CODE_LESSON)
+        cases = [
+            ("Call v.get(i as usize) here", "Gọi v.get(j as isize) ở đây"),
+            ("Match Some(ref x) here", "Khớp Some(x) ở đây"),
+            ("Write fn rename(mut self) here", "Viết fn rename(self) ở đây"),
+            ("Use print_it(mut value) here", "Dùng print_it(value) ở đây"),
+        ]
+        for en, tr in cases:
+            self.assertTrue(c.missing_code(en, tr, vocab), en)
 
     def test_quoted_text_only_in_a_comment_is_not_output(self):
         lesson = {
@@ -403,6 +439,19 @@ class CodeInProse(unittest.TestCase):
         self.assertIn("go", vocab["literals"])
         self.assertIn("hi", vocab["literals"])  # an "// Output:" line is output
         self.assertFalse(c.code_tokens('It says "not ready yet" to you', vocab))
+
+    def test_commented_out_code_still_counts_as_code(self):
+        lesson = {
+            "sections": [
+                {"type": "code", "code": 'fn main() {\n    // println!("{a}");\n    // total = 1;\n    // calls foo(1)\n}'},
+            ],
+        }
+        vocab = c.lesson_vocabulary(lesson)
+        self.assertIn("{a}", vocab["literals"])
+        self.assertIn("total = 1;", vocab["literals"])
+        en = 'Try println!("{a}") to see it'
+        self.assertEqual(c.missing_code(en, 'Thử println!("{a}") để xem', vocab), [])
+        self.assertTrue(c.missing_code(en, 'Thử println!("{b}") để xem', vocab))
 
     def test_token_counts_matter(self):
         vocab = c.lesson_vocabulary(CODE_LESSON)

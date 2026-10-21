@@ -12,7 +12,7 @@
     },
     {
       "type": "text",
-      "text": "Theo quy ước, các test nằm trong một module ở cuối cùng file, tên là tests. Nó được đánh dấu #[cfg(test)], điều này báo cho Rust chỉ biên dịch module đó khi chạy test, không phải trong một bản build thông thường. Bên trong nó, use super::*; đưa mọi thứ từ module cha vào phạm vi để các test có thể gọi các hàm của bạn. Việc import bằng * hiếm gặp ở nơi khác, nhưng ở đây đó là thói quen thông thường."
+      "text": "Theo quy ước, các test nằm trong một module ở cuối chính file đó, tên là tests. Nó được đánh dấu #[cfg(test)], điều này báo cho Rust chỉ biên dịch module đó khi chạy test, không phải trong một bản build thông thường. Bên trong nó, use super::*; đưa mọi thứ từ module cha vào phạm vi để các test có thể gọi các hàm của bạn. Việc import bằng * hiếm gặp ở nơi khác, nhưng ở đây đó là thói quen thông thường."
     },
     {
       "type": "code",

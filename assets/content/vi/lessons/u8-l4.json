@@ -16,7 +16,7 @@
     },
     {
       "type": "text",
-      "text": "Hãy nhìn chú thích Output. Dòng đầu tiên đến trước mọi phép nhân đôi, và sau đó \"doubling\" và \"got\" xen kẽ nhau: mỗi vòng lặp yêu cầu một phần tử, và chỉ khi đó closure mới chạy. Rust thậm chí còn cảnh báo bạn nếu bạn tạo một adapter mà không bao giờ dùng nó."
+      "text": "Hãy nhìn chú thích Output. Dòng đầu tiên đến trước mọi phép nhân đôi, và sau đó \"doubling\" và \"got\" xen kẽ nhau: mỗi lượt lặp yêu cầu một phần tử, và chỉ khi đó closure mới chạy. Rust thậm chí còn cảnh báo bạn nếu bạn tạo một adapter mà không bao giờ dùng nó."
     },
     {
       "type": "text",
@@ -49,7 +49,7 @@
     },
     {
       "type": "note",
-      "text": "Điều này giống Java Streams, C# LINQ, các phương thức mảng của JavaScript và generator của Python, nhưng vì mỗi adapter là một kiểu generic cụ thể, trình biên dịch có thể inline cả chuỗi thành một vòng lặp đơn giản, nên nó thường nhanh như một vòng lặp viết tay. Không như các phương thức mảng của JS (nhưng giống các iterator helper mới hơn của JS, như Iterator.prototype.map), không có gì chạy cho đến khi bạn tiêu thụ iterator, và closure của filter mượn phần tử (&Item).",
+      "text": "Điều này giống Java Streams, C# LINQ, các phương thức mảng của JavaScript và generator của Python, nhưng vì mỗi adapter là một kiểu generic cụ thể, trình biên dịch có thể inline cả chuỗi adapter thành một vòng lặp đơn giản, nên nó thường nhanh như một vòng lặp viết tay. Không như các phương thức mảng của JS (nhưng giống các iterator helper mới hơn của JS, như Iterator.prototype.map), không có gì chạy cho đến khi bạn tiêu thụ iterator, và closure của filter mượn phần tử (&Item).",
       "track": "fast"
     }
   ],
@@ -60,7 +60,7 @@
     "solution": "fn main() {\n    let words = [\"apple\", \"fig\", \"banana\", \"kiwi\"];\n    for w in words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase()) {\n        println!(\"{w}\");\n    }\n}",
     "hints": [
       "Hai bước xảy ra với mỗi từ: một số từ bị loại bỏ, và những từ còn lại bị thay đổi. Hai adapter nào làm hai việc đó?",
-      "Bắt đầu từ words.iter(). Nối filter với một closure trả về true cho các từ cần giữ, rồi map với một closure tạo từ mới. to_uppercase() tạo chữ hoa.",
+      "Hãy bắt đầu từ words.iter(). Hãy nối filter với một closure trả về true cho các từ cần giữ, rồi map với một closure tạo từ mới. to_uppercase() tạo chữ hoa.",
       "Vòng lặp for có thể nhận cả chuỗi sau in: words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase()). println! bên trong giữ nguyên."
     ]
   },

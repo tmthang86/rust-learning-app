@@ -25,7 +25,7 @@
     },
     {
       "type": "text",
-      "text": "Thiết kế: giữ công việc thực sự trong các hàm nhận những giá trị đơn giản, và giữ main mỏng. parse_args biến các đối số thành một enum Mode, hoặc một lỗi nếu người dùng gõ sai. report đếm và định dạng. run nối hai hàm đó bằng toán tử ?."
+      "text": "Thiết kế: giữ công việc thực sự trong các hàm nhận những giá trị đơn giản, và giữ main thật gọn. parse_args biến các đối số thành một enum Mode, hoặc một lỗi nếu người dùng gõ sai. report đếm và định dạng. run nối hai hàm đó bằng toán tử ?."
     },
     {
       "type": "code",
@@ -33,23 +33,23 @@
     },
     {
       "type": "text",
-      "text": "Chia chương trình theo cách này rất đáng giá. parse_args và report có thể được test riêng, như bạn đã học ở Unit 9 với #[test] và assert_eq!, còn main chỉ là phần kết nối. Lỗi là giá trị, không phải panic: gõ sai một flag là điều có thể xảy ra, nên công cụ báo lỗi một cách lịch sự. Một công cụ thực sẽ in lỗi bằng eprintln! (ghi ra luồng lỗi) rồi gọi std::process::exit(1), để các script có thể thấy là nó đã thất bại."
+      "text": "Chia chương trình theo cách này rất đáng giá. parse_args và report có thể được test riêng, như bạn đã học ở Unit 9 với #[test] và assert_eq!, còn main chỉ là phần kết nối. Lỗi là giá trị, không phải panic: gõ sai một flag là điều được lường trước, nên công cụ báo lỗi một cách lịch sự. Một công cụ thực sẽ in lỗi bằng eprintln! (ghi ra luồng lỗi) rồi gọi std::process::exit(1), để các script có thể thấy là nó đã thất bại."
     },
     {
       "type": "note",
-      "text": "Nếu bạn đến từ Python hoặc Go: env::args() giống sys.argv hoặc os.Args. env::args() bị panic nếu một đối số không phải Unicode hợp lệ; env::args_os() thì không. Với các công cụ thực tế, hầu hết mọi người dùng crate clap, nó phân tích flag, viết văn bản --help và báo lỗi giúp bạn. Cũng lưu ý rằng text.lines() tách theo \\n và \\r\\n, và chars().count() đếm các Unicode scalar value, không phải byte (là thứ wc -c đếm).",
+      "text": "Nếu bạn đến từ Python hoặc Go: env::args() giống sys.argv hoặc os.Args. env::args() bị panic nếu một đối số không phải Unicode hợp lệ; env::args_os() thì không. Với các công cụ thực tế, hầu hết mọi người dùng crate clap, nó phân tích flag, tạo nội dung --help và báo lỗi giúp bạn. Cũng lưu ý rằng text.lines() tách theo \\n và \\r\\n, và chars().count() đếm các Unicode scalar value, không phải byte (là thứ wc -c đếm).",
       "track": "fast"
     }
   ],
   "exercise": {
-    "prompt": "count() chưa biết flag --chars, nên nó báo là flag không xác định. Hãy dạy nó đếm số ký tự trong văn bản cho --chars, theo cách giống như các flag khác đếm dòng và từ. Chương trình sẽ in ra ba dòng: --lines: 2, --words: 5, --chars: 24. Gợi ý: thêm nhánh match \"--chars\" => Some(text.chars().count()).",
+    "prompt": "count() chưa biết flag --chars, nên nó báo là flag không xác định. Hãy dạy nó đếm số ký tự trong văn bản cho --chars, theo cách giống như các flag khác đếm dòng và từ. Chương trình phải in ra ba dòng: --lines: 2, --words: 5, --chars: 24. Gợi ý: thêm nhánh match \"--chars\" => Some(text.chars().count()).",
     "starter": "fn count(text: &str, flag: &str) -> Option<usize> {\n    match flag {\n        \"--lines\" => Some(text.lines().count()),\n        \"--words\" => Some(text.split_whitespace().count()),\n        _ => None,\n    }\n}\n\nfn main() {\n    let text = \"one two\\nthree four five\\n\";\n    for flag in [\"--lines\", \"--words\", \"--chars\"] {\n        match count(text, flag) {\n            Some(n) => println!(\"{flag}: {n}\"),\n            None => println!(\"{flag}: unknown flag\"),\n        }\n    }\n}",
     "expectedOutput": "--lines: 2\n--words: 5\n--chars: 24",
     "solution": "fn count(text: &str, flag: &str) -> Option<usize> {\n    match flag {\n        \"--lines\" => Some(text.lines().count()),\n        \"--words\" => Some(text.split_whitespace().count()),\n        \"--chars\" => Some(text.chars().count()),\n        _ => None,\n    }\n}\n\nfn main() {\n    let text = \"one two\\nthree four five\\n\";\n    for flag in [\"--lines\", \"--words\", \"--chars\"] {\n        match count(text, flag) {\n            Some(n) => println!(\"{flag}: {n}\"),\n            None => println!(\"{flag}: unknown flag\"),\n        }\n    }\n}",
     "hints": [
       "Hãy nhìn cách count xử lý --lines và --words. --chars cần thêm một nhánh cùng dạng. Phương thức nào đếm ký tự?",
       "text.chars() là một iterator qua các ký tự, nên text.chars().count() đếm chúng. Hãy bọc con số trong Some, giống các nhánh khác.",
-      "Thêm nhánh \"--chars\" => Some(text.chars().count()), phía trên nhánh _. Nhánh _ khớp với mọi thứ, nên một nhánh đặt sau nó sẽ không bao giờ chạy."
+      "Hãy thêm nhánh \"--chars\" => Some(text.chars().count()), phía trên nhánh _. Nhánh _ khớp với mọi thứ, nên một nhánh đặt sau nó sẽ không bao giờ chạy."
     ]
   },
   "quiz": [
@@ -67,7 +67,7 @@
       "options": [
         "Panic không được phép trong các chương trình đọc đối số",
         "Result luôn chạy nhanh hơn panic, ngay cả khi không có gì thất bại",
-        "Một flag gõ sai là điều có thể xảy ra, nên bên gọi có thể báo lỗi một cách lịch sự"
+        "Một flag gõ sai là điều được lường trước, nên bên gọi có thể báo lỗi một cách lịch sự"
       ],
       "answer": 2
     },

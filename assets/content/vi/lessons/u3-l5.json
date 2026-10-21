@@ -12,7 +12,7 @@
     },
     {
       "type": "text",
-      "text": "[0..5] nghĩa là từ chỉ số 0 đến (không bao gồm) 5. Bỏ phần đầu hoặc phần cuối để chỉ điểm bắt đầu hoặc điểm kết thúc. Chỉ số của String đếm theo byte, không phải ký tự. Trong văn bản tiếng Anh thông thường, mỗi chữ cái là một byte, nên hai cách đếm cho cùng kết quả. Những chữ cái như é chiếm nhiều hơn một byte; Unit 5 sẽ giải thích lý do."
+      "text": "[0..5] nghĩa là từ chỉ số 0 đến (không bao gồm) 5. Bỏ trống số bắt đầu hoặc số kết thúc để chỉ đầu chuỗi hoặc cuối chuỗi. Chỉ số của String đếm theo byte, không phải ký tự. Trong văn bản tiếng Anh thông thường, mỗi chữ cái là một byte, nên hai cách đếm cho cùng kết quả. Những chữ cái như é chiếm nhiều hơn một byte; Unit 5 sẽ giải thích lý do."
     },
     {
       "type": "text",

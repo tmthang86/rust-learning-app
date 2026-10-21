@@ -32,7 +32,7 @@
     },
     {
       "type": "text",
-      "text": "Bạn có thể tạo iterator của riêng mình bằng cách implement trait Iterator cho một struct. Bạn cần viết hai thứ. type Item = u32; cho biết kiểu của các phần tử bạn đưa ra (một associated type, tức kiểu liên kết: một kiểu thuộc về phần impl của trait). Và fn next(&mut self) -> Option<u32>, trả về phần tử kế tiếp hoặc None."
+      "text": "Bạn có thể tạo iterator của riêng mình bằng cách implement trait Iterator cho một struct. Bạn cần viết hai thứ. type Item = u32; cho biết kiểu của các phần tử bạn đưa ra (một kiểu liên kết (associated type): một kiểu thuộc về phần impl của trait). Và fn next(&mut self) -> Option<u32>, trả về phần tử kế tiếp hoặc None."
     },
     {
       "type": "code",
@@ -77,9 +77,9 @@
     {
       "question": "Phương thức nào lấy quyền sở hữu một Vec và đưa cho bạn các phần tử của nó theo giá trị?",
       "options": [
-        "iter(), đưa ra các phần tử thuộc sở hữu và để Vec rỗng",
+        "iter(), đưa ra các phần tử theo giá trị và để Vec rỗng",
         "iter_mut(), trao các phần tử và tiêu thụ Vec",
-        "into_iter(), tiêu thụ Vec và đưa ra các phần tử thuộc sở hữu"
+        "into_iter(), tiêu thụ Vec và đưa ra các phần tử theo giá trị"
       ],
       "answer": 2
     },

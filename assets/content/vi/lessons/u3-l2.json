@@ -12,7 +12,7 @@
     },
     {
       "type": "text",
-      "text": "Những kiểu này triển khai (implement) Copy, thứ đánh dấu một kiểu là rẻ để sao chép từng byte một. Rust tự động sao chép chúng thay vì di chuyển. (Copy là một trait: trait là một tập hợp có tên các khả năng hoặc phương thức mà một kiểu hứa là có. Unit 7 nói về trait.) Tuple và mảng chỉ gồm các kiểu Copy cũng là Copy. String không phải Copy, vì nó sở hữu văn bản trên heap."
+      "text": "Những kiểu này implement Copy, thứ đánh dấu rằng kiểu đó có thể sao chép từng byte một với chi phí thấp. Rust tự động sao chép chúng thay vì di chuyển. (Copy là một trait: trait là một tập hợp có tên các khả năng hoặc phương thức mà một kiểu cam kết sẽ có. Unit 7 nói về trait.) Tuple và mảng chỉ gồm các kiểu Copy cũng là Copy. String không phải Copy, vì nó sở hữu văn bản trên heap."
     },
     {
       "type": "text",
@@ -33,7 +33,7 @@
     },
     {
       "type": "note",
-      "text": "Bạn có thể thêm những trait này vào kiểu của riêng mình bằng #[derive(Clone, Copy)]. Copy chỉ được phép khi mọi trường đều là Copy và kiểu đó không triển khai Drop (Copy cũng yêu cầu Clone, nên cả hai cùng có trong derive), vì vậy một struct chứa một String có thể là Clone nhưng không bao giờ là Copy.",
+      "text": "Bạn có thể thêm những trait này vào kiểu của riêng mình bằng #[derive(Clone, Copy)]. Copy chỉ được phép khi mọi trường đều là Copy và kiểu đó không implement Drop (Copy cũng yêu cầu Clone, nên cả hai cùng có trong derive), vì vậy một struct chứa một String có thể là Clone nhưng không bao giờ là Copy.",
       "track": "fast"
     }
   ],
@@ -43,14 +43,14 @@
     "expectedOutput": "apple apple",
     "solution": "fn main() {\n    let first = String::from(\"apple\");\n    let second = first.clone();\n    println!(\"{first} {second}\");\n}",
     "hints": [
-      "Viết let second = first sẽ di chuyển String. Bạn muốn second có bản sao riêng của nó thay vì vậy.",
+      "Viết let second = first sẽ di chuyển String. Thay vào đó, bạn muốn second có bản sao riêng của nó.",
       "Một String có thể được sao chép bằng phương thức .clone(). Hãy gọi nó trên first, ở dòng tạo second.",
       "Hãy đổi dòng đó thành let second = first.clone(); Khi đó cả hai biến đều sở hữu một String."
     ]
   },
   "quiz": [
     {
-      "question": "Cái nào trong những cái này được sao chép, không bị di chuyển, khi gán?",
+      "question": "Kiểu nào sau đây được sao chép chứ không bị di chuyển khi gán?",
       "options": [
         "String",
         "i32",

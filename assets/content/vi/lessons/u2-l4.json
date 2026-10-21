@@ -24,7 +24,7 @@
     },
     {
       "type": "text",
-      "text": "0..3 đếm 0, 1, 2 (nó dừng trước 3). 0..=3 bao gồm cả số 3. Hãy dùng continue để nhảy sang vòng tiếp theo và break để dừng sớm."
+      "text": "0..3 đếm 0, 1, 2 (nó dừng trước 3). 0..=3 bao gồm cả số 3. Hãy dùng continue để nhảy sang lượt lặp tiếp theo và break để dừng sớm."
     },
     {
       "type": "note",
@@ -66,7 +66,7 @@
       "question": "continue làm gì?",
       "options": [
         "Kết thúc chương trình",
-        "Nhảy sang vòng tiếp theo của vòng lặp",
+        "Nhảy sang lượt lặp tiếp theo",
         "Thoát khỏi vòng lặp"
       ],
       "answer": 1

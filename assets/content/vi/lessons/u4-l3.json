@@ -33,7 +33,7 @@
     },
     {
       "type": "note",
-      "text": "Enum của Rust là tagged union (sum type): khác với enum của C hay các hằng enum singleton của Java, mỗi variant có thể mang dữ liệu riêng, khá giống một sealed interface của Java với các cài đặt record. Cùng với struct, chúng cho phép bạn làm cho các trạng thái không hợp lệ không thể biểu diễn được.",
+      "text": "Enum của Rust là tagged union (sum type): khác với enum của C hay các hằng enum singleton của Java, mỗi variant có thể mang dữ liệu riêng, khá giống một sealed interface của Java với các record implement nó. Cùng với struct, chúng cho phép bạn làm cho các trạng thái không hợp lệ không thể biểu diễn được.",
       "track": "fast"
     }
   ],
@@ -71,7 +71,7 @@
       "options": [
         "Có",
         "Không",
-        "Chỉ số"
+        "Chỉ với số"
       ],
       "answer": 0
     }

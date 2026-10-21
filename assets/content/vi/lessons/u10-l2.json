@@ -4,7 +4,7 @@
   "sections": [
     {
       "type": "text",
-      "text": "Hai trait nhỏ mang lại cho smart pointer cảm giác đặc biệt của chúng. Deref điều khiển việc toán tử * làm gì. Drop cho phép bạn chạy code khi một giá trị biến mất. Bạn đã biết ý tưởng của * từ tham chiếu: nó đi theo tham chiếu để lấy giá trị mà nó trỏ tới. Một Box hoạt động theo cùng cách đó."
+      "text": "Hai trait nhỏ mang lại cho con trỏ thông minh (smart pointer) cảm giác đặc biệt của chúng. Deref điều khiển việc toán tử * làm gì. Drop cho phép bạn chạy code khi một giá trị biến mất. Bạn đã biết ý tưởng của * từ tham chiếu: nó đi theo tham chiếu để lấy giá trị mà nó trỏ tới. Một Box hoạt động theo cùng cách đó."
     },
     {
       "type": "code",
@@ -12,7 +12,7 @@
     },
     {
       "type": "text",
-      "text": "Bạn có thể làm cho kiểu của riêng mình hoạt động như vậy bằng cách implement trait Deref. Dưới đây là một kiểu box nhỏ tên là MyBox. struct MyBox<T>(T); là một tuple struct: một struct có các trường không tên, ở đây là một trường thuộc kiểu T bất kỳ, mà bạn truy cập bằng .0. Trait Deref cần hai thứ. type Target = T; cho biết * trả về kiểu gì (đây được gọi là một associated type). Phương thức deref trả về một tham chiếu tới giá trị bên trong đó."
+      "text": "Bạn có thể làm cho kiểu của riêng mình hoạt động như vậy bằng cách implement trait Deref. Dưới đây là một kiểu box nhỏ tên là MyBox. struct MyBox<T>(T); là một tuple struct: một struct có các trường không tên, ở đây là một trường thuộc kiểu T bất kỳ, mà bạn truy cập bằng .0. Trait Deref cần hai thứ. type Target = T; cho biết * trả về kiểu gì (đây được gọi là kiểu liên kết (associated type)). Phương thức deref trả về một tham chiếu tới giá trị bên trong đó."
     },
     {
       "type": "code",
@@ -49,7 +49,7 @@
     },
     {
       "type": "note",
-      "text": "Nếu bạn đến từ C++: Drop là destructor, và việc dọn dẹp theo thứ tự ngược là RAII, giống như trong C++. try-with-resources của Java, using của C# và with của Python cho việc dọn dẹp xác định cho một khối. Rust làm điều đó cho mọi giá trị một cách tự động, không cần cú pháp đặc biệt. Ngược lại, finalizer của Java có thể chạy muộn hoặc không bao giờ chạy, và đã bị deprecated để gỡ bỏ. Deref cũng có một trait anh em, DerefMut, cho *x trên một giá trị có thể thay đổi. Các trường của một struct bị drop sau drop của chính struct đó, theo thứ tự chúng được khai báo. Điều này ngược với C++, vốn hủy các thành viên theo thứ tự ngược lại.",
+      "text": "Nếu bạn đến từ C++: Drop là destructor, và việc dọn dẹp theo thứ tự ngược là RAII, giống như trong C++. try-with-resources của Java, using của C# và with của Python cho việc dọn dẹp xác định cho một khối. Rust làm điều đó cho mọi giá trị một cách tự động, không cần cú pháp đặc biệt. Ngược lại, finalizer của Java có thể chạy muộn hoặc không bao giờ chạy, và đã bị đánh dấu lỗi thời (deprecated), sẽ bị gỡ bỏ. Deref cũng có một trait anh em, DerefMut, cho *x trên một giá trị có thể thay đổi. Các trường của một struct bị drop sau drop của chính struct đó, theo thứ tự chúng được khai báo. Điều này ngược với C++, vốn hủy các thành viên theo thứ tự ngược lại.",
       "track": "fast"
     }
   ],
@@ -61,7 +61,7 @@
     "hints": [
       "Một giá trị bị drop ở cuối phạm vi của nó. Để dọn dẹp một giá trị sớm hơn, có một hàm nhận giá trị và drop nó ngay lập tức.",
       "Hàm đó là drop(value). Nó nằm trong prelude, nên không cần dòng use. Nó nhận quyền sở hữu, nên giá trị không thể được dùng sau nó.",
-      "Thay chú thích bằng drop(first); để nó nằm ngay sau dòng guards và trước println!(\"working\"). Đừng đụng đến second."
+      "Hãy thay chú thích bằng drop(first); để nó nằm ngay sau dòng guards và trước println!(\"working\"). Đừng đụng đến second."
     ]
   },
   "quiz": [

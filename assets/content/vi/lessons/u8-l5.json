@@ -16,7 +16,7 @@
     },
     {
       "type": "text",
-      "text": "Các consumer khác biến cả dãy phần tử thành một giá trị duy nhất. sum cộng các phần tử lại, và count cho biết có bao nhiêu phần tử. fold là cái tổng quát: bạn đưa cho nó một giá trị khởi đầu và một closure nhận tổng đang chạy (acc) cùng phần tử tiếp theo, rồi trả về tổng mới."
+      "text": "Các consumer khác biến cả dãy phần tử thành một giá trị duy nhất. sum cộng các phần tử lại, và count cho biết có bao nhiêu phần tử. fold là cái tổng quát: bạn đưa cho nó một giá trị khởi đầu và một closure nhận tổng tích lũy (acc) cùng phần tử tiếp theo, rồi trả về tổng mới."
     },
     {
       "type": "text",
@@ -48,7 +48,7 @@
     },
     {
       "type": "text",
-      "text": "split_whitespace cho một iterator trên các từ, nên mọi adapter và consumer trong bài này đều dùng được trên nó. max_by_key chọn phần tử có khóa lớn nhất từ closure. Nếu có nhiều phần tử bằng nhau, nó trả về phần tử cuối cùng."
+      "text": "split_whitespace cho một iterator trên các từ, nên mọi adapter và consumer trong bài này đều dùng được trên nó. max_by_key chọn phần tử có khóa lớn nhất từ closure. Nếu nhiều phần tử có khóa lớn nhất bằng nhau, nó trả về phần tử cuối cùng."
     },
     {
       "type": "note",

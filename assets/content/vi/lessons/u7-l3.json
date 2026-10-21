@@ -20,7 +20,7 @@
     },
     {
       "type": "text",
-      "text": "Đây là cùng hình dạng với impl fmt::Display for LoginError mà bạn đã thấy, và cái cho ShopError mà bạn đã viết, trong Unit 6. Display là một trait của thư viện chuẩn. Nó yêu cầu một phương thức, fmt, và {} trong println! gọi nó. Đây là nó một lần nữa cho một kiểu mới:"
+      "text": "Đây cũng là khuôn mẫu của impl fmt::Display for LoginError mà bạn đã thấy, và của impl cho ShopError mà bạn đã viết, trong Unit 6. Display là một trait của thư viện chuẩn. Nó yêu cầu một phương thức, fmt, và {} trong println! gọi nó. Dưới đây là nó một lần nữa, cho một kiểu mới:"
     },
     {
       "type": "code",
@@ -42,7 +42,7 @@
     }
   ],
   "exercise": {
-    "prompt": "Code khởi đầu có một trait Speak với một phương thức bắt buộc speak và một phương thức mặc định shout. Dog đã implement nó. Hãy làm cho Robot cũng speak được: speak của nó phải trả về beep, theo sau là một dấu cách và id của nó. Sau đó, ở cuối main, tạo một Robot với id 7 và in shout của nó. Chương trình sẽ in ra hai dòng: WOOF, I AM REX và BEEP 7. Trình biên dịch cảnh báo rằng Robot chưa bao giờ được tạo cho đến khi bạn hoàn thành; điều đó là bình thường. Gợi ý: impl Speak for Robot { fn speak(&self) -> String { format!(\"beep {}\", self.id) } }",
+    "prompt": "Code khởi đầu có một trait Speak với một phương thức bắt buộc speak và một phương thức mặc định shout. Dog đã implement nó. Hãy làm cho Robot cũng speak được: speak của nó phải trả về beep, theo sau là một dấu cách và id của nó. Sau đó, ở cuối main, tạo một Robot với id 7 và in shout của nó. Chương trình phải in ra hai dòng: WOOF, I AM REX và BEEP 7. Cho đến khi bạn làm xong, trình biên dịch sẽ cảnh báo rằng Robot không bao giờ được tạo; điều đó là bình thường. Gợi ý: impl Speak for Robot { fn speak(&self) -> String { format!(\"beep {}\", self.id) } }",
     "starter": "trait Speak {\n    fn speak(&self) -> String;\n\n    fn shout(&self) -> String {\n        self.speak().to_uppercase()\n    }\n}\n\nstruct Dog {\n    name: String,\n}\n\nstruct Robot {\n    id: u32,\n}\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        format!(\"woof, I am {}\", self.name)\n    }\n}\n\nfn main() {\n    let dog = Dog { name: String::from(\"Rex\") };\n    println!(\"{}\", dog.shout());\n}",
     "expectedOutput": "WOOF, I AM REX\nBEEP 7",
     "solution": "trait Speak {\n    fn speak(&self) -> String;\n\n    fn shout(&self) -> String {\n        self.speak().to_uppercase()\n    }\n}\n\nstruct Dog {\n    name: String,\n}\n\nstruct Robot {\n    id: u32,\n}\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        format!(\"woof, I am {}\", self.name)\n    }\n}\n\nimpl Speak for Robot {\n    fn speak(&self) -> String {\n        format!(\"beep {}\", self.id)\n    }\n}\n\nfn main() {\n    let dog = Dog { name: String::from(\"Rex\") };\n    println!(\"{}\", dog.shout());\n    let robot = Robot { id: 7 };\n    println!(\"{}\", robot.shout());\n}",

@@ -37,19 +37,19 @@
     },
     {
       "type": "note",
-      "text": "Đây là hình dạng của hầu hết các web framework: phân tích byte thành một request có kiểu, định tuyến theo (method, path), trả về một response có kiểu. Các framework như axum, actix-web và rocket làm điều tương tự với extractor và macro. Một parser thực sự còn phải xử lý các chi tiết của HTTP/1.1 mà ví dụ đồ chơi này bỏ qua: từ chối các dòng header gập đã lỗi thời, các body chunked, kiểm tra Content-Length, và giới hạn kích thước request. Phân tích đầu vào không đáng tin cậy bằng Result thay vì panic là điều giữ cho máy chủ sống.",
+      "text": "Đây là khuôn mẫu chung của hầu hết các web framework: phân tích byte thành một request có kiểu, định tuyến theo (method, path), trả về một phản hồi có kiểu. Các framework như axum, actix-web và rocket làm điều tương tự với extractor và macro. Một parser thực sự còn phải xử lý các chi tiết của HTTP/1.1 mà ví dụ đồ chơi này bỏ qua: từ chối các dòng header gập đã lỗi thời, các body chunked, kiểm tra Content-Length, và giới hạn kích thước request. Phân tích đầu vào không đáng tin cậy bằng Result thay vì panic là điều giúp máy chủ tiếp tục chạy.",
       "track": "fast"
     }
   ],
   "exercise": {
-    "prompt": "Máy chủ nhỏ trong route() mới chỉ biết trang chủ. Hãy thêm một trang About: một request cho đường dẫn /about phải trả lời với trạng thái 200 và body About us, trong khi các đường dẫn lạ khác vẫn cho 404. Chương trình sẽ in ra ba dòng: 200 Home page, 200 About us, 404 Not found. Gợi ý: thêm nhánh match \"/about\" => (200, \"About us\") trước nhánh _.",
+    "prompt": "Máy chủ nhỏ trong route() mới chỉ biết trang chủ. Hãy thêm một trang About: một request cho đường dẫn /about phải trả lời với trạng thái 200 và body About us, trong khi các đường dẫn lạ khác vẫn cho 404. Chương trình phải in ra ba dòng: 200 Home page, 200 About us, 404 Not found. Gợi ý: thêm nhánh match \"/about\" => (200, \"About us\") trước nhánh _.",
     "starter": "fn route(path: &str) -> (u16, &'static str) {\n    match path {\n        \"/\" => (200, \"Home page\"),\n        _ => (404, \"Not found\"),\n    }\n}\n\nfn main() {\n    for path in [\"/\", \"/about\", \"/nope\"] {\n        let (status, body) = route(path);\n        println!(\"{status} {body}\");\n    }\n}",
     "expectedOutput": "200 Home page\n200 About us\n404 Not found",
     "solution": "fn route(path: &str) -> (u16, &'static str) {\n    match path {\n        \"/\" => (200, \"Home page\"),\n        \"/about\" => (200, \"About us\"),\n        _ => (404, \"Not found\"),\n    }\n}\n\nfn main() {\n    for path in [\"/\", \"/about\", \"/nope\"] {\n        let (status, body) = route(path);\n        println!(\"{status} {body}\");\n    }\n}",
     "hints": [
       "Hiện giờ /about rơi vào nhánh _ và cho 404. Hãy nhìn nhánh cho \"/\" và thêm một nhánh giống vậy cho /about.",
       "Mỗi nhánh có một văn bản đường dẫn ở bên trái và một tuple ở bên phải: con số trạng thái và văn bản body.",
-      "Thêm \"/about\" => (200, \"About us\"), phía trên nhánh _. Nhánh _ khớp với mọi thứ, nên một nhánh đặt sau nó sẽ không bao giờ chạy."
+      "Hãy thêm \"/about\" => (200, \"About us\"), phía trên nhánh _. Nhánh _ khớp với mọi thứ, nên một nhánh đặt sau nó sẽ không bao giờ chạy."
     ]
   },
   "quiz": [

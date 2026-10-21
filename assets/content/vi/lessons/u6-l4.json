@@ -33,7 +33,7 @@
     },
     {
       "type": "text",
-      "text": "From là một trait chuẩn khác. impl From<ParseIntError> for ConfigError cho Rust biết cách tạo một ConfigError từ một ParseIntError (kiểu trong dấu ngoặc góc là kiểu bạn chuyển đổi từ nó). Toán tử ? dùng nó một cách tự động: khi parse thất bại, ? biến ParseIntError thành ConfigError trước khi trả về nó."
+      "text": "From là một trait chuẩn khác. impl From<ParseIntError> for ConfigError cho Rust biết cách tạo một ConfigError từ một ParseIntError (kiểu trong dấu ngoặc góc là kiểu nguồn mà bạn chuyển đổi từ đó). Toán tử ? dùng nó một cách tự động: khi parse thất bại, ? biến ParseIntError thành ConfigError trước khi trả về nó."
     },
     {
       "type": "code",
@@ -45,7 +45,7 @@
     },
     {
       "type": "note",
-      "text": "Bài học này kết hợp enum, match, impl và Result, và cho bạn nếm thử đầu tiên về trait. Nếu bạn thấy nó nhiều quá, đó là chuyện bình thường. Hãy quay lại bài này sau Unit 7.",
+      "text": "Bài học này kết hợp enum, match, impl và Result, và giúp bạn làm quen bước đầu với trait. Nếu bạn thấy nó nhiều quá, đó là chuyện bình thường. Hãy quay lại bài này sau Unit 7.",
       "track": "starter"
     },
     {
@@ -55,7 +55,7 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy thêm một impl Display cho ShopError, làm theo ví dụ LoginError, với thông báo \"out of stock\". Sau đó đổi println!(\"Error: {:?}\", e) thành println!(\"Error: {e}\"), để nó dùng thông báo của bạn thay vì dạng debug. Chương trình sẽ in ra: Error: out of stock",
+    "prompt": "Hãy thêm một impl Display cho ShopError, làm theo ví dụ LoginError, với thông báo \"out of stock\". Sau đó đổi println!(\"Error: {:?}\", e) thành println!(\"Error: {e}\"), để nó dùng thông báo của bạn thay vì dạng debug. Chương trình phải in ra: Error: out of stock",
     "starter": "use std::fmt;   // keep this: your Display impl needs fmt\n\n#[derive(Debug)]\nenum ShopError {\n    OutOfStock,\n}\n\nfn main() {\n    let e = ShopError::OutOfStock;\n    println!(\"Error: {:?}\", e);\n}",
     "expectedOutput": "Error: out of stock",
     "solution": "use std::fmt;\n\n#[derive(Debug)]\nenum ShopError {\n    OutOfStock,\n}\n\nimpl fmt::Display for ShopError {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        match self {\n            ShopError::OutOfStock => write!(f, \"out of stock\"),\n        }\n    }\n}\n\nfn main() {\n    let e = ShopError::OutOfStock;\n    println!(\"Error: {e}\");\n}",
@@ -94,7 +94,7 @@
       "answer": 0
     },
     {
-      "question": "Implement From<ParseIntError> cho kiểu lỗi của bạn cho phép bạn làm gì?",
+      "question": "Việc implement From<ParseIntError> cho kiểu lỗi của bạn cho phép bạn làm gì?",
       "options": [
         "Dùng ? trên kết quả parse trong các hàm của bạn",
         "Parse nhanh hơn",

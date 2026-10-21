@@ -16,7 +16,7 @@
     },
     {
       "type": "text",
-      "text": "Bạn có thể có bao nhiêu tham chiếu chia sẻ tùy thích cùng một lúc (cuốn Book và các lỗi của trình biên dịch gọi chúng là tham chiếu bất biến, immutable reference), vì không ai có thể thay đổi giá trị qua chúng:"
+      "text": "Bạn có thể có bao nhiêu tham chiếu chia sẻ tùy thích cùng một lúc (sách Rust chính thức, the Book, và thông báo lỗi của trình biên dịch gọi chúng là tham chiếu bất biến, immutable reference), vì không ai có thể thay đổi giá trị qua chúng:"
     },
     {
       "type": "code",

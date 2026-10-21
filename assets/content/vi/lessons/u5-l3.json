@@ -4,7 +4,7 @@
   "sections": [
     {
       "type": "text",
-      "text": "Một HashMap lưu các giá trị dưới các khóa, để bạn có thể tra cứu theo tên thay vì theo vị trí. Hãy đưa nó vào bằng use."
+      "text": "Một HashMap lưu các giá trị theo khóa, để bạn có thể tra cứu theo tên thay vì theo vị trí. Hãy đưa nó vào bằng use."
     },
     {
       "type": "code",
@@ -46,7 +46,7 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy dùng entry API để đếm mỗi chữ cái xuất hiện bao nhiêu lần, rồi in số đếm của 'a'. Chương trình sẽ in ra: 3",
+    "prompt": "Hãy dùng entry API để đếm mỗi chữ cái xuất hiện bao nhiêu lần, rồi in số đếm của 'a'. Chương trình phải in ra: 3",
     "starter": "use std::collections::HashMap;\n\nfn main() {\n    let word = \"banana\";\n    let mut counts: HashMap<char, i32> = HashMap::new();   // keep mut: you'll add counts\n    for c in word.chars() {\n        // count c here\n    }\n    println!(\"{}\", counts.get(&'a').unwrap_or(&0));\n}",
     "expectedOutput": "3",
     "solution": "use std::collections::HashMap;\n\nfn main() {\n    let word = \"banana\";\n    let mut counts: HashMap<char, i32> = HashMap::new();\n    for c in word.chars() {\n        *counts.entry(c).or_insert(0) += 1;\n    }\n    println!(\"{}\", counts.get(&'a').unwrap_or(&0));\n}",
@@ -60,7 +60,7 @@
     {
       "question": "map.get(key) trả về gì?",
       "options": [
-        "Giá trị, hoặc chương trình bị crash",
+        "Giá trị, hoặc chương trình bị sập (crash)",
         "Một Option chứa tham chiếu tới giá trị",
         "Một bool"
       ],
