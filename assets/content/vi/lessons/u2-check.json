@@ -20,7 +20,7 @@
     },
     {
       "type": "note",
-      "text": "Gợi ý cho letter: hãy viết một dãy if, else if, else làm toàn bộ thân hàm. Mỗi khối chỉ chứa một char như 'A', không có dấu chấm phẩy, nên chính chuỗi đó là giá trị mà hàm trả về. Hãy kiểm tra ngưỡng cao nhất trước."
+      "text": "Gợi ý cho letter: hãy viết một dãy if, else if, else làm toàn bộ thân hàm. Mỗi khối chỉ chứa một char như 'A', không có dấu chấm phẩy, nên chính dãy đó là giá trị mà hàm trả về. Hãy kiểm tra ngưỡng cao nhất trước."
     },
     {
       "type": "note",
