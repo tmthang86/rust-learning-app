@@ -58,7 +58,12 @@
     "prompt": "Build the sentence with format! using name and lang. It should print: Thang is learning Rust",
     "starter": "fn main() {\n    let name = \"Thang\";\n    let lang = \"Rust\";\n    let sentence = String::new();\n    println!(\"{sentence}\");\n}",
     "expectedOutput": "Thang is learning Rust",
-    "solution": "fn main() {\n    let name = \"Thang\";\n    let lang = \"Rust\";\n    let sentence = format!(\"{name} is learning {lang}\");\n    println!(\"{sentence}\");\n}"
+    "solution": "fn main() {\n    let name = \"Thang\";\n    let lang = \"Rust\";\n    let sentence = format!(\"{name} is learning {lang}\");\n    println!(\"{sentence}\");\n}",
+    "hints": [
+      "Right now sentence is an empty String, so an empty line prints. Build it from name and lang instead.",
+      "format! works like println! but gives back a String. Put the variable names inside {} in the text.",
+      "Write let sentence = format!(\"{name} is learning {lang}\");"
+    ]
   },
   "quiz": [
     {

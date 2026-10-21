@@ -57,7 +57,12 @@
     "prompt": "apply calls a closure on a number. The starter passes it a doubling closure. Below that, make a closure that subtracts 5 from its argument, pass it to apply together with 50, and print the result. It should print two lines: 42 and 45. Hint: let minus_five = |x| x - 5;",
     "starter": "fn apply(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(value)\n}\n\nfn main() {\n    let doubled = apply(|x| x * 2, 21);\n    println!(\"{doubled}\");\n}",
     "expectedOutput": "42\n45",
-    "solution": "fn apply(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(value)\n}\n\nfn main() {\n    let doubled = apply(|x| x * 2, 21);\n    println!(\"{doubled}\");\n    let minus_five = |x| x - 5;\n    println!(\"{}\", apply(minus_five, 50));\n}"
+    "solution": "fn apply(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(value)\n}\n\nfn main() {\n    let doubled = apply(|x| x * 2, 21);\n    println!(\"{doubled}\");\n    let minus_five = |x| x - 5;\n    println!(\"{}\", apply(minus_five, 50));\n}",
+    "hints": [
+      "A closure can be stored in a variable and passed to apply, just like the doubling closure in the starter. Make one that subtracts instead.",
+      "Write the parameter between two bars, then the body: |x| x - 5. Put it in a variable with let, and pass that variable to apply.",
+      "Below the first println!, write let minus_five = |x| x - 5; and then println!(\"{}\", apply(minus_five, 50))."
+    ]
   },
   "quiz": [
     {

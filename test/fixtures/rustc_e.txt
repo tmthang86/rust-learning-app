@@ -1,0 +1,35 @@
+error[E0425]: cannot find value `undefined_name` in this scope
+ --> e.rs:2:13
+  |
+2 |     let a = undefined_name;
+  |             ^^^^^^^^^^^^^^ not found in this scope
+
+error[E0308]: mismatched types
+ --> e.rs:3:18
+  |
+3 |     let b: i32 = "x";
+  |            ---   ^^^ expected `i32`, found `&str`
+  |            |
+  |            expected due to this
+
+error[E0689]: can't call method `len` on ambiguous numeric type `{integer}`
+ --> e.rs:4:15
+  |
+4 |     let c = 5.len();
+  |               ^^^
+  |
+help: you must specify a concrete type for this numeric value, like `i32`
+  |
+4 |     let c = 5_i32.len();
+  |              ++++
+
+error[E0433]: cannot find type `Nope` in this scope
+ --> e.rs:5:13
+  |
+5 |     let d = Nope::new();
+  |             ^^^^ use of undeclared type `Nope`
+
+error: aborting due to 4 previous errors
+
+Some errors have detailed explanations: E0308, E0425, E0433, E0689.
+For more information about an error, try `rustc --explain E0308`.

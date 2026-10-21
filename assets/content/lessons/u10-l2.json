@@ -57,7 +57,12 @@
     "prompt": "Right now first is dropped at the very end of main. Change the program so first is cleaned up before the line that prints working, while second stays alive until the end. It should print four lines: guards: first and second, dropping first, working, dropping second. Hint: call drop(first); just before println!(\"working\").",
     "starter": "struct Guard {\n    name: String,\n}\n\nimpl Drop for Guard {\n    fn drop(&mut self) {\n        println!(\"dropping {}\", self.name);\n    }\n}\n\nfn main() {\n    let first = Guard { name: String::from(\"first\") };\n    let second = Guard { name: String::from(\"second\") };\n    println!(\"guards: {} and {}\", first.name, second.name);\n    // add drop(first); here\n    println!(\"working\");\n}",
     "expectedOutput": "guards: first and second\ndropping first\nworking\ndropping second",
-    "solution": "struct Guard {\n    name: String,\n}\n\nimpl Drop for Guard {\n    fn drop(&mut self) {\n        println!(\"dropping {}\", self.name);\n    }\n}\n\nfn main() {\n    let first = Guard { name: String::from(\"first\") };\n    let second = Guard { name: String::from(\"second\") };\n    println!(\"guards: {} and {}\", first.name, second.name);\n    drop(first);\n    println!(\"working\");\n}"
+    "solution": "struct Guard {\n    name: String,\n}\n\nimpl Drop for Guard {\n    fn drop(&mut self) {\n        println!(\"dropping {}\", self.name);\n    }\n}\n\nfn main() {\n    let first = Guard { name: String::from(\"first\") };\n    let second = Guard { name: String::from(\"second\") };\n    println!(\"guards: {} and {}\", first.name, second.name);\n    drop(first);\n    println!(\"working\");\n}",
+    "hints": [
+      "A value is dropped at the end of its scope. To clean one up sooner, there is a function that takes the value and drops it right now.",
+      "The function is drop(value). It is in the prelude, so no use line is needed. It takes ownership, so the value cannot be used after it.",
+      "Replace the comment with drop(first); so it comes right after the guards line and before println!(\"working\"). Leave second alone."
+    ]
   },
   "quiz": [
     {

@@ -8,6 +8,7 @@ import '../account/progress_sync.dart';
 import '../runner/code_runner.dart';
 import 'age.dart';
 import 'course_repository.dart';
+import 'error_explanations.dart';
 import 'models.dart';
 
 /// App-wide state: the course, the learner's track and their progress.
@@ -33,7 +34,9 @@ class AppState extends ChangeNotifier {
     this.accounts = const DisabledAccountService(),
     this.sync,
     AgeStore? age,
-  }) : age = age ?? AgeStore(prefs) {
+    ErrorExplanationRepository? errors,
+  }) : age = age ?? AgeStore(prefs),
+       errors = errors ?? ErrorExplanationRepository() {
     _track = Track.fromName(prefs.getString(_trackKey));
     _completed = (prefs.getStringList(_completedKey) ?? const []).toSet();
     _user = accounts.currentUser;
@@ -70,6 +73,9 @@ class AppState extends ChangeNotifier {
   static const _childAccountKey = 'childAccountToDelete';
 
   final CourseRepository repository;
+
+  /// Explanations for compiler errors, loaded on first use.
+  final ErrorExplanationRepository errors;
   final CodeRunner runner;
   final SharedPreferences prefs;
   final AccountService accounts;

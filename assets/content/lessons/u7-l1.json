@@ -53,7 +53,12 @@
     "prompt": "last_item only works on slices of i32. Make it work for slices of any type, so it also works on a list of words. Then, at the end of main, make an array of three words (red, green and blue) and print its last item. It should print two lines: 15 and blue. Hint: fn last_item<T>(items: &[T]) -> &T, and let words = [\"red\", \"green\", \"blue\"];",
     "starter": "fn last_item(items: &[i32]) -> &i32 {\n    &items[items.len() - 1]\n}\n\nfn main() {\n    let numbers = [4, 8, 15];\n    println!(\"{}\", last_item(&numbers));\n}",
     "expectedOutput": "15\nblue",
-    "solution": "fn last_item<T>(items: &[T]) -> &T {\n    &items[items.len() - 1]\n}\n\nfn main() {\n    let numbers = [4, 8, 15];\n    println!(\"{}\", last_item(&numbers));\n    let words = [\"red\", \"green\", \"blue\"];\n    println!(\"{}\", last_item(&words));\n}"
+    "solution": "fn last_item<T>(items: &[T]) -> &T {\n    &items[items.len() - 1]\n}\n\nfn main() {\n    let numbers = [4, 8, 15];\n    println!(\"{}\", last_item(&numbers));\n    let words = [\"red\", \"green\", \"blue\"];\n    println!(\"{}\", last_item(&words));\n}",
+    "hints": [
+      "The function only accepts i32 because of its parameter and its return type. Which types there could become a placeholder, like T in swap_pair?",
+      "Put a type parameter in angle brackets after the function name, then use T in place of i32 in the parameter and in the return type.",
+      "Write fn last_item<T>(items: &[T]) -> &T. Then, at the end of main, make an array of the three words and print last_item(&words), just like the call for numbers."
+    ]
   },
   "quiz": [
     {

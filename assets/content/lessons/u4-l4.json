@@ -45,7 +45,12 @@
     "prompt": "first_even returns an Option. Print its value, or 0 if there's no even number, using unwrap_or. It should print: 8",
     "starter": "fn first_even(numbers: &[i32]) -> Option<i32> {\n    for &n in numbers {   // each item is a &i32; &n gives the plain number n\n        if n % 2 == 0 {\n            return Some(n);\n        }\n    }\n    None\n}\n\nfn main() {\n    let result = first_even(&[3, 7, 8, 10]);\n    println!(\"{:?}\", result);\n}",
     "expectedOutput": "8",
-    "solution": "fn first_even(numbers: &[i32]) -> Option<i32> {\n    for &n in numbers {   // each item is a &i32; &n gives the plain number n\n        if n % 2 == 0 {\n            return Some(n);\n        }\n    }\n    None\n}\n\nfn main() {\n    let result = first_even(&[3, 7, 8, 10]);\n    println!(\"{}\", result.unwrap_or(0));\n}"
+    "solution": "fn first_even(numbers: &[i32]) -> Option<i32> {\n    for &n in numbers {   // each item is a &i32; &n gives the plain number n\n        if n % 2 == 0 {\n            return Some(n);\n        }\n    }\n    None\n}\n\nfn main() {\n    let result = first_even(&[3, 7, 8, 10]);\n    println!(\"{}\", result.unwrap_or(0));\n}",
+    "hints": [
+      "The function gives back an Option, which may hold a number or nothing. You need a plain number to print.",
+      "Option has a method unwrap_or that takes a fallback value. Call it on result with 0 as the fallback.",
+      "Change the println! to print result.unwrap_or(0). {} is enough now, because it's a plain number."
+    ]
   },
   "quiz": [
     {

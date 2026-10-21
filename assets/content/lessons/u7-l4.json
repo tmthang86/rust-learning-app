@@ -73,7 +73,12 @@
     "prompt": "show takes only an i32. Make it work for any type that can be printed with {}, and add a call with a string at the end of main. It should print two lines: <5> and <hi>. Hint: add use std::fmt::Display; at the top, and write fn show<T: Display>(item: T).",
     "starter": "fn show(item: i32) {\n    println!(\"<{item}>\");\n}\n\nfn main() {\n    show(5);\n}",
     "expectedOutput": "<5>\n<hi>",
-    "solution": "use std::fmt::Display;\n\nfn show<T: Display>(item: T) {\n    println!(\"<{item}>\");\n}\n\nfn main() {\n    show(5);\n    show(\"hi\");\n}"
+    "solution": "use std::fmt::Display;\n\nfn show<T: Display>(item: T) {\n    println!(\"<{item}>\");\n}\n\nfn main() {\n    show(5);\n    show(\"hi\");\n}",
+    "hints": [
+      "show takes only an i32 now. It must accept any type that can be printed with {}. Which trait is the one for {}?",
+      "Add a type parameter with a trait bound after the function name: <T: Display>. Use T as the type of item. Display needs a use line at the top of the file.",
+      "Add use std::fmt::Display; at the top and change the signature to fn show<T: Display>(item: T). Then call show(\"hi\") at the end of main."
+    ]
   },
   "quiz": [
     {

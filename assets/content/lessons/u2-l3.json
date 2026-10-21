@@ -47,7 +47,12 @@
     "prompt": "Use if as an expression to set size to \"big\" when n is over 100 and \"small\" otherwise. It should print: big",
     "starter": "fn main() {\n    let n = 250;\n    let size = \"?\";\n    println!(\"{size}\");\n}",
     "expectedOutput": "big",
-    "solution": "fn main() {\n    let n = 250;\n    let size = if n > 100 { \"big\" } else { \"small\" };\n    println!(\"{size}\");\n}"
+    "solution": "fn main() {\n    let n = 250;\n    let size = if n > 100 { \"big\" } else { \"small\" };\n    println!(\"{size}\");\n}",
+    "hints": [
+      "You need if to produce a value, not just run code. Which line should get that value?",
+      "On the let size line, write if after the = sign. Put the two possible values in the blocks, each without a semicolon.",
+      "Write let size = if n > 100 { \"big\" } else { \"small\" }; The whole if sits on the right of the = sign."
+    ]
   },
   "quiz": [
     {

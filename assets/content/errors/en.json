@@ -1,0 +1,503 @@
+{
+  "E0382": {
+    "title": "Using a value after it was moved",
+    "explanation": "A value can have only one owner. Assigning a String to another variable, or passing it to a function, moves it to the new owner. After that, the old variable can't be used. Simple types like i32 are copied instead, so they never get moved.",
+    "fixes": [
+      "Borrow instead of moving: write &name so the original owner keeps the value.",
+      "Make a separate copy with .clone() if you really need two values."
+    ]
+  },
+  "E0499": {
+    "title": "Two mutable borrows at the same time",
+    "explanation": "You can have many shared references or one mutable reference to a value, never two mutable ones (&mut) at once. Rust stopped because a second &mut was made while the first one was still going to be used.",
+    "fixes": [
+      "Finish with the first &mut before making the second. A borrow ends after its last use."
+    ]
+  },
+  "E0502": {
+    "title": "Shared and mutable borrow at the same time",
+    "explanation": "A value was borrowed as shared (&) and as mutable (&mut) at the same time. Rust allows many shared borrows or one mutable borrow, but never both while the first is still in use.",
+    "fixes": [
+      "Use the first reference for the last time before you change the value.",
+      "Keep a copy instead of a reference, for example with .clone(), so nothing stays borrowed while you change the original."
+    ]
+  },
+  "E0505": {
+    "title": "Moving a value that is still borrowed",
+    "explanation": "A value was moved (for example into a function) while a reference to it was still going to be used. The reference would point at something that is gone, so Rust stopped.",
+    "fixes": [
+      "Use the reference before the move, so the borrow is finished first.",
+      "Change the function to take a reference (&String) and call it with &s, or give it s.clone()."
+    ]
+  },
+  "E0506": {
+    "title": "Changing a value that is borrowed",
+    "explanation": "A reference to this variable is still going to be used, so the variable can't get a new value yet. A new value would make the reference wrong.",
+    "fixes": [
+      "Use the reference for the last time before you assign the new value. A borrow ends after its last use."
+    ]
+  },
+  "E0507": {
+    "title": "Moving a value out of a borrow",
+    "explanation": "You only borrowed this value, so you can't take ownership of it. Its owner still needs it. This also happens when you take a String out of a Vec by index, like v[0].",
+    "fixes": [
+      "Borrow the part you need instead: write &r.name or &v[0].",
+      "Make your own copy with .clone()."
+    ]
+  },
+  "E0515": {
+    "title": "Returning a reference to a local variable",
+    "explanation": "Local variables are dropped when the function ends. A reference to one would point at nothing, so Rust won't let you return it.",
+    "fixes": [
+      "Return the owned value instead of a reference, for example a String rather than a &str.",
+      "If you need a reference, borrow from data that lives longer, such as a parameter."
+    ]
+  },
+  "E0597": {
+    "title": "Value does not live long enough",
+    "explanation": "A value was dropped at the end of its block while a reference to it was still going to be used. The reference would point at something that is gone.",
+    "fixes": [
+      "Declare the value in the outer block, so it lives as long as the reference.",
+      "Use the reference inside the block, before the value is dropped."
+    ]
+  },
+  "E0716": {
+    "title": "A temporary value was dropped",
+    "explanation": "A value that is not stored in a variable, like the result of String::from(\"hi\"), is a temporary. Temporaries are usually dropped at the end of the statement, so a reference to one does not last.",
+    "fixes": [
+      "Store the value in a variable first with let, then borrow that variable.",
+      "Keep the owned value (for example the String) instead of borrowing from a temporary."
+    ]
+  },
+  "E0106": {
+    "title": "Missing lifetime specifier",
+    "explanation": "Rust needs to know how long a reference lives. A function that returns a reference must say which input it borrows from, and Rust can't guess that when there are several reference inputs (outside methods) or none. A struct field that holds a reference needs a lifetime name too.",
+    "fixes": [
+      "With several reference inputs, name a lifetime: fn longest<'a>(a: &'a str, b: &'a str) -> &'a str.",
+      "If nothing is passed in to borrow from, return an owned value such as a String instead of a reference.",
+      "For a struct field, put the lifetime on the struct: struct Holder<'a> { name: &'a str }. Or store a String."
+    ]
+  },
+  "E0384": {
+    "title": "Changing a variable that is not mut",
+    "explanation": "Variables are immutable by default, so a value can't be assigned twice. Rust stopped because this variable already has a value and was not declared with mut.",
+    "fixes": [
+      "Add mut when you declare it: let mut x = 5; (for a function parameter, write mut x: i32).",
+      "Or make a new variable with the same name using let (shadowing): let x = 6;"
+    ]
+  },
+  "E0596": {
+    "title": "Borrowing as mutable without mut",
+    "explanation": "This code needs to change a value, for example v.push(1) borrows v as mutable. But the variable is not declared with mut, or it is only a shared reference (&).",
+    "fixes": [
+      "If you own the value, declare it with let mut (or mut v for a parameter).",
+      "If it comes in through a reference parameter, change the type to &mut, like &mut Vec<i32>."
+    ]
+  },
+  "E0594": {
+    "title": "Assigning to something that is not mut",
+    "explanation": "A value that is not mutable was given a new value. Fields of a struct can only change when the whole variable is declared with mut.",
+    "fixes": [
+      "Declare the variable with let mut.",
+      "If you assign through a reference, the reference must be a &mut.",
+      "If the value lives in a RefCell, change it through borrow_mut()."
+    ]
+  },
+  "E0308": {
+    "title": "Mismatched types",
+    "explanation": "Rust expected one type but found another. This often happens when you pass a value whose type differs from what the function asks for, or when the two sides of a let or an if/else disagree.",
+    "fixes": [
+      "Read the \"expected\" and \"found\" lines in the message, then change the value to the type that is expected.",
+      "Convert on purpose when it makes sense, such as as f64 for numbers or .to_string() for text.",
+      "If a function ends with a ; after its last value, remove the ; so the value is returned."
+    ]
+  },
+  "E0277": {
+    "title": "A type is missing a needed trait",
+    "explanation": "Rust needed a type to have an ability (a trait), but it doesn't. The message says which one. Common cases: printing a Vec with {}, adding an i32 to an f64, or using an i32 as an index.",
+    "fixes": [
+      "To print a Vec or your own struct, use {:?} and put #[derive(Debug)] above the struct.",
+      "Make number types match: convert with as, and index a Vec with a usize, not an i32.",
+      "In a generic function, add the bound the code needs, like fn show<T: std::fmt::Debug>(x: T)."
+    ]
+  },
+  "E0599": {
+    "title": "Method or function not found",
+    "explanation": "A method, function or enum variant was used that the type doesn't have. Rust looked at the type and found nothing with that name.",
+    "fixes": [
+      "Check the spelling and the type: the method (d.bark()), function (String::new()) or variant (Light::Red) must exist for that type.",
+      "For your own type, write it in an impl block, or add the variant to the enum."
+    ]
+  },
+  "E0425": {
+    "title": "Name not found",
+    "explanation": "Rust can't find anything with this name here. Maybe it is misspelled, was never declared, or lives somewhere else. This also covers types, which show up as \"cannot find type\".",
+    "fixes": [
+      "Check the spelling against where it was declared.",
+      "Make sure it is declared before this line and that you are still inside the block where it exists.",
+      "If it is defined in another module, bring it in with use."
+    ]
+  },
+  "E0433": {
+    "title": "Type or module not imported",
+    "explanation": "A crate, module or type was used that Rust doesn't know in this place. Often it is a type from the standard library, like HashMap, that needs a use line first.",
+    "fixes": [
+      "Import it at the top, for example use std::collections::HashMap;",
+      "Check the spelling of the name and of every part of the path.",
+      "To use a module from your own crate, start the path with crate::"
+    ]
+  },
+  "E0432": {
+    "title": "Import not found",
+    "explanation": "A use line points at something that Rust can't find. The path might be misspelled, or the item might not exist in that module.",
+    "fixes": [
+      "Check the spelling of every part of the path.",
+      "Check that the item really exists in that module.",
+      "Paths to your own code can start with crate::, self:: or super::"
+    ]
+  },
+  "E0061": {
+    "title": "Wrong number of arguments",
+    "explanation": "The number of arguments in a call must match the number in the function's definition. Rust has no optional arguments, so every one must be given.",
+    "fixes": [
+      "Count the parameters in the function and pass exactly that many.",
+      "If the function should take a different number, change its definition."
+    ]
+  },
+  "E0369": {
+    "title": "Operator not supported for this type",
+    "explanation": "An operator like + or == was used on a type that doesn't support it. Rust only allows an operator when the type implements the matching trait. Two &str values can't be added, for example.",
+    "fixes": [
+      "To join text, start from a String: \"a\".to_owned() + \"b\", or use format!(\"{}{}\", a, b).",
+      "For your own struct, put #[derive(PartialEq)] above it to use ==, or implement Add from std::ops to use +.",
+      "In a generic function, add a bound: T: PartialOrd for >, or T: std::ops::Add<Output = T> for +."
+    ]
+  },
+  "E0381": {
+    "title": "Using a variable with no value yet",
+    "explanation": "A variable was declared but never given a value, and then it was used. Rust won't let you read a variable that has nothing in it.",
+    "fixes": [
+      "Give the variable a value before you use it, for example let x: i32 = 0;",
+      "If you set it in branches such as if and else, make sure every path sets it."
+    ]
+  },
+  "E0282": {
+    "title": "Type annotations needed",
+    "explanation": "Rust could not work out one single type from the code, so it needs your help. For example, Vec::new() doesn't say what the vector will hold.",
+    "fixes": [
+      "Write the type on the variable: let v: Vec<i32> = Vec::new();",
+      "Or give the type in the call: Vec::<i32>::new()",
+      "Or use the value in a way that shows its type, such as pushing an i32 into it."
+    ]
+  },
+  "E0283": {
+    "title": "Rust can't pick which type to build",
+    "explanation": "Some methods, like collect(), can build many different types, such as a Vec or a String. Rust can't tell which one you want, so it asks you to say.",
+    "fixes": [
+      "Write the type on the variable: let d: Vec<i32> = ... .collect(); Writing Vec<_> is enough.",
+      "Or put the type in the call: .collect::<Vec<_>>()"
+    ]
+  },
+  "E0284": {
+    "title": "Rust can't pick the result type",
+    "explanation": "Some methods, like parse(), can produce many different types. Rust can't be sure which one you want, so it asks you to say.",
+    "fixes": [
+      "Write the type on the variable: let n: i32 = \"5\".parse().unwrap();",
+      "Or put the type in the call: \"5\".parse::<i32>()"
+    ]
+  },
+  "E0004": {
+    "title": "match does not cover every case",
+    "explanation": "A match must handle every possible value. Rust found at least one value that no arm matches, and the error names it.",
+    "fixes": [
+      "Add an arm for each missing case, such as the variant named in the message.",
+      "Or add _ => as the last arm to match anything else."
+    ]
+  },
+  "E0063": {
+    "title": "Missing a struct field",
+    "explanation": "A struct value must give a value for every field. At least one field was left out of this struct literal.",
+    "fixes": [
+      "Add the missing field, using the name shown in the message.",
+      "Or copy the rest from another value: Point { x: 1, ..other }"
+    ]
+  },
+  "E0560": {
+    "title": "Unknown field in a struct value",
+    "explanation": "A field name was used that the struct does not have. Maybe it is misspelled.",
+    "fixes": [
+      "Check the field's spelling against the struct definition.",
+      "If the struct really needs this field, add it to the struct definition."
+    ]
+  },
+  "E0609": {
+    "title": "No such field",
+    "explanation": "This value has no field with that name. Maybe the name is misspelled, or the value is a different type than you expected.",
+    "fixes": [
+      "Check the field's spelling against the struct definition.",
+      "Check the type of the value: another struct may have the field you want.",
+      "If the field is missing from the struct, add it to the definition."
+    ]
+  },
+  "E0615": {
+    "title": "Method used like a field",
+    "explanation": "A method was written without brackets, so Rust treats it like a field. A method needs round brackets () after its name to run.",
+    "fixes": [
+      "Add round brackets: s.len() instead of s.len.",
+      "If you wanted a field of your own struct, check its spelling."
+    ]
+  },
+  "E0616": {
+    "title": "Private field",
+    "explanation": "This field is private, so only code in the module that defines the struct (and modules inside it) can use it. Types from Rust itself, like Vec, keep their fields private.",
+    "fixes": [
+      "If you meant a method, add round brackets: v.len() instead of v.len. You can't change the fields of Rust's own types.",
+      "For your own struct, make the field public by writing pub before its name.",
+      "Or add a public method that returns the value (a getter)."
+    ]
+  },
+  "E0603": {
+    "title": "Private item",
+    "explanation": "This item is private, which means it can only be used inside its own module (and modules within it). Rust stopped because it was used from outside.",
+    "fixes": [
+      "Make the item public with the pub keyword.",
+      "Or call it from inside its module, for example through a public function."
+    ]
+  },
+  "E0624": {
+    "title": "Private method",
+    "explanation": "This method is private, so it can only be used in the scope where it was defined.",
+    "fixes": [
+      "For your own type, make the method public by writing pub before fn, or only call it inside its module.",
+      "If the type is not yours, the method may belong to the value inside it. For example, v.get(0) gives an Option, so unwrap it or use match first."
+    ]
+  },
+  "E0046": {
+    "title": "Missing trait methods",
+    "explanation": "An impl block for a trait must provide every method that has no default body. At least one is missing, and the error names it.",
+    "fixes": [
+      "Add each missing method named in the message to the impl block.",
+      "Copy the method signature from the trait, then write the body."
+    ]
+  },
+  "E0373": {
+    "title": "Closure may outlive the data it borrows",
+    "explanation": "A closure borrows variables by default. A thread or a returned closure may run after those variables are gone, so Rust stopped.",
+    "fixes": [
+      "Add move before the closure, like move || { ... }, so it takes ownership of what it uses.",
+      "If you still need the value afterwards, give the closure a .clone() (or an Arc) and keep the original."
+    ]
+  },
+  "E0614": {
+    "title": "Cannot dereference this type",
+    "explanation": "The * operator was used on a value that is not a reference or other pointer. Only types like &T can be dereferenced this way.",
+    "fixes": [
+      "Remove the * when the value is not a reference.",
+      "Use * only on references and smart pointers such as &i32 or Box<i32>."
+    ]
+  },
+  "E0728": {
+    "title": "await outside async code",
+    "explanation": "await waits for a future to finish. It can only be used inside an async fn or an async block.",
+    "fixes": [
+      "Move the .await into an async fn or an async block.",
+      "A normal function, including main, can't await. Something like the course's block_on helper, or a runtime such as tokio, has to run the future."
+    ]
+  },
+  "E0601": {
+    "title": "No main function",
+    "explanation": "A program needs a main function. That is where it starts, and Rust could not find one.",
+    "fixes": [
+      "Add fn main() { ... }",
+      "Check that main is spelled exactly like that, in lower case."
+    ]
+  },
+  "E0072": {
+    "title": "A type that contains itself",
+    "explanation": "A struct or enum can't contain itself directly. It would need infinite space. The inner one must sit behind a pointer such as Box, which has a known size.",
+    "fixes": [
+      "Wrap the inner value in a Box: use Option<Box<Node>> instead of Option<Node>."
+    ]
+  },
+  "E0023": {
+    "title": "Wrong number of fields in a pattern",
+    "explanation": "A pattern for an enum variant must have one sub-pattern for each field the variant has. This pattern has a different number.",
+    "fixes": [
+      "Count the fields in the variant's definition and match them all.",
+      "Use _ for a field you don't need, like Shape::Rect(w, _)."
+    ]
+  },
+  "E0317": {
+    "title": "if without an else used as a value",
+    "explanation": "An if without an else has the type (), which means no value. When a value is needed, like in a let, Rust needs an else too.",
+    "fixes": [
+      "Add an else block that gives a value of the same type as the if block."
+    ]
+  },
+  "E0423": {
+    "title": "Name used the wrong way",
+    "explanation": "A name was used like a function (or a value was expected), but it is something else. A common cause is forgetting the ! when calling a macro: println(\"hi\") instead of println!(\"hi\").",
+    "fixes": [
+      "Add the ! after a macro name: println!(\"hi\")",
+      "Otherwise check that the name is the function or value you meant."
+    ]
+  },
+  "E0606": {
+    "title": "Invalid cast",
+    "explanation": "The as keyword only converts between simple types such as numbers. Casting something else, like text or a reference, doesn't work.",
+    "fixes": [
+      "To turn text into a number, use parse: \"5\".parse::<i32>().unwrap()",
+      "If you have a reference to a number, dereference it first: *x as u32"
+    ]
+  },
+  "E0368": {
+    "title": "Operator can't change this type",
+    "explanation": "An assignment operator like += was used on a type that doesn't support it. A &str can't grow, so it has no +=.",
+    "fixes": [
+      "Use a String instead: let mut s = String::from(\"hi\"); s += \" there\";",
+      "Or call s.push_str(\" there\") on a String."
+    ]
+  },
+  "E0435": {
+    "title": "Using a variable where a constant is needed",
+    "explanation": "Array lengths and const values must be known when the program is compiled. A value stored in a let variable is only known when the program runs.",
+    "fixes": [
+      "Use a constant: const N: usize = 3; then [0; N]",
+      "If the size is only known when the program runs, use a Vec: vec![0; n]"
+    ]
+  },
+  "E0605": {
+    "title": "Cast not allowed for this type",
+    "explanation": "The as keyword only converts between simple types such as numbers. A String is not one of them, so as can't turn it into a number.",
+    "fixes": [
+      "To turn text into a number, use parse: s.parse::<i32>().unwrap()"
+    ]
+  },
+  "E0765": {
+    "title": "Text in quotes is never closed",
+    "explanation": "A piece of text starts with a double quote but never ends with one. Rust keeps reading until the end of the file.",
+    "fixes": [
+      "Add the missing closing double quote at the end of the text."
+    ]
+  },
+  "syntax-missing-semicolon": {
+    "title": "Missing semicolon",
+    "explanation": "Most statements in Rust end with ;. Rust reached the start of the next statement before it saw the end of this one. The arrow in the message points at the line that needs the ;.",
+    "fixes": [
+      "Add ; at the end of the line the arrow points to."
+    ]
+  },
+  "syntax-unclosed-delimiter": {
+    "title": "Unclosed bracket",
+    "explanation": "Every {, ( or [ needs a matching closing partner. The code ended while one was still open.",
+    "fixes": [
+      "Find the bracket the message calls unclosed, or says might not be properly closed, and add its closing partner where that block should end.",
+      "Check that each { has its own }. Matching indentation helps you see where a block should end."
+    ]
+  },
+  "syntax-mismatched-delimiter": {
+    "title": "Brackets don't match",
+    "explanation": "A closing bracket was found that doesn't match the last bracket that was opened, such as ( closed by ].",
+    "fixes": [
+      "Change the closing bracket to the partner of the opening one: ( with ), [ with ], { with }."
+    ]
+  },
+  "syntax-unexpected-closing": {
+    "title": "Extra closing bracket",
+    "explanation": "A closing bracket was found that has no opening partner. Maybe a block was closed twice.",
+    "fixes": [
+      "Remove the extra closing bracket, or add the missing opening one."
+    ]
+  },
+  "syntax-expected-expression": {
+    "title": "A value is missing",
+    "explanation": "Rust expected a value (an expression), but found something else, such as ;. For example, let x = ; has no value after the =.",
+    "fixes": [
+      "Write the value that belongs there, such as let x = 5;",
+      "Check for a missing value or an extra symbol just before the arrow."
+    ]
+  },
+  "syntax-increment": {
+    "title": "No ++ in Rust",
+    "explanation": "Rust has no ++ operator, neither before nor after a variable. To add one, write it out with +=.",
+    "fixes": [
+      "Write i += 1; instead of i++ or ++i. The variable must be declared with let mut."
+    ]
+  },
+  "syntax-decrement": {
+    "title": "No -- in Rust",
+    "explanation": "Rust has no -- operator, neither before nor after a variable. To subtract one, write it out with -=.",
+    "fixes": [
+      "Write i -= 1; instead of i--. The variable must be declared with let mut."
+    ]
+  },
+  "syntax-unknown-macro": {
+    "title": "Unknown macro",
+    "explanation": "Rust can't find a macro with this name. Macros are written with a ! at the end, like println!, and the name may be misspelled.",
+    "fixes": [
+      "Check the spelling of the name, for example println! or vec!"
+    ]
+  },
+  "syntax-format-args": {
+    "title": "Not enough values for {}",
+    "explanation": "Each {} in a format string such as println!(\"{} {}\", a) needs one value after the string. Here there are more {} than values.",
+    "fixes": [
+      "Add a value for every {}.",
+      "Or remove the extra {}."
+    ]
+  },
+  "syntax-argument-never-used": {
+    "title": "A value has no {} to go in",
+    "explanation": "A value was given to println! (or format!) but the format string has no {} for it, so it would never be shown.",
+    "fixes": [
+      "Add a {} for the value in the text, such as println!(\"{}\", 5).",
+      "Or remove the extra value."
+    ]
+  },
+  "syntax-format-literal": {
+    "title": "Format text must be in quotes",
+    "explanation": "The first thing in println! must be text written in double quotes. A variable can't be used as the format text.",
+    "fixes": [
+      "Start with a string in quotes and print the variable through {}: println!(\"{}\", s)"
+    ]
+  },
+  "syntax-unused-formatting-arguments": {
+    "title": "Several values have no {} to go in",
+    "explanation": "Some values were given to println! (or format!) but the format string has no {} for them, so they would never be shown.",
+    "fixes": [
+      "Add a {} for each value in the text, such as println!(\"{} {}\", 1, 2).",
+      "Or remove the extra values."
+    ]
+  },
+  "syntax-invalid-format-string": {
+    "title": "Invalid text inside {}",
+    "explanation": "Inside {} you can put only a variable name (or a position or format option), not a calculation. Rust could not read what is between the braces.",
+    "fixes": [
+      "Work it out first: let next = age + 1; then println!(\"{next}\").",
+      "Or leave {} empty and pass the calculation after the text: println!(\"{}\", age + 1)."
+    ]
+  },
+  "syntax-char-literal": {
+    "title": "Too many characters in single quotes",
+    "explanation": "Single quotes hold exactly one character, like 'a'. Text with more characters needs double quotes, like \"ab\".",
+    "fixes": [
+      "Use double quotes for text: \"ab\"",
+      "Or keep only one character between the single quotes."
+    ]
+  },
+  "syntax-unknown-token": {
+    "title": "Unknown symbol",
+    "explanation": "Rust found a symbol that isn't valid in code. This often happens with curly quotes, which come from copying text from a document or a web page. Code needs straight quotes. Errors after this one often go away once it is fixed.",
+    "fixes": [
+      "Retype the symbol with your keyboard. Use straight quotes: \" and '"
+    ]
+  },
+  "syntax-literal-out-of-range": {
+    "title": "Number too big for its type",
+    "explanation": "Each number type holds values only up to a limit. For example, u8 holds 0 to 255. The number written here is outside the range of its type.",
+    "fixes": [
+      "Use a type that is big enough, such as u16 or i32.",
+      "Or use a smaller number."
+    ]
+  }
+}

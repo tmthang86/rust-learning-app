@@ -58,7 +58,12 @@
     "prompt": "Add a Display impl for ShopError, following the LoginError example, with the message \"out of stock\". Then change println!(\"Error: {:?}\", e) to println!(\"Error: {e}\"), so it uses your message instead of the debug form. It should print: Error: out of stock",
     "starter": "use std::fmt;   // keep this: your Display impl needs fmt\n\n#[derive(Debug)]\nenum ShopError {\n    OutOfStock,\n}\n\nfn main() {\n    let e = ShopError::OutOfStock;\n    println!(\"Error: {:?}\", e);\n}",
     "expectedOutput": "Error: out of stock",
-    "solution": "use std::fmt;\n\n#[derive(Debug)]\nenum ShopError {\n    OutOfStock,\n}\n\nimpl fmt::Display for ShopError {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        match self {\n            ShopError::OutOfStock => write!(f, \"out of stock\"),\n        }\n    }\n}\n\nfn main() {\n    let e = ShopError::OutOfStock;\n    println!(\"Error: {e}\");\n}"
+    "solution": "use std::fmt;\n\n#[derive(Debug)]\nenum ShopError {\n    OutOfStock,\n}\n\nimpl fmt::Display for ShopError {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        match self {\n            ShopError::OutOfStock => write!(f, \"out of stock\"),\n        }\n    }\n}\n\nfn main() {\n    let e = ShopError::OutOfStock;\n    println!(\"Error: {e}\");\n}",
+    "hints": [
+      "Look at how LoginError gets a readable message: an impl block with one method inside. ShopError needs the same, with only one variant to handle.",
+      "Write impl fmt::Display for ShopError and copy the fmt line exactly as in the lesson. Inside, match self with one arm for ShopError::OutOfStock that calls write!(f, \"...\").",
+      "Use write!(f, \"out of stock\") with no semicolon after it. Then change the println! to print {e} instead of {:?}."
+    ]
   },
   "quiz": [
     {
