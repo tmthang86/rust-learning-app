@@ -1,0 +1,64 @@
+{
+  "id": "u12-check",
+  "title": "Checkpoint: Stock keeper",
+  "sections": [
+    {
+      "type": "text",
+      "text": "This final checkpoint is a small program that pulls from the whole course. A command line becomes an enum with a parser, as in the capstone lessons (A command-line tool, A text adventure). Failures are values of a custom error type with Display and From, and ? moves them up (Units 4 and 6). Stock lives in a HashMap (Unit 5), and the report is built with an iterator pipeline (Unit 8). The checks in main use assert_eq! (Unit 9). You write three functions."
+    },
+    {
+      "type": "text",
+      "text": "The starter compiles, but three bodies are marked todo!(), a placeholder that panics with \"not yet implemented\" when it runs. The types, the Display text of each error, run_line and main are written for you. A HashMap has no fixed order, so report must sort the names before it prints them. The program prints the result of each command from a script, so you can read the whole conversation."
+    },
+    {
+      "type": "note",
+      "text": "parse: split the line with split_whitespace(), and take the first three words with next(). Then match on the tuple (verb, item, amount), as parse did in the text adventure. An arm like (\"add\", Some(item), Some(amount)) can call amount.parse()? straight inside Command::Add(...), because the From impl turns the error into StockError::BadNumber. A pattern like \"add\" | \"remove\" matches either word.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "apply: for Add, use *stock.entry(item).or_insert(0) += amount. Make the message before you move item into entry. For Remove, read the count with *stock.get(&item).unwrap_or(&0). If it is smaller than the amount, return Err(StockError::NotEnough { item, have, wanted: amount }). Otherwise store have - amount with insert. report: collect the keys into a Vec, sort it, filter out the names whose count is 0, then map each to \"name=count\" and join them with \", \".",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Signatures to match: parse(line: &str) -> Result<Command, StockError>, apply(stock: &mut HashMap<String, u32>, command: Command) -> Result<String, StockError> and report(stock: &HashMap<String, u32>) -> String. Rules worth checking: a missing item or amount is MissingArgument, a bad amount is BadNumber (even when the item is there), an empty line is UnknownCommand(\"\"), and items that reach 0 do not appear in the report.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Finish the stock keeper. Three bodies are marked todo!().\n\n(1) fn parse(line: &str) -> Result<Command, StockError> reads the first three words of the line. report gives Command::Report (words after it are ignored). add ITEM AMOUNT gives Command::Add(item, amount), and remove ITEM AMOUNT gives Command::Remove(item, amount). The amount is a u32. If add or remove has no item or no amount, return StockError::MissingArgument. If the amount cannot be parsed as a u32 (for example lots or -5), return StockError::BadNumber (the From impl lets ? do this). Any other first word, or an empty line, gives StockError::UnknownCommand with that first word (an empty text for an empty line).\n\n(2) fn apply(stock: &mut HashMap<String, u32>, command: Command) -> Result<String, StockError>. Add raises the count (a new item starts at 0) and returns the text added AMOUNT ITEM. Remove lowers the count and returns removed AMOUNT ITEM. If there are fewer than AMOUNT in stock (an unknown item counts as 0), it changes nothing and returns StockError::NotEnough { item, have, wanted }. Report returns report(stock).\n\n(3) fn report(stock: &HashMap<String, u32>) -> String lists the items whose count is above 0, sorted by name, as name=count separated by a comma and a space (for example apple=8, pear=2). If there are none, it returns (empty).\n\nDo not change main. It should print:\n\nparse checks passed\n> \"report\"\n(empty)\n> \"add apple 5\"\nadded 5 apple\n> \"add pear 2\"\nadded 2 pear\n> \"add apple 3\"\nadded 3 apple\n> \"remove pear 2\"\nremoved 2 pear\n> \"remove apple 10\"\nerror: only 8 apple in stock, wanted 10\n> \"remove kiwi 1\"\nerror: only 0 kiwi in stock, wanted 1\n> \"add plum\"\nerror: missing item or amount\n> \"add plum lots\"\nerror: the amount must be a whole number\n> \"sell apple 1\"\nerror: unknown command 'sell'\n> \"\"\nerror: unknown command ''\n> \"report\"\napple=8",
+    "starter": "use std::collections::HashMap;\nuse std::fmt;\nuse std::num::ParseIntError;\n\n#[derive(Debug, PartialEq)]\nenum Command {\n    Add(String, u32),\n    Remove(String, u32),\n    Report,\n}\n\n#[derive(Debug, PartialEq)]\nenum StockError {\n    UnknownCommand(String),\n    MissingArgument,\n    BadNumber,\n    NotEnough { item: String, have: u32, wanted: u32 },\n}\n\nimpl fmt::Display for StockError {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        match self {\n            StockError::UnknownCommand(word) => write!(f, \"unknown command '{word}'\"),\n            StockError::MissingArgument => write!(f, \"missing item or amount\"),\n            StockError::BadNumber => write!(f, \"the amount must be a whole number\"),\n            StockError::NotEnough { item, have, wanted } => {\n                write!(f, \"only {have} {item} in stock, wanted {wanted}\")\n            }\n        }\n    }\n}\n\n// Lets ? turn a ParseIntError into a StockError.\nimpl From<ParseIntError> for StockError {\n    fn from(_: ParseIntError) -> StockError {\n        StockError::BadNumber\n    }\n}\n\nfn parse(line: &str) -> Result<Command, StockError> {\n    todo!()\n}\n\nfn report(stock: &HashMap<String, u32>) -> String {\n    todo!()\n}\n\nfn apply(stock: &mut HashMap<String, u32>, command: Command) -> Result<String, StockError> {\n    todo!()\n}\n\nfn run_line(stock: &mut HashMap<String, u32>, line: &str) -> Result<String, StockError> {\n    let command = parse(line)?;\n    apply(stock, command)\n}\n\nfn main() {\n    assert_eq!(parse(\"report\"), Ok(Command::Report));\n    assert_eq!(parse(\"add apple 5\"), Ok(Command::Add(String::from(\"apple\"), 5)));\n    assert_eq!(parse(\"sell apple 1\"), Err(StockError::UnknownCommand(String::from(\"sell\"))));\n    println!(\"parse checks passed\");\n\n    let script = [\n        \"report\",\n        \"add apple 5\",\n        \"add pear 2\",\n        \"add apple 3\",\n        \"remove pear 2\",\n        \"remove apple 10\",\n        \"remove kiwi 1\",\n        \"add plum\",\n        \"add plum lots\",\n        \"sell apple 1\",\n        \"\",\n        \"report\",\n    ];\n    let mut stock = HashMap::new();\n    for line in script {\n        println!(\"> {line:?}\");\n        match run_line(&mut stock, line) {\n            Ok(message) => println!(\"{message}\"),\n            Err(e) => println!(\"error: {e}\"),\n        }\n    }\n}",
+    "expectedOutput": "parse checks passed\n> \"report\"\n(empty)\n> \"add apple 5\"\nadded 5 apple\n> \"add pear 2\"\nadded 2 pear\n> \"add apple 3\"\nadded 3 apple\n> \"remove pear 2\"\nremoved 2 pear\n> \"remove apple 10\"\nerror: only 8 apple in stock, wanted 10\n> \"remove kiwi 1\"\nerror: only 0 kiwi in stock, wanted 1\n> \"add plum\"\nerror: missing item or amount\n> \"add plum lots\"\nerror: the amount must be a whole number\n> \"sell apple 1\"\nerror: unknown command 'sell'\n> \"\"\nerror: unknown command ''\n> \"report\"\napple=8",
+    "solution": "use std::collections::HashMap;\nuse std::fmt;\nuse std::num::ParseIntError;\n\n#[derive(Debug, PartialEq)]\nenum Command {\n    Add(String, u32),\n    Remove(String, u32),\n    Report,\n}\n\n#[derive(Debug, PartialEq)]\nenum StockError {\n    UnknownCommand(String),\n    MissingArgument,\n    BadNumber,\n    NotEnough { item: String, have: u32, wanted: u32 },\n}\n\nimpl fmt::Display for StockError {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        match self {\n            StockError::UnknownCommand(word) => write!(f, \"unknown command '{word}'\"),\n            StockError::MissingArgument => write!(f, \"missing item or amount\"),\n            StockError::BadNumber => write!(f, \"the amount must be a whole number\"),\n            StockError::NotEnough { item, have, wanted } => {\n                write!(f, \"only {have} {item} in stock, wanted {wanted}\")\n            }\n        }\n    }\n}\n\n// Lets ? turn a ParseIntError into a StockError.\nimpl From<ParseIntError> for StockError {\n    fn from(_: ParseIntError) -> StockError {\n        StockError::BadNumber\n    }\n}\n\nfn parse(line: &str) -> Result<Command, StockError> {\n    let mut words = line.split_whitespace();\n    let verb = words.next().unwrap_or(\"\");\n    let item = words.next();\n    let amount = words.next();\n    match (verb, item, amount) {\n        (\"report\", _, _) => Ok(Command::Report),\n        (\"add\", Some(item), Some(amount)) => Ok(Command::Add(item.to_string(), amount.parse()?)),\n        (\"remove\", Some(item), Some(amount)) => {\n            Ok(Command::Remove(item.to_string(), amount.parse()?))\n        }\n        (\"add\" | \"remove\", _, _) => Err(StockError::MissingArgument),\n        _ => Err(StockError::UnknownCommand(verb.to_string())),\n    }\n}\n\nfn report(stock: &HashMap<String, u32>) -> String {\n    let mut names: Vec<_> = stock.keys().collect();\n    names.sort();\n    let parts: Vec<String> = names\n        .into_iter()\n        .filter(|name| stock[*name] > 0)\n        .map(|name| format!(\"{name}={}\", stock[name]))\n        .collect();\n    if parts.is_empty() {\n        String::from(\"(empty)\")\n    } else {\n        parts.join(\", \")\n    }\n}\n\nfn apply(stock: &mut HashMap<String, u32>, command: Command) -> Result<String, StockError> {\n    match command {\n        Command::Add(item, amount) => {\n            let message = format!(\"added {amount} {item}\");\n            *stock.entry(item).or_insert(0) += amount;\n            Ok(message)\n        }\n        Command::Remove(item, amount) => {\n            let have = *stock.get(&item).unwrap_or(&0);\n            if have < amount {\n                return Err(StockError::NotEnough { item, have, wanted: amount });\n            }\n            let message = format!(\"removed {amount} {item}\");\n            stock.insert(item, have - amount);\n            Ok(message)\n        }\n        Command::Report => Ok(report(stock)),\n    }\n}\n\nfn run_line(stock: &mut HashMap<String, u32>, line: &str) -> Result<String, StockError> {\n    let command = parse(line)?;\n    apply(stock, command)\n}\n\nfn main() {\n    assert_eq!(parse(\"report\"), Ok(Command::Report));\n    assert_eq!(parse(\"add apple 5\"), Ok(Command::Add(String::from(\"apple\"), 5)));\n    assert_eq!(parse(\"sell apple 1\"), Err(StockError::UnknownCommand(String::from(\"sell\"))));\n    println!(\"parse checks passed\");\n\n    let script = [\n        \"report\",\n        \"add apple 5\",\n        \"add pear 2\",\n        \"add apple 3\",\n        \"remove pear 2\",\n        \"remove apple 10\",\n        \"remove kiwi 1\",\n        \"add plum\",\n        \"add plum lots\",\n        \"sell apple 1\",\n        \"\",\n        \"report\",\n    ];\n    let mut stock = HashMap::new();\n    for line in script {\n        println!(\"> {line:?}\");\n        match run_line(&mut stock, line) {\n            Ok(message) => println!(\"{message}\"),\n            Err(e) => println!(\"error: {e}\"),\n        }\n    }\n}"
+  },
+  "quiz": [
+    {
+      "question": "Why does parse return Result<Command, StockError> instead of calling panic! on a bad line?",
+      "options": [
+        "Because panic! cannot be used in a function that returns a value",
+        "A mistyped command is normal input, not a bug, so the caller gets an error value it can handle",
+        "Because Result is always faster than panic!"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What does amount.parse()? do inside parse when amount is the text lots?",
+      "options": [
+        "It panics",
+        "It gives the number 0",
+        "It returns Err(StockError::BadNumber) from parse, because the From impl converts the ParseIntError"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Why does report sort the names before it prints them?",
+      "options": [
+        "A HashMap does not promise any order, so sorting makes the output the same on every run",
+        "sort removes the names that appear twice",
+        "A HashMap cannot be printed in any other way"
+      ],
+      "answer": 0
+    }
+  ]
+}

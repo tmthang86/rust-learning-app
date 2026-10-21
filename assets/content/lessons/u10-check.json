@@ -1,0 +1,59 @@
+{
+  "id": "u10-check",
+  "title": "Checkpoint: Shared log",
+  "sections": [
+    {
+      "type": "text",
+      "text": "This checkpoint practices the whole unit. A recursive tree needs Box to have a known size (Box<T>). A Guard value cleans up with Drop, and it can be used where a &str is expected through Deref (Deref and Drop). Several guards share one log with Rc (Rc<T>), and the log is changed through RefCell (RefCell<T> and interior mutability). You do not write main."
+    },
+    {
+      "type": "text",
+      "text": "The starter compiles, but three bodies are marked todo!(), a placeholder that panics with \"not yet implemented\" when it runs. The Deref impl for Guard is already written. That is why shout(&db) works in main: Rust turns the &Guard into a &String, and then into the &str that shout wants. The program prints the log at the end, so the messages show you the order in which values were created and dropped."
+    },
+    {
+      "type": "note",
+      "text": "depth: match on tree. A Leaf has depth 1. For a Node, call depth on both children (they are Box<Tree>, and Rust lets you pass them where a &Tree is expected, as in the sum example), then give back the bigger one plus 1. Guard::new: push the message first, with log.borrow_mut().push(...), then build the Guard with Rc::clone(log). Drop: push a closed message the same way.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Signatures to match: depth(tree: &Tree) -> u32, Guard::new(name: &str, log: &Rc<RefCell<Vec<String>>>) -> Guard, and Drop::drop(&mut self). The log is a Vec<String> inside a RefCell inside an Rc. Rc::strong_count in main checks that new really adds an owner. Drop order in main: drop(cache) runs early, and db is dropped at the end of its block.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Finish the program. Three bodies are marked todo!().\n\n(1) fn depth(tree: &Tree) -> u32: a Leaf has depth 1, and a Node has depth 1 plus the depth of its deeper child.\n\n(2) Guard::new(name: &str, log: &Rc<RefCell<Vec<String>>>) -> Guard pushes the text opened NAME onto the log (for example opened db), and returns a Guard that holds its name and a new owner of the same log (do not copy the Vec).\n\n(3) impl Drop for Guard pushes the text closed NAME onto the log when a Guard goes away.\n\nDo not change main. It should print:\n\ndepths: 1 2 4\nowners: 3\nDB\nowners: 2\nowners: 1\nopened db\nopened cache\nclosed cache\nworking\nclosed db",
+    "starter": "use std::cell::RefCell;\nuse std::ops::Deref;\nuse std::rc::Rc;\n\nenum Tree {\n    Leaf,\n    Node(Box<Tree>, Box<Tree>),\n}\n\nfn depth(tree: &Tree) -> u32 {\n    todo!()\n}\n\nstruct Guard {\n    name: String,\n    log: Rc<RefCell<Vec<String>>>,\n}\n\nimpl Guard {\n    fn new(name: &str, log: &Rc<RefCell<Vec<String>>>) -> Guard {\n        todo!()\n    }\n}\n\nimpl Drop for Guard {\n    fn drop(&mut self) {\n        todo!()\n    }\n}\n\nimpl Deref for Guard {\n    type Target = String;\n\n    fn deref(&self) -> &String {\n        &self.name\n    }\n}\n\nfn shout(text: &str) -> String {\n    text.to_uppercase()\n}\n\nfn main() {\n    let leaf = Tree::Leaf;\n    let pair = Tree::Node(Box::new(Tree::Leaf), Box::new(Tree::Leaf));\n    let lopsided = Tree::Node(\n        Box::new(Tree::Leaf),\n        Box::new(Tree::Node(\n            Box::new(Tree::Leaf),\n            Box::new(Tree::Node(Box::new(Tree::Leaf), Box::new(Tree::Leaf))),\n        )),\n    );\n    println!(\"depths: {} {} {}\", depth(&leaf), depth(&pair), depth(&lopsided));\n\n    let log = Rc::new(RefCell::new(Vec::new()));\n    {\n        let db = Guard::new(\"db\", &log);\n        let cache = Guard::new(\"cache\", &log);\n        println!(\"owners: {}\", Rc::strong_count(&log));\n        println!(\"{}\", shout(&db));\n        drop(cache);\n        println!(\"owners: {}\", Rc::strong_count(&log));\n        log.borrow_mut().push(String::from(\"working\"));\n    }\n    println!(\"owners: {}\", Rc::strong_count(&log));\n    for line in log.borrow().iter() {\n        println!(\"{line}\");\n    }\n}",
+    "expectedOutput": "depths: 1 2 4\nowners: 3\nDB\nowners: 2\nowners: 1\nopened db\nopened cache\nclosed cache\nworking\nclosed db",
+    "solution": "use std::cell::RefCell;\nuse std::ops::Deref;\nuse std::rc::Rc;\n\nenum Tree {\n    Leaf,\n    Node(Box<Tree>, Box<Tree>),\n}\n\nfn depth(tree: &Tree) -> u32 {\n    match tree {\n        Tree::Leaf => 1,\n        Tree::Node(left, right) => {\n            let l = depth(left);\n            let r = depth(right);\n            if l > r { l + 1 } else { r + 1 }\n        }\n    }\n}\n\nstruct Guard {\n    name: String,\n    log: Rc<RefCell<Vec<String>>>,\n}\n\nimpl Guard {\n    fn new(name: &str, log: &Rc<RefCell<Vec<String>>>) -> Guard {\n        log.borrow_mut().push(format!(\"opened {name}\"));\n        Guard { name: String::from(name), log: Rc::clone(log) }\n    }\n}\n\nimpl Drop for Guard {\n    fn drop(&mut self) {\n        self.log.borrow_mut().push(format!(\"closed {}\", self.name));\n    }\n}\n\nimpl Deref for Guard {\n    type Target = String;\n\n    fn deref(&self) -> &String {\n        &self.name\n    }\n}\n\nfn shout(text: &str) -> String {\n    text.to_uppercase()\n}\n\nfn main() {\n    let leaf = Tree::Leaf;\n    let pair = Tree::Node(Box::new(Tree::Leaf), Box::new(Tree::Leaf));\n    let lopsided = Tree::Node(\n        Box::new(Tree::Leaf),\n        Box::new(Tree::Node(\n            Box::new(Tree::Leaf),\n            Box::new(Tree::Node(Box::new(Tree::Leaf), Box::new(Tree::Leaf))),\n        )),\n    );\n    println!(\"depths: {} {} {}\", depth(&leaf), depth(&pair), depth(&lopsided));\n\n    let log = Rc::new(RefCell::new(Vec::new()));\n    {\n        let db = Guard::new(\"db\", &log);\n        let cache = Guard::new(\"cache\", &log);\n        println!(\"owners: {}\", Rc::strong_count(&log));\n        println!(\"{}\", shout(&db));\n        drop(cache);\n        println!(\"owners: {}\", Rc::strong_count(&log));\n        log.borrow_mut().push(String::from(\"working\"));\n    }\n    println!(\"owners: {}\", Rc::strong_count(&log));\n    for line in log.borrow().iter() {\n        println!(\"{line}\");\n    }\n}"
+  },
+  "quiz": [
+    {
+      "question": "Why is the variant written Node(Box<Tree>, Box<Tree>) and not Node(Tree, Tree)?",
+      "options": [
+        "Without Box, a Tree would contain a Tree and have infinite size",
+        "A Box makes the tree faster to read",
+        "An enum variant cannot hold another enum"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "What does Rc::clone(&log) copy?",
+      "options": [
+        "The whole Vec of messages",
+        "Only a pointer, and it adds 1 to the owner count",
+        "Nothing, and the owner count stays the same"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What happens if you call log.borrow_mut() while another borrow_mut() guard on the same RefCell is still alive?",
+      "options": [
+        "The compiler reports an error",
+        "The second call waits until the first guard is dropped",
+        "The program panics at run time"
+      ],
+      "answer": 2
+    }
+  ]
+}

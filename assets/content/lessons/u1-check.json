@@ -1,0 +1,70 @@
+{
+  "id": "u1-check",
+  "title": "Checkpoint: Fruit stall",
+  "sections": [
+    {
+      "type": "text",
+      "text": "This checkpoint practises Unit 1: constants, let and mut, shadowing and printing with println!. A fruit stall sells fruit by the kilo. You will write two functions that work out prices. The main function prints the results."
+    },
+    {
+      "type": "text",
+      "text": "It draws on the lessons Printing with println!, Variables and mutability and Shadowing. Read main as well. It turns the text \"3.5\" into a number by shadowing weight, and it uses print! to start a line that println! finishes."
+    },
+    {
+      "type": "note",
+      "text": "Function syntax in one line: fn name(parameter: type) -> type { ... }. The last expression, written without a semicolon, is the value the function gives back. The types of the parameters and of the result are always written out.",
+      "track": "fast"
+    },
+    {
+      "type": "note",
+      "text": "todo!() is a placeholder. If the program reaches it, it stops with the message \"not yet implemented\". Replace each todo!() with your own code. Until you do, the compiler may warn that some names are unused. That is expected."
+    },
+    {
+      "type": "note",
+      "text": "The three constants are written outside any function, so every function can use them by name. A constant always has a written type."
+    },
+    {
+      "type": "note",
+      "text": "Hint for fruit_cost: make total with let mut, multiply kilos by PRICE_PER_KILO, then add BAG_FEE with +=. The last line is total."
+    },
+    {
+      "type": "note",
+      "text": "Hint for after_coupon: write let cost = cost - COUPON; and then another let cost line that halves it. Each new cost shadows the one before, so no mut is needed. The last line gives back cost."
+    }
+  ],
+  "exercise": {
+    "prompt": "Replace each todo!() with working code. Do not change the constants or main.\n\nfn fruit_cost(kilos: f64) -> f64\nMultiplies kilos by PRICE_PER_KILO, then adds BAG_FEE. Make the total with let mut and change it with +=.\n\nfn after_coupon(cost: f64) -> f64\nTakes COUPON off cost, then halves the result. Do not use mut. Shadow cost with new let lines instead.\n\nThe program should print:\n3.5 kg costs 9.25\n0 kg costs 0.5\nCost 10.5, after coupon 4.25\nCost 3, after coupon 0.5\nCosts: [4.25, 5.5]",
+    "starter": "const PRICE_PER_KILO: f64 = 2.5;\nconst BAG_FEE: f64 = 0.5;\nconst COUPON: f64 = 2.0;\n\nfn fruit_cost(kilos: f64) -> f64 {\n    todo!()\n}\n\nfn after_coupon(cost: f64) -> f64 {\n    todo!()\n}\n\nfn main() {\n    let weight = \"3.5\";\n    let weight: f64 = weight.parse().unwrap();\n    println!(\"{weight} kg costs {}\", fruit_cost(weight));\n    println!(\"0 kg costs {}\", fruit_cost(0.0));\n\n    let cost = fruit_cost(4.0);\n    println!(\"Cost {cost}, after coupon {}\", after_coupon(cost));\n    println!(\"Cost 3, after coupon {}\", after_coupon(3.0));\n\n    let costs = [fruit_cost(1.5), fruit_cost(2.0)];\n    print!(\"Costs: \");\n    println!(\"{:?}\", costs);\n}",
+    "expectedOutput": "3.5 kg costs 9.25\n0 kg costs 0.5\nCost 10.5, after coupon 4.25\nCost 3, after coupon 0.5\nCosts: [4.25, 5.5]",
+    "solution": "const PRICE_PER_KILO: f64 = 2.5;\nconst BAG_FEE: f64 = 0.5;\nconst COUPON: f64 = 2.0;\n\nfn fruit_cost(kilos: f64) -> f64 {\n    let mut total = kilos * PRICE_PER_KILO;\n    total += BAG_FEE;\n    total\n}\n\nfn after_coupon(cost: f64) -> f64 {\n    let cost = cost - COUPON;\n    let cost = cost / 2.0;\n    cost\n}\n\nfn main() {\n    let weight = \"3.5\";\n    let weight: f64 = weight.parse().unwrap();\n    println!(\"{weight} kg costs {}\", fruit_cost(weight));\n    println!(\"0 kg costs {}\", fruit_cost(0.0));\n\n    let cost = fruit_cost(4.0);\n    println!(\"Cost {cost}, after coupon {}\", after_coupon(cost));\n    println!(\"Cost 3, after coupon {}\", after_coupon(3.0));\n\n    let costs = [fruit_cost(1.5), fruit_cost(2.0)];\n    print!(\"Costs: \");\n    println!(\"{:?}\", costs);\n}"
+  },
+  "quiz": [
+    {
+      "question": "You run cargo new fruit. Where do you write the program's code?",
+      "options": [
+        "In Cargo.toml",
+        "In src/main.rs",
+        "In the target folder"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Which of these can give a name a new type, for example from text to a number?",
+      "options": [
+        "let mut and then =",
+        "const",
+        "Shadowing with a new let"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "What is true about a constant such as PRICE_PER_KILO?",
+      "options": [
+        "It always needs a written type",
+        "It must be declared inside main",
+        "It can be changed with mut"
+      ],
+      "answer": 0
+    }
+  ]
+}

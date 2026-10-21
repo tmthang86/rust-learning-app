@@ -8,7 +8,9 @@ For every lesson in assets/content/lessons/:
   in the app, so this comment is how learners see the output),
 - each exercise's solution must print the expected output, without warnings,
 - each exercise's starter code must NOT already print it,
-- each quiz answer index must point at a real option.
+- each quiz answer index must point at a real option,
+- every lesson id in course.json has a file, and every file is in course.json,
+- a course.json entry with `"checkpoint": true` has an exercise with a solution.
 
 Usage: python3 tool/check_lessons.py   (needs rustc on PATH)
 """
@@ -106,9 +108,37 @@ def check(path):
     return problems
 
 
+def check_course():
+    """Cross-checks course.json against the lesson files."""
+    problems = []
+    course = json.load(open(os.path.join(ROOT, "assets", "content", "course.json")))
+    listed = {}
+    for unit in course["units"]:
+        for ref in unit["lessons"]:
+            if ref["id"] in listed:
+                problems.append(f"course.json: lesson id {ref['id']} is listed twice")
+            listed[ref["id"]] = ref
+    files = {
+        os.path.splitext(os.path.basename(p))[0]
+        for p in glob.glob(os.path.join(LESSONS, "*.json"))
+    }
+    for lid in sorted(set(listed) - files):
+        problems.append(f"course.json lists {lid} but assets/content/lessons/{lid}.json is missing")
+    for lid in sorted(files - set(listed)):
+        problems.append(f"assets/content/lessons/{lid}.json is not listed in course.json")
+    for lid, ref in listed.items():
+        if not ref.get("checkpoint") or lid not in files:
+            continue
+        lesson = json.load(open(os.path.join(LESSONS, lid + ".json")))
+        exercise = lesson.get("exercise")
+        if not exercise or not exercise.get("solution"):
+            problems.append(f"{lid}: checkpoint needs an exercise with a solution")
+    return problems
+
+
 def main():
     paths = sorted(glob.glob(os.path.join(LESSONS, "*.json")))
-    problems = [p for path in paths for p in check(path)]
+    problems = check_course() + [p for path in paths for p in check(path)]
     for p in problems:
         print("FAIL", p)
     print(f"Checked {len(paths)} lessons, {len(problems)} problems.")

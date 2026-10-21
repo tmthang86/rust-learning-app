@@ -46,6 +46,20 @@ prints, the example ends with a `// Output:` comment holding that output (most
 Unit 7–12 examples have one), and `tool/check_lessons.py` checks the comment
 against the real output.
 
+### Checkpoint challenges
+
+Every unit ends with a checkpoint: a lesson with id `uN-check` (for example
+`u3-check`) listed last in the unit in `course.json` with `"checkpoint": true`.
+The file has the same schema as any lesson (sections, `exercise`, `quiz`) and
+`tool/check_lessons.py` requires an exercise with a solution. It is graded like
+an exercise (the program's printed output is compared with `expectedOutput`),
+counts as a normal lesson for progress (`N of M lessons done`) and syncs under
+its id like any other lesson. The app shows it with a trophy icon and a
+"Checkpoint" label in the course map. A checkpoint is designed around named
+functions with fixed signatures (the learner implements `fn is_even(n: i32) ->
+bool`, and so on), so a later multi-test grader can call those functions with
+several inputs instead of only comparing one printed output.
+
 ## Release scope
 
 - **First release:** Units 0–6 fully written (enough for a learner to write real

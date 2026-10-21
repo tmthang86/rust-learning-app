@@ -1,0 +1,64 @@
+{
+  "id": "u8-check",
+  "title": "Checkpoint: Number pipeline",
+  "sections": [
+    {
+      "type": "text",
+      "text": "This checkpoint practices the whole unit. You will return a closure that captures a value (Capturing and move), accept a closure that changes a variable (the Fn traits), write an iterator of your own (The Iterator trait) and then use adapters and consumers on it (Iterator adapters, Consuming iterators). You do not write main. It calls your code and prints the results."
+    },
+    {
+      "type": "text",
+      "text": "The starter compiles, but three pieces are marked todo!(), a placeholder that panics with \"not yet implemented\" when it runs. Replace them one at a time. The Collatz rule works like this: from a number n, the next number is n / 2 if n is even, and 3 * n + 1 if n is odd. The sequence ends after it reaches 1, and the 1 is included. For example, 6 gives 6, 3, 10, 5, 16, 8, 4, 2, 1."
+    },
+    {
+      "type": "note",
+      "text": "make_scaler: the closure must own factor, so keep the word move before the bars, and only replace what comes after |x|. sum_where: values.iter() hands out &i32, and filter hands your closure a reference to that item, so the closure sees a &&i32. Write keep(**n) to call keep with a plain i32, and end the pipeline with .sum().",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Collatz::next: if done is true, return None right away. Otherwise save self.current in a variable, work out the following number (and set done when the value is 1), and return Some of the saved value. Order matters: you must return the value you saved, not the new one.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Signatures to match: make_scaler(factor: i32) -> impl Fn(i32) -> i32, sum_where(values: &[i32], mut keep: impl FnMut(i32) -> bool) -> i32, and Iterator::next for Collatz with type Item = u64. keep is FnMut, so main can pass a closure that counts its own calls. Edge cases in main: an empty slice, and a start value of 1.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Finish the program. Three pieces are marked todo!().\n\n(1) fn make_scaler(factor: i32) -> impl Fn(i32) -> i32 returns a closure that multiplies its argument by factor.\n\n(2) fn sum_where(values: &[i32], mut keep: impl FnMut(i32) -> bool) -> i32 returns the sum of the values for which keep returns true. Use an iterator pipeline, and call keep exactly once per value. The sum of no values is 0.\n\n(3) Write fn next(&mut self) -> Option<u64> in impl Iterator for Collatz. The first item is the start value. After each item, the next one is item / 2 if it is even, and item * 3 + 1 if it is odd. After the item 1 has been given out, next returns None. The start value is always at least 1.\n\nDo not change main. It should print:\n\n21 -7\n32\neven total 10, checked 6\n0\n[6, 3, 10, 5, 16, 8, 4, 2, 1]\n[1]\nsteps from 27: 112\npeak from 27: Some(9232)\n[800, 400, 200, 100]",
+    "starter": "fn make_scaler(factor: i32) -> impl Fn(i32) -> i32 {\n    move |x| todo!()   // TODO: use x and factor\n}\n\nfn sum_where(values: &[i32], mut keep: impl FnMut(i32) -> bool) -> i32 {\n    todo!()\n}\n\nstruct Collatz {\n    current: u64,\n    done: bool,\n}\n\nimpl Collatz {\n    fn new(start: u64) -> Collatz {\n        Collatz { current: start, done: false }\n    }\n}\n\nimpl Iterator for Collatz {\n    type Item = u64;\n\n    fn next(&mut self) -> Option<u64> {\n        todo!()\n    }\n}\n\nfn main() {\n    let triple = make_scaler(3);\n    let negate = make_scaler(-1);\n    println!(\"{} {}\", triple(7), negate(7));\n\n    let numbers = [4, 9, -2, 15, 8, 0];\n    let limit = 5;\n    println!(\"{}\", sum_where(&numbers, |n| n > limit));\n\n    let mut checked = 0;\n    let even_total = sum_where(&numbers, |n| {\n        checked += 1;\n        n % 2 == 0\n    });\n    println!(\"even total {even_total}, checked {checked}\");\n    println!(\"{}\", sum_where(&[], |_| true));\n\n    let steps: Vec<u64> = Collatz::new(6).collect();\n    println!(\"{:?}\", steps);\n    println!(\"{:?}\", Collatz::new(1).collect::<Vec<u64>>());\n    println!(\"steps from 27: {}\", Collatz::new(27).count());\n    println!(\"peak from 27: {:?}\", Collatz::new(27).max());\n    let scaled: Vec<u64> = Collatz::new(6).skip(5).map(|n| n * 100).collect();\n    println!(\"{:?}\", scaled);\n}",
+    "expectedOutput": "21 -7\n32\neven total 10, checked 6\n0\n[6, 3, 10, 5, 16, 8, 4, 2, 1]\n[1]\nsteps from 27: 112\npeak from 27: Some(9232)\n[800, 400, 200, 100]",
+    "solution": "fn make_scaler(factor: i32) -> impl Fn(i32) -> i32 {\n    move |x| x * factor\n}\n\nfn sum_where(values: &[i32], mut keep: impl FnMut(i32) -> bool) -> i32 {\n    values.iter().filter(|n| keep(**n)).sum()\n}\n\nstruct Collatz {\n    current: u64,\n    done: bool,\n}\n\nimpl Collatz {\n    fn new(start: u64) -> Collatz {\n        Collatz { current: start, done: false }\n    }\n}\n\nimpl Iterator for Collatz {\n    type Item = u64;\n\n    fn next(&mut self) -> Option<u64> {\n        if self.done {\n            return None;\n        }\n        let value = self.current;\n        if value == 1 {\n            self.done = true;\n        } else if value % 2 == 0 {\n            self.current = value / 2;\n        } else {\n            self.current = value * 3 + 1;\n        }\n        Some(value)\n    }\n}\n\nfn main() {\n    let triple = make_scaler(3);\n    let negate = make_scaler(-1);\n    println!(\"{} {}\", triple(7), negate(7));\n\n    let numbers = [4, 9, -2, 15, 8, 0];\n    let limit = 5;\n    println!(\"{}\", sum_where(&numbers, |n| n > limit));\n\n    let mut checked = 0;\n    let even_total = sum_where(&numbers, |n| {\n        checked += 1;\n        n % 2 == 0\n    });\n    println!(\"even total {even_total}, checked {checked}\");\n    println!(\"{}\", sum_where(&[], |_| true));\n\n    let steps: Vec<u64> = Collatz::new(6).collect();\n    println!(\"{:?}\", steps);\n    println!(\"{:?}\", Collatz::new(1).collect::<Vec<u64>>());\n    println!(\"steps from 27: {}\", Collatz::new(27).count());\n    println!(\"peak from 27: {:?}\", Collatz::new(27).max());\n    let scaled: Vec<u64> = Collatz::new(6).skip(5).map(|n| n * 100).collect();\n    println!(\"{:?}\", scaled);\n}"
+  },
+  "quiz": [
+    {
+      "question": "make_scaler returns a closure that uses factor. Why must the closure be written with move?",
+      "options": [
+        "move makes the closure run faster",
+        "move lets the closure change factor",
+        "Without move the closure only borrows factor, which is gone when make_scaler returns"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "What does let it = Collatz::new(6).map(|n| n * 100); do if it is never used afterwards?",
+      "options": [
+        "It runs the closure for every item right away",
+        "Nothing: map is lazy, so no item is produced and the closure never runs",
+        "It panics when the program ends"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Why does sum_where ask for mut keep: impl FnMut(i32) -> bool instead of impl Fn?",
+      "options": [
+        "So the caller may pass a closure that changes a variable it captured, such as a counter",
+        "Because an Fn closure cannot return a bool",
+        "Because FnMut closures are always faster to call"
+      ],
+      "answer": 0
+    }
+  ]
+}

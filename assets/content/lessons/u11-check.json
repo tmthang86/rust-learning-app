@@ -1,0 +1,64 @@
+{
+  "id": "u11-check",
+  "title": "Checkpoint: Parallel helpers",
+  "sections": [
+    {
+      "type": "text",
+      "text": "This checkpoint practices the first three lessons of the unit, and the last lesson in the quiz. You will start threads and join them in order (Threads), collect results from several senders through one channel (Channels), and add up numbers in a shared total behind Arc and Mutex (Shared state with Arc and Mutex). You do not write main."
+    },
+    {
+      "type": "text",
+      "text": "The starter compiles, but three bodies are marked todo!(), a placeholder that panics with \"not yet implemented\" when it runs. The output of your program must be the same on every run, even though threads run at the same time. That is why each function either joins its threads in the order it started them, or sorts what it received, before it returns anything."
+    },
+    {
+      "type": "note",
+      "text": "word_counts: start one thread per text with thread::spawn(move || ...), keep the handles in a Vec, then join them in the same order and push each result. squares: make the channel, give each thread its own tx.clone(), then drop(tx) before the receiving loop, or the loop never ends. This matters most for n = 0, where no thread is started. Collect the pairs, sort them, return them.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "parallel_total: make let total = Arc::new(Mutex::new(0)). In the loop, make let total = Arc::clone(&total) and move it into the thread. Inside the thread, add the chunk's sum with *total.lock().unwrap() += part. After you join every handle, read the value with *total.lock().unwrap(). A chunk can be empty, and the list of chunks can be empty too.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Signatures to match: word_counts(texts: Vec<String>) -> Vec<usize> (same order as the input), squares(n: u32) -> Vec<(u32, u32)> (sorted), and parallel_total(chunks: Vec<Vec<u32>>) -> u32. Edge cases in main: empty text, extra spaces, no texts at all, n = 0, empty chunks, no chunks.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Finish the three functions marked todo!().\n\n(1) fn word_counts(texts: Vec<String>) -> Vec<usize> starts one thread per text. Each thread counts the words in its text (split_whitespace().count()). The result has one count per text, in the same order as texts.\n\n(2) fn squares(n: u32) -> Vec<(u32, u32)> starts one thread for each number from 1 to n. Each thread sends the pair (number, number * number) through a single channel. The function returns all the pairs sorted, and returns an empty Vec when n is 0.\n\n(3) fn parallel_total(chunks: Vec<Vec<u32>>) -> u32 starts one thread per chunk. Each thread adds the sum of its chunk to one total that all threads share through Arc<Mutex<u32>>. The function returns the final total (0 for no chunks).\n\nDo not change main. It should print:\n\n[3, 0, 2, 5]\n[]\n[(1, 1), (2, 4), (3, 9), (4, 16)]\n[]\n136\n0",
+    "starter": "use std::sync::mpsc;\nuse std::sync::{Arc, Mutex};\nuse std::thread;\n\n// One thread per text. The answers come back in the same order as the texts.\nfn word_counts(texts: Vec<String>) -> Vec<usize> {\n    todo!()\n}\n\n// One thread per number from 1 to n. Each sends (number, square) through a channel.\nfn squares(n: u32) -> Vec<(u32, u32)> {\n    todo!()\n}\n\n// One thread per chunk. Each thread adds its chunk's sum to one shared total.\nfn parallel_total(chunks: Vec<Vec<u32>>) -> u32 {\n    todo!()\n}\n\nfn main() {\n    let texts = vec![\n        String::from(\"one two three\"),\n        String::new(),\n        String::from(\"  spaced   out  \"),\n        String::from(\"the quick brown fox jumps\"),\n    ];\n    println!(\"{:?}\", word_counts(texts));\n    println!(\"{:?}\", word_counts(Vec::new()));\n\n    println!(\"{:?}\", squares(4));\n    println!(\"{:?}\", squares(0));\n\n    println!(\"{}\", parallel_total(vec![vec![1, 2, 3], vec![10, 20], vec![], vec![100]]));\n    println!(\"{}\", parallel_total(Vec::new()));\n}",
+    "expectedOutput": "[3, 0, 2, 5]\n[]\n[(1, 1), (2, 4), (3, 9), (4, 16)]\n[]\n136\n0",
+    "solution": "use std::sync::mpsc;\nuse std::sync::{Arc, Mutex};\nuse std::thread;\n\n// One thread per text. The answers come back in the same order as the texts.\nfn word_counts(texts: Vec<String>) -> Vec<usize> {\n    let mut handles = Vec::new();\n    for text in texts {\n        handles.push(thread::spawn(move || text.split_whitespace().count()));\n    }\n    let mut counts = Vec::new();\n    for handle in handles {\n        counts.push(handle.join().unwrap());\n    }\n    counts\n}\n\n// One thread per number from 1 to n. Each sends (number, square) through a channel.\nfn squares(n: u32) -> Vec<(u32, u32)> {\n    let (tx, rx) = mpsc::channel();\n    for id in 1..=n {\n        let tx = tx.clone();\n        thread::spawn(move || {\n            tx.send((id, id * id)).unwrap();\n        });\n    }\n    drop(tx);\n\n    let mut results = Vec::new();\n    for pair in rx {\n        results.push(pair);\n    }\n    results.sort();\n    results\n}\n\n// One thread per chunk. Each thread adds its chunk's sum to one shared total.\nfn parallel_total(chunks: Vec<Vec<u32>>) -> u32 {\n    let total = Arc::new(Mutex::new(0));\n    let mut handles = Vec::new();\n    for chunk in chunks {\n        let total = Arc::clone(&total);\n        handles.push(thread::spawn(move || {\n            let part: u32 = chunk.iter().sum();\n            *total.lock().unwrap() += part;\n        }));\n    }\n    for handle in handles {\n        handle.join().unwrap();\n    }\n    let answer = *total.lock().unwrap();   // copy the number out of the guard\n    answer\n}\n\nfn main() {\n    let texts = vec![\n        String::from(\"one two three\"),\n        String::new(),\n        String::from(\"  spaced   out  \"),\n        String::from(\"the quick brown fox jumps\"),\n    ];\n    println!(\"{:?}\", word_counts(texts));\n    println!(\"{:?}\", word_counts(Vec::new()));\n\n    println!(\"{:?}\", squares(4));\n    println!(\"{:?}\", squares(0));\n\n    println!(\"{}\", parallel_total(vec![vec![1, 2, 3], vec![10, 20], vec![], vec![100]]));\n    println!(\"{}\", parallel_total(Vec::new()));\n}"
+  },
+  "quiz": [
+    {
+      "question": "In squares, what happens if you forget drop(tx) after the loop that starts the threads?",
+      "options": [
+        "The code does not compile",
+        "The loop over rx never ends, because the original sender is still alive",
+        "The pairs arrive in a random order and cannot be sorted"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Why is the Mutex shared with Arc and not with Rc?",
+      "options": [
+        "Arc counts its owners in a thread-safe way, and Rc cannot be sent to another thread",
+        "Arc locks the data inside, and Rc does not",
+        "Rc cannot hold a Mutex"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "You call an async fn but never use .await on the future it returns and never pass it to a runner. What runs?",
+      "options": [
+        "The whole body runs at once, and the result is thrown away",
+        "Only the code before the first .await runs",
+        "Nothing runs: a future is lazy until something polls it"
+      ],
+      "answer": 2
+    }
+  ]
+}
