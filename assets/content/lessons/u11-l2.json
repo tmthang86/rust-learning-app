@@ -49,7 +49,7 @@
     },
     {
       "type": "note",
-      "text": "Coming from Go: this is much like a chan, and Rust's advice is the same: do not communicate by sharing memory, share memory by communicating. Rust's mpsc::channel is unbounded and multi-producer, single-consumer; mpsc::sync_channel(n) is a bounded version where send blocks when the buffer is full. Go's make(chan T) is unbuffered, which matches sync_channel(0), and make(chan T, n) matches sync_channel(n). For multiple consumers or select-style code, people usually reach for the crossbeam-channel crate.",
+      "text": "Coming from Go: this is much like a chan, and Rust's advice is the same: do not communicate by sharing memory, share memory by communicating. Rust's mpsc::channel is unbounded and multi-producer, single-consumer; mpsc::sync_channel(n) is a bounded version where send blocks when the buffer is full. Go's make(chan T) is unbuffered, which matches sync_channel(0), and make(chan T, n) matches sync_channel(n). Unlike a Go channel, which any number of goroutines can receive from, an mpsc Receiver has exactly one owner. For multiple consumers or select-style code, people usually reach for the crossbeam-channel crate.",
       "track": "fast"
     }
   ],

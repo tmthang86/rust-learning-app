@@ -69,7 +69,7 @@
     },
     {
       "type": "note",
-      "text": "Coming from Java, Go or C#: a crate is roughly one compilation unit, like a Go package or a .NET assembly (a Cargo package is closer to a Go module). If you know npm or PyPI, then Cargo.toml is like package.json or requirements.txt and crates.io is the registry. A package can have one library crate and many binary crates (extra binaries go in src/bin/). Cargo.lock is normally committed (cargo new sets this up), for libraries too. Workspaces let several packages share one lock file and one build folder. The older layout garden/mod.rs also works, but garden.rs next to a garden/ folder is the current style.",
+      "text": "Coming from Java, Go or C#: a crate is the unit Rust compiles in one go, roughly a Java module or JAR, a Go package or a .NET assembly (a Cargo package is closer to a Go module). If you know npm or PyPI, then Cargo.toml is like package.json or pyproject.toml, Cargo.lock is like package-lock.json, and crates.io is the registry. A package can have one library crate and many binary crates (extra binaries go in src/bin/). Cargo.lock is normally committed (cargo new sets this up), for libraries too. Workspaces let several packages share one lock file and one build folder. The older layout garden/mod.rs also works, but garden.rs next to a garden/ folder is the current style.",
       "track": "fast"
     }
   ],

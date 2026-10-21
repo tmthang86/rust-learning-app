@@ -57,7 +57,7 @@
     },
     {
       "type": "note",
-      "text": "Compare with other languages. C++ makes you pick a capture list ([&], [=], [x, &y]) and happily lets you capture a dangling reference. JavaScript, Python and Java capture variables silently (Java requires them to be effectively final). Rust infers the capture mode from the body, and the borrow checker rejects any capture that could dangle. move is the equivalent of [=] by value, but it moves non-Copy types.",
+      "text": "Compare with other languages. C++ makes you pick a capture list ([&], [=], [x, &y]) and happily lets you capture a dangling reference. JavaScript, Python and Java capture variables silently (Python needs nonlocal to assign to one; Java requires them to be effectively final). Rust infers the capture mode from the body, and the borrow checker rejects any capture that could dangle. move is the equivalent of [=] by value, but it moves non-Copy types.",
       "track": "fast"
     }
   ],

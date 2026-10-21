@@ -57,7 +57,7 @@
     },
     {
       "type": "note",
-      "text": "RefCell<T> is single-threaded: it is not Sync. Its multi-threaded counterparts are Mutex<T> and RwLock<T> (Unit 11). Rc<RefCell<T>> is the Rust version of a shared, mutable object in Java or Python, but with the rules enforced, and with panics instead of silent aliasing bugs (such as changing a list while you loop over it). Use try_borrow and try_borrow_mut when a borrow failure is a normal case rather than a bug.",
+      "text": "RefCell<T> is single-threaded: it is not Sync. Its multi-threaded counterparts are Mutex<T> and RwLock<T> (Unit 11). Rc<RefCell<T>> is the Rust version of a shared, mutable object in Java or Python, but with the rules enforced: changing a list while you loop over it is a compile error or a guaranteed panic, not a best-effort ConcurrentModificationException (Java) or an easy-to-get-wrong loop (Python). Use try_borrow and try_borrow_mut when a borrow failure is a normal case rather than a bug.",
       "track": "fast"
     }
   ],

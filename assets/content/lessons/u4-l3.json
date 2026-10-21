@@ -33,7 +33,7 @@
     },
     {
       "type": "note",
-      "text": "Rust enums are tagged unions (sum types), much richer than C or Java enums. Together with structs they let you make invalid states unrepresentable.",
+      "text": "Rust enums are tagged unions (sum types): unlike C enums or Java's singleton enum constants, each variant can carry its own data, much like a Java sealed interface with record implementations. Together with structs they let you make invalid states unrepresentable.",
       "track": "fast"
     }
   ],

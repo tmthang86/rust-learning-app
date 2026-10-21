@@ -22,7 +22,7 @@
     {
       "type": "note",
       "track": "fast",
-      "text": "Coming from another language: {name} works like f-strings in Python or template literals in JavaScript, but the format string is checked at compile time. A typo in a placeholder is a compile error, not a runtime surprise. Only a plain variable name fits inside the braces: {age + 1} is an error. For anything else, use {} and pass the value after the string: println!(\"{}\", age + 1)."
+      "text": "Coming from another language: {name} works like f-strings in Python or template literals in JavaScript, but the format string is checked at compile time. A typo in a placeholder is a compile error, not a runtime surprise. Only a plain variable name fits inside the braces (unlike f-strings and template literals, which take any expression): {age + 1} is an error. For anything else, use {} and pass the value after the string: println!(\"{}\", age + 1)."
     },
     {
       "type": "text",

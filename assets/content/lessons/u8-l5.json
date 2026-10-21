@@ -57,7 +57,7 @@
     },
     {
       "type": "note",
-      "text": "Equivalents: Python sum(), len(list(...)), max(), any(), all(), functools.reduce (fold); Java collect(Collectors.toList()), reduce, anyMatch, allMatch; JS reduce, some, every, find. A nice Rust trick: collect can gather an iterator of Results into one Result<Vec<_>, _>, stopping at the first Err, for example let nums: Result<Vec<i32>, _> = [\"1\", \"2\"].iter().map(|s| s.parse::<i32>()).collect();",
+      "text": "Equivalents: Python sum(), len(list(...)), max(), any(), all(), functools.reduce (fold); Java toList() (or collect(Collectors.toList())), reduce, anyMatch, allMatch; JS reduce, some, every, find. A nice Rust trick: collect can gather an iterator of Results into one Result<Vec<_>, _>, stopping at the first Err, for example let nums: Result<Vec<i32>, _> = [\"1\", \"2\"].iter().map(|s| s.parse::<i32>()).collect();",
       "track": "fast"
     }
   ],
