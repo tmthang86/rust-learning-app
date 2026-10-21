@@ -42,9 +42,31 @@
     }
   ],
   "exercise": {
-    "prompt": "Finish check_age so it returns Err(String::from(\"too young\")) when age is under 18, and Ok(age) otherwise. With 15 it should print: error: too young",
+    "prompt": "Finish check_age so it returns Err(String::from(\"too young\")) when age is under 18, and Ok(age) otherwise.",
     "starter": "fn check_age(age: u32) -> Result<u32, String> {\n    Ok(age)\n}\n\nfn main() {\n    match check_age(15) {\n        Ok(a) => println!(\"welcome, age {a}\"),\n        Err(e) => println!(\"error: {e}\"),\n    }\n}",
-    "expectedOutput": "error: too young",
+    "tests": [
+      {
+        "id": "fifteen-too-young",
+        "label": "15 is too young",
+        "code": "check_eq!(check_age(15), Err(String::from(\"too young\")));"
+      },
+      {
+        "id": "thirty-ok",
+        "label": "30 is welcome",
+        "code": "check_eq!(check_age(30), Ok(30));"
+      },
+      {
+        "id": "boundary-18",
+        "hidden": true,
+        "label": "18 is the first allowed age",
+        "code": "check_eq!(check_age(18), Ok(18));"
+      },
+      {
+        "id": "boundary-17",
+        "hidden": true,
+        "code": "check_eq!(check_age(17), Err(String::from(\"too young\")));"
+      }
+    ],
     "solution": "fn check_age(age: u32) -> Result<u32, String> {\n    if age < 18 {\n        Err(String::from(\"too young\"))\n    } else {\n        Ok(age)\n    }\n}\n\nfn main() {\n    match check_age(15) {\n        Ok(a) => println!(\"welcome, age {a}\"),\n        Err(e) => println!(\"error: {e}\"),\n    }\n}",
     "hints": [
       "You need to check the age and then return one of two results. Which tool from Unit 2 chooses between two cases?",

@@ -42,14 +42,48 @@
     }
   ],
   "exercise": {
-    "prompt": "first_even returns an Option. Print its value, or 0 if there's no even number, using unwrap_or. It should print: 8",
-    "starter": "fn first_even(numbers: &[i32]) -> Option<i32> {\n    for &n in numbers {   // each item is a &i32; &n gives the plain number n\n        if n % 2 == 0 {\n            return Some(n);\n        }\n    }\n    None\n}\n\nfn main() {\n    let result = first_even(&[3, 7, 8, 10]);\n    println!(\"{:?}\", result);\n}",
-    "expectedOutput": "8",
-    "solution": "fn first_even(numbers: &[i32]) -> Option<i32> {\n    for &n in numbers {   // each item is a &i32; &n gives the plain number n\n        if n % 2 == 0 {\n            return Some(n);\n        }\n    }\n    None\n}\n\nfn main() {\n    let result = first_even(&[3, 7, 8, 10]);\n    println!(\"{}\", result.unwrap_or(0));\n}",
+    "prompt": "first_even returns an Option. Finish even_or_zero so it returns the first even number, or 0 if there is no even number, using first_even and unwrap_or. For [3, 7, 8, 10] main should print: 8",
+    "starter": "fn first_even(numbers: &[i32]) -> Option<i32> {\n    for &n in numbers {   // each item is a &i32; &n gives the plain number n\n        if n % 2 == 0 {\n            return Some(n);\n        }\n    }\n    None\n}\n\nfn even_or_zero(numbers: &[i32]) -> i32 {\n    // first_even gives an Option<i32>. Turn it into a plain number,\n    // using 0 when it holds nothing.\n    todo!()\n}\n\nfn main() {\n    println!(\"{}\", even_or_zero(&[3, 7, 8, 10]));\n}",
+    "tests": [
+      {
+        "id": "finds-first-even",
+        "label": "Returns 8 for [3, 7, 8, 10]",
+        "code": "check_eq!(even_or_zero(&[3, 7, 8, 10]), 8);"
+      },
+      {
+        "id": "main-prints-8",
+        "label": "The program prints 8",
+        "output": "8"
+      },
+      {
+        "id": "no-even",
+        "hidden": true,
+        "label": "No even number gives 0",
+        "code": "check_eq!(even_or_zero(&[1, 3, 5]), 0);"
+      },
+      {
+        "id": "empty",
+        "hidden": true,
+        "label": "An empty list gives 0",
+        "code": "check_eq!(even_or_zero(&[]), 0);"
+      },
+      {
+        "id": "first-not-last",
+        "hidden": true,
+        "label": "Takes the first even number, not the last",
+        "code": "check_eq!(even_or_zero(&[2, 4, 6]), 2);"
+      },
+      {
+        "id": "negative",
+        "hidden": true,
+        "code": "check_eq!(even_or_zero(&[-3, -4]), -4);"
+      }
+    ],
+    "solution": "fn first_even(numbers: &[i32]) -> Option<i32> {\n    for &n in numbers {   // each item is a &i32; &n gives the plain number n\n        if n % 2 == 0 {\n            return Some(n);\n        }\n    }\n    None\n}\n\nfn even_or_zero(numbers: &[i32]) -> i32 {\n    first_even(numbers).unwrap_or(0)\n}\n\nfn main() {\n    println!(\"{}\", even_or_zero(&[3, 7, 8, 10]));\n}",
     "hints": [
-      "The function gives back an Option, which may hold a number or nothing. You need a plain number to print.",
-      "Option has a method unwrap_or that takes a fallback value. Call it on result with 0 as the fallback.",
-      "Change the println! to print result.unwrap_or(0). {} is enough now, because it's a plain number."
+      "even_or_zero must give back a plain number, but first_even gives back an Option, which may hold a number or nothing.",
+      "Option has a method unwrap_or that takes a fallback value. Call first_even(numbers) and then .unwrap_or(0) on its result.",
+      "Replace todo!() with first_even(numbers).unwrap_or(0) and no semicolon, so it is the value the function returns."
     ]
   },
   "quiz": [
