@@ -49,7 +49,12 @@
     "prompt": "Use the entry API to count how many times each letter appears, then print the count for 'a'. It should print: 3",
     "starter": "use std::collections::HashMap;\n\nfn main() {\n    let word = \"banana\";\n    let mut counts: HashMap<char, i32> = HashMap::new();   // keep mut: you'll add counts\n    for c in word.chars() {\n        // count c here\n    }\n    println!(\"{}\", counts.get(&'a').unwrap_or(&0));\n}",
     "expectedOutput": "3",
-    "solution": "use std::collections::HashMap;\n\nfn main() {\n    let word = \"banana\";\n    let mut counts: HashMap<char, i32> = HashMap::new();\n    for c in word.chars() {\n        *counts.entry(c).or_insert(0) += 1;\n    }\n    println!(\"{}\", counts.get(&'a').unwrap_or(&0));\n}"
+    "solution": "use std::collections::HashMap;\n\nfn main() {\n    let word = \"banana\";\n    let mut counts: HashMap<char, i32> = HashMap::new();\n    for c in word.chars() {\n        *counts.entry(c).or_insert(0) += 1;\n    }\n    println!(\"{}\", counts.get(&'a').unwrap_or(&0));\n}",
+    "hints": [
+      "For each letter you need to either start a count or add 1 to the existing one. The entry API does this.",
+      "counts.entry(c).or_insert(0) gives back a mutable reference to the count. Put * in front of it to follow the reference, then add 1 with += 1.",
+      "Inside the loop write *counts.entry(c).or_insert(0) += 1;"
+    ]
   },
   "quiz": [
     {

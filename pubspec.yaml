@@ -80,6 +80,7 @@ flutter:
     - assets/content/lessons/
     - assets/content/vi/
     - assets/content/vi/lessons/
+    - assets/content/errors/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -21,9 +21,11 @@ Translatable keys (the only values a translation may change):
 `title`, `summary`, `text`, `prompt`, `question`, `options`, `hints`,
 `explanation`, `label`.
 
-`label` is `exercise.tests[].label`, the name of a test case. Translate the label
-of a visible test. A hidden test's label is copied unchanged: the checker allows
-a translatable value to differ or to match the English one.
+`label` is `exercise.tests[].label`, the name of a test case. It comes with the
+multi-test exercises (a separate pull request that has not landed yet); the
+checker already treats it as a translatable text. Translate the label of a
+visible test. A hidden test's label is copied unchanged: the checker allows a
+translatable value to differ or to match the English one.
 
 Everything else must be **byte-identical** to the English file: `id`, `number`,
 `tracks`, `type`, `track`, `code`, `starter`, `solution`, `expectedOutput`,
@@ -37,9 +39,44 @@ Everything else must be **byte-identical** to the English file: `id`, `number`,
 - Rust keywords, identifiers, macro names (`println!`, `let`, `mut`) stay English
   in prose.
 - `hints` is a list of strings (exercise hints); translate each, keep the count.
+  Every exercise has 1 to 3 hints and the translated lesson needs the same
+  number, or the app falls back to the English lesson.
+- **Code inside prose stays as written** (rule below).
+- The title in a lesson file must equal the title of that lesson in the same
+  language's `course.json`. The map and the lesson then show the same title.
+
+### Code inside prose
+
+English prose and quiz options mention code without marking it ("Read
+`let apples = 5;` as ...", the option `==`, the option `Grade A`). A translation
+may reword the sentence, but the checker requires every *code token* of the
+English text (in `text`, `prompt`, `question`, `options`, `hints`, `label` and
+`explanation`) to be in the translated text, character for character. A code
+token is one of:
+
+- an operator or punctuation of code: `=`, `==`, `!=`, `<=`, `+=`, `->`, `=>`,
+  `&&`, `..=`, `{}`, `{:?}`, `()`, `&mut`, `&str`, `&'a`;
+- a call, path or generic: `greet();`, `Some(42)`, `std::fmt`, `Vec<i32>`,
+  `x.len()`, `v[0]`, `#[test]`;
+- a macro known from the lesson's code (`println!`, `vec!`), a `snake_case`
+  name, a number type (`i32`, `u8`, `f64`), an error code (`E0308`), a file name
+  (`Cargo.toml`, `src/main.rs`), a flag (`--words`), a Rust-only keyword (`let`,
+  `mut`, `fn`, `const`, `struct`, `enum`, `impl`, `mod`, `pub`), a bare number;
+- a quoted string, or a line of output, that the lesson's own code or expected
+  output prints (`"Grade A"`, `Even`). Quoted words that are not in the lesson's
+  code (`"store this value"`) are ordinary words and may be translated.
+
+A quiz option that is *only* code or program output (`==`, `greet();`, `"7"`,
+`Grade A`, `let mut x = 1;`, `for x in &v`) must be byte-identical to English.
+Ordinary English words are never code tokens, so a sentence can be translated
+freely around them. The scan is a heuristic: when it flags something that is
+not code, rewrite the English or the translation so the token appears as is
+(a translator can always keep the English token in the sentence).
 
 `python3 tool/check_lessons.py` enforces this for every `assets/content/<code>/`
-folder (a folder named by a 2-3 letter language code). It walks the English and
+folder (a folder named by a 2-3 letter language code, with an optional region
+such as `pt-BR`). The app itself only loads the codes in `supportedLanguageCodes`,
+so a region folder is checked but not loaded until the language is added. It walks the English and
 translated files generically, so new fields added to the English lessons are
 covered without changing the checker. It needs `rustc` only for the English
 checks; translated files are compared to English, not compiled.
@@ -47,7 +84,12 @@ checks; translated files are compared to English, not compiled.
 ```
 python3 tool/check_lessons.py          # English compile checks + translation checks
 python3 tool/test_check_lessons.py     # tests of the checker itself, no rustc needed
+python3 tool/check_errors.py           # error explanations, incl. other languages
 ```
+
+The summary line `vi: 5 of 58 lessons translated` counts only files that pass
+every check and whose texts differ from English, so a copied English file is
+not counted.
 
 ## Add or update a lesson translation
 
@@ -67,7 +109,9 @@ instead, so a stale translation can never change how an exercise or quiz is
 checked.
 
 `course.json` is a full mirror too: translate `title` and `summary` of each unit
-and `title` of each lesson; ids, numbers and tracks stay.
+and `title` of each lesson; ids, numbers and tracks stay. The lesson screen and
+the quiz screen show the title from the course map, so a lesson that has no
+translated file still opens under its translated title.
 
 ## Fallback
 
@@ -116,8 +160,9 @@ which don't change with the language.
 - New keys: add to `app_en.arb` with an `@key` description when the meaning isn't
   obvious, and a `placeholders` block (with `type`) for every `{name}`. Numbers
   that change the wording use ICU plurals
-  (`{total, plural, =1{lesson} other{lessons}}`). Then add the Vietnamese (and
-  any other) translation.
+  (`{total, plural, =1{lesson} other{lessons}}`, also for seconds and minutes).
+  Then add the Vietnamese (and any other) translation; Vietnamese has no
+  plural forms, so its plural has only `other`.
 - Log and debug strings (`debugPrint`) and string literals that are Rust code
   are not localized.
 - The code runner reports problems as `RunIssue` values (kind plus numbers), and
@@ -133,22 +178,31 @@ Learners choose **System** (default), **English** or **Tiếng Việt**, on the 
 screen, on the track picker and in Progress. It is stored on the device in
 `SharedPreferences` (`language`, not synced to the account). **System** uses the
 first language in the device's preferred list that the app supports, else English
-(`resolveLanguageCode` in `lib/data/language.dart`). `AppState.locale` goes to
+(`resolveLanguageCode` in `lib/data/language.dart`). That is Flutter's own
+default locale resolution on purpose: a device set to French then Vietnamese
+gets Vietnamese, not English. `AppState.locale` goes to
 `MaterialApp.router(locale: ...)`, and `AppState` reloads the course when the
 language changes, and open lesson and quiz screens reload their lesson.
+
+## Hints, solutions and compiler-error explanations
+
+- The labels and buttons around hints, the solution and the explanation cards
+  are ordinary UI strings in the ARB files (`showHintLeft`, `hintLabel`,
+  `errorCardHeading`, ...). The hint texts are lesson content (`exercise.hints`).
+- The explanation cards read `assets/content/errors/<lang>.json`
+  (`ErrorExplanationRepository.explain(stderr, lang: ...)`). The cards ask for the
+  app's language and load again when it changes. An entry a language doesn't
+  have comes in English, entry by entry, so a partial `vi.json` is fine.
+- Only `title`, `explanation` and `fixes` are prose. `tool/check_errors.py`
+  checks every `<lang>.json` besides `en.json`: known keys only, only those
+  three fields, the same number of fixes as English, and the code in the English
+  text (`&name`, `.clone()`, `i32`, `E0382`) copied as is. This is not a lesson
+  mirror, and `check_lessons.py` doesn't look at it. `errors/vi.json` isn't
+  written yet.
 
 ## Checks that run in CI
 
 - `flutter analyze` and `flutter test` (language resolution and persistence,
   repository fallback, the Vietnamese screens, ARB key and placeholder parity).
 - `python3 tool/check_lessons.py` (English compile checks and the translation
-  checks) and `python3 tool/test_check_lessons.py`.
-
-## Other files that live nearby
-
-- `lib/l10n` holds the generated `app_localizations*.dart` (gitignored) and
-  hand-written Dart files such as `l10n.dart`. More hand-written files, for
-  example `help_strings.dart`, can sit beside them; only the generated files are
-  ignored.
-- `assets/content/errors/<lang>.json` (compiler-error help text) is a separate
-  feature, not a lesson mirror. The lesson checker does not look at it.
+  checks), `python3 tool/test_check_lessons.py` and `python3 tool/check_errors.py`.

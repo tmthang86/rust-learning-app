@@ -6,11 +6,15 @@ import '../../app/theme.dart';
 import '../../data/app_state.dart';
 import '../../l10n/l10n.dart';
 import '../../runner/code_runner.dart';
+import 'error_explanation_cards.dart';
 
 /// A Rust code editor with a Run button and an output panel.
 ///
 /// When [expectedOutput] is set, the output is checked against it and
 /// [onSolved] is called on a match.
+///
+/// A caller that needs to read or replace the code passes a [controller];
+/// [onRunFinished] reports every finished run.
 class CodeEditor extends StatefulWidget {
   const CodeEditor({
     super.key,
@@ -18,6 +22,9 @@ class CodeEditor extends StatefulWidget {
     this.expectedOutput,
     this.onSolved,
     this.minLines = 8,
+    this.controller,
+    this.onRunFinished,
+    this.belowRunRow,
   });
 
   final String initialCode;
@@ -25,15 +32,26 @@ class CodeEditor extends StatefulWidget {
   final VoidCallback? onSolved;
   final int minLines;
 
+  /// Holds the code. When null the editor makes its own, starting with
+  /// [initialCode]. A given controller is not disposed here, and its text
+  /// is used as it is (Reset still goes back to [initialCode]).
+  final TextEditingController? controller;
+
+  /// Called after each run with its result and whether it solved the
+  /// exercise. Not called when the editor was closed during the run.
+  final void Function(RunResult result, bool solved)? onRunFinished;
+
+  /// Shown between the Run row and the output (hints, solution).
+  final Widget? belowRunRow;
+
   @override
   State<CodeEditor> createState() => _CodeEditorState();
 }
 
 class _CodeEditorState extends State<CodeEditor>
     with AutomaticKeepAliveClientMixin {
-  late final TextEditingController _controller = TextEditingController(
-    text: widget.initialCode,
-  );
+  late TextEditingController _controller;
+  late bool _ownsController;
   RunResult? _result;
   bool _running = false;
 
@@ -46,8 +64,26 @@ class _CodeEditorState extends State<CodeEditor>
   bool get wantKeepAlive => true;
 
   @override
+  void initState() {
+    super.initState();
+    _ownsController = widget.controller == null;
+    _controller =
+        widget.controller ?? TextEditingController(text: widget.initialCode);
+  }
+
+  @override
+  void didUpdateWidget(CodeEditor old) {
+    super.didUpdateWidget(old);
+    if (widget.controller == old.controller) return;
+    if (_ownsController) _controller.dispose();
+    _ownsController = widget.controller == null;
+    _controller =
+        widget.controller ?? TextEditingController(text: widget.initialCode);
+  }
+
+  @override
   void dispose() {
-    _controller.dispose();
+    if (_ownsController) _controller.dispose();
     super.dispose();
   }
 
@@ -79,6 +115,7 @@ class _CodeEditorState extends State<CodeEditor>
       _running = false;
       _runCount++;
     });
+    widget.onRunFinished?.call(result, solved);
     // Screen readers hear every run, including repeats with the same text.
     // Where the platform doesn't support announcements (they are
     // deprecated on Android), the output's live region does the job.
@@ -161,6 +198,10 @@ class _CodeEditorState extends State<CodeEditor>
                   keyboardType: TextInputType.multiline,
                   autocorrect: false,
                   enableSuggestions: false,
+                  // Smart quotes and dashes would put characters in the
+                  // code that rustc rejects.
+                  smartQuotesType: SmartQuotesType.disabled,
+                  smartDashesType: SmartDashesType.disabled,
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.all(16),
@@ -191,6 +232,7 @@ class _CodeEditorState extends State<CodeEditor>
             ),
           ],
         ),
+        ?widget.belowRunRow,
         if (result != null) ...[
           const SizedBox(height: 8),
           _RunOutput(
@@ -231,6 +273,8 @@ class _CodeEditorState extends State<CodeEditor>
               ),
             ),
           ],
+          if (result.stage == RunStage.compile)
+            ErrorExplanationCards(stderr: result.stderr),
         ],
       ],
     );

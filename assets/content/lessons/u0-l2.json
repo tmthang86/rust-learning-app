@@ -17,7 +17,8 @@
     "prompt": "A box holds 6 eggs. Below the first println!, work out how many eggs are in 4 boxes and print it, so the program prints:\n6 eggs per box, 4 boxes\n24 eggs",
     "starter": "fn main() {\n    let eggs_per_box = 6;\n    let boxes = 4;\n    println!(\"{eggs_per_box} eggs per box, {boxes} boxes\");\n    // work out the total here and print it\n}",
     "expectedOutput": "6 eggs per box, 4 boxes\n24 eggs",
-    "solution": "fn main() {\n    let eggs_per_box = 6;\n    let boxes = 4;\n    println!(\"{eggs_per_box} eggs per box, {boxes} boxes\");\n    let total = eggs_per_box * boxes;\n    println!(\"{total} eggs\");\n}"
+    "solution": "fn main() {\n    let eggs_per_box = 6;\n    let boxes = 4;\n    println!(\"{eggs_per_box} eggs per box, {boxes} boxes\");\n    let total = eggs_per_box * boxes;\n    println!(\"{total} eggs\");\n}",
+    "hints": ["You need a new variable that holds the eggs in all the boxes. Which two variables should it combine?", "Make a new variable with let, for example total. Multiply the two with *, then print it.", "Write let total = eggs_per_box * boxes; then use println! with {total} followed by the word eggs."]
   },
   "quiz": [
     {

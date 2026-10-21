@@ -57,7 +57,12 @@
     "prompt": "Add a function length(list: &List) -> u32 that counts the items: a Cons counts as 1 plus the length of the rest, and Nil is 0. Follow the shape of sum. Then change the println! in main so it prints both: sum = 6, length = 3",
     "starter": "enum List {\n    Cons(i32, Box<List>),\n    Nil,\n}\nuse List::{Cons, Nil};\n\nfn sum(list: &List) -> i32 {\n    match list {\n        Cons(value, rest) => *value + sum(rest),\n        Nil => 0,\n    }\n}\n\n// add fn length here\n\nfn main() {\n    let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));\n    println!(\"sum = {}\", sum(&list));\n}",
     "expectedOutput": "sum = 6, length = 3",
-    "solution": "enum List {\n    Cons(i32, Box<List>),\n    Nil,\n}\nuse List::{Cons, Nil};\n\nfn sum(list: &List) -> i32 {\n    match list {\n        Cons(value, rest) => *value + sum(rest),\n        Nil => 0,\n    }\n}\n\nfn length(list: &List) -> u32 {\n    match list {\n        Cons(_, rest) => 1 + length(rest),\n        Nil => 0,\n    }\n}\n\nfn main() {\n    let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));\n    println!(\"sum = {}, length = {}\", sum(&list), length(&list));\n}"
+    "solution": "enum List {\n    Cons(i32, Box<List>),\n    Nil,\n}\nuse List::{Cons, Nil};\n\nfn sum(list: &List) -> i32 {\n    match list {\n        Cons(value, rest) => *value + sum(rest),\n        Nil => 0,\n    }\n}\n\nfn length(list: &List) -> u32 {\n    match list {\n        Cons(_, rest) => 1 + length(rest),\n        Nil => 0,\n    }\n}\n\nfn main() {\n    let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));\n    println!(\"sum = {}, length = {}\", sum(&list), length(&list));\n}",
+    "hints": [
+      "length follows the shape of sum: a match on the list with one arm for Cons and one for Nil. What should each arm give?",
+      "Write fn length(list: &List) -> u32 and match list. Nil gives 0. In the Cons arm you do not need the number, so write _ there (it means \"any value, ignored\") and name the rest.",
+      "The Cons arm is 1 + length(rest). Then change the println! in main to print both: sum = {}, length = {}, with sum(&list) and length(&list)."
+    ]
   },
   "quiz": [
     {

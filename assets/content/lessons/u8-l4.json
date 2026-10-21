@@ -57,7 +57,12 @@
     "prompt": "The starter prints every word. Change the loop so it goes through an iterator pipeline instead: keep only the words longer than 3 letters, and turn each one into uppercase before it is printed. It should print three lines: APPLE, BANANA and KIWI. Hint: words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase())",
     "starter": "fn main() {\n    let words = [\"apple\", \"fig\", \"banana\", \"kiwi\"];\n    for w in words.iter() {\n        println!(\"{w}\");\n    }\n}",
     "expectedOutput": "APPLE\nBANANA\nKIWI",
-    "solution": "fn main() {\n    let words = [\"apple\", \"fig\", \"banana\", \"kiwi\"];\n    for w in words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase()) {\n        println!(\"{w}\");\n    }\n}"
+    "solution": "fn main() {\n    let words = [\"apple\", \"fig\", \"banana\", \"kiwi\"];\n    for w in words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase()) {\n        println!(\"{w}\");\n    }\n}",
+    "hints": [
+      "Two steps happen to each word: some words are dropped, and the others are changed. Which two adapters do those jobs?",
+      "Start from words.iter(). Chain filter with a closure that returns true for the words to keep, then map with a closure that builds the new word. to_uppercase() makes upper case.",
+      "The for loop can take the whole chain after in: words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase()). The println! inside stays as it is."
+    ]
   },
   "quiz": [
     {

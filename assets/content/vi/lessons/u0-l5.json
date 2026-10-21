@@ -15,7 +15,8 @@
     "prompt": "Viết một hàm tên là add nhận hai tham số i32, a và b, và trả về a + b dưới dạng i32. Sau đó xóa // ở đầu dòng trong main để nó gọi hàm của bạn. Chương trình sẽ in ra: 7",
     "starter": "// write fn add here\n\nfn main() {\n    // println!(\"{}\", add(3, 4));\n}",
     "expectedOutput": "7",
-    "solution": "fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\nfn main() {\n    println!(\"{}\", add(3, 4));\n}"
+    "solution": "fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\nfn main() {\n    println!(\"{}\", add(3, 4));\n}",
+    "hints": ["Hãy nhìn hàm area trong bài học. Hàm của bạn có cùng cấu trúc, với hai đầu vào và một kết quả.", "Hãy bắt đầu với fn add(a: i32, b: i32) -> i32. Dòng cuối cùng, không có dấu chấm phẩy, là giá trị được trả về.", "Giữa cặp dấu ngoặc nhọn, chỉ cần viết a + b, không có dấu chấm phẩy. Sau đó xóa // ở trước dòng println! trong main."]
   },
   "quiz": [
     {

@@ -18,7 +18,6 @@ class LanguagePicker extends StatelessWidget {
       container: true,
       label: l10n.languageLabel,
       child: SegmentedButton<AppLanguage>(
-        showSelectedIcon: false,
         segments: [
           ButtonSegment(
             value: AppLanguage.system,

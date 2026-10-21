@@ -241,12 +241,12 @@
   "runIssueUnreadable": "The code runner sent an answer the app could not read. Please try again.",
   "runIssueForbidden": "This version of the app can't run code. Please update the app.",
   "runIssueTooLong": "Your code is too long to run. Try making it shorter.",
-  "runIssueRateLimitedWait": "You're running code very quickly. Try again in {seconds} seconds.",
+  "runIssueRateLimitedWait": "You're running code very quickly. Try again in {seconds, plural, =1{1 second} other{{seconds} seconds}}.",
   "@runIssueRateLimitedWait": {
     "placeholders": {"seconds": {"type": "int"}}
   },
   "runIssueRateLimited": "You're running code very quickly. Try again in a minute.",
-  "runIssueBusyWait": "The code runner is busy. Try again in {seconds} seconds.",
+  "runIssueBusyWait": "The code runner is busy. Try again in {seconds, plural, =1{1 second} other{{seconds} seconds}}.",
   "@runIssueBusyWait": {
     "placeholders": {"seconds": {"type": "int"}}
   },
@@ -325,5 +325,33 @@
   "storePendingTransaction": "An earlier purchase is still being processed. Please try again in a moment.",
   "storeOther": "The purchase didn't go through. Please try again.",
   "restoreNetwork": "Couldn't reach the store to check for earlier purchases. Check your connection and try again.",
-  "restoreOther": "Couldn't check for earlier purchases. Please try again."
+  "restoreOther": "Couldn't check for earlier purchases. Please try again.",
+
+  "showHintLeft": "Show a hint ({left} left)",
+  "@showHintLeft": {
+    "placeholders": {"left": {"type": "int"}}
+  },
+  "hintLabel": "Hint {number} of {total}: {hint}",
+  "@hintLabel": {
+    "placeholders": {"number": {"type": "int"}, "total": {"type": "int"}, "hint": {"type": "String"}}
+  },
+  "showSolution": "Show solution",
+  "solutionHeading": "Solution",
+  "solutionNote": "Show solution không có nghĩa là bạn đã hoàn thành bài học. Hãy chạy code của bạn để hoàn thành.",
+  "copyToEditor": "Copy to editor",
+  "copiedToEditor": "Solution copied to the editor",
+  "putMyCodeBack": "Put my code back",
+  "codeRestored": "Your code is back in the editor",
+  "solutionShown": "Solution shown below the Run button",
+  "errorCardHeading": "What this error means",
+  "errorTitle": "{key}: {title}",
+  "@errorTitle": {
+    "placeholders": {"key": {"type": "String"}, "title": {"type": "String"}}
+  },
+  "fixesHeading": "How to fix it",
+  "reviewLesson": "Review lesson: {title}",
+  "@reviewLesson": {
+    "placeholders": {"title": {"type": "String"}}
+  },
+  "officialPage": "More about this error (official Rust page):"
 }

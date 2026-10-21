@@ -65,7 +65,12 @@
     "prompt": "other and counter share one number. The program already adds 5 through other. Add a line that adds 10 through counter, so the program prints: counter = 15. Hint: borrow_mut() gives a guard, and the * reaches the number inside it, so write *counter.borrow_mut() += 10;",
     "starter": "use std::cell::RefCell;\nuse std::rc::Rc;\n\nfn main() {\n    let counter = Rc::new(RefCell::new(0));\n    let other = Rc::clone(&counter);\n    *other.borrow_mut() += 5;\n    // add the line for counter here\n    println!(\"counter = {}\", counter.borrow());\n}",
     "expectedOutput": "counter = 15",
-    "solution": "use std::cell::RefCell;\nuse std::rc::Rc;\n\nfn main() {\n    let counter = Rc::new(RefCell::new(0));\n    let other = Rc::clone(&counter);\n    *other.borrow_mut() += 5;\n    *counter.borrow_mut() += 10;\n    println!(\"counter = {}\", counter.borrow());\n}"
+    "solution": "use std::cell::RefCell;\nuse std::rc::Rc;\n\nfn main() {\n    let counter = Rc::new(RefCell::new(0));\n    let other = Rc::clone(&counter);\n    *other.borrow_mut() += 5;\n    *counter.borrow_mut() += 10;\n    println!(\"counter = {}\", counter.borrow());\n}",
+    "hints": [
+      "counter and other point to the same number. The line for other already changes it. Write a similar line that goes through counter.",
+      "borrow_mut() gives a writer guard, and * reaches the number inside it. Then += 10 changes the number.",
+      "Copy the line for other into the empty spot, use counter instead of other, and add 10 instead of 5."
+    ]
   },
   "quiz": [
     {

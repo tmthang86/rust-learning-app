@@ -8,7 +8,7 @@ import '../../l10n/l10n.dart';
 import '../../monetization/ad_banner.dart';
 import '../../monetization/ads_service.dart';
 import '../../monetization/monetization.dart';
-import '../editor/code_editor.dart';
+import 'exercise_panel.dart';
 
 /// One lesson: explanation, examples, an exercise and a link to the quiz.
 class LessonScreen extends StatefulWidget {
@@ -157,7 +157,12 @@ class _LessonBody extends StatelessWidget {
 
     return DeepLinkScope(
       child: Scaffold(
-      appBar: lessonAppBar(context, title: Text(lesson.title)),
+      appBar: lessonAppBar(
+        context,
+        // The course map's title, so the map and the lesson agree even when
+        // only one of them is translated.
+        title: Text(state.course?.lessonTitle(lesson.id) ?? lesson.title),
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 760),
@@ -177,9 +182,10 @@ class _LessonBody extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(exercise.prompt),
                 const SizedBox(height: 12),
-                CodeEditor(
-                  initialCode: exercise.starter,
-                  expectedOutput: exercise.expectedOutput,
+                ExercisePanel(
+                  key: ValueKey(lesson.id),
+                  lessonId: lesson.id,
+                  exercise: exercise,
                   // Solving the exercise completes the lesson, as does
                   // passing the quiz.
                   onSolved: () => state.markCompleted(lesson.id),

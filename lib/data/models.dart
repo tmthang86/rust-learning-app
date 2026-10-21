@@ -96,6 +96,17 @@ class Course {
     ]);
   }
 
+  /// The title of lesson [id] among the units [track] sees, or null when
+  /// there is no such lesson there.
+  String? lessonTitle(String id, {Track? track}) {
+    for (final u in track == null ? units : unitsFor(track)) {
+      for (final l in u.lessons) {
+        if (l.id == id) return l.title;
+      }
+    }
+    return null;
+  }
+
   List<Unit> unitsFor(Track track) =>
       units.where((u) => u.tracks.contains(track)).toList();
 
@@ -135,6 +146,7 @@ class Exercise {
     required this.starter,
     required this.expectedOutput,
     this.solution,
+    this.hints = const [],
   });
 
   final String prompt;
@@ -144,11 +156,17 @@ class Exercise {
   /// A reference answer, checked by tool/check_lessons.py.
   final String? solution;
 
+  /// Up to three nudges, shown one at a time, from general to concrete.
+  final List<String> hints;
+
   factory Exercise.fromJson(Map<String, dynamic> json) => Exercise(
         prompt: json['prompt'] as String,
         starter: json['starter'] as String,
         expectedOutput: json['expectedOutput'] as String,
         solution: json['solution'] as String?,
+        hints: ((json['hints'] as List?) ?? const [])
+            .whereType<String>()
+            .toList(),
       );
 }
 
@@ -204,7 +222,8 @@ class Lesson {
     if ((e == null) != (f == null)) return false;
     if (e != null &&
         f != null &&
-        (e.starter != f.starter ||
+        (e.hints.length != f.hints.length ||
+            e.starter != f.starter ||
             e.expectedOutput != f.expectedOutput ||
             e.solution != f.solution)) {
       return false;

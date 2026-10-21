@@ -41,7 +41,11 @@
     "prompt": "Add a fourth variant, Mythic, to Rarity, and add Rarity::Mythic to the end of the list so it gets printed too. It should print: Common\nRare\nEpic\nMythic",
     "starter": "#[derive(Debug)]\nenum Rarity {\n    Common,\n    Rare,\n    Epic,\n}\n\nfn main() {\n    let all = [Rarity::Common, Rarity::Rare, Rarity::Epic];\n    for r in all {\n        println!(\"{:?}\", r);\n    }\n}",
     "expectedOutput": "Common\nRare\nEpic\nMythic",
-    "solution": "#[derive(Debug)]\nenum Rarity {\n    Common,\n    Rare,\n    Epic,\n    Mythic,\n}\n\nfn main() {\n    let all = [Rarity::Common, Rarity::Rare, Rarity::Epic, Rarity::Mythic];\n    for r in all {\n        println!(\"{:?}\", r);\n    }\n}"
+    "solution": "#[derive(Debug)]\nenum Rarity {\n    Common,\n    Rare,\n    Epic,\n    Mythic,\n}\n\nfn main() {\n    let all = [Rarity::Common, Rarity::Rare, Rarity::Epic, Rarity::Mythic];\n    for r in all {\n        println!(\"{:?}\", r);\n    }\n}",
+    "hints": [
+      "Two places list the rarities: the enum itself and the array in main. Both need the new one.",
+      "Add a line Mythic, to the enum. Then add Rarity::Mythic at the end of the array inside the square brackets."
+    ]
   },
   "quiz": [
     {

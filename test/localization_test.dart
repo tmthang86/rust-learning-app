@@ -1,12 +1,17 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rust_learn/data/app_state.dart';
 import 'package:rust_learn/data/course_repository.dart';
+import 'package:rust_learn/data/error_explanations.dart';
 import 'package:rust_learn/data/language.dart';
 import 'package:rust_learn/data/models.dart';
+import 'package:rust_learn/features/editor/error_explanation_cards.dart';
+import 'package:rust_learn/features/settings/language_picker.dart';
 import 'package:rust_learn/l10n/app_localizations.dart';
 import 'package:rust_learn/main.dart';
 import 'package:rust_learn/runner/code_runner.dart';
@@ -67,6 +72,35 @@ CourseRepository viCourse({Map<String, String> extraFiles = const {}}) {
     },
   );
 }
+
+/// Serves files from memory, holding back the ones with a gate until the
+/// gate is opened.
+class GatedBundle extends MapBundle {
+  GatedBundle(super.files);
+
+  final gates = <String, Completer<void>>{};
+
+  @override
+  Future<ByteData> load(String key) async {
+    await gates[key]?.future;
+    return super.load(key);
+  }
+}
+
+String _courseJson(String unitTitle) => jsonEncode({
+  'units': [
+    {
+      'id': 'u1',
+      'number': 1,
+      'title': unitTitle,
+      'summary': 'S',
+      'tracks': ['starter', 'fast'],
+      'lessons': [
+        {'id': 'plain', 'title': 'P'},
+      ],
+    },
+  ],
+});
 
 void main() {
   setUp(() => mockPrefs({}));
@@ -182,6 +216,69 @@ void main() {
       await state.setLanguage(AppLanguage.english);
       await pumpEventQueue();
       expect(state.course!.units.single.title, 'Basics');
+    });
+
+    test('a slow load for a language dropped since never wins', () async {
+      final bundle = GatedBundle({
+        'assets/content/course.json': _courseJson('Basics'),
+        'assets/content/vi/course.json': _courseJson('Cơ bản'),
+      });
+      final state = await make(repository: CourseRepository(bundle: bundle));
+      await state.load();
+      expect(state.course!.units.single.title, 'Basics');
+
+      // Vietnamese is chosen, but its file is slow to arrive...
+      final gate = bundle.gates['assets/content/vi/course.json'] =
+          Completer<void>();
+      await state.setLanguage(AppLanguage.vietnamese);
+      await pumpEventQueue();
+      expect(state.course!.units.single.title, 'Basics');
+
+      // ...English is chosen again, and loads at once...
+      await state.setLanguage(AppLanguage.english);
+      await pumpEventQueue();
+      expect(state.course!.units.single.title, 'Basics');
+
+      // ...and when the Vietnamese file finally arrives it is thrown away.
+      gate.complete();
+      await pumpEventQueue();
+      expect(state.languageCode, 'en');
+      expect(state.course!.units.single.title, 'Basics');
+    });
+
+    test('the newest choice wins even when an older load finishes last', () async {
+      final bundle = GatedBundle({
+        'assets/content/course.json': _courseJson('Basics'),
+        'assets/content/vi/course.json': _courseJson('Cơ bản'),
+      });
+      final gate = bundle.gates['assets/content/vi/course.json'] =
+          Completer<void>();
+      final state = await make(repository: CourseRepository(bundle: bundle));
+      await state.setLanguage(AppLanguage.vietnamese); // stays loading
+      await state.setLanguage(AppLanguage.english);
+      await state.setLanguage(AppLanguage.vietnamese); // loading again
+      gate.complete();
+      await pumpEventQueue();
+      expect(state.course!.units.single.title, 'Cơ bản');
+    });
+
+    test('a failing save does not leave the app in two minds', () async {
+      final prefs = await SharedPreferences.getInstance();
+      final state = AppState(
+        repository: viCourse(),
+        runner: const PlaceholderCodeRunner(),
+        prefs: _FailingPrefs(prefs),
+        deviceLocales: const [Locale('en')],
+      );
+      await state.load();
+      var notified = 0;
+      state.addListener(() => notified++);
+      await state.setLanguage(AppLanguage.vietnamese);
+      await pumpEventQueue();
+      expect(state.language, AppLanguage.vietnamese);
+      expect(state.languageCode, 'vi');
+      expect(notified, greaterThan(0));
+      expect(state.course!.units.single.title, 'Cơ bản');
     });
 
     test('picking the language that is already in use changes nothing', () async {
@@ -505,6 +602,8 @@ void main() {
         'appTitle',
         'languageEnglish',
         'languageVietnamese',
+        // A code and a title: "E0382: Using a value after it was moved".
+        'errorTitle',
       };
       for (final key in keys(en).difference(same)) {
         expect(vi[key], isNot(en[key]), reason: '$key is not translated');
@@ -732,7 +831,7 @@ void main() {
 
       await tester.tap(find.text('Tiếp theo'));
       await tester.pumpAndSettle();
-      expect(find.text('Đúng 0/1 câu'), findsOneWidget);
+      expect(find.text('Đúng 0 trên 1 câu'), findsOneWidget);
       expect(find.text('Hãy xem lại bài học và thử lại.'), findsOneWidget);
       expect(state.isCompleted('quiz'), isFalse);
     });
@@ -764,6 +863,280 @@ void main() {
       expect(find.text('Đánh dấu là đã xong'), findsOneWidget);
     });
 
+    Map<String, String> twoQuestionQuiz() {
+      String quiz(String q1, String q2, String title) => jsonEncode({
+        'id': 'quiz',
+        'title': title,
+        'sections': [
+          {'type': 'text', 'text': 'Body'},
+        ],
+        'quiz': [
+          {
+            'question': q1,
+            'options': ['A', 'B', 'C'],
+            'answer': 1,
+          },
+          {
+            'question': q2,
+            'options': ['A', 'B', 'C'],
+            'answer': 2,
+          },
+        ],
+      });
+      return {
+        'assets/content/lessons/quiz.json': quiz('Pick B', 'Pick C', 'Lesson quiz'),
+        'assets/content/vi/lessons/quiz.json': quiz('Chọn B', 'Chọn C', 'Bài quiz'),
+      };
+    }
+
+    testWidgets('switching language in the middle of a quiz keeps the place', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      final state = await start(
+        tester,
+        prefs: {'track': 'fast', 'language': 'english'},
+        ageKnown: true,
+        location: '/lesson/quiz/quiz',
+        repository: viCourse(extraFiles: twoQuestionQuiz()),
+      );
+      expect(find.text('Quiz: Lesson quiz'), findsOneWidget);
+      expect(find.text('Pick B'), findsOneWidget);
+
+      // Question 1: right. Question 2: pick a wrong option, don't check yet.
+      await tester.tap(find.text('B'));
+      await tester.pump();
+      await tester.tap(find.text('Check'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      expect(find.text('Pick C'), findsOneWidget);
+      await tester.tap(find.text('A'));
+      await tester.pump();
+
+      await tester.runAsync(() => state.setLanguage(AppLanguage.vietnamese));
+      await courseReloaded(tester);
+
+      // Same question, same selection, same score, in Vietnamese.
+      expect(find.text('Chọn C'), findsOneWidget);
+      expect(find.text('Pick C'), findsNothing);
+      expect(find.text('Kiểm tra: Bài quiz'), findsOneWidget);
+      expect(find.bySemanticsLabel('Câu hỏi 2 trên 2'), findsOneWidget);
+      await tester.tap(find.text('Kiểm tra')); // enabled: A is still picked
+      await tester.pumpAndSettle();
+      expect(find.text('Chưa đúng. Đáp án là: C'), findsOneWidget);
+      await tester.tap(find.text('Tiếp theo'));
+      await tester.pumpAndSettle();
+      expect(find.text('Đúng 1 trên 2 câu'), findsOneWidget);
+      semantics.dispose();
+    });
+
+    testWidgets('the language picker shows a check and fits a narrow phone', (
+      tester,
+    ) async {
+      mockPrefs({'language': 'vietnamese'});
+      final state = (await tester.runAsync(
+        () async => AppState(
+          repository: viCourse(),
+          runner: const PlaceholderCodeRunner(),
+          prefs: await SharedPreferences.getInstance(),
+          deviceLocales: const [Locale('en')],
+        ),
+      ))!;
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ListenableBuilder(
+          listenable: state,
+          builder: (context, _) => MaterialApp(
+            locale: state.locale,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: MediaQuery(
+              data: const MediaQueryData(textScaler: TextScaler.linear(1.3)),
+              child: AppScope(
+                state: state,
+                child: const Scaffold(
+                  body: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: SizedBox(width: double.infinity, child: LanguagePicker()),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull); // no overflow
+      expect(find.byIcon(Icons.check), findsOneWidget);
+      expect(find.text('Hệ thống'), findsOneWidget);
+
+      await tester.tap(find.text('English'));
+      await tester.pumpAndSettle();
+      expect(find.text('System'), findsOneWidget);
+      expect(find.byIcon(Icons.check), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the lesson and quiz show the title the course map shows', (
+      tester,
+    ) async {
+      // The map says "Bài plain". One lesson file has a different title and
+      // one doesn't parse (so the English lesson is used): both open under
+      // the map's title.
+      final repo = viCourse(
+        extraFiles: {
+          'assets/content/vi/lessons/plain.json': jsonEncode({
+            'id': 'plain',
+            'title': 'Tiêu đề khác',
+            'sections': [
+              {'type': 'text', 'text': 'Nội dung plain'},
+            ],
+          }),
+          'assets/content/vi/lessons/quiz.json': '{ not json',
+        },
+      );
+      await start(
+        tester,
+        prefs: {'track': 'fast', 'language': 'vietnamese'},
+        ageKnown: true,
+        location: '/lesson/plain',
+        repository: repo,
+      );
+      expect(find.text('Nội dung plain'), findsOneWidget);
+      expect(find.text('Bài plain'), findsOneWidget);
+      expect(find.text('Tiêu đề khác'), findsNothing);
+
+    });
+
+    testWidgets('a quiz that falls back to English keeps the map\'s title', (
+      tester,
+    ) async {
+      final repo = viCourse(
+        extraFiles: {'assets/content/vi/lessons/quiz.json': '{ not json'},
+      );
+      final state = await start(
+        tester,
+        prefs: {'track': 'fast', 'language': 'vietnamese'},
+        ageKnown: true,
+        location: '/lesson/quiz/quiz',
+        repository: repo,
+      );
+      expect(state.languageCode, 'vi');
+      expect(find.text('Pick B'), findsOneWidget); // the English quiz
+      expect(find.text('Kiểm tra: Bài quiz'), findsOneWidget); // the map's title
+    });
+
+    testWidgets('hints and the solution speak the app language', (tester) async {
+      String exercise(String prompt, List<String> hints) => jsonEncode({
+        'id': 'exercise',
+        'title': 'x',
+        'sections': [
+          {'type': 'text', 'text': 'Body'},
+        ],
+        'exercise': {
+          'prompt': prompt,
+          'starter': 'fn main() {}',
+          'expectedOutput': 'hi',
+          'solution': 'fn main() { println!("hi"); }',
+          'hints': hints,
+        },
+      });
+      final repo = viCourse(
+        extraFiles: {
+          'assets/content/lessons/exercise.json': exercise('Print hi', ['H1', 'H2']),
+          'assets/content/vi/lessons/exercise.json': exercise('In ra hi', ['G1', 'G2']),
+        },
+      );
+      final state = await start(
+        tester,
+        prefs: {'track': 'fast', 'language': 'english'},
+        ageKnown: true,
+        location: '/lesson/exercise',
+        repository: repo,
+      );
+      await tester.scrollUntilVisible(
+        find.text('Show a hint (2 left)'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Show a hint (2 left)'), findsOneWidget);
+
+      await tester.runAsync(() => state.setLanguage(AppLanguage.vietnamese));
+      await courseReloaded(tester);
+      expect(find.text('Hiện gợi ý (còn 2)'), findsOneWidget);
+      await tester.tap(find.text('Hiện gợi ý (còn 2)'));
+      await tester.pumpAndSettle();
+      expect(find.text('Gợi ý 1 trên 2: G1'), findsOneWidget);
+      expect(find.text('Xem lời giải'), findsNothing); // after all hints
+    });
+
+    testWidgets('error explanations come in the app language and follow it', (
+      tester,
+    ) async {
+      final bundle = MapBundle({
+        'assets/content/errors/index.json': jsonEncode([
+          {'code': 'E0382', 'lessons': [], 'example': 'x'},
+          {'code': 'E0499', 'lessons': [], 'example': 'x'},
+        ]),
+        'assets/content/errors/en.json': jsonEncode({
+          'E0382': {'title': 'Moved', 'explanation': 'Words', 'fixes': ['Fix']},
+          'E0499': {'title': 'Twice', 'explanation': 'More', 'fixes': ['Fix2']},
+        }),
+        'assets/content/errors/vi.json': jsonEncode({
+          'E0382': {'title': 'Đã di chuyển', 'explanation': 'Lời', 'fixes': ['Sửa']},
+        }),
+      });
+      mockPrefs({'language': 'english'});
+      final state = (await tester.runAsync(
+        () async => AppState(
+          repository: viCourse(),
+          runner: const PlaceholderCodeRunner(),
+          prefs: await SharedPreferences.getInstance(),
+          deviceLocales: const [Locale('en')],
+          errors: ErrorExplanationRepository(bundle: bundle),
+        ),
+      ))!;
+      await tester.pumpWidget(
+        ListenableBuilder(
+          listenable: state,
+          builder: (context, _) => MaterialApp(
+            locale: state.locale,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: AppScope(
+              state: state,
+              child: const Scaffold(
+                body: SingleChildScrollView(
+                  child: ErrorExplanationCards(
+                    stderr: 'error[E0382]: borrow of moved value\n'
+                        'error[E0499]: cannot borrow twice',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pumpAndSettle();
+      expect(find.text('E0382: Moved'), findsOneWidget);
+      expect(find.text('What this error means'), findsNWidgets(2));
+      expect(find.text('How to fix it'), findsNWidgets(2));
+
+      await tester.runAsync(() => state.setLanguage(AppLanguage.vietnamese));
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pumpAndSettle();
+      expect(find.text('E0382: Đã di chuyển'), findsOneWidget);
+      expect(find.text('Sửa'), findsOneWidget);
+      // An entry with no Vietnamese text comes in English, entry by entry.
+      expect(find.text('E0499: Twice'), findsOneWidget);
+      expect(find.text('Lỗi này có nghĩa là gì'), findsNWidgets(2));
+      expect(find.text('Cách sửa'), findsNWidgets(2));
+    });
+
     testWidgets('runner problems are shown in the learner\'s language', (
       tester,
     ) async {
@@ -791,6 +1164,16 @@ void main() {
     });
   });
 
+  test('wait times read as plurals in English and Vietnamese', () {
+    final en = lookupAppLocalizations(const Locale('en'));
+    final vi = _vi();
+    expect(en.runIssueBusyWait(1), contains('in 1 second.'));
+    expect(en.runIssueBusyWait(5), contains('in 5 seconds.'));
+    expect(en.runIssueRateLimitedWait(1), contains('in 1 second.'));
+    expect(vi.runIssueBusyWait(1), contains('sau 1 giây'));
+    expect(vi.runIssueRateLimitedWait(30), contains('sau 30 giây'));
+  });
+
   test('the runner turns server answers into issues the UI can translate', () {
     final l10n = _vi();
     expect(const RunIssue(RunIssueKind.busy, seconds: 5).message(l10n), contains('5 giây'));
@@ -812,3 +1195,36 @@ void main() {
 }
 
 AppLocalizations _vi() => lookupAppLocalizations(const Locale('vi'));
+
+/// Preferences whose writes of strings fail, as when the disk is full.
+class _FailingPrefs implements SharedPreferences {
+  _FailingPrefs(this.inner);
+
+  final SharedPreferences inner;
+
+  @override
+  Future<bool> setString(String key, String value) async =>
+      throw StateError('disk full');
+
+  @override
+  String? getString(String key) => inner.getString(key);
+  @override
+  List<String>? getStringList(String key) => inner.getStringList(key);
+  @override
+  int? getInt(String key) => inner.getInt(key);
+  @override
+  bool? getBool(String key) => inner.getBool(key);
+  @override
+  Future<bool> setBool(String key, bool value) => inner.setBool(key, value);
+  @override
+  Future<bool> setInt(String key, int value) => inner.setInt(key, value);
+  @override
+  Future<bool> setStringList(String key, List<String> value) =>
+      inner.setStringList(key, value);
+  @override
+  Future<bool> remove(String key) => inner.remove(key);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName}');
+}

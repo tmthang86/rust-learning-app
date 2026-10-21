@@ -41,7 +41,12 @@
     "prompt": "first is moved into second, so it can't be printed. Use .clone() so both can be printed. It should print: apple apple",
     "starter": "fn main() {\n    let first = String::from(\"apple\");\n    let second = first;\n    println!(\"{first} {second}\");\n}",
     "expectedOutput": "apple apple",
-    "solution": "fn main() {\n    let first = String::from(\"apple\");\n    let second = first.clone();\n    println!(\"{first} {second}\");\n}"
+    "solution": "fn main() {\n    let first = String::from(\"apple\");\n    let second = first.clone();\n    println!(\"{first} {second}\");\n}",
+    "hints": [
+      "Writing let second = first moves the String. You want second to get its own copy instead.",
+      "A String can be copied with the .clone() method. Call it on first, on the line where second is created.",
+      "Change that line to let second = first.clone(); Then both variables own a String."
+    ]
   },
   "quiz": [
     {

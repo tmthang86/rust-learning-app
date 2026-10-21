@@ -11,10 +11,14 @@ For translators of the UI (`lib/l10n/app_vi.arb`) and course content
 - **The app speaks as "chúng tôi"** in system messages ("Chúng tôi không thể xác
   nhận ..."), and avoids it elsewhere. Buttons that say "I" use "Tôi" ("Tôi mới
   học lập trình").
-- **Friendly, plain, not childish.** Short sentences. "Hãy ..." for instructions
-  in lessons ("Hãy nhìn ba dòng bên trong ..."); "Vui lòng ..." for system
-  messages and errors. No emoji, no slang, no "nhé" except to soften a retry
-  nudge ("Hãy tiếp tục thử nhé.").
+- **Friendly, plain, not childish.** Short sentences. No emoji, no slang, no
+  "nhé" except to soften a retry nudge ("Hãy tiếp tục thử nhé.").
+- **"Hãy" or "Vui lòng".** "Hãy ..." is the teacher's voice: instructions and
+  coaching in lessons, hints, quiz and exercise feedback, and the empty-code nudge
+  ("Hãy nhìn ba dòng bên trong ...", "Hãy xem lại bài học và thử lại."). "Vui lòng
+  ..." is the system's voice: every request that follows an error, a failure or a
+  warning from the app, the runner, the account service or the store ("Vui lòng
+  kiểm tra kết nối mạng và thử lại."). Never mix them inside one message.
 - **Sentence case.** Capitalise the first word and proper names only
   ("Quyền sở hữu", not "Quyền Sở Hữu"; the Vietnamese Rust book title-cases
   headings, we don't).
@@ -62,7 +66,7 @@ first use in a lesson (and, in titles, where the table says so).
 | condition | điều kiện | |
 | loop | vòng lặp | `for`, `while`, `loop` keep |
 | range (`1..=5`) | dãy số (range) | |
-| placeholder (`{}`) | chỗ giữ chỗ (placeholder) | |
+| placeholder (`{}`) | ô giữ chỗ (placeholder) | |
 | array | mảng | |
 | tuple | tuple | keep |
 | scalar types | kiểu scalar | keep; the Vietnamese book also uses "vô hướng" |
@@ -87,7 +91,7 @@ first use in a lesson (and, in titles, where the table says so).
 | borrowing / borrow | mượn (borrowing) | gloss at first use |
 | borrow checker | borrow checker | keep; "trình kiểm tra mượn" at first use |
 | reference | tham chiếu | |
-| mutable reference | tham chiếu có thể thay đổi | |
+| mutable reference | tham chiếu có thể thay đổi (`&mut`) | the Rust book translation uses exactly "tham chiếu có thể thay đổi" (ch. 4.2); keep the `(&mut)` gloss in titles so it is clear what is meant |
 | move (the concept) | di chuyển (move) / "move" | the keyword `move` stays |
 | copy / clone | `Copy` / `Clone` | keep (trait names) |
 | mutable / mutability | có thể thay đổi / tính có thể thay đổi | `mut` keep |
@@ -114,7 +118,7 @@ first use in a lesson (and, in titles, where the table says so).
 | crate | crate | keep |
 | package / workspace | package / workspace | keep |
 | visibility (`pub`) | visibility; công khai / riêng tư | |
-| test / unit test | test, kiểm thử / unit test (kiểm thử đơn vị) | |
+| test / unit test | test / unit test | keep in titles, summaries and prose ("viết test"); "kiểm thử" only as a gloss |
 | panic | panic | keep as noun and verb ("gây ra panic") |
 | error handling | xử lý lỗi | |
 | recoverable / unrecoverable error | lỗi có thể khôi phục / không thể khôi phục | |
@@ -127,7 +131,7 @@ first use in a lesson (and, in titles, where the table says so).
 | interior mutability | interior mutability | keep |
 | concurrency | đồng thời (concurrency) | "đa luồng" for multithreading |
 | thread | thread | keep; "luồng" is understood and may be used in plain prose |
-| channel | channel | keep; "kênh" as a gloss |
+| channel | channel | keep (it is the API name, `mpsc::channel`); "kênh" as a gloss. The Rust book translation writes "kênh" throughout (81 uses); we keep the English word because learners meet it in code |
 | message passing | truyền thông điệp | |
 | shared state | trạng thái chia sẻ | |
 | data race / deadlock | data race / deadlock | keep |

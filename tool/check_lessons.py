@@ -8,6 +8,7 @@ For every lesson in assets/content/lessons/:
   in the app, so this comment is how learners see the output),
 - each exercise's solution must print the expected output, without warnings,
 - each exercise's starter code must NOT already print it,
+- each exercise needs 1 to 3 non-empty hints (strings),
 - each quiz answer index must point at a real option.
 
 Translations (assets/content/<lang>/course.json and
@@ -50,9 +51,14 @@ TRANSLATABLE_KEYS = {
     "label",
 }
 
-# A translation folder is named by a plain language code (assets/content/vi).
-# Other folders in assets/content (lessons, errors, ...) are not locales.
-LOCALE_DIR = re.compile(r"^[a-z]{2,3}$")
+# Keys whose English text may mention code ("Read let x = 5; as ..."). The
+# code in them has to stay as written in the translation (see code_tokens).
+PROSE_KEYS = {"text", "prompt", "question", "options", "hints", "label", "explanation"}
+
+# A translation folder is named by a language code (assets/content/vi) or a
+# language with a region (assets/content/pt-BR, pt_BR). Other folders in
+# assets/content (lessons, errors, ...) are not locales.
+LOCALE_DIR = re.compile(r"^[a-z]{2,3}([-_][A-Za-z0-9]{2,8})?$")
 
 
 def run(code):
@@ -123,6 +129,13 @@ def check(path):
                 problems.append(f"{lid}: solution printed {out!r}, expected {expected!r}\n{err[:500]}")
             elif warnings:
                 problems.append(f"{lid}: solution has compiler warnings\n{warnings[:500]}")
+        hints = exercise.get("hints")
+        if (
+            not isinstance(hints, list)
+            or not 1 <= len(hints) <= 3
+            or not all(isinstance(h, str) and h.strip() for h in hints)
+        ):
+            problems.append(f"{lid}: exercise needs 1 to 3 non-empty hints (strings)")
         out, _, _ = run(exercise["starter"])
         if out is not None and out.strip() == expected:
             problems.append(f"{lid}: starter code already solves the exercise")
@@ -132,6 +145,221 @@ def check(path):
             problems.append(f"{lid}: quiz answer out of range in {q['question']!r}")
 
     return problems
+
+
+# ---- Code inside prose -------------------------------------------------
+#
+# Lesson prose and quiz options mention code without marking it ("Read
+# let apples = 5; as ...", options like "==" or "Grade A"). A translation may
+# reword the sentence but must leave that code as it is, or a translated
+# `if age = 18` teaches something false and a changed option changes which
+# answer is right. The English text is scanned for "code tokens" and each one
+# must still be in the translation. The scan is a heuristic, tuned to catch
+# operators, calls, paths, macros, generics, quoted program output and
+# similar, without flagging ordinary English words.
+
+# Word-like pieces that are code on their own.
+_CODE_WORD = re.compile(
+    r"""
+      ::                      # paths: std::fmt, Rc::clone
+    | \w\(                    # calls: greet(), Some(42)
+    | \(\)                    # unit and empty argument lists
+    | [{}\[\]]                # braces and brackets: {}, {name}, v[0]
+    | ->  | =>                # arrows
+    | [=!<>+\-*/%]=           # ==, !=, <=, >=, +=, -=, *=
+    | &&  | \|\|              # logical operators
+    | \.\.                    # ranges: 1..=5
+    | &['\w\[]                # &str, &mut, &'a, &[T]
+    | \#\[                    # attributes
+    | ^\|\w+\|$              # closure parameters: |x|
+    | \w<[\w&'_]              # generics: Vec<i32>
+    | \d;$                    # statements: let x = 5;
+    | \w\.(rs|toml|lock|json)$ | ^src/   # file names: main.rs, src/lib.rs
+    | ^--\w                   # command-line flags
+    | ^[a-z][a-z0-9]*_\w+     # snake_case identifiers
+    | ^E\d{4}$                # error codes
+    | ^[iu](8|16|32|64|128|size)$ | ^f(32|64)$   # number types
+    | ^'[a-z]+$               # lifetimes: 'a, 'static
+    """,
+    re.VERBOSE,
+)
+# Rust keywords that are never ordinary English words.
+_CODE_KEYWORDS = {"let", "mut", "fn", "const", "struct", "enum", "impl", "mod", "pub", "dyn", "unsafe"}
+# Words that make an option code ("for x in &v") when nothing else is prose.
+_RUST_KEYWORDS = _CODE_KEYWORDS | {
+    "for", "in", "if", "else", "new", "break", "return", "loop", "while",
+    "match", "self", "use", "as", "ref", "trait", "where", "move", "static",
+    "async", "await", "type", "crate",
+}
+# Operators that are code when they stand alone between spaces.
+_CODE_OPERATORS = {
+    "=", "==", "!=", "<", ">", "<=", ">=", "+", "*", "%", "&", "&&", "||", "|",
+    "+=", "-=", "*=", "/=", "->", "=>", "..", "..=", "!", "{", "}", "{}", "()",
+    "_", "::", ";", "#", "{:?}", "{:#?}", "[]",
+}
+_TRAILING_PUNCTUATION = ".,?:"
+_QUOTED = re.compile(r'"((?:[^"\\]|\\.)*)"')
+_MACRO_CALL = re.compile(r"\b([a-z_][a-z0-9_]*)!\s*[(\[{]")
+_NUMBER = re.compile(r"^-?[0-9][0-9_.]*$")
+
+
+def lesson_vocabulary(lesson):
+    """What the English lesson's own code says: the string literals and
+    program output (a quoted "Grade A" in prose is code only when the
+    lesson's code prints or uses it), and the macro names in use."""
+    chunks = [
+        s.get("code", "")
+        for s in lesson.get("sections", [])
+        if isinstance(s, dict) and isinstance(s.get("code"), str)
+    ]
+    exercise = lesson.get("exercise")
+    if isinstance(exercise, dict):
+        chunks += [
+            exercise[k]
+            for k in ("starter", "solution", "expectedOutput")
+            if isinstance(exercise.get(k), str)
+        ]
+    literals = set()
+    outputs = set()
+    macros = {"println", "print", "eprintln", "format", "vec", "panic", "assert"}
+    for chunk in chunks:
+        macros.update(_MACRO_CALL.findall(chunk))
+        literals.update(m.group(1) for m in _QUOTED.finditer(chunk))
+        outputs.update(m.group(1) for m in _QUOTED.finditer(chunk))
+        for line in chunk.splitlines():
+            line = line.strip()
+            if line.startswith("//"):
+                line = line[2:].strip()
+            if line:
+                literals.add(line)
+    if isinstance(exercise, dict) and isinstance(exercise.get("expectedOutput"), str):
+        outputs.update(l.strip() for l in exercise["expectedOutput"].splitlines())
+    # Text the program prints can appear in prose without quotes ("prints
+    # Even when ..."), and then it has to stay as it is. Plain lowercase
+    # words are left out: they are as likely to be ordinary English.
+    printed = {
+        o
+        for o in outputs
+        if len(o) >= 3 and not (o.isalpha() and o.islower()) and re.search(r"\w", o)
+    }
+    return {"literals": literals, "macros": macros, "printed": printed}
+
+
+def _clean_token(word):
+    word = word.rstrip(_TRAILING_PUNCTUATION)
+    # "(see foo()" -> "foo()": drop a bracket the token doesn't close.
+    while word.startswith("(") and word.count("(") > word.count(")"):
+        word = word[1:]
+    while word.endswith(")") and word.count(")") > word.count("("):
+        word = word[:-1]
+    word = word.rstrip(_TRAILING_PUNCTUATION)
+    if word.endswith("'s"):
+        word = word[:-2]
+    return word
+
+
+def code_tokens(text, vocab):
+    """The pieces of `text` that are code and must survive translation, as a
+    set. Quoted text counts only when the lesson's code or output has it."""
+    tokens = set()
+    for m in _QUOTED.finditer(text):
+        inside = m.group(1)
+        if inside in vocab["literals"] or not inside.strip() or inside in ("...", "{}"):
+            tokens.add(m.group(0))
+    unquoted = _QUOTED.sub(" ", text)
+    for out in vocab["printed"]:
+        if re.search(r"(?<![\w])" + re.escape(out) + r"(?![\w])", unquoted):
+            tokens.add(out)
+    for word in unquoted.split():
+        word = _clean_token(word)
+        if not word:
+            continue
+        macro = re.match(r"([a-z_][a-z0-9_]*)!", word)
+        if (
+            word in _CODE_OPERATORS
+            or word in _CODE_KEYWORDS
+            or _CODE_WORD.search(word)
+            or (macro and macro.group(1) in vocab["macros"])
+            or _NUMBER.match(word)
+        ):
+            tokens.add(word)
+    return tokens
+
+
+def is_code_option(option, vocab):
+    """A quiz option that is code or program output, not words: it must be
+    byte-identical in a translation."""
+    text = option.strip()
+    if not text:
+        return False
+    if not re.search(r"[^\W\d_]", text):  # no letters at all: ==, 5, {}
+        return True
+    if _QUOTED.fullmatch(text) or text in vocab["literals"]:
+        return True
+    # A declaration or a command: "let mut x = 1;", "fn greet", "cargo new".
+    if (
+        re.match(r"(let|const|static)\s[\x20-\x7e]*[=;]", text)
+        or re.match(r"(fn|struct|enum|impl|mod)\s+\w+$", text)
+        or re.match(r"(fn|struct|enum|impl|mod)\s[\x20-\x7e]*[{(<;]", text)
+        or re.match(r"(cargo|rustc)\s[\x20-\x7e]+$", text)
+    ):
+        return True
+    words = text.split()
+    plain = [w for w in words if not code_tokens(w, vocab)]
+    # Every word is code, a Rust keyword or a one-letter name ("for x in &v"),
+    # with at least one real code token among them.
+    return len(plain) < len(words) and all(
+        w in _RUST_KEYWORDS or re.fullmatch(r"[a-z]\d?", w) for w in plain
+    )
+
+
+def compare_code(en, tr, where, vocab, path="$"):
+    """Problems where code in the English prose of `en` is not in `tr`.
+    Walks both trees in step; call it only on a pair that passed
+    compare_translation (so the shapes agree)."""
+    problems = []
+    if isinstance(en, dict) and isinstance(tr, dict):
+        for key, value in en.items():
+            if key not in tr:
+                continue
+            here = f"{path}.{key}"
+            if key in PROSE_KEYS:
+                problems += compare_code_text(
+                    value, tr[key], where, vocab, here, option=key == "options"
+                )
+            else:
+                problems += compare_code(value, tr[key], where, vocab, here)
+    elif isinstance(en, list) and isinstance(tr, list) and len(en) == len(tr):
+        for i, (a, b) in enumerate(zip(en, tr)):
+            problems += compare_code(a, b, where, vocab, f"{path}[{i}]")
+    return problems
+
+
+def compare_code_text(en, tr, where, vocab, path, option=False):
+    if isinstance(en, list) and isinstance(tr, list) and len(en) == len(tr):
+        problems = []
+        for i, (a, b) in enumerate(zip(en, tr)):
+            problems += compare_code_text(
+                a, b, where, vocab, f"{path}[{i}]", option=option
+            )
+        return problems
+    if not (isinstance(en, str) and isinstance(tr, str)):
+        return []
+    if option and is_code_option(en, vocab):
+        if en != tr:
+            return [
+                f"{where}: {path} is code or program output and must stay "
+                f"{en!r}, got {tr!r}"
+            ]
+        return []
+    missing = sorted(t for t in code_tokens(en, vocab) if t not in tr)
+    if missing:
+        return [
+            f"{where}: {path} changes code from the English text: "
+            + ", ".join(repr(t) for t in missing)
+            + " missing (code in prose must be copied as is)"
+        ]
+    return []
 
 
 def compare_translation(en, tr, where, path="$"):
@@ -192,6 +420,29 @@ def compare_texts(en, tr, where, path):
     return compare_translation(en, tr, where, path)
 
 
+def lesson_titles(course):
+    """{lesson id: title} from a course.json (units[].lessons[])."""
+    titles = {}
+    for unit in course.get("units", []) if isinstance(course, dict) else []:
+        for lesson in unit.get("lessons", []) if isinstance(unit, dict) else []:
+            if isinstance(lesson, dict) and isinstance(lesson.get("id"), str):
+                titles[lesson["id"]] = lesson.get("title")
+    return titles
+
+
+def texts_differ(en, tr):
+    """True when the translatable texts of `tr` are not all the English
+    ones (compare_translation has already made sure the shapes agree)."""
+    if isinstance(en, dict) and isinstance(tr, dict):
+        return any(
+            k in tr and (en[k] != tr[k] if k in TRANSLATABLE_KEYS else texts_differ(en[k], tr[k]))
+            for k in en
+        )
+    if isinstance(en, list) and isinstance(tr, list):
+        return any(texts_differ(a, b) for a, b in zip(en, tr))
+    return False
+
+
 def load_json(path, where, problems):
     try:
         with open(path, encoding="utf-8") as f:
@@ -220,12 +471,16 @@ def check_translations(content=CONTENT):
         base = os.path.join(content, lang)
         done = 0
 
+        course_titles = {}
         course_path = os.path.join(base, "course.json")
         if os.path.exists(course_path):
             en = load_json(english_course, lang, problems)
             tr = load_json(course_path, lang, problems)
             if en is not None and tr is not None:
-                problems += compare_translation(en, tr, f"{lang}/course.json")
+                found = compare_translation(en, tr, f"{lang}/course.json")
+                problems += found
+                if not found:
+                    course_titles = lesson_titles(tr)
         else:
             problems.append(f"{lang}: course.json is missing (titles stay English)")
 
@@ -243,8 +498,20 @@ def check_translations(content=CONTENT):
             if isinstance(tr, dict) and tr.get("id") != lid:
                 problems.append(f"{where}: id {tr.get('id')!r} should be {lid!r}")
             found = compare_translation(en, tr, where)
-            problems += found
             if not found:
+                found = compare_code(en, tr, where, lesson_vocabulary(en))
+            if not found and isinstance(tr, dict):
+                shown = course_titles.get(lid)
+                if shown is not None and shown != tr.get("title"):
+                    found = [
+                        f"{where}: title {tr.get('title')!r} differs from the "
+                        f"title {shown!r} in {lang}/course.json (the map and "
+                        "the lesson must show the same title)"
+                    ]
+            problems += found
+            # A copy of the English file passes the checks above but is not
+            # a translation yet.
+            if not found and texts_differ(en, tr):
                 done += 1
         stray = [
             os.path.relpath(p, content)

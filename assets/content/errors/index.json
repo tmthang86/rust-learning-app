@@ -1,0 +1,495 @@
+[
+  {
+    "code": "E0382",
+    "lessons": [
+      "u3-l1",
+      "u3-l2",
+      "u3-l3"
+    ],
+    "example": "fn main() {\n    let name = String::from(\"Ferris\");\n    let other = name;\n    println!(\"{} {}\", name, other);\n}\n"
+  },
+  {
+    "code": "E0499",
+    "lessons": [
+      "u3-l4"
+    ],
+    "example": "fn main() {\n    let mut s = String::from(\"hi\");\n    let a = &mut s;\n    let b = &mut s;\n    a.push('!');\n    b.push('?');\n    println!(\"{}\", s);\n}\n"
+  },
+  {
+    "code": "E0502",
+    "lessons": [
+      "u3-l4",
+      "u3-l3"
+    ],
+    "example": "fn main() {\n    let mut v = vec![1, 2, 3];\n    let first = &v[0];\n    v.push(4);\n    println!(\"{}\", first);\n}\n"
+  },
+  {
+    "code": "E0505",
+    "lessons": [
+      "u3-l3"
+    ],
+    "example": "fn eat(s: String) {\n    println!(\"{}\", s);\n}\n\nfn main() {\n    let s = String::from(\"hi\");\n    let r = &s;\n    eat(s);\n    println!(\"{}\", r);\n}\n"
+  },
+  {
+    "code": "E0506",
+    "lessons": [
+      "u3-l4",
+      "u3-l3"
+    ],
+    "example": "fn main() {\n    let mut x = 5;\n    let r = &x;\n    x = 6;\n    println!(\"{}\", r);\n}\n"
+  },
+  {
+    "code": "E0507",
+    "lessons": [
+      "u3-l3",
+      "u5-l1"
+    ],
+    "example": "struct Wrapper {\n    name: String,\n}\n\nfn main() {\n    let w = Wrapper { name: String::from(\"Ferris\") };\n    let r = &w;\n    let name = r.name;\n    println!(\"{}\", name);\n}\n"
+  },
+  {
+    "code": "E0515",
+    "lessons": [
+      "u7-l5",
+      "u3-l3"
+    ],
+    "example": "fn make() -> &'static str {\n    let s = String::from(\"hi\");\n    &s\n}\n\nfn main() {\n    println!(\"{}\", make());\n}\n"
+  },
+  {
+    "code": "E0597",
+    "lessons": [
+      "u7-l5"
+    ],
+    "example": "fn main() {\n    let r;\n    {\n        let x = 5;\n        r = &x;\n    }\n    println!(\"{}\", r);\n}\n"
+  },
+  {
+    "code": "E0716",
+    "lessons": [
+      "u7-l5",
+      "u5-l2"
+    ],
+    "example": "fn main() {\n    let s: &str = String::from(\"hi\").as_str();\n    println!(\"{}\", s);\n}\n"
+  },
+  {
+    "code": "E0106",
+    "lessons": [
+      "u7-l5",
+      "u3-l3"
+    ],
+    "example": "fn longest(a: &str, b: &str) -> &str {\n    if a.len() > b.len() { a } else { b }\n}\n\nfn main() {\n    println!(\"{}\", longest(\"ab\", \"c\"));\n}\n"
+  },
+  {
+    "code": "E0384",
+    "lessons": [
+      "u1-l4",
+      "u1-l5"
+    ],
+    "example": "fn main() {\n    let x = 5;\n    x = 6;\n    println!(\"{}\", x);\n}\n"
+  },
+  {
+    "code": "E0596",
+    "lessons": [
+      "u3-l4",
+      "u1-l4"
+    ],
+    "example": "fn main() {\n    let v = Vec::new();\n    v.push(1);\n    println!(\"{:?}\", v);\n}\n"
+  },
+  {
+    "code": "E0594",
+    "lessons": [
+      "u3-l4",
+      "u1-l4",
+      "u10-l4"
+    ],
+    "example": "struct Counter {\n    n: i32,\n}\n\nfn main() {\n    let c = Counter { n: 0 };\n    c.n = 1;\n    println!(\"{}\", c.n);\n}\n"
+  },
+  {
+    "code": "E0308",
+    "lessons": [
+      "u2-l1",
+      "u2-l5",
+      "u2-l3"
+    ],
+    "example": "fn main() {\n    let x: i32 = \"five\";\n    println!(\"{}\", x);\n}\n"
+  },
+  {
+    "code": "E0277",
+    "lessons": [
+      "u7-l4",
+      "u2-l1",
+      "u2-l2",
+      "u5-l1",
+      "u11-l3"
+    ],
+    "example": "fn main() {\n    let a: i32 = 5;\n    let b: f64 = 2.0;\n    println!(\"{}\", a + b);\n}\n"
+  },
+  {
+    "code": "E0599",
+    "lessons": [
+      "u4-l2",
+      "u4-l3",
+      "u7-l4"
+    ],
+    "example": "struct Dog;\n\nfn main() {\n    let d = Dog;\n    d.bark();\n}\n"
+  },
+  {
+    "code": "E0425",
+    "lessons": [
+      "u1-l4",
+      "u0-l2"
+    ],
+    "example": "fn main() {\n    let total = 5;\n    println!(\"{}\", totl);\n}\n"
+  },
+  {
+    "code": "E0433",
+    "lessons": [
+      "u5-l3",
+      "u9-l2"
+    ],
+    "example": "fn main() {\n    let mut m = HashMap::new();\n    m.insert(\"a\", 1);\n    println!(\"{:?}\", m);\n}\n"
+  },
+  {
+    "code": "E0432",
+    "lessons": [
+      "u9-l2"
+    ],
+    "example": "use std::collections::HashMapp;\n\nfn main() {}\n"
+  },
+  {
+    "code": "E0061",
+    "lessons": [
+      "u0-l5",
+      "u2-l5"
+    ],
+    "example": "fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\nfn main() {\n    println!(\"{}\", add(1));\n}\n"
+  },
+  {
+    "code": "E0369",
+    "lessons": [
+      "u7-l1",
+      "u7-l4",
+      "u5-l2"
+    ],
+    "example": "struct Meters(i32);\n\nfn main() {\n    let a = Meters(1);\n    let b = Meters(2);\n    let c = a + b;\n}\n"
+  },
+  {
+    "code": "E0381",
+    "lessons": [],
+    "example": "fn main() {\n    let x: i32;\n    println!(\"{}\", x);\n}\n"
+  },
+  {
+    "code": "E0282",
+    "lessons": [
+      "u5-l1"
+    ],
+    "example": "fn main() {\n    let v = Vec::new();\n    println!(\"{}\", v.len());\n}\n"
+  },
+  {
+    "code": "E0283",
+    "lessons": [
+      "u8-l5",
+      "u8-l4"
+    ],
+    "example": "fn main() {\n    let v = vec![1, 2, 3];\n    let doubled = v.iter().map(|x| x * 2).collect();\n}\n"
+  },
+  {
+    "code": "E0284",
+    "lessons": [
+      "u6-l2",
+      "u2-l1"
+    ],
+    "example": "fn main() {\n    let n = \"5\".parse().unwrap();\n    println!(\"{}\", n);\n}\n"
+  },
+  {
+    "code": "E0004",
+    "lessons": [
+      "u4-l5",
+      "u4-l3"
+    ],
+    "example": "enum Light {\n    Red,\n    Yellow,\n    Green,\n}\n\nfn main() {\n    let l = Light::Red;\n    match l {\n        Light::Red => println!(\"stop\"),\n        Light::Green => println!(\"go\"),\n    }\n}\n"
+  },
+  {
+    "code": "E0063",
+    "lessons": [
+      "u4-l1"
+    ],
+    "example": "struct Point {\n    x: i32,\n    y: i32,\n}\n\nfn main() {\n    let p = Point { x: 1 };\n}\n"
+  },
+  {
+    "code": "E0560",
+    "lessons": [
+      "u4-l1"
+    ],
+    "example": "struct Point {\n    x: i32,\n    y: i32,\n}\n\nfn main() {\n    let p = Point { x: 1, y: 2, z: 3 };\n}\n"
+  },
+  {
+    "code": "E0609",
+    "lessons": [
+      "u4-l1"
+    ],
+    "example": "struct Point {\n    x: i32,\n    y: i32,\n}\n\nfn main() {\n    let p = Point { x: 1, y: 2 };\n    println!(\"{}\", p.z);\n}\n"
+  },
+  {
+    "code": "E0615",
+    "lessons": [
+      "u4-l2"
+    ],
+    "example": "fn main() {\n    let s = String::from(\"hi\");\n    println!(\"{}\", s.len);\n}\n"
+  },
+  {
+    "code": "E0616",
+    "lessons": [
+      "u9-l2",
+      "u4-l2"
+    ],
+    "example": "fn main() {\n    let v = vec![1, 2, 3];\n    println!(\"{}\", v.len);\n}\n"
+  },
+  {
+    "code": "E0603",
+    "lessons": [
+      "u9-l2"
+    ],
+    "example": "mod shapes {\n    fn area() -> i32 {\n        42\n    }\n}\n\nfn main() {\n    println!(\"{}\", shapes::area());\n}\n"
+  },
+  {
+    "code": "E0624",
+    "lessons": [
+      "u9-l2",
+      "u4-l4",
+      "u5-l1"
+    ],
+    "example": "fn main() {\n    let v = vec![1, 2, 3];\n    println!(\"{}\", v.get(0).len());\n}\n"
+  },
+  {
+    "code": "E0046",
+    "lessons": [
+      "u7-l3"
+    ],
+    "example": "trait Speak {\n    fn speak(&self) -> String;\n}\n\nstruct Dog;\n\nimpl Speak for Dog {}\n\nfn main() {}\n"
+  },
+  {
+    "code": "E0373",
+    "lessons": [
+      "u11-l1",
+      "u8-l2"
+    ],
+    "example": "use std::thread;\n\nfn main() {\n    let v = vec![1, 2, 3];\n    let handle = thread::spawn(|| {\n        println!(\"{:?}\", v);\n    });\n    handle.join().unwrap();\n}\n"
+  },
+  {
+    "code": "E0614",
+    "lessons": [
+      "u3-l4",
+      "u10-l2"
+    ],
+    "example": "fn main() {\n    let x = 5;\n    println!(\"{}\", *x);\n}\n"
+  },
+  {
+    "code": "E0728",
+    "lessons": [
+      "u11-l4"
+    ],
+    "example": "async fn get() -> i32 {\n    1\n}\n\nfn main() {\n    let x = get().await;\n}\n"
+  },
+  {
+    "code": "E0601",
+    "lessons": [
+      "u1-l1"
+    ],
+    "example": "fn hello() {\n    println!(\"hi\");\n}\n"
+  },
+  {
+    "code": "E0072",
+    "lessons": [
+      "u10-l1"
+    ],
+    "example": "struct Node {\n    value: i32,\n    next: Option<Node>,\n}\n\nfn main() {}\n"
+  },
+  {
+    "code": "E0023",
+    "lessons": [
+      "u4-l3"
+    ],
+    "example": "enum Shape {\n    Rect(i32, i32),\n}\n\nfn main() {\n    let s = Shape::Rect(1, 2);\n    match s {\n        Shape::Rect(w) => println!(\"{}\", w),\n    }\n}\n"
+  },
+  {
+    "code": "E0317",
+    "lessons": [
+      "u2-l3"
+    ],
+    "example": "fn main() {\n    let n = 5;\n    let x: i32 = if n > 3 { 1 };\n}\n"
+  },
+  {
+    "code": "E0423",
+    "lessons": [
+      "u1-l3",
+      "u1-l1"
+    ],
+    "example": "fn main() {\n    println(\"hi\");\n}\n"
+  },
+  {
+    "code": "E0606",
+    "lessons": [
+      "u2-l1"
+    ],
+    "example": "fn main() {\n    let n = \"5\" as i32;\n}\n"
+  },
+  {
+    "code": "E0368",
+    "lessons": [
+      "u5-l2"
+    ],
+    "example": "fn main() {\n    let mut s = \"hi\";\n    s += \" there\";\n}\n"
+  },
+  {
+    "code": "E0435",
+    "lessons": [
+      "u2-l2",
+      "u1-l4"
+    ],
+    "example": "fn main() {\n    let n = 3;\n    let a = [0; n];\n}\n"
+  },
+  {
+    "code": "E0605",
+    "lessons": [
+      "u2-l1"
+    ],
+    "example": "fn main() {\n    let s = String::from(\"5\");\n    let n = s as i32;\n}\n"
+  },
+  {
+    "code": "E0765",
+    "lessons": [
+      "u1-l3"
+    ],
+    "example": "fn main() {\n    println!(\"hi);\n}\n"
+  },
+  {
+    "id": "syntax-missing-semicolon",
+    "match": "expected `;`",
+    "lessons": [
+      "u2-l5"
+    ],
+    "example": "fn main() {\n    let x = 5\n    println!(\"{}\", x);\n}\n"
+  },
+  {
+    "id": "syntax-unclosed-delimiter",
+    "match": "unclosed delimiter",
+    "lessons": [
+      "u1-l1"
+    ],
+    "example": "fn f() {\n    if true {\n        println!(\"a\");\n}\n\nfn main() {\n    f();\n}\n"
+  },
+  {
+    "id": "syntax-mismatched-delimiter",
+    "match": "mismatched closing delimiter",
+    "lessons": [
+      "u1-l1"
+    ],
+    "example": "fn main() {\n    let v = (1, 2];\n}\n"
+  },
+  {
+    "id": "syntax-unexpected-closing",
+    "match": "unexpected closing delimiter",
+    "lessons": [
+      "u1-l1"
+    ],
+    "example": "fn main() {\n    println!(\"hi\");\n}\n}\n"
+  },
+  {
+    "id": "syntax-expected-expression",
+    "match": "expected expression",
+    "lessons": [
+      "u0-l2"
+    ],
+    "example": "fn main() {\n    let x = ;\n}\n"
+  },
+  {
+    "id": "syntax-increment",
+    "match": "increment operator",
+    "lessons": [
+      "u1-l4",
+      "u2-l4"
+    ],
+    "example": "fn main() {\n    let mut i = 0;\n    i++;\n}\n"
+  },
+  {
+    "id": "syntax-decrement",
+    "match": "decrement operator",
+    "lessons": [
+      "u1-l4",
+      "u2-l4"
+    ],
+    "example": "fn main() {\n    let mut i = 5;\n    i--;\n}\n"
+  },
+  {
+    "id": "syntax-unknown-macro",
+    "match": "cannot find macro",
+    "lessons": [
+      "u1-l3",
+      "u1-l1"
+    ],
+    "example": "fn main() {\n    printn!(\"hi\");\n}\n"
+  },
+  {
+    "id": "syntax-format-args",
+    "match": "in format string, but",
+    "lessons": [
+      "u1-l3"
+    ],
+    "example": "fn main() {\n    println!(\"{} {}\", 1);\n}\n"
+  },
+  {
+    "id": "syntax-argument-never-used",
+    "match": "argument never used",
+    "lessons": [
+      "u1-l3"
+    ],
+    "example": "fn main() {\n    println!(\"hi\", 5);\n}\n"
+  },
+  {
+    "id": "syntax-format-literal",
+    "match": "format argument must be a string literal",
+    "lessons": [
+      "u1-l3"
+    ],
+    "example": "fn main() {\n    let s = \"hi {}\";\n    println!(s, 1);\n}\n"
+  },
+  {
+    "id": "syntax-unused-formatting-arguments",
+    "match": "unused formatting arguments",
+    "lessons": [
+      "u1-l3"
+    ],
+    "example": "fn main() {\n    println!(\"hi\", 1, 2);\n}\n"
+  },
+  {
+    "id": "syntax-invalid-format-string",
+    "match": "invalid format string",
+    "lessons": [
+      "u1-l3"
+    ],
+    "example": "fn main() {\n    let age = 3;\n    println!(\"{age + 1}\");\n}\n"
+  },
+  {
+    "id": "syntax-char-literal",
+    "match": "character literal may only contain one codepoint",
+    "lessons": [
+      "u2-l1"
+    ],
+    "example": "fn main() {\n    let c = 'ab';\n}\n"
+  },
+  {
+    "id": "syntax-unknown-token",
+    "match": "unknown start of token",
+    "lessons": [
+      "u1-l3"
+    ],
+    "example": "fn main() {\n    let s = “hi”;\n}\n"
+  },
+  {
+    "id": "syntax-literal-out-of-range",
+    "match": "literal out of range",
+    "lessons": [
+      "u2-l1"
+    ],
+    "example": "fn main() {\n    let x: u8 = 256;\n    println!(\"{}\", x);\n}\n"
+  }
+]

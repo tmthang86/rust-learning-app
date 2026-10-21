@@ -52,7 +52,7 @@
         { "id": "u3-l1", "title": "Quyền sở hữu và việc di chuyển (move)" },
         { "id": "u3-l2", "title": "Copy và Clone" },
         { "id": "u3-l3", "title": "Mượn (borrowing) và tham chiếu" },
-        { "id": "u3-l4", "title": "Tham chiếu có thể thay đổi" },
+        { "id": "u3-l4", "title": "Tham chiếu có thể thay đổi (&mut)" },
         { "id": "u3-l5", "title": "Slice" }
       ]
     },
@@ -126,7 +126,7 @@
     {
       "id": "u9",
       "number": 9,
-      "title": "Module, crate và kiểm thử",
+      "title": "Module, crate và test",
       "summary": "Module, visibility, crate với Cargo, và test.",
       "tracks": ["starter", "fast"],
       "lessons": [

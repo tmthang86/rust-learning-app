@@ -9,6 +9,7 @@ import '../account/progress_sync.dart';
 import '../runner/code_runner.dart';
 import 'age.dart';
 import 'course_repository.dart';
+import 'error_explanations.dart';
 import 'language.dart';
 import 'models.dart';
 
@@ -36,7 +37,9 @@ class AppState extends ChangeNotifier {
     this.sync,
     AgeStore? age,
     List<Locale>? deviceLocales,
-  }) : age = age ?? AgeStore(prefs) {
+    ErrorExplanationRepository? errors,
+  }) : age = age ?? AgeStore(prefs),
+       errors = errors ?? ErrorExplanationRepository() {
     _track = Track.fromName(prefs.getString(_trackKey));
     _completed = (prefs.getStringList(_completedKey) ?? const []).toSet();
     _language = AppLanguage.fromName(prefs.getString(_languageKey));
@@ -76,6 +79,9 @@ class AppState extends ChangeNotifier {
   static const _childAccountKey = 'childAccountToDelete';
 
   final CourseRepository repository;
+
+  /// Explanations for compiler errors, loaded on first use.
+  final ErrorExplanationRepository errors;
   final CodeRunner runner;
   final SharedPreferences prefs;
   final AccountService accounts;
@@ -272,9 +278,16 @@ class AppState extends ChangeNotifier {
     if (language == _language) return;
     final before = languageCode;
     _language = language;
-    await prefs.setString(_languageKey, language.name);
+    // The app switches first, so a failing save can't leave the screen in
+    // one language and the state in another. The choice then lasts for this
+    // run only.
     notifyListeners();
     if (languageCode != before) unawaited(_reloadCourse());
+    try {
+      await prefs.setString(_languageKey, language.name);
+    } catch (e) {
+      debugPrint('Saving the language failed: $e');
+    }
   }
 
   /// Called when the device's preferred languages change. Matters only

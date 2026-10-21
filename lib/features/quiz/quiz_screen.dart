@@ -87,7 +87,12 @@ class _QuizScreenState extends State<QuizScreen> {
         return Scaffold(
           appBar: lessonAppBar(
             context,
-            title: Text(context.l10n.quizTitle(lesson.title)),
+            title: Text(
+              context.l10n.quizTitle(
+                AppScope.of(context).course?.lessonTitle(lesson.id) ??
+                    lesson.title,
+              ),
+            ),
           ),
           body: Center(
             child: ConstrainedBox(
