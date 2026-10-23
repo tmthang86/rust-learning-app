@@ -11,8 +11,8 @@ newer action or a newer `functions/` npm package exists.
 | Job | What it checks | Run it locally |
 | --- | --- | --- |
 | `flutter` | `flutter analyze` and `flutter test` on Flutter 3.47.7 | `flutter pub get && flutter analyze && flutter test` |
-| `lessons` | Every lesson example and exercise solution compiles (edition 2024); every error-explanation example fails with its own error code or message, and every code is still emitted; every translated file under `assets/content/<lang>/` matches its English source; the checker's own tests | `python3 tool/check_lessons.py && python3 tool/test_check_lessons.py && python3 tool/check_errors.py` |
-| `runner` | `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test` | in `runner/`: `cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test` |
+| `lessons` | Rust 1.99.1 (the sandbox's). Builds `rr-grade`, then every lesson example compiles (edition 2024) and every exercise is graded with its tests: the solution passes all of them, the starter fails one (`--self-test` checks the checker itself); every error-explanation example fails with its own error code or message, and every code is still emitted; every translated file under `assets/content/<lang>/` matches its English source; the checker's own tests | `cargo build --release --locked -p rr-grade` in `runner/`, then `python3 tool/check_lessons.py --self-test`, `python3 tool/check_lessons.py`, `python3 tool/test_check_lessons.py`, `python3 tool/check_errors.py` |
+| `runner` | `cargo fmt --all --check`, `cargo clippy -D warnings`, `cargo test`, for the server and the `rr-grade` crate | in `runner/`: `cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace` |
 | `runner-sandbox` | Builds the sandbox image and runs the Docker test (limits, no network) | in `runner/`: `docker build -t rust-runner-sandbox -f sandbox.Dockerfile . && cargo test -- --ignored` |
 | `firebase` | Firestore rules against the emulator, and the account-deletion Cloud Function against the Auth, Firestore and Functions emulators | `sh test/firestore_rules/run.sh`, then `cd functions && npm ci && npm test` |
 
@@ -31,7 +31,11 @@ emulators.
   `runc` runtime, so `runner-sandbox` leaves `RUNNER_DOCKER_RUNTIME` unset.
   It checks the container limits and the blocked network, not gVisor. Test
   gVisor on the real host.
-- **Rust version.** CI uses the latest stable Rust with `clippy -D warnings`,
+- **Rust version.** The `lessons` job uses exactly the Rust version of the
+  sandbox image (`runner/sandbox.Dockerfile`, 1.99.1), so a lesson passes CI
+  only if the runner will grade it the same way. Bump the version in both
+  files (and the digest in `runner/Dockerfile`) together. The other Rust jobs
+  use the latest stable Rust with `clippy -D warnings`,
   so a new Rust release can turn CI red without any code change.
   `dtolnay/rust-toolchain` is pinned to the head of its `stable` branch;
   Dependabot may not bump it, so check it now and then.

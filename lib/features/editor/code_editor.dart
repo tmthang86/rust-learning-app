@@ -4,14 +4,19 @@ import 'package:flutter/services.dart';
 
 import '../../app/theme.dart';
 import '../../data/app_state.dart';
+import '../../data/models.dart';
 import '../../l10n/l10n.dart';
 import '../../runner/code_runner.dart';
 import 'error_explanation_cards.dart';
+import 'tests_panel.dart';
 
 /// A Rust code editor with a Run button and an output panel.
 ///
-/// When [expectedOutput] is set, the output is checked against it and
-/// [onSolved] is called on a match.
+/// When [tests] is set, Run grades the code with the runner's `/grade`: a
+/// tests panel shows each test, and [onSolved] is called when every test
+/// passes. With only the legacy [expectedOutput], Run is a plain run whose
+/// output is compared here and shown as one test. Without either (the
+/// playground), Run just runs the code.
 ///
 /// A caller that needs to read or replace the code passes a [controller];
 /// [onRunFinished] reports every finished run.
@@ -20,6 +25,7 @@ class CodeEditor extends StatefulWidget {
     super.key,
     required this.initialCode,
     this.expectedOutput,
+    this.tests,
     this.onSolved,
     this.minLines = 8,
     this.controller,
@@ -29,6 +35,9 @@ class CodeEditor extends StatefulWidget {
 
   final String initialCode;
   final String? expectedOutput;
+
+  /// What grades the exercise, hidden tests included. Null: no grading.
+  final List<ExerciseTest>? tests;
   final VoidCallback? onSolved;
   final int minLines;
 
@@ -87,27 +96,57 @@ class _CodeEditorState extends State<CodeEditor>
     super.dispose();
   }
 
-  static bool _matches(RunResult? r, String? expected) =>
-      expected != null &&
-      r != null &&
-      r.success &&
-      r.stdout.trim() == expected.trim();
+  /// The tests that grade a run: [CodeEditor.tests], else the legacy
+  /// expected output as one output test, else none.
+  List<ExerciseTest>? get _tests =>
+      widget.tests ??
+      (widget.expectedOutput == null
+          ? null
+          : [ExerciseTest.legacy(widget.expectedOutput!)]);
 
-  bool get _solved => _matches(_result, widget.expectedOutput);
+  /// Solved means every test passed, hidden ones included; a runner that
+  /// couldn't be reached never solves anything.
+  static bool _matches(RunResult? r, List<ExerciseTest>? tests) =>
+      tests != null && r is GradeResult && r.solves(tests);
+
+  bool get _solved => _matches(_result, _tests);
+
+  /// What a screen reader says when a run finishes.
+  String _announcement(AppLocalizations l10n, RunResult r, bool solved) {
+    final tests = _tests;
+    if (tests != null && r is GradeResult && showsTestsPanel(r)) {
+      return gradeAnnouncement(l10n, r, tests, solved: solved);
+    }
+    return runAnnouncement(l10n, r, solved: tests == null ? null : solved);
+  }
 
   Future<void> _run() async {
     if (_running) return;
     final state = AppScope.read(context);
     // Captured now: the result may arrive after the learner left the lesson,
     // and solving still counts then.
-    final expected = widget.expectedOutput;
+    final tests = _tests;
     final onSolved = widget.onSolved;
     // ...but only for the same person: not after a sign-out, a switch to
     // another account, or during account deletion.
     final epoch = state.accountEpoch;
     setState(() => _running = true);
-    final result = await state.runner.run(_controller.text);
-    final solved = _matches(result, expected);
+    // Declared tests go to /grade. An exercise with only an expected output
+    // is run as before (one run, no /grade needed) and shown as one test.
+    final declared = widget.tests;
+    final expected = widget.expectedOutput;
+    final RunResult result;
+    if (declared != null) {
+      result = await state.runner.grade(_controller.text, declared);
+    } else if (expected != null) {
+      result = GradeResult.fromLegacyRun(
+        await state.runner.run(_controller.text),
+        expected,
+      );
+    } else {
+      result = await state.runner.run(_controller.text);
+    }
+    final solved = _matches(result, tests);
     if (solved && state.accountEpoch == epoch) onSolved?.call();
     if (!mounted) return;
     setState(() {
@@ -122,11 +161,7 @@ class _CodeEditorState extends State<CodeEditor>
     if (MediaQuery.supportsAnnounceOf(context)) {
       SemanticsService.sendAnnouncement(
         View.of(context),
-        runAnnouncement(
-          context.l10n,
-          result,
-          solved: expected == null ? null : solved,
-        ),
+        _announcement(context.l10n, result, solved),
         Directionality.of(context),
       );
     }
@@ -234,18 +269,23 @@ class _CodeEditorState extends State<CodeEditor>
         ),
         ?widget.belowRunRow,
         if (result != null) ...[
+          if (result is GradeResult && showsTestsPanel(result)) ...[
+            const SizedBox(height: 8),
+            TestsPanel(tests: _tests ?? const [], result: result),
+          ],
           const SizedBox(height: 8),
           _RunOutput(
             result: result,
+            // The tests' own message says why there are no compiler errors.
+            showOutput: !testsCouldNotUseCode(result),
             // Fallback when announcements aren't supported: a live region
             // whose label changes on every run, so repeats are read too.
             liveLabel: MediaQuery.supportsAnnounceOf(context)
                 ? null
                 : '${l10n.announceRunCount(_runCount)} '
-                      '${runAnnouncement(l10n, result, solved: widget.expectedOutput == null ? null : _solved)}',
+                      '${_announcement(l10n, result, _solved)}',
           ),
-          if (widget.expectedOutput != null &&
-              result.stage != RunStage.unavailable) ...[
+          if (_tests != null && result.stage != RunStage.unavailable) ...[
             const SizedBox(height: 8),
             // Its own node, so it isn't read as part of the code field. The
             // verdict is also part of the run announcement.
@@ -260,9 +300,7 @@ class _CodeEditorState extends State<CodeEditor>
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      _solved
-                          ? l10n.exerciseSolved
-                          : l10n.exerciseNotYet,
+                      _solved ? l10n.exerciseSolved : l10n.exerciseNotYet,
                       style: TextStyle(
                         color: _solved ? scheme.primary : scheme.error,
                         fontWeight: FontWeight.w600,
@@ -273,7 +311,7 @@ class _CodeEditorState extends State<CodeEditor>
               ),
             ),
           ],
-          if (result.stage == RunStage.compile)
+          if (result.stage == RunStage.compile && !testsCouldNotUseCode(result))
             ErrorExplanationCards(stderr: result.stderr),
         ],
       ],
@@ -419,10 +457,17 @@ String runAnnouncement(AppLocalizations l10n, RunResult r, {bool? solved}) {
 /// runner couldn't be used), then any compiler warnings, kept apart and
 /// folded away because the program ran anyway.
 class _RunOutput extends StatelessWidget {
-  const _RunOutput({required this.result, this.liveLabel});
+  const _RunOutput({
+    required this.result,
+    this.liveLabel,
+    this.showOutput = true,
+  });
 
   final RunResult result;
   final String? liveLabel;
+
+  /// False when there is nothing to show but the live region.
+  final bool showOutput;
 
   @override
   Widget build(BuildContext context) {
@@ -463,36 +508,39 @@ class _RunOutput extends StatelessWidget {
             label: liveLabel,
             child: const SizedBox(width: 1, height: 1),
           ),
-        Semantics(
-          container: true,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: scheme.inverseSurface,
-              borderRadius: BorderRadius.circular(12),
-              border: isError
-                  ? Border.all(color: scheme.error, width: 2)
-                  : null,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  heading,
-                  style: textTheme.labelLarge?.copyWith(
-                    color: scheme.onInverseSurface,
-                    fontWeight: FontWeight.w700,
+        if (showOutput)
+          Semantics(
+            container: true,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: scheme.inverseSurface,
+                borderRadius: BorderRadius.circular(12),
+                border: isError
+                    ? Border.all(color: scheme.error, width: 2)
+                    : null,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    heading,
+                    style: textTheme.labelLarge?.copyWith(
+                      color: scheme.onInverseSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                SelectableText(
-                  body.isEmpty ? l10n.runNoOutput : body,
-                  style: codeTextStyle.copyWith(color: scheme.onInverseSurface),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  SelectableText(
+                    body.isEmpty ? l10n.runNoOutput : body,
+                    style: codeTextStyle.copyWith(
+                      color: scheme.onInverseSurface,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
         if (warnings.isNotEmpty) ...[
           const SizedBox(height: 8),
           Theme(

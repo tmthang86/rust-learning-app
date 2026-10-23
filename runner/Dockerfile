@@ -16,6 +16,7 @@ FROM ${RUST_IMAGE} AS build
 WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
+COPY grade ./grade
 RUN cargo build --release --locked
 
 # Only the Docker CLI is needed, not the daemon.

@@ -12,7 +12,13 @@
   "exercise": {
     "prompt": "Hoán đổi các dòng để chương trình in ra First, rồi Second, mỗi từ trên một dòng riêng.",
     "starter": "fn main() {\n    println!(\"Second\");\n    println!(\"First\");\n}",
-    "expectedOutput": "First\nSecond",
+    "tests": [
+      {
+        "id": "first-then-second",
+        "label": "In ra First, rồi Second",
+        "output": "First\nSecond"
+      }
+    ],
     "solution": "fn main() {\n    println!(\"First\");\n    println!(\"Second\");\n}",
     "hints": ["Máy tính chạy các dòng của bạn từ trên xuống dưới. Dòng nào nên chạy trước?", "Mỗi dòng println! là một lệnh hoàn chỉnh kết thúc bằng ;. Hãy chuyển println!(\"First\"); lên trên println!(\"Second\");, vẫn nằm trong cặp dấu ngoặc nhọn."]
   },

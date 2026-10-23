@@ -1,0 +1,77 @@
+
+    unsafe extern "C" {
+        fn dup(fd: i32) -> i32;
+        fn dup2(old: i32, new: i32) -> i32;
+        fn close(fd: i32) -> i32;
+        fn getrlimit(resource: i32, limit: *mut Rlimit) -> i32;
+        fn setrlimit(resource: i32, limit: *const Rlimit) -> i32;
+        fn signal(signum: i32, handler: usize) -> usize;
+    }
+
+    #[repr(C)]
+    #[derive(Clone, Copy)]
+    struct Rlimit {
+        cur: u64,
+        max: u64,
+    }
+
+    /// Most bytes a capture keeps. The file is limited to this size while
+    /// the code runs: a write past it fails (so `println!` panics) instead
+    /// of filling the disk.
+    const CAPTURE_MAX: u64 = 64 * 1024;
+
+    static CAPTURES: ::std::sync::atomic::AtomicU32 = ::std::sync::atomic::AtomicU32::new(0);
+
+    /// What `run` printed to stdout (at most 64 KB). Panics in `run` pass
+    /// through after stdout is back.
+    pub fn output_of<F: ::core::ops::FnOnce()>(run: F) -> ::std::string::String {
+        use ::std::io::{Read, Seek};
+        use ::std::os::fd::AsRawFd;
+        let _ = ::std::io::Write::flush(&mut ::std::io::stdout());
+        let n = CAPTURES.fetch_add(1, ::std::sync::atomic::Ordering::Relaxed);
+        let path = ::std::env::temp_dir().join(::std::format!("rr-capture-{}-{n}", ::std::process::id()));
+        let mut file = ::std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create_new(true)
+            .open(&path)
+            .expect("could not capture the output");
+        let _ = ::std::fs::remove_file(&path);
+        // SAFETY: plain fd and rlimit calls; fd 1 and the file size limit
+        // are put back before returning. SIGXFSZ (RLIMIT_FSIZE is 1, the
+        // signal 25 on Linux) is ignored so a write past the limit fails
+        // with an error instead of ending the process.
+        let mut before = Rlimit { cur: 0, max: 0 };
+        let have_limit = unsafe { getrlimit(1, &mut before) } == 0;
+        if have_limit {
+            let tight = Rlimit { cur: CAPTURE_MAX.min(before.max), max: before.max };
+            unsafe {
+                signal(25, 1);
+                setrlimit(1, &tight);
+            }
+        }
+        let saved = unsafe { dup(1) };
+        if saved < 0 || unsafe { dup2(file.as_raw_fd(), 1) } < 0 {
+            panic!("could not capture the output");
+        }
+        let result = ::std::panic::catch_unwind(::std::panic::AssertUnwindSafe(run));
+        // The limit goes first, so a line left in stdout's buffer is still
+        // written to the capture and doesn't turn up in the real output.
+        if have_limit {
+            unsafe {
+                setrlimit(1, &before);
+            }
+        }
+        let _ = ::std::io::Write::flush(&mut ::std::io::stdout());
+        unsafe {
+            dup2(saved, 1);
+            close(saved);
+        }
+        let mut bytes = ::std::vec::Vec::new();
+        let _ = file.seek(::std::io::SeekFrom::Start(0));
+        let _ = (&mut file).take(CAPTURE_MAX).read_to_end(&mut bytes);
+        if let ::core::result::Result::Err(payload) = result {
+            ::std::panic::resume_unwind(payload);
+        }
+        ::std::string::String::from_utf8_lossy(&bytes).into_owned()
+    }

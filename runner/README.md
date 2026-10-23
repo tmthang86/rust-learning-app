@@ -48,6 +48,43 @@ for older app builds; match on `code`):
 The 401 messages are generic on purpose; the specific reason goes only to the
 server log (`auth_error`).
 
+### `POST /grade`
+
+Grades an exercise that has several tests (some hidden in the app's UI). Same
+headers, gate, rate limits (one request costs one token), slots and sandbox as
+`/run`. Body:
+
+```json
+{ "code": "fn check_age(...) { ... }",
+  "tests": [ { "id": "fifteen", "code": "check_eq!(check_age(15), Err(String::from(\"too young\")));" },
+             { "id": "zero", "code": "let _ = divide(1, 0);", "panics": "cannot divide" },
+             { "id": "prints", "output": "error: too young" } ] }
+```
+
+A `code` test is a few Rust statements run inside the learner's crate with
+`check_eq!(actual, expected)`, `check!(cond)`, `check_near!(a, b, tol)` and
+`output_of(|| ...)`. An `output` test compares what `main` prints. Answer:
+
+```json
+{ "success": false, "stage": "run", "durationMs": 1830, "stdout": "error: too young\n",
+  "stderr": "", "warnings": "", "compileErrorsIn": null, "reason": null,
+  "tests": [ { "id": "fifteen", "status": "pass" },
+             { "id": "zero", "status": "fail", "expr": "check_age(30)", "expected": "Ok(30)", "actual": "Err(\"too young\")" } ] }
+```
+
+`status` is `pass`, `fail`, `panic`, `nopanic`, `error`, `timeout`, `crashed`
+or `not_run`; `reason` is a machine code (`mem_limit`, `output_limit`,
+`stack_overflow`, `exit:<n>`, `no_main`, `tests_dont_fit`, `harness`). With
+`compileErrorsIn: "code"` the learner's own code does not compile and `stderr`
+holds the same text `/run` would show; with `"tests"` the code compiles but the
+tests cannot use it (a renamed function). An invalid test list is
+`400 tests_invalid`. The details are in
+[`docs/production-design.md`](docs/production-design.md) and
+[`../docs/exercise-tests-design.md`](../docs/exercise-tests-design.md).
+
+The grading logic lives in the `grade/` crate (`rr-grade`), which
+`tool/check_lessons.py` also uses, through the `rr-grade` command.
+
 ### `GET /health`
 
 No auth, no rate limit, never cached. JSON:

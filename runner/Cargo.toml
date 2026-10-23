@@ -3,7 +3,12 @@ name = "rust-runner"
 version = "0.2.0"
 edition = "2024"
 
+# The grading crate: shared by the server and tool/check_lessons.py.
+[workspace]
+members = ["grade"]
+
 [dependencies]
+rr-grade = { path = "grade" }
 aws-lc-rs = "1.18.2"
 axum = "0.8.9"
 governor = "0.10.4"

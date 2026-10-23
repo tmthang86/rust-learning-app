@@ -89,6 +89,12 @@ pub struct RunInfo {
     pub stdout_bytes: Option<usize>,
     pub stderr_bytes: Option<usize>,
     pub truncated: bool,
+    /// `grade` for `/grade`; absent for `/run`.
+    pub endpoint: Option<&'static str>,
+    /// `/grade`: how many tests were asked for, and how many passed. Counts
+    /// only, never ids or code.
+    pub tests_total: Option<usize>,
+    pub tests_passed: Option<usize>,
     /// Which bucket said no, on a 429.
     pub limiter: Option<&'static str>,
     /// Why App Check said no, on a 401/403. Logs only, never the response.

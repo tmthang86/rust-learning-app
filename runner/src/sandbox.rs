@@ -72,6 +72,21 @@ impl RunOutput {
     }
 }
 
+/// The answer to `POST /grade`: the `/run` fields plus the per-test results.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GradeOutput {
+    #[serde(flatten)]
+    pub run: RunOutput,
+    /// Where the compile errors are: the learner's code or the tests.
+    pub compile_errors_in: Option<rr_grade::ErrorsIn>,
+    /// A machine code for a problem that is not about one test (`no_main`,
+    /// `harness`, or why a test crashed).
+    pub reason: Option<String>,
+    /// One result per requested test, in request order.
+    pub tests: Vec<rr_grade::TestResult>,
+}
+
 #[derive(Debug, Clone)]
 pub struct Limits {
     /// Wall-clock limit for compiling.
@@ -190,12 +205,51 @@ fn both_markers() -> Vec<u8> {
 
 /// Shell script run for every job. The source code arrives on stdin.
 /// `$1` is the compile timeout, `$2` the run timeout (seconds), `$3` a
-/// writable work dir, `$4` the program's address-space cap in KB. The program
+/// writable work dir, `$4` the program's address-space cap in KB. `$5` is
+/// the mode: absent or `run` for `/run`, `grade` for `/grade` (see the grade
+/// block below; `/run` never reaches it). The program
 /// replaces the shell with `exec`, so the job's exit code is the program's
 /// (or `timeout`'s) own. The cap is set after compiling, so rustc is bound
 /// only by the container's memory limit.
 const JOB_SCRIPT: &str = r#"
 csecs="$1"; secs="$2"; work="$3"; vmem="$4"
+if [ "${5:-run}" = grade ]; then
+  # Grade mode (POST /grade). $6: the learner's code length in bytes (the
+  # first bytes of the file on stdin), the rest: the test harness's own
+  # arguments. The file holds the learner's code plus the generated harness
+  # (see rr-grade). It is built without optimisation: the tests are small and
+  # a build at the level of /run took twice as long.
+  llen="$6"; shift 6
+  mkdir -p "$work/g"
+  cat > "$work/g/main.rs"
+  printf '\001RR-COMPILE\n'
+  { timeout --signal=KILL "$csecs" rustc --edition 2024 -C opt-level=0 -C overflow-checks=on \
+    --test --error-format=json --remap-path-prefix "$work/g=$work" \
+    -o "$work/prog" "$work/g/main.rs" 1>&3 2>&3; } 3>&2 2>/dev/null
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    [ "$rc" -eq 137 ] && exit 202
+    # Whose error is it? Compile the learner's code alone, as /run would
+    # (--emit=mir finds the same errors as a full build). Its output follows
+    # the RR-CHECK marker on stderr, its exit code comes after the marker on
+    # stdout.
+    head -c "$llen" "$work/g/main.rs" > "$work/main.rs"
+    printf '\001RR-CHECK\n'
+    printf '\001RR-CHECK\n' >&2
+    { timeout --signal=KILL "$secs" rustc --edition 2024 -C opt-level=1 -C overflow-checks=on \
+      --emit=mir -o "$work/l.mir" "$work/main.rs" 1>&3 2>&3; } 3>&2 2>/dev/null
+    printf '\001RR-CHECK:%s\n' "$?"
+    exit 201
+  fi
+  printf '\001RR-RUN\n'
+  printf '\001RR-RUN\n' >&2
+  # No source is left for the program to read.
+  rm -rf "$work/g" "$work/main.rs"
+  ulimit -t "$((secs + 2))"
+  ulimit -S -t "$((secs + 1))"
+  ulimit -v "$vmem"
+  exec timeout --signal=TERM --kill-after=1 "$secs" "$work/prog" "$@" </dev/null
+fi
 cat > "$work/main.rs"
 printf '\001RR-COMPILE\n'
 # When `timeout` kills rustc it dies of SIGKILL too, and bash would print
@@ -257,6 +311,52 @@ impl Sandbox {
     }
 
     pub async fn run(&self, code: &str, limits: &Limits) -> std::io::Result<RunOutput> {
+        match self.execute(code, &JobKind::Run, limits).await? {
+            Execution::Finished(collected, duration_ms) => {
+                interpret(collected, limits, duration_ms)
+            }
+            Execution::JobTimeout(duration_ms) => Ok(job_timeout_output(limits, duration_ms)),
+        }
+    }
+
+    /// Grades `code` against `tests` (`POST /grade`): one compile of the
+    /// learner's code plus a generated harness, one run. Same container,
+    /// limits and caps as [`Sandbox::run`].
+    pub async fn grade(
+        &self,
+        code: &str,
+        tests: &[rr_grade::TestSpec],
+        limits: &Limits,
+    ) -> std::io::Result<GradeOutput> {
+        let nonce = uuid::Uuid::new_v4().simple().to_string();
+        let generated = rr_grade::build(code, tests, &nonce);
+        let kind = JobKind::Grade {
+            learner_bytes: generated.learner_bytes,
+        };
+        match self.execute(&generated.source, &kind, limits).await? {
+            Execution::Finished(collected, duration_ms) => {
+                interpret_grade(&generated, collected, limits, duration_ms)
+            }
+            Execution::JobTimeout(duration_ms) => Ok(GradeOutput {
+                tests: generated
+                    .ids
+                    .iter()
+                    .map(|id| rr_grade::TestResult::new(id, rr_grade::Status::NotRun))
+                    .collect(),
+                compile_errors_in: None,
+                reason: None,
+                run: job_timeout_output(limits, duration_ms),
+            }),
+        }
+    }
+
+    /// Starts the job, feeds it `stdin` and collects what it produced.
+    async fn execute(
+        &self,
+        stdin: &str,
+        kind: &JobKind,
+        limits: &Limits,
+    ) -> std::io::Result<Execution> {
         let started = Instant::now();
         // Local mode needs a work dir on the host; Docker uses the container's /tmp.
         let local_dir = match self {
@@ -264,10 +364,10 @@ impl Sandbox {
             Sandbox::Docker(_) => None,
         };
         let (mut cmd, mut guard) = match self {
-            Sandbox::Docker(d) => d.command(limits),
+            Sandbox::Docker(d) => d.command(limits, kind),
             Sandbox::Local => {
                 let dir = local_dir.as_ref().expect("local dir").path();
-                (local_command(dir, limits), ContainerGuard::none())
+                (local_command(dir, limits, kind), ContainerGuard::none())
             }
         };
 
@@ -287,7 +387,7 @@ impl Sandbox {
 
         let job = tokio::time::timeout(
             limits.job_timeout,
-            collect(&mut child, &handle, code, limits),
+            collect(&mut child, &handle, stdin, limits),
         )
         .await;
         let duration_ms = started.elapsed().as_millis() as u64;
@@ -297,13 +397,7 @@ impl Sandbox {
             Err(_) => {
                 let _ = child.start_kill();
                 guard.remove_now().await;
-                return Ok(RunOutput {
-                    stderr: format!(
-                        "Time limit exceeded: the job took longer than {} seconds.",
-                        limits.job_timeout.as_secs()
-                    ),
-                    ..RunOutput::new(false, Stage::Timeout, duration_ms)
-                });
+                return Ok(Execution::JobTimeout(duration_ms));
             }
         };
         // A docker CLI killed by a signal may leave its container running.
@@ -316,7 +410,7 @@ impl Sandbox {
         if let Some(e) = host_failure(&collected, matches!(self, Sandbox::Docker(_))) {
             return Err(e);
         }
-        interpret(collected, limits, duration_ms)
+        Ok(Execution::Finished(collected, duration_ms))
     }
 
     /// Removes containers this server started that no job owns any more,
@@ -439,7 +533,7 @@ pub async fn check_sandbox(sandbox: &Sandbox, limits: &Limits) -> Result<(), Str
 }
 
 impl DockerSandbox {
-    fn command(&self, limits: &Limits) -> (Command, ContainerGuard) {
+    fn command(&self, limits: &Limits, kind: &JobKind) -> (Command, ContainerGuard) {
         let name = format!("{}{}", self.prefix, uuid::Uuid::new_v4().simple());
         let mut cmd = Command::new("docker");
         cmd.args(["run", "-i", "--rm", "--init", "--name", &name])
@@ -471,7 +565,8 @@ impl DockerSandbox {
             .arg(limits.compile_timeout.as_secs().to_string())
             .arg(limits.run_timeout.as_secs().to_string())
             .arg("/tmp")
-            .arg(limits.program_vmem_kb().to_string());
+            .arg(limits.program_vmem_kb().to_string())
+            .args(kind.script_args());
         self.live.lock().unwrap().insert(name.clone());
         (
             cmd,
@@ -484,13 +579,14 @@ impl DockerSandbox {
     }
 }
 
-fn local_command(dir: &std::path::Path, limits: &Limits) -> Command {
+fn local_command(dir: &std::path::Path, limits: &Limits, kind: &JobKind) -> Command {
     let mut cmd = Command::new("bash");
     cmd.args(["-c", JOB_SCRIPT, "job"])
         .arg(limits.compile_timeout.as_secs().to_string())
         .arg(limits.run_timeout.as_secs().to_string())
         .arg(dir)
-        .arg(limits.program_vmem_kb().to_string());
+        .arg(limits.program_vmem_kb().to_string())
+        .args(kind.script_args());
     // Own process group, so the whole job can be killed at once.
     #[cfg(unix)]
     cmd.process_group(0);
@@ -566,6 +662,46 @@ impl Drop for ContainerGuard {
                 std::thread::spawn(remove);
             }
         }
+    }
+}
+
+/// Which job the script runs.
+enum JobKind {
+    Run,
+    Grade {
+        /// Length of the learner's code, the first bytes of the file.
+        learner_bytes: usize,
+    },
+}
+
+impl JobKind {
+    /// The script's arguments after the four common ones. `/run` passes
+    /// none, so its invocation is the one it always was.
+    fn script_args(&self) -> Vec<String> {
+        match self {
+            JobKind::Run => Vec::new(),
+            JobKind::Grade { learner_bytes } => {
+                let mut args = vec!["grade".to_string(), learner_bytes.to_string()];
+                args.extend(rr_grade::generate::RUN_ARGS.iter().map(|a| a.to_string()));
+                args
+            }
+        }
+    }
+}
+
+enum Execution {
+    Finished(Collected, u64),
+    /// The whole job passed `job_timeout` (the duration so far).
+    JobTimeout(u64),
+}
+
+fn job_timeout_output(limits: &Limits, duration_ms: u64) -> RunOutput {
+    RunOutput {
+        stderr: format!(
+            "Time limit exceeded: the job took longer than {} seconds.",
+            limits.job_timeout.as_secs()
+        ),
+        ..RunOutput::new(false, Stage::Timeout, duration_ms)
     }
 }
 
@@ -919,6 +1055,173 @@ fn interpret(c: Collected, limits: &Limits, duration_ms: u64) -> std::io::Result
     })
 }
 
+/// Written to stdout and stderr by grade mode when the combined compile
+/// failed, right before the learner-only check runs.
+const CHECK_MARKER: &[u8] = b"\x01RR-CHECK\n";
+/// Written to stdout after the check, followed by its exit code and a newline.
+const CHECK_RESULT: &[u8] = b"\x01RR-CHECK:";
+
+/// `bytes` without the lines that contain `needle`.
+fn drop_lines_containing(bytes: &[u8], needle: &[u8]) -> Vec<u8> {
+    let mut out = Vec::with_capacity(bytes.len());
+    for line in bytes.split_inclusive(|b| *b == b'\n') {
+        if find(line, needle).is_none() {
+            out.extend_from_slice(line);
+        }
+    }
+    out
+}
+
+/// [`interpret`] for a graded job.
+fn interpret_grade(
+    g: &rr_grade::Generated,
+    c: Collected,
+    limits: &Limits,
+    duration_ms: u64,
+) -> std::io::Result<GradeOutput> {
+    let max = limits.max_output;
+    let not_run = |g: &rr_grade::Generated| -> Vec<rr_grade::TestResult> {
+        g.ids
+            .iter()
+            .map(|id| rr_grade::TestResult::new(id, rr_grade::Status::NotRun))
+            .collect()
+    };
+
+    // The program started: results come from its records.
+    if c.stdout.starts_with(&both_markers()) {
+        let program_stdout = c.stdout[both_markers().len()..].to_vec();
+        let (warnings_raw, program_err) = match find(&c.stderr, RUN_MARKER) {
+            Some(i) => (
+                c.stderr[..i].to_vec(),
+                c.stderr[i + RUN_MARKER.len()..].to_vec(),
+            ),
+            None => (c.stderr.clone(), Vec::new()),
+        };
+        let code = c.code;
+        let overflow = c.overflow;
+        let mut run = interpret(c, limits, duration_ms)?;
+        let end = rr_grade::EndState {
+            end: if run.stage == Stage::Timeout {
+                rr_grade::End::TimedOut
+            } else if overflow {
+                rr_grade::End::OutputLimit
+            } else if run.mem_limit {
+                rr_grade::End::MemLimit
+            } else {
+                rr_grade::End::Exited(code.unwrap_or(-1))
+            },
+            stack_overflow: find(&program_err, b"has overflowed its stack").is_some(),
+        };
+        let stdout_text = String::from_utf8_lossy(&program_stdout);
+        let verdict = rr_grade::results(g, &stdout_text, &end);
+        // What /run would call the program's stdout is `main`'s output. The
+        // program's stderr is the whole run's, without the server's prose
+        // (a timeout and the like are the tests' statuses).
+        // The "[output truncated]" mark only belongs there if `main` was
+        // the one that printed too much (not a test, before `main` ran).
+        run.stdout = text(
+            verdict.main_stdout.as_bytes(),
+            max,
+            overflow && !verdict.main_stdout.is_empty(),
+        );
+        // When the output limit stops the job, the docker CLI may complain
+        // about its closed pipe on the same stream; that is not the program's.
+        let program_err = if overflow {
+            drop_lines_containing(&program_err, b"write /dev/stdout: broken pipe")
+        } else {
+            program_err
+        };
+        run.stderr = text(&program_err, max, overflow && program_err.len() >= max);
+        run.warnings = text(
+            rr_grade::learner_warnings(g, &String::from_utf8_lossy(&warnings_raw)).as_bytes(),
+            max,
+            false,
+        )
+        .trim()
+        .to_string();
+        run.success =
+            matches!(end.end, rr_grade::End::Exited(0)) && verdict.main == rr_grade::MainStatus::Ok;
+        return Ok(GradeOutput {
+            run,
+            compile_errors_in: None,
+            reason: verdict.reason,
+            tests: verdict.tests,
+        });
+    }
+
+    // Compiling failed, and the learner-only check ran: whose error is it?
+    if c.code == Some(COMPILE_FAILED) && !c.overflow && c.stdout.starts_with(COMPILE_MARKER) {
+        let (combined_json, check_text) = match find(&c.stderr, CHECK_MARKER) {
+            Some(i) => (
+                String::from_utf8_lossy(&c.stderr[..i]).into_owned(),
+                String::from_utf8_lossy(&c.stderr[i + CHECK_MARKER.len()..]).into_owned(),
+            ),
+            None => (
+                String::from_utf8_lossy(&c.stderr).into_owned(),
+                String::new(),
+            ),
+        };
+        // `RR-CHECK:<exit code>`; a check that was killed (137) or timed out
+        // has no verdict.
+        let rc = find(&c.stdout, CHECK_RESULT).and_then(|i| {
+            let rest = &c.stdout[i + CHECK_RESULT.len()..];
+            let end = rest.iter().position(|b| *b == b'\n')?;
+            std::str::from_utf8(&rest[..end]).ok()?.parse::<i32>().ok()
+        });
+        let check = match rc {
+            Some(0) => Some(rr_grade::CheckResult {
+                passed: true,
+                text: String::new(),
+            }),
+            Some(137) | Some(124) | None => None,
+            Some(_) => Some(rr_grade::CheckResult {
+                passed: false,
+                text: text(check_text.as_bytes(), max, false),
+            }),
+        };
+        let verdict = rr_grade::classify_compile(g, &combined_json, check.as_ref());
+        if verdict.reason.as_deref() == Some("harness") {
+            // A bug in the harness, or a documented residual. Logged
+            // without any code.
+            tracing::warn!(event = "grade_harness", "the test harness did not compile");
+        }
+        let mut run = RunOutput::new(false, Stage::Compile, duration_ms);
+        run.stderr = text(verdict.stderr.as_bytes(), max, false);
+        run.compiler_verdict = true;
+        run.truncated = verdict.stderr.len() > max;
+        return Ok(GradeOutput {
+            run,
+            compile_errors_in: Some(verdict.errors_in),
+            reason: verdict.reason,
+            tests: verdict.tests,
+        });
+    }
+
+    // The compiler printed too much: the combined diagnostics are cut off
+    // and say nothing reliable.
+    if c.stdout.starts_with(COMPILE_MARKER) && c.overflow {
+        let mut run = RunOutput::new(false, Stage::Compile, duration_ms);
+        run.stderr = "The compiler printed too much output.".to_string();
+        run.truncated = true;
+        return Ok(GradeOutput {
+            run,
+            compile_errors_in: Some(rr_grade::ErrorsIn::Code),
+            reason: None,
+            tests: not_run(g),
+        });
+    }
+
+    // Everything else is as in /run: not started (a server error), compile
+    // killed or out of memory.
+    let run = interpret(c, limits, duration_ms)?;
+    Ok(GradeOutput {
+        run,
+        compile_errors_in: None,
+        reason: None,
+        tests: not_run(g),
+    })
+}
+
 fn find(haystack: &[u8], needle: &[u8]) -> Option<usize> {
     haystack.windows(needle.len()).position(|w| w == needle)
 }
@@ -1137,6 +1440,214 @@ mod tests {
             assert_eq!(out.stage, Stage::Timeout, "exit {code}");
             assert!(out.compiler_verdict && !out.mem_limit);
         }
+    }
+
+    // --- grade mode ---
+
+    const NONCE: &str = "00112233445566778899aabbccddeeff";
+
+    fn generated() -> rr_grade::Generated {
+        let tests = [
+            rr_grade::TestSpec {
+                id: "a".into(),
+                code: Some("check!(true);".into()),
+                ..Default::default()
+            },
+            rr_grade::TestSpec {
+                id: "o".into(),
+                output: Some("hi".into()),
+                ..Default::default()
+            },
+        ];
+        rr_grade::build("fn main() { println!(\"hi\"); }\n", &tests, NONCE)
+    }
+
+    fn rec(kind: &str, fields: &[&str]) -> String {
+        let mut s = format!("\x01RR-T:{NONCE}:{kind}");
+        for f in fields {
+            s.push('\x1f');
+            s.push_str(f);
+        }
+        s.push('\n');
+        s
+    }
+
+    fn graded(c: Collected) -> std::io::Result<GradeOutput> {
+        interpret_grade(&generated(), c, &Limits::default(), 7)
+    }
+
+    fn statuses(out: &GradeOutput) -> Vec<rr_grade::Status> {
+        out.tests.iter().map(|t| t.status).collect()
+    }
+
+    fn passing_run_stdout() -> Vec<u8> {
+        let mut stdout = both_markers();
+        let mut body = String::from("running 1 test\n");
+        body += &rec("case", &["a"]);
+        body += &rec("pass", &[]);
+        body += &rec("main", &[]);
+        body += "hi\n";
+        body += &rec("mainend", &["ok"]);
+        body += &rec("done", &[]);
+        stdout.extend_from_slice(body.as_bytes());
+        stdout
+    }
+
+    #[test]
+    fn a_graded_run_reads_the_records() {
+        let c = collected(
+            &passing_run_stdout(),
+            b"warn\n\x01RR-RUN\nto stderr\n",
+            Some(0),
+        );
+        let out = graded(c).unwrap();
+        assert!(out.run.success);
+        assert_eq!(out.run.stage, Stage::Run);
+        assert_eq!(out.run.stdout, "hi\n");
+        assert_eq!(out.run.stderr, "to stderr\n");
+        assert_eq!(statuses(&out), [rr_grade::Status::Pass; 2]);
+        assert!(out.compile_errors_in.is_none() && out.reason.is_none());
+        assert!(out.run.compiler_verdict && !out.run.mem_limit);
+    }
+
+    #[test]
+    fn a_graded_run_that_times_out_or_crashes_says_so_per_test() {
+        use rr_grade::Status::*;
+        let mut stdout = both_markers();
+        stdout.extend_from_slice(rec("case", &["a"]).as_bytes());
+        // The in-container timer.
+        let out = graded(collected(&stdout, b"\x01RR-RUN\n", Some(124))).unwrap();
+        assert_eq!(
+            (out.run.stage, statuses(&out)),
+            (Stage::Timeout, vec![Timeout, NotRun])
+        );
+        assert!(
+            !out.run.stderr.contains("Time limit"),
+            "no server prose: {}",
+            out.run.stderr
+        );
+        // The host-side timer.
+        let mut c = collected(&stdout, b"\x01RR-RUN\n", Some(137));
+        c.timed_out = true;
+        let out = graded(c).unwrap();
+        assert_eq!(statuses(&out), [Timeout, NotRun]);
+        // Too much output, in a test: `main` never ran, so its stdout is
+        // empty, not "[output truncated]", and docker's pipe complaint is
+        // not the program's stderr.
+        let mut c = collected(
+            &stdout,
+            b"\x01RR-RUN\nwrite /dev/stdout: broken pipe\nreal stderr\n",
+            Some(137),
+        );
+        c.overflow = true;
+        let out = graded(c).unwrap();
+        assert_eq!(out.run.stdout, "");
+        assert!(
+            !out.run.stderr.contains("broken pipe"),
+            "{}",
+            out.run.stderr
+        );
+        assert!(out.run.stderr.contains("real stderr"));
+        assert_eq!(statuses(&out), [Crashed, NotRun]);
+        assert_eq!(out.tests[0].reason.as_deref(), Some("output_limit"));
+        assert_eq!(out.reason.as_deref(), Some("output_limit"));
+        // Memory.
+        let out = graded(collected(&stdout, b"\x01RR-RUN\n", Some(137))).unwrap();
+        assert_eq!(out.tests[0].reason.as_deref(), Some("mem_limit"));
+        assert!(out.run.mem_limit);
+        let out = graded(collected(
+            &stdout,
+            b"\x01RR-RUN\nmemory allocation of 9 bytes failed\n",
+            Some(134),
+        ))
+        .unwrap();
+        assert_eq!(out.tests[0].reason.as_deref(), Some("mem_limit"));
+        // Stack overflow, and any other exit.
+        let out = graded(collected(
+            &stdout,
+            b"\x01RR-RUN\nthread 'x' has overflowed its stack\n",
+            Some(134),
+        ))
+        .unwrap();
+        assert_eq!(out.tests[0].reason.as_deref(), Some("stack_overflow"));
+        let out = graded(collected(&stdout, b"\x01RR-RUN\n", Some(3))).unwrap();
+        assert_eq!(out.tests[0].reason.as_deref(), Some("exit:3"));
+    }
+
+    #[test]
+    fn a_failed_combined_compile_uses_the_learner_only_check() {
+        let json = r#"{"message":"mismatched types","level":"error","spans":[{"file_name":"/tmp/main.rs","line_start":1,"is_primary":true,"expansion":null}],"rendered":"error: json"}"#;
+        let mut stderr = json.as_bytes().to_vec();
+        stderr.extend_from_slice(b"\n\x01RR-CHECK\nerror[E0308]: mismatched types\n");
+        let mut stdout = COMPILE_MARKER.to_vec();
+        stdout.extend_from_slice(b"\x01RR-CHECK\n\x01RR-CHECK:1\n");
+        let out = graded(collected(&stdout, &stderr, Some(201))).unwrap();
+        assert_eq!(out.run.stage, Stage::Compile);
+        assert_eq!(out.compile_errors_in, Some(rr_grade::ErrorsIn::Code));
+        assert_eq!(out.run.stderr, "error[E0308]: mismatched types");
+        assert_eq!(statuses(&out), [rr_grade::Status::NotRun; 2]);
+        assert!(out.run.compiler_verdict);
+
+        // A check that was killed has no verdict; the combined diagnostics
+        // decide (here: an error in the learner's line 1).
+        let mut stdout = COMPILE_MARKER.to_vec();
+        stdout.extend_from_slice(b"\x01RR-CHECK\n\x01RR-CHECK:137\n");
+        let out = graded(collected(&stdout, &stderr, Some(201))).unwrap();
+        assert_eq!(out.compile_errors_in, Some(rr_grade::ErrorsIn::Code));
+        assert_eq!(out.run.stderr, "error: json");
+
+        // The check passed and the error is in a test: the tests don't fit.
+        let g = generated();
+        let line = g.ranges[0].start + 1;
+        let in_test = format!(
+            r#"{{"message":"cannot find function `f`","level":"error","spans":[{{"file_name":"/tmp/main.rs","line_start":{line},"is_primary":true,"expansion":null}}],"rendered":"x"}}"#
+        );
+        let mut stderr = in_test.into_bytes();
+        stderr.extend_from_slice(b"\n\x01RR-CHECK\n");
+        let mut stdout = COMPILE_MARKER.to_vec();
+        stdout.extend_from_slice(b"\x01RR-CHECK\n\x01RR-CHECK:0\n");
+        let out = graded(collected(&stdout, &stderr, Some(201))).unwrap();
+        assert_eq!(out.compile_errors_in, Some(rr_grade::ErrorsIn::Tests));
+        assert_eq!(out.run.stderr, "");
+        assert_eq!(
+            statuses(&out),
+            [rr_grade::Status::Error, rr_grade::Status::NotRun]
+        );
+    }
+
+    #[test]
+    fn graded_jobs_that_never_started_or_were_killed_while_compiling_are_as_in_run() {
+        assert!(graded(collected(b"", b"docker: boom", Some(125))).is_err());
+        let out = graded(collected(COMPILE_MARKER, b"", Some(202))).unwrap();
+        assert_eq!(out.run.stage, Stage::Timeout);
+        assert!(out.compile_errors_in.is_none());
+        assert_eq!(statuses(&out), [rr_grade::Status::NotRun; 2]);
+        let out = graded(collected(COMPILE_MARKER, b"partial", Some(137))).unwrap();
+        assert!(out.run.mem_limit);
+        assert!(!out.run.compiler_verdict);
+        assert!(graded(collected(COMPILE_MARKER, b"", Some(1))).is_err());
+    }
+
+    #[test]
+    fn a_program_cannot_fake_the_check_markers() {
+        // Printing them while running changes nothing: the run markers are
+        // there, so the records decide.
+        let mut stdout = passing_run_stdout();
+        stdout.extend_from_slice(b"\x01RR-CHECK:0\n");
+        let out = graded(collected(&stdout, b"\x01RR-RUN\n\x01RR-CHECK\n", Some(0))).unwrap();
+        assert_eq!(out.run.stage, Stage::Run);
+        assert_eq!(statuses(&out), [rr_grade::Status::Pass; 2]);
+    }
+
+    #[test]
+    fn the_script_arguments_of_each_job_kind() {
+        assert!(
+            JobKind::Run.script_args().is_empty(),
+            "/run passes nothing extra"
+        );
+        let args = JobKind::Grade { learner_bytes: 42 }.script_args();
+        assert_eq!(&args[..2], ["grade", "42"]);
+        assert_eq!(&args[2..], rr_grade::generate::RUN_ARGS);
     }
 
     #[test]

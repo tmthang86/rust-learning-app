@@ -240,6 +240,15 @@ if [[ $no_header_code == 401 ]]; then
 else
   fail "POST https://$DOMAIN/run without a header got HTTP $no_header_code (wanted 401)"
 fi
+grade_code="$(curl "${curl_opts[@]}" -o /dev/null -w '%{http_code}' -X POST \
+  -H 'content-type: application/json' \
+  -d '{"code":"fn main() {}","tests":[{"id":"a","output":""}]}' \
+  "https://$DOMAIN/grade" 2> /dev/null || true)"
+if [[ $grade_code == 401 ]]; then
+  pass "POST https://$DOMAIN/grade without an App Check header gets 401"
+else
+  fail "POST https://$DOMAIN/grade without a header got HTTP $grade_code (wanted 401, not 404: is /grade in the Caddyfile?)"
+fi
 other_code="$(curl "${curl_opts[@]}" -o /dev/null -w '%{http_code}' "https://$DOMAIN/" 2> /dev/null || true)"
 if [[ $other_code == 404 ]]; then
   pass "other paths get 404"

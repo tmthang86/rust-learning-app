@@ -387,12 +387,52 @@ class FakeReminderScheduler implements ReminderScheduler {
 }
 
 /// Returns fixed output, e.g. the exercise's expected answer.
+///
+/// Grading answers with [graded] when set; otherwise it grades the fixed
+/// [result] the way the runner would grade a program that printed it: output
+/// tests pass when the run succeeded and its stdout matches, code tests are
+/// reported as not run.
 class FakeRunner implements CodeRunner {
-  FakeRunner(this.result);
+  FakeRunner(this.result, {this.graded});
   RunResult result;
+  GradeResult? graded;
+
+  /// The tests of every grading request, newest last.
+  final List<List<ExerciseTest>> gradeRequests = [];
 
   @override
   Future<RunResult> run(String source) async => result;
+
+  @override
+  Future<GradeResult> grade(String source, List<ExerciseTest> tests) async {
+    gradeRequests.add(tests);
+    final fixed = graded;
+    if (fixed != null) return fixed;
+    final r = result;
+    if (r.stage == RunStage.unavailable) {
+      return GradeResult.unavailable(r.stderr);
+    }
+    return GradeResult(
+      success: r.success,
+      stage: r.stage,
+      stdout: r.stdout,
+      stderr: r.stderr,
+      warnings: r.warnings,
+      tests: [
+        for (final t in tests)
+          TestResult(
+            id: t.id,
+            status: !t.isOutput || r.stage != RunStage.run
+                ? TestStatus.notRun
+                : r.success && r.stdout.trim() == t.output!.trim()
+                ? TestStatus.pass
+                : TestStatus.fail,
+            expected: t.output,
+            actual: r.stdout,
+          ),
+      ],
+    );
+  }
 }
 
 /// Serves course content from memory instead of the bundled assets.

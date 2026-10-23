@@ -1303,6 +1303,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "rr-grade"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "rust-runner"
 version = "0.2.0"
 dependencies = [
@@ -1314,6 +1322,7 @@ dependencies = [
  "jsonwebtoken",
  "libc",
  "reqwest",
+ "rr-grade",
  "serde",
  "serde_json",
  "tempfile",

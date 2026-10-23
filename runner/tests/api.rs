@@ -8,7 +8,7 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use rust_runner::AppState;
 use rust_runner::sandbox::{Limits, Sandbox};
-use serde_json::Value;
+use serde_json::{Value, json};
 use tokio::sync::Semaphore;
 
 fn state(sandbox: Sandbox) -> Arc<AppState> {
@@ -309,6 +309,439 @@ async fn program_cannot_print_the_markers_to_fake_a_stage() {
     assert!(out["stdout"].as_str().unwrap().contains("fake"), "{out}");
 }
 
+// --- POST /grade ---
+
+async fn post_grade(state: Arc<AppState>, code: &str, tests: Value) -> (StatusCode, Value) {
+    let (status, _, body) = common::send(
+        common::router(state, "127.0.0.1"),
+        common::grade_request(code, tests),
+    )
+    .await;
+    (status, body)
+}
+
+async fn grade_local(code: &str, tests: Value) -> Value {
+    let (status, body) = post_grade(state(Sandbox::Local), code, tests).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    body
+}
+
+/// `["pass", "fail", ...]` of a `/grade` answer, in request order.
+fn statuses(out: &Value) -> Vec<String> {
+    out["tests"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|t| t["status"].as_str().unwrap().to_string())
+        .collect()
+}
+
+const CHECK_AGE: &str = "fn check_age(age: u32) -> Result<u32, String> {\n    if age < 18 {\n        Err(String::from(\"too young\"))\n    } else {\n        Ok(age)\n    }\n}\n\nfn main() {\n    match check_age(15) {\n        Ok(a) => println!(\"welcome, age {a}\"),\n        Err(e) => println!(\"error: {e}\"),\n    }\n}\n";
+
+fn age_tests() -> Value {
+    json!([
+        { "id": "fifteen", "code": "check_eq!(check_age(15), Err(String::from(\"too young\")));" },
+        { "id": "thirty", "code": "check_eq!(check_age(30), Ok(30));" },
+        { "id": "boundary", "code": "check_eq!(check_age(18), Ok(18));" },
+        { "id": "prints", "output": "error: too young" },
+    ])
+}
+
+#[tokio::test]
+async fn g1_the_solution_passes_every_test() {
+    let out = grade_local(CHECK_AGE, age_tests()).await;
+    assert_eq!(statuses(&out), ["pass"; 4], "{out}");
+    assert_eq!(out["success"], true);
+    assert_eq!(out["stage"], "run");
+    assert_eq!(out["stdout"], "error: too young\n");
+    assert!(
+        out["compileErrorsIn"].is_null() && out["reason"].is_null(),
+        "{out}"
+    );
+    assert_eq!(out["warnings"], "");
+    assert!(out["durationMs"].is_u64());
+}
+
+#[tokio::test]
+async fn g2_a_todo_starter_panics_with_not_yet_implemented() {
+    let starter = CHECK_AGE.replace(
+        "    if age < 18 {\n        Err(String::from(\"too young\"))\n    } else {\n        Ok(age)\n    }\n",
+        "    todo!()\n",
+    );
+    let out = grade_local(&starter, age_tests()).await;
+    assert_eq!(
+        statuses(&out),
+        ["panic", "panic", "panic", "panic"],
+        "{out}"
+    );
+    let t = &out["tests"][0];
+    assert!(
+        t["message"]
+            .as_str()
+            .unwrap()
+            .contains("not yet implemented"),
+        "{out}"
+    );
+    assert_eq!(t["line"], 2);
+    // Output tests fail because main panics (it calls the todo!() too).
+    assert_eq!(out["success"], false);
+}
+
+#[tokio::test]
+async fn g3_a_renamed_function_means_the_tests_do_not_fit() {
+    let renamed = CHECK_AGE.replace("check_age", "verify_age");
+    let out = grade_local(&renamed, age_tests()).await;
+    assert_eq!(out["stage"], "compile", "{out}");
+    assert_eq!(out["compileErrorsIn"], "tests", "{out}");
+    assert_eq!(statuses(&out), ["error", "error", "error", "not_run"]);
+    assert_eq!(out["tests"][0]["reason"], "tests_dont_fit");
+    assert!(
+        out["tests"][0]["message"]
+            .as_str()
+            .unwrap()
+            .contains("cannot find function"),
+        "{out}"
+    );
+    assert_eq!(out["stderr"], "");
+}
+
+/// Local jobs run in a random temp dir; Docker jobs always in /tmp. Drops
+/// the directory so two jobs' compiler output can be compared.
+fn without_dir(text: &str) -> String {
+    text.lines()
+        .map(|l| match l.find("/main.rs") {
+            Some(i) => {
+                let start = l[..i].rfind(' ').map_or(0, |p| p + 1);
+                format!("{}{}", &l[..start], &l[i + 1..])
+            }
+            None => l.to_string(),
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+#[tokio::test]
+async fn g3b_compile_errors_in_the_learners_code_read_exactly_as_under_run() {
+    let cases = [
+        (
+            "missing brace",
+            "fn add(a: i32) -> i32 {\n    a + 1\n\nfn main() {}\n",
+        ),
+        (
+            "type error",
+            "fn add(a: i32) -> i32 { \"x\" }\nfn main() {}\n",
+        ),
+        (
+            "borrow error",
+            "fn add(a: i32) -> i32 { let s = String::new(); let t = s; let _u = s; let _ = t; a }\nfn main() {}\n",
+        ),
+        // These two pass a metadata-only check, which is why the learner-only
+        // check uses --emit=mir.
+        (
+            "arithmetic_overflow",
+            "fn add(a: i32) -> i32 { let x: u8 = 255 + 1; a + x as i32 }\nfn main() {}\n",
+        ),
+        (
+            "unconditional_panic",
+            "fn add(a: i32) -> i32 { a + [1, 2, 3][5] }\nfn main() {}\n",
+        ),
+    ];
+    for (name, code) in cases {
+        let run = run_local(code).await;
+        let graded = grade_local(
+            code,
+            json!([{ "id": "t", "code": "check_eq!(add(1), 2);" }]),
+        )
+        .await;
+        assert_eq!(run["stage"], "compile", "{name}");
+        assert_eq!(graded["stage"], "compile", "{name}: {graded}");
+        assert_eq!(graded["compileErrorsIn"], "code", "{name}: {graded}");
+        assert_eq!(
+            without_dir(graded["stderr"].as_str().unwrap()),
+            without_dir(run["stderr"].as_str().unwrap()),
+            "{name}"
+        );
+        assert_eq!(statuses(&graded), ["not_run"], "{name}");
+    }
+}
+
+#[tokio::test]
+async fn g3c_a_learners_own_cfg_test_error_is_reported_as_theirs() {
+    let code = "fn add(a: i32) -> i32 { a }\nfn main() {}\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn t() { let x: i32 = \"a\"; }\n}\n";
+    let out = grade_local(
+        code,
+        json!([{ "id": "t", "code": "check_eq!(add(1), 1);" }]),
+    )
+    .await;
+    assert_eq!(out["compileErrorsIn"], "code", "{out}");
+    assert!(
+        out["stderr"].as_str().unwrap().contains("mismatched types"),
+        "{out}"
+    );
+    assert!(out["reason"].is_null(), "{out}");
+}
+
+#[tokio::test]
+async fn g3d_deny_warnings_and_forbid_unsafe() {
+    let code =
+        "#![deny(warnings)]\nfn id(n: i32) -> i32 { n }\nfn main() { println!(\"{}\", id(1)); }\n";
+    let out = grade_local(
+        code,
+        json!([
+            { "id": "a", "code": "check_eq!(id(1), 1);" },
+            { "id": "o", "output": "1" },
+            { "id": "p", "code": "let r: Result<i32, i32> = Err(1); r.unwrap();", "panics": "" },
+        ]),
+    )
+    .await;
+    assert_eq!(statuses(&out), ["pass"; 3], "{out}");
+
+    // The documented residual: the unsafe capture code is refused.
+    let forbid = "#![forbid(unsafe_code)]\nfn id(n: i32) -> i32 { n }\nfn main() {}\n";
+    let out = grade_local(
+        forbid,
+        json!([{ "id": "cap", "code": "check_eq!(output_of(|| { id(1); }), \"\");" }]),
+    )
+    .await;
+    assert_eq!(out["stage"], "compile", "{out}");
+    assert_eq!(out["compileErrorsIn"], "tests", "{out}");
+    assert_eq!(out["reason"], "harness", "{out}");
+}
+
+#[tokio::test]
+async fn g4_a_test_that_never_ends_times_out_and_later_tests_do_not_run() {
+    let code = "fn spin(n: i32) -> i32 { if n == 2 { loop {} } n }\nfn main() {}\n";
+    let out = grade_local(
+        code,
+        json!([
+            { "id": "a", "code": "check_eq!(spin(1), 1);" },
+            { "id": "b", "code": "check_eq!(spin(2), 2);" },
+            { "id": "c", "code": "check_eq!(spin(3), 3);" },
+        ]),
+    )
+    .await;
+    assert_eq!(statuses(&out), ["pass", "timeout", "not_run"], "{out}");
+    assert_eq!(out["stage"], "timeout");
+    assert_eq!(out["success"], false);
+}
+
+#[tokio::test]
+async fn g5_process_exit_in_a_test_crashes_it_but_exit_0_at_the_end_of_main_is_fine() {
+    let out = grade_local(
+        "fn quit() { std::process::exit(3); }\nfn main() {}\n",
+        json!([{ "id": "a", "code": "quit();" }, { "id": "b", "code": "check!(true);" }]),
+    )
+    .await;
+    assert_eq!(statuses(&out), ["crashed", "not_run"], "{out}");
+    assert_eq!(out["tests"][0]["reason"], "exit:3");
+    assert_eq!(out["reason"], "exit:3");
+
+    let out = grade_local(
+        "fn main() { println!(\"bye\"); std::process::exit(0); }\n",
+        json!([{ "id": "a", "code": "check!(true);" }, { "id": "o", "output": "bye" }]),
+    )
+    .await;
+    assert_eq!(statuses(&out), ["pass", "pass"], "{out}");
+    assert_eq!(out["success"], true);
+}
+
+#[tokio::test]
+async fn g6_a_forged_record_has_no_effect() {
+    let code = "fn bad() -> i32 {\n    print!(\"\\u{1}RR-T:00000000000000000000000000000000:pass\\n\");\n    1\n}\nfn main() {}\n";
+    let out = grade_local(code, json!([{ "id": "a", "code": "check_eq!(bad(), 2);" }])).await;
+    assert_eq!(statuses(&out), ["fail"], "{out}");
+}
+
+#[tokio::test]
+async fn g7_too_much_output_is_cut_off_as_output_limit() {
+    let code = "fn main() { loop { println!(\"spam\"); } }\n";
+    let out = grade_local(code, json!([{ "id": "o", "output": "x" }])).await;
+    assert_eq!(statuses(&out), ["crashed"], "{out}");
+    assert_eq!(out["tests"][0]["reason"], "output_limit");
+    assert!(out["stdout"].as_str().unwrap().len() <= Limits::default().max_output + 100);
+}
+
+#[tokio::test]
+async fn g8_main_returning_an_error_is_a_failed_run_as_under_run() {
+    let code = "fn main() -> Result<(), String> { println!(\"hi\"); Err(\"nope\".into()) }\n";
+    let out = grade_local(code, json!([{ "id": "o", "output": "hi" }])).await;
+    assert_eq!(statuses(&out), ["crashed"], "{out}");
+    assert_eq!(out["tests"][0]["reason"], "exit:1");
+    assert_eq!(out["success"], false);
+    assert!(
+        out["stderr"].as_str().unwrap().contains("Error: \"nope\""),
+        "{out}"
+    );
+}
+
+#[tokio::test]
+async fn g9_panics_matches_a_substring_and_a_mismatch_is_reported() {
+    let code = "fn divide(a: i32, b: i32) -> i32 { if b == 0 { panic!(\"cannot divide by zero\"); } a / b }\nfn main() {}\n";
+    let out = grade_local(
+        code,
+        json!([
+            { "id": "ok", "code": "let _ = divide(1, 0);", "panics": "cannot divide" },
+            { "id": "wrong", "code": "let _ = divide(1, 0);", "panics": "overflow" },
+            { "id": "none", "code": "let _ = divide(4, 2);", "panics": "" },
+        ]),
+    )
+    .await;
+    assert_eq!(statuses(&out), ["pass", "panic", "nopanic"], "{out}");
+    assert_eq!(out["tests"][1]["message"], "cannot divide by zero");
+    assert_eq!(out["tests"][1]["line"], 1);
+}
+
+#[tokio::test]
+async fn g10_a_learners_own_failing_test_is_not_run() {
+    let code = "fn main() { println!(\"ok\"); }\n#[test]\nfn mine() { panic!(\"no\"); }\n";
+    let out = grade_local(code, json!([{ "id": "o", "output": "ok" }])).await;
+    assert_eq!(statuses(&out), ["pass"], "{out}");
+}
+
+#[tokio::test]
+async fn g11_bad_test_lists_get_400_tests_invalid() {
+    let many: Vec<Value> = (0..51)
+        .map(|i| json!({ "id": format!("t{i}"), "code": "check!(true);" }))
+        .collect();
+    let long_code = "x".repeat(5000);
+    let bad = [
+        json!([]),
+        json!(many),
+        json!([{ "id": "A", "code": "check!(true);" }]),
+        json!([{ "id": "a", "code": "check!(true);" }, { "id": "a", "code": "check!(true);" }]),
+        json!([{ "id": "a" }]),
+        json!([{ "id": "a", "code": "x", "output": "y" }]),
+        json!([{ "id": "a", "output": "y", "panics": "z" }]),
+        json!([{ "id": "a", "code": long_code }]),
+    ];
+    for tests in bad {
+        let (status, body) = post_grade(state(Sandbox::Local), "fn main() {}", tests.clone()).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{tests}");
+        assert_eq!(body["code"], "tests_invalid", "{body}");
+        assert!(body["error"].is_string());
+    }
+    // Same code checks as /run.
+    let t = json!([{ "id": "a", "code": "check!(true);" }]);
+    let (status, body) = post_grade(state(Sandbox::Local), "  ", t.clone()).await;
+    assert_eq!(
+        (status, &body["code"]),
+        (StatusCode::BAD_REQUEST, &json!("code_empty"))
+    );
+    let big = "a".repeat(rust_runner::MAX_CODE_BYTES + 10);
+    let (status, body) = post_grade(state(Sandbox::Local), &big, t.clone()).await;
+    assert_eq!(
+        (status, &body["code"]),
+        (StatusCode::PAYLOAD_TOO_LARGE, &json!("code_too_long"))
+    );
+    // A body past the hard limit.
+    let huge = "a".repeat(rust_runner::MAX_GRADE_BODY_BYTES + 10);
+    let (status, body) = post_grade(state(Sandbox::Local), &huge, t).await;
+    assert_eq!(
+        (status, &body["code"]),
+        (StatusCode::PAYLOAD_TOO_LARGE, &json!("code_too_long"))
+    );
+    // Not JSON, and a missing tests field.
+    let router = || common::router(state(Sandbox::Local), "127.0.0.1");
+    let req = Request::post("/grade")
+        .header("content-type", "application/json")
+        .body(Body::from("{\"code\":\"fn main() {}\"}"))
+        .unwrap();
+    let (status, _, v) = common::send(router(), req).await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(v["code"], "bad_request");
+}
+
+/// 20 threads at once: they work in `/run`, and must in `/grade`, where only
+/// the grading thread has the big stack (8 MiB each would not fit the
+/// sandbox's address-space cap).
+const MANY_THREADS: &str = "use std::thread;\nfn sum(n: usize) -> usize { let hs: Vec<_> = (0..n).map(|i| thread::spawn(move || i)).collect(); hs.into_iter().map(|h| h.join().unwrap()).sum() }\nfn main() { println!(\"{}\", sum(20)); }\n";
+
+#[tokio::test]
+async fn g13b_many_threads_work_in_run_and_in_grade() {
+    let run = run_local(MANY_THREADS).await;
+    assert_eq!(run["stdout"], "190\n", "{run}");
+    let out = grade_local(
+        MANY_THREADS,
+        json!([{ "id": "t", "code": "check_eq!(sum(20), 190);" }, { "id": "o", "output": "190" }]),
+    )
+    .await;
+    assert_eq!(statuses(&out), ["pass", "pass"], "{out}");
+}
+
+#[tokio::test]
+async fn g13_a_deep_recursion_works_in_run_and_in_grade() {
+    let code = "fn depth(n: u64, pad: [u8; 256]) -> u64 { if n == 0 { pad[0] as u64 } else { 1 + depth(n - 1, std::hint::black_box(pad)) } }\nfn main() { println!(\"{}\", depth(20_000, [0; 256])); }\n";
+    let run = run_local(code).await;
+    assert_eq!(run["stdout"], "20000\n", "{run}");
+    let out = grade_local(
+        code,
+        json!([
+            { "id": "deep", "code": "check_eq!(depth(20_000, [0; 256]), 20_000);" },
+            { "id": "o", "output": "20000" },
+        ]),
+    )
+    .await;
+    assert_eq!(statuses(&out), ["pass", "pass"], "{out}");
+}
+
+#[tokio::test]
+async fn g14_learner_names_that_shadow_the_prelude_still_compile() {
+    let code = "#![allow(dead_code)]\nenum Option { A }\nstruct String(i32);\nstruct Vec;\nstruct Box;\ntype Result<T> = std::result::Result<T, i32>;\nfn Ok() {}\nfn Err() {}\nfn Some() {}\nfn None() {}\nfn double(n: i32) -> i32 { n * 2 }\nfn main() { println!(\"{}\", double(2)); }\n";
+    let out = grade_local(
+        code,
+        json!([{ "id": "a", "code": "check_eq!(double(2), 4);" }, { "id": "o", "output": "4" }]),
+    )
+    .await;
+    assert_eq!(statuses(&out), ["pass", "pass"], "{out}");
+}
+
+#[tokio::test]
+async fn g15_a_learner_forbid_unused_variables_with_clean_tests_passes() {
+    let code = "#![forbid(unused_variables)]\nfn id(n: i32) -> i32 { n }\nfn main() { println!(\"{}\", id(1)); }\n";
+    let out = grade_local(code, json!([{ "id": "a", "code": "check_eq!(id(1), 1);" }])).await;
+    assert_eq!(statuses(&out), ["pass"], "{out}");
+}
+
+#[tokio::test]
+async fn g16_a_panic_in_a_thread_the_learner_spawns_reaches_stderr() {
+    let code =
+        "fn go() { let _ = std::thread::spawn(|| panic!(\"in thread\")).join(); }\nfn main() {}\n";
+    let out = grade_local(code, json!([{ "id": "a", "code": "go();" }])).await;
+    assert_eq!(statuses(&out), ["pass"], "{out}");
+    assert!(
+        out["stderr"].as_str().unwrap().contains("in thread"),
+        "{out}"
+    );
+}
+
+#[tokio::test]
+async fn the_harness_is_not_given_the_learners_source_to_read() {
+    // The sources are deleted before the program starts.
+    let code = "fn leftover(dir: &std::path::Path) -> bool { dir.join(\"main.rs\").exists() || dir.join(\"g\").exists() }\nfn main() {}\n";
+    let out = grade_local(
+        code,
+        json!([{ "id": "a", "code": "let exe = std::env::current_exe().unwrap(); check!(!leftover(exe.parent().unwrap()));" }]),
+    )
+    .await;
+    assert_eq!(statuses(&out), ["pass"], "{out}");
+}
+
+#[tokio::test]
+async fn grade_and_run_share_one_set_of_slots() {
+    let mut st = AppState::for_tests(Sandbox::Local, Limits::default());
+    st.slots = Semaphore::new(0);
+    st.queue_timeout = Duration::from_millis(100);
+    let st = Arc::new(st);
+    let (status, body) = post_grade(
+        st.clone(),
+        "fn main() {}",
+        json!([{ "id": "a", "output": "" }]),
+    )
+    .await;
+    assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(body["code"], "busy");
+}
+
 // --- Docker tests (ignored by default) ---
 //
 // They need Docker and the sandbox image (`docker build -t rust-runner-sandbox
@@ -491,6 +924,130 @@ async fn docker_sandbox_runs_and_blocks_network() {
     );
 }
 
+/// `/grade` in the container: the main cases, the stack size, no source file
+/// left for the program (D2), and `output_of` (D3, which needs dup2 to work
+/// under the container's kernel interface).
+#[tokio::test]
+#[ignore]
+async fn docker_grade_runs_the_cases() {
+    let _turn = DOCKER_SUITE.lock().await;
+    let grade = |code: &'static str, tests: Value| async move {
+        let (status, body) = post_grade(docker_state(), code, tests).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        body
+    };
+
+    // D1: G1 the solution passes.
+    let out = grade(CHECK_AGE, age_tests()).await;
+    assert_eq!(statuses(&out), ["pass"; 4], "{out}");
+    assert_eq!(out["success"], true, "{out}");
+
+    // G2: a todo!() starter.
+    let starter = CHECK_AGE.replace(
+        "    if age < 18 {\n        Err(String::from(\"too young\"))\n    } else {\n        Ok(age)\n    }\n",
+        "    todo!()\n",
+    );
+    let starter: &'static str = Box::leak(starter.into_boxed_str());
+    let out = grade(starter, age_tests()).await;
+    assert_eq!(statuses(&out)[0], "panic", "{out}");
+    assert!(
+        out["tests"][0]["message"]
+            .as_str()
+            .unwrap()
+            .contains("not yet implemented")
+    );
+
+    // G3: a renamed function, compile errors in the learner's code (the
+    // learner-only check runs in the container too).
+    let renamed: &'static str = Box::leak(
+        CHECK_AGE
+            .replace("check_age", "verify_age")
+            .into_boxed_str(),
+    );
+    let out = grade(renamed, age_tests()).await;
+    assert_eq!(out["compileErrorsIn"], "tests", "{out}");
+    let broken = "fn add(a: i32) -> i32 { let x: u8 = 255 + 1; a + x as i32 }\nfn main() {}\n";
+    let out = grade(
+        broken,
+        json!([{ "id": "t", "code": "check_eq!(add(1), 2);" }]),
+    )
+    .await;
+    assert_eq!(out["compileErrorsIn"], "code", "{out}");
+    assert!(
+        out["stderr"]
+            .as_str()
+            .unwrap()
+            .contains("arithmetic_overflow"),
+        "{out}"
+    );
+    let (_, run) = post_run(docker_state(), broken).await;
+    assert_eq!(
+        without_dir(out["stderr"].as_str().unwrap()),
+        without_dir(run["stderr"].as_str().unwrap())
+    );
+
+    // G4: an endless test.
+    let spin = "fn spin(n: i32) -> i32 { if n == 2 { loop {} } n }\nfn main() {}\n";
+    let out = grade(
+        spin,
+        json!([
+            { "id": "a", "code": "check_eq!(spin(1), 1);" },
+            { "id": "b", "code": "check_eq!(spin(2), 2);" },
+            { "id": "c", "code": "check_eq!(spin(3), 3);" },
+        ]),
+    )
+    .await;
+    assert_eq!(statuses(&out), ["pass", "timeout", "not_run"], "{out}");
+
+    // G13: the stack of a test is the main thread's.
+    let deep = "fn depth(n: u64, pad: [u8; 256]) -> u64 { if n == 0 { pad[0] as u64 } else { 1 + depth(n - 1, std::hint::black_box(pad)) } }\nfn main() { println!(\"{}\", depth(20_000, [0; 256])); }\n";
+    let out = grade(deep, json!([{ "id": "deep", "code": "check_eq!(depth(20_000, [0; 256]), 20_000);" }, { "id": "o", "output": "20000" }])).await;
+    assert_eq!(statuses(&out), ["pass", "pass"], "{out}");
+
+    // Many threads, under the sandbox's address-space cap.
+    let out = grade(
+        MANY_THREADS,
+        json!([{ "id": "t", "code": "check_eq!(sum(20), 190);" }, { "id": "o", "output": "190" }]),
+    )
+    .await;
+    assert_eq!(statuses(&out), ["pass", "pass"], "{out}");
+
+    // D2: nothing of the source is left in /tmp when the program runs.
+    let leftovers = "fn count() -> usize { std::fs::read_dir(\"/tmp\").unwrap().filter_map(|e| e.ok()).filter(|e| e.file_name() == \"main.rs\" || e.file_name() == \"g\").count() }\nfn main() {}\n";
+    let out = grade(
+        leftovers,
+        json!([{ "id": "a", "code": "check_eq!(count(), 0);" }]),
+    )
+    .await;
+    assert_eq!(statuses(&out), ["pass"], "{out}");
+
+    // D3: output_of captures prints in the container.
+    let greet = "fn greet() { println!(\"hello\"); }\nfn main() { greet(); }\n";
+    let out = grade(
+        greet,
+        json!([
+            { "id": "cap", "code": "check_eq!(output_of(|| greet()), \"hello\\n\");" },
+            { "id": "o", "output": "hello" },
+        ]),
+    )
+    .await;
+    assert_eq!(statuses(&out), ["pass", "pass"], "{out}");
+    assert_eq!(out["stdout"], "hello\n", "{out}");
+
+    // The capture is bounded: a flood inside output_of fails that test (the
+    // write past the limit panics) and does not fill the tmpfs.
+    let flood = "fn spam() { for _ in 0..2_000_000 { println!(\"0123456789012345678901234567890123456789\"); } }\nfn main() { println!(\"done\"); }\n";
+    let out = grade(
+        flood,
+        json!([
+            { "id": "spam", "code": "output_of(|| spam());", "panics": "failed printing" },
+            { "id": "o", "output": "done" },
+        ]),
+    )
+    .await;
+    assert_eq!(statuses(&out), ["pass", "pass"], "{out}");
+}
+
 /// A full tmpfs counts toward the sandbox's memory but not the program's
 /// address space; the program cap leaves room for both. The OOM was
 /// nondeterministic under gVisor, so this runs five times in a row.
@@ -562,4 +1119,74 @@ fn main() { println!("{}", BIG[7]); }"#;
     let stage = out["stage"].as_str().unwrap();
     assert!(stage == "compile" || stage == "timeout", "{out}");
     assert_eq!(out["success"], false, "{out}");
+}
+
+/// Whole-job time of `/grade` against `/run` (container start included) on
+/// the lessons' own solutions: the cost the design budgets at 1.5x. Prints
+/// the medians; run with `cargo test --test api cost -- --ignored --nocapture`.
+/// Set `COST_RUNS` for the number of rounds (default 3; the numbers in the design doc used 9).
+#[tokio::test]
+#[ignore]
+async fn cost_grade_against_run_on_lesson_solutions() {
+    let _turn = DOCKER_SUITE.lock().await;
+    let rounds: usize = std::env::var("COST_RUNS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(3);
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../assets/content/lessons");
+    let median = |mut v: Vec<f64>| {
+        v.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        v[v.len() / 2]
+    };
+    for id in ["u6-l2", "u12-l2", "u0-l1"] {
+        let lesson: Value =
+            serde_json::from_str(&std::fs::read_to_string(dir.join(format!("{id}.json"))).unwrap())
+                .unwrap();
+        let ex = &lesson["exercise"];
+        let solution = ex["solution"].as_str().unwrap().to_string();
+        let tests: Value = match ex.get("tests") {
+            Some(t) => Value::Array(
+                t.as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|t| {
+                        let mut t = t.clone();
+                        t.as_object_mut().unwrap().remove("label");
+                        t.as_object_mut().unwrap().remove("hidden");
+                        t
+                    })
+                    .collect(),
+            ),
+            None => json!([{ "id": "output", "output": ex["expectedOutput"] }]),
+        };
+        let (mut runs, mut grades) = (Vec::new(), Vec::new());
+        for round in 0..rounds + 1 {
+            let t = std::time::Instant::now();
+            let (status, out) = post_run(docker_state(), &solution).await;
+            assert_eq!(status, StatusCode::OK, "{out}");
+            let run_s = t.elapsed().as_secs_f64();
+            let t = std::time::Instant::now();
+            let (status, out) = post_grade(docker_state(), &solution, tests.clone()).await;
+            assert_eq!(status, StatusCode::OK, "{out}");
+            let grade_s = t.elapsed().as_secs_f64();
+            let passed = out["tests"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|t| t["status"] == "pass")
+                .count();
+            assert_eq!(passed, out["tests"].as_array().unwrap().len(), "{out}");
+            if round > 0 {
+                // The first round warms the image cache.
+                runs.push(run_s);
+                grades.push(grade_s);
+            }
+        }
+        let (r, g) = (median(runs), median(grades));
+        println!(
+            "COST {id}: run {r:.3}s, grade {g:.3}s, ratio {:.2} ({} tests)",
+            g / r,
+            tests.as_array().unwrap().len()
+        );
+    }
 }

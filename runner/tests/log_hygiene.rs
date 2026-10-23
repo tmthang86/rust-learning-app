@@ -139,14 +139,41 @@ async fn logs_never_contain_code_tokens_or_addresses() {
         ]
     );
 
+    // /grade: a request that runs, with test code, ids, expected output and
+    // a failure message that must not reach the logs. It uses another token
+    // (the first one is rate limited).
+    let test_marker = "SECRET_TEST_MARKER_5c1d";
+    let grade_token = valid_token();
+    let graded = send(
+        router(st.clone(), "127.0.0.1"),
+        grade_request_with(
+            &format!("fn f() -> i32 {{ 1 }}\nfn main() {{ println!(\"{code_marker}\"); }}"),
+            serde_json::json!([
+                { "id": "secret-id-5c1d", "code": format!("check_eq!(f(), 2); let _ = \"{test_marker}\";") },
+                { "id": "out", "output": test_marker },
+            ]),
+            &[
+                ("x-firebase-appcheck", &grade_token),
+                ("x-forwarded-for", client_ip),
+            ],
+        ),
+    )
+    .await;
+    assert_eq!(graded.0, StatusCode::OK, "{}", graded.2);
+    assert_eq!(graded.2["tests"][0]["status"], "fail");
+
     let logs = String::from_utf8(buffer.0.lock().unwrap().clone()).unwrap();
     let lines = logs
         .lines()
         .filter(|l| l.contains("\"run_finished\""))
         .count();
-    assert_eq!(lines, 5, "one run_finished line per request:\n{logs}");
+    assert_eq!(lines, 6, "one run_finished line per request:\n{logs}");
     for secret in [
         code_marker,
+        test_marker,
+        "secret-id-5c1d",
+        "check_eq", // test code
+        "f() == 2", // a failure's expression
         client_ip,
         "SECRET_BEARER_MARKER",
         "SECRET_UA_MARKER",
@@ -168,6 +195,9 @@ async fn logs_never_contain_code_tokens_or_addresses() {
         "\"auth_error\":\"missing\"",
         "\"platform\":\"android\"",
         "\"request_id\":",
+        "\"endpoint\":\"grade\"",
+        "\"tests_total\":2",
+        "\"tests_passed\":0",
     ] {
         assert!(logs.contains(wanted), "missing {wanted} in:\n{logs}");
     }

@@ -153,18 +153,102 @@ class LessonSection {
   }
 }
 
+/// One test of an exercise. A **code test** ([code]) is a few Rust
+/// statements run inside the learner's crate; an **output test** ([output])
+/// compares what `main` prints. Hidden tests are shown only as a count in
+/// the UI (they still ship with the app: hidden, not secret).
+class ExerciseTest {
+  const ExerciseTest({
+    required this.id,
+    this.label,
+    this.hidden = false,
+    this.code,
+    this.panics,
+    this.output,
+  });
+
+  /// `^[a-z0-9][a-z0-9-]{0,39}$`, unique in the exercise. Not shown.
+  final String id;
+
+  /// What the test checks, in words. Required (and translated) on visible
+  /// tests; on hidden ones a note for reviewers that is never shown.
+  final String? label;
+  final bool hidden;
+
+  /// Rust statements, the body of a `fn()`. Null for an output test.
+  final String? code;
+
+  /// With [code]: the test passes only if the code panics with a message
+  /// containing this text (empty = any panic).
+  final String? panics;
+
+  /// The expected stdout of `main`. Null for a code test.
+  final String? output;
+
+  bool get isOutput => output != null;
+
+  /// The id the legacy `expectedOutput` is graded under.
+  static const legacyId = 'output';
+
+  /// A lesson with only `expectedOutput`: one output test.
+  factory ExerciseTest.legacy(String expectedOutput) =>
+      ExerciseTest(id: legacyId, output: expectedOutput);
+
+  /// Throws [FormatException] when [json] isn't a test.
+  factory ExerciseTest.fromJson(Map<String, dynamic> json) {
+    final id = json['id'];
+    final code = json['code'];
+    final output = json['output'];
+    if (id is! String || id.isEmpty) {
+      throw const FormatException('a test needs an "id"');
+    }
+    if ((code is String) == (output is String)) {
+      throw FormatException('test "$id" needs exactly one of code and output');
+    }
+    final label = json['label'];
+    final panics = json['panics'];
+    if ((label != null && label is! String) ||
+        (panics != null && panics is! String)) {
+      throw FormatException('test "$id" has a "label" or "panics" that is not text');
+    }
+    return ExerciseTest(
+      id: id,
+      label: label as String?,
+      hidden: json['hidden'] == true,
+      code: code is String ? code : null,
+      panics: panics as String?,
+      output: output is String ? output : null,
+    );
+  }
+
+  /// What the runner is sent: no label and no `hidden`.
+  Map<String, Object> toRequestJson() => {
+        'id': id,
+        'code': ?code,
+        'panics': ?panics,
+        'output': ?output,
+      };
+}
+
 class Exercise {
   const Exercise({
     required this.prompt,
     required this.starter,
-    required this.expectedOutput,
+    this.expectedOutput,
+    this.declaredTests = const [],
     this.solution,
     this.hints = const [],
   });
 
   final String prompt;
   final String starter;
-  final String expectedOutput;
+
+  /// Legacy: the output `main` must print. Only present when the exercise
+  /// has no `tests`; graded as one output test.
+  final String? expectedOutput;
+
+  /// The `tests` of the lesson file (empty for a legacy exercise).
+  final List<ExerciseTest> declaredTests;
 
   /// A reference answer, checked by tool/check_lessons.py.
   final String? solution;
@@ -172,15 +256,47 @@ class Exercise {
   /// Up to three nudges, shown one at a time, from general to concrete.
   final List<String> hints;
 
-  factory Exercise.fromJson(Map<String, dynamic> json) => Exercise(
-        prompt: json['prompt'] as String,
-        starter: json['starter'] as String,
-        expectedOutput: json['expectedOutput'] as String,
-        solution: json['solution'] as String?,
-        hints: ((json['hints'] as List?) ?? const [])
-            .whereType<String>()
-            .toList(),
+  /// What grades the exercise: its tests, or the legacy single output test.
+  List<ExerciseTest> get tests => declaredTests.isNotEmpty
+      ? declaredTests
+      : [ExerciseTest.legacy(expectedOutput ?? '')];
+
+  /// Throws [FormatException] when there is neither `tests` nor
+  /// `expectedOutput`.
+  factory Exercise.fromJson(Map<String, dynamic> json) {
+    final tests = json['tests'];
+    final expected = json['expectedOutput'];
+    if (tests == null && expected is! String) {
+      throw const FormatException(
+        'an exercise needs "tests" or "expectedOutput"',
       );
+    }
+    if (tests != null && tests is! List) {
+      throw const FormatException('"tests" is not a list');
+    }
+    final declared = tests == null
+        ? const <ExerciseTest>[]
+        : [
+            for (final t in tests as List)
+              if (t is Map<String, dynamic>)
+                ExerciseTest.fromJson(t)
+              else
+                throw const FormatException('a test is not an object'),
+          ];
+    if (tests != null && declared.isEmpty) {
+      throw const FormatException('"tests" is empty');
+    }
+    return Exercise(
+      prompt: json['prompt'] as String,
+      starter: json['starter'] as String,
+      expectedOutput: tests == null ? expected as String : null,
+      declaredTests: declared,
+      solution: json['solution'] as String?,
+      hints: ((json['hints'] as List?) ?? const [])
+          .whereType<String>()
+          .toList(),
+    );
+  }
 }
 
 class QuizQuestion {
@@ -222,6 +338,22 @@ class Lesson {
   /// translation must be this close to the English lesson to be used, so
   /// completing it, checking the exercise and scoring the quiz work the
   /// same in every language.
+  /// Tests match when everything but the translated `label` is equal.
+  static bool _sameTests(List<ExerciseTest> a, List<ExerciseTest> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      final x = a[i], y = b[i];
+      if (x.id != y.id ||
+          x.hidden != y.hidden ||
+          x.code != y.code ||
+          x.panics != y.panics ||
+          x.output != y.output) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   bool hasSameStructureAs(Lesson other) {
     if (id != other.id || sections.length != other.sections.length) {
       return false;
@@ -238,7 +370,8 @@ class Lesson {
         (e.hints.length != f.hints.length ||
             e.starter != f.starter ||
             e.expectedOutput != f.expectedOutput ||
-            e.solution != f.solution)) {
+            e.solution != f.solution ||
+            !_sameTests(e.declaredTests, f.declaredTests))) {
       return false;
     }
     if (quiz.length != other.quiz.length) return false;

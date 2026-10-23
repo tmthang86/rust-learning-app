@@ -42,9 +42,31 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy hoàn thành check_age để nó trả về Err(String::from(\"too young\")) khi age nhỏ hơn 18, và Ok(age) trong các trường hợp còn lại. Với 15, chương trình phải in ra: error: too young",
+    "prompt": "Hãy hoàn thành check_age để nó trả về Err(String::from(\"too young\")) khi age nhỏ hơn 18, và Ok(age) trong các trường hợp còn lại.",
     "starter": "fn check_age(age: u32) -> Result<u32, String> {\n    Ok(age)\n}\n\nfn main() {\n    match check_age(15) {\n        Ok(a) => println!(\"welcome, age {a}\"),\n        Err(e) => println!(\"error: {e}\"),\n    }\n}",
-    "expectedOutput": "error: too young",
+    "tests": [
+      {
+        "id": "fifteen-too-young",
+        "label": "15 tuổi là chưa đủ tuổi",
+        "code": "check_eq!(check_age(15), Err(String::from(\"too young\")));"
+      },
+      {
+        "id": "thirty-ok",
+        "label": "30 được chấp nhận",
+        "code": "check_eq!(check_age(30), Ok(30));"
+      },
+      {
+        "id": "boundary-18",
+        "hidden": true,
+        "label": "18 is the first allowed age",
+        "code": "check_eq!(check_age(18), Ok(18));"
+      },
+      {
+        "id": "boundary-17",
+        "hidden": true,
+        "code": "check_eq!(check_age(17), Err(String::from(\"too young\")));"
+      }
+    ],
     "solution": "fn check_age(age: u32) -> Result<u32, String> {\n    if age < 18 {\n        Err(String::from(\"too young\"))\n    } else {\n        Ok(age)\n    }\n}\n\nfn main() {\n    match check_age(15) {\n        Ok(a) => println!(\"welcome, age {a}\"),\n        Err(e) => println!(\"error: {e}\"),\n    }\n}",
     "hints": [
       "Bạn cần kiểm tra tuổi rồi trả về một trong hai kết quả. Công cụ nào trong Unit 2 chọn giữa hai trường hợp?",

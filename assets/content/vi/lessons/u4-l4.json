@@ -42,14 +42,48 @@
     }
   ],
   "exercise": {
-    "prompt": "first_even trả về một Option. Hãy in giá trị của nó, hoặc 0 nếu không có số chẵn, bằng unwrap_or. Chương trình phải in ra: 8",
-    "starter": "fn first_even(numbers: &[i32]) -> Option<i32> {\n    for &n in numbers {   // each item is a &i32; &n gives the plain number n\n        if n % 2 == 0 {\n            return Some(n);\n        }\n    }\n    None\n}\n\nfn main() {\n    let result = first_even(&[3, 7, 8, 10]);\n    println!(\"{:?}\", result);\n}",
-    "expectedOutput": "8",
-    "solution": "fn first_even(numbers: &[i32]) -> Option<i32> {\n    for &n in numbers {   // each item is a &i32; &n gives the plain number n\n        if n % 2 == 0 {\n            return Some(n);\n        }\n    }\n    None\n}\n\nfn main() {\n    let result = first_even(&[3, 7, 8, 10]);\n    println!(\"{}\", result.unwrap_or(0));\n}",
+    "prompt": "first_even trả về một Option. Hãy hoàn thành even_or_zero để nó trả về số chẵn đầu tiên, hoặc 0 nếu không có số chẵn, bằng first_even và unwrap_or. Với [3, 7, 8, 10], main phải in ra: 8",
+    "starter": "fn first_even(numbers: &[i32]) -> Option<i32> {\n    for &n in numbers {   // each item is a &i32; &n gives the plain number n\n        if n % 2 == 0 {\n            return Some(n);\n        }\n    }\n    None\n}\n\nfn even_or_zero(numbers: &[i32]) -> i32 {\n    // first_even gives an Option<i32>. Turn it into a plain number,\n    // using 0 when it holds nothing.\n    let _ = first_even(numbers); // delete this line when you use it for real\n    todo!()\n}\n\nfn main() {\n    println!(\"{}\", even_or_zero(&[3, 7, 8, 10]));\n}",
+    "tests": [
+      {
+        "id": "finds-first-even",
+        "label": "Trả về 8 với [3, 7, 8, 10]",
+        "code": "check_eq!(even_or_zero(&[3, 7, 8, 10]), 8);"
+      },
+      {
+        "id": "main-prints-8",
+        "label": "Chương trình in ra 8",
+        "output": "8"
+      },
+      {
+        "id": "no-even",
+        "hidden": true,
+        "label": "No even number gives 0",
+        "code": "check_eq!(even_or_zero(&[1, 3, 5]), 0);"
+      },
+      {
+        "id": "empty",
+        "hidden": true,
+        "label": "An empty list gives 0",
+        "code": "check_eq!(even_or_zero(&[]), 0);"
+      },
+      {
+        "id": "first-not-last",
+        "hidden": true,
+        "label": "Takes the first even number, not the last",
+        "code": "check_eq!(even_or_zero(&[2, 4, 6]), 2);"
+      },
+      {
+        "id": "negative",
+        "hidden": true,
+        "code": "check_eq!(even_or_zero(&[-3, -4]), -4);"
+      }
+    ],
+    "solution": "fn first_even(numbers: &[i32]) -> Option<i32> {\n    for &n in numbers {   // each item is a &i32; &n gives the plain number n\n        if n % 2 == 0 {\n            return Some(n);\n        }\n    }\n    None\n}\n\nfn even_or_zero(numbers: &[i32]) -> i32 {\n    first_even(numbers).unwrap_or(0)\n}\n\nfn main() {\n    println!(\"{}\", even_or_zero(&[3, 7, 8, 10]));\n}",
     "hints": [
-      "Hàm trả về một Option, có thể chứa một con số hoặc không có gì. Bạn cần một con số thuần để in ra.",
-      "Option có phương thức unwrap_or nhận một giá trị dự phòng. Hãy gọi nó trên result với 0 làm giá trị dự phòng.",
-      "Hãy đổi println! để in result.unwrap_or(0). Giờ chỉ cần {} là đủ, vì nó là một con số thuần."
+      "even_or_zero phải trả về một con số thuần, nhưng first_even trả về một Option, có thể chứa một con số hoặc không có gì.",
+      "Option có phương thức unwrap_or nhận một giá trị dự phòng. Hãy gọi first_even(numbers) rồi gọi .unwrap_or(0) trên kết quả của nó.",
+      "Hãy thay todo!() bằng first_even(numbers).unwrap_or(0) và không có dấu chấm phẩy, để nó là giá trị mà hàm trả về."
     ]
   },
   "quiz": [

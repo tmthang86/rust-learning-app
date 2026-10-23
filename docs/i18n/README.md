@@ -21,10 +21,10 @@ Translatable keys (the only values a translation may change):
 `title`, `summary`, `text`, `prompt`, `question`, `options`, `hints`,
 `explanation`, `label`.
 
-`label` is `exercise.tests[].label`, the name of a test case. It comes with the
-multi-test exercises (a separate pull request that has not landed yet); the
-checker already treats it as a translatable text. Translate the label of a
-visible test. A hidden test's label is copied unchanged: the checker allows a
+`label` is `exercise.tests[].label`, the name of a test case (exercises with
+`tests`; see `docs/exercise-tests-design.md`). Translate the label of a
+visible test, and keep `tests` (ids, `code`, `output`, `hidden`, `panics`)
+identical to English. A hidden test's label is copied unchanged: the checker allows a
 translatable value to differ or to match the English one.
 
 Everything else must be **byte-identical** to the English file: `id`, `number`,
