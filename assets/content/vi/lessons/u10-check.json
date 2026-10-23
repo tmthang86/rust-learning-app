@@ -22,7 +22,7 @@
     }
   ],
   "exercise": {
-    "prompt": "Hoàn thành chương trình. Bốn thân hàm được đánh dấu todo!().\n\n(1) fn depth(tree: &Tree) -> u32: một Leaf có độ sâu 1, và một Node có độ sâu bằng 1 cộng độ sâu của nhánh con sâu hơn.\n\n(2) Guard::new(name: &str, log: &Rc<RefCell<Vec<String>>>) -> Guard push văn bản opened NAME vào nhật ký (ví dụ opened db), và trả về một Guard giữ tên của nó và một chủ sở hữu mới của cùng nhật ký đó (đừng sao chép Vec).\n\n(3) impl Drop for Guard push văn bản closed NAME vào nhật ký khi một Guard biến mất.\n\n(4) Trong impl Deref for Guard, fn deref(&self) -> &String trả về một tham chiếu đến tên của guard.\n\nĐừng thay đổi main. Với lời giải đúng, chương trình in ra:\n\ndepths: 1 2 4\nowners: 3\nDB\nowners: 2\nowners: 1\nopened db\nopened cache\nclosed cache\nworking\nclosed db",
+    "prompt": "Hoàn thành chương trình. Bốn thân hàm được đánh dấu todo!().\n\n(1) fn depth(tree: &Tree) -> u32: một Leaf có độ sâu 1, và một Node có độ sâu bằng 1 cộng độ sâu của nhánh con sâu hơn.\n\n(2) Guard::new(name: &str, log: &Rc<RefCell<Vec<String>>>) -> Guard push văn bản opened NAME vào nhật ký (ví dụ opened db), và trả về một Guard giữ tên của nó và một chủ sở hữu mới của cùng nhật ký đó (đừng sao chép Vec).\n\n(3) impl Drop for Guard push văn bản closed NAME vào nhật ký khi một Guard biến mất.\n\n(4) Trong impl Deref for Guard, fn deref(&self) -> &String trả về một tham chiếu đến tên của guard.\n\nĐừng thay đổi main. Khi các hàm chạy đúng, main in ra:\n\ndepths: 1 2 4\nowners: 3\nDB\nowners: 2\nowners: 1\nopened db\nopened cache\nclosed cache\nworking\nclosed db",
     "starter": "use std::cell::RefCell;\nuse std::ops::Deref;\nuse std::rc::Rc;\n\nenum Tree {\n    Leaf,\n    Node(Box<Tree>, Box<Tree>),\n}\n\nfn depth(tree: &Tree) -> u32 {\n    todo!()\n}\n\nstruct Guard {\n    name: String,\n    log: Rc<RefCell<Vec<String>>>,\n}\n\nimpl Guard {\n    fn new(name: &str, log: &Rc<RefCell<Vec<String>>>) -> Guard {\n        todo!()\n    }\n}\n\nimpl Drop for Guard {\n    fn drop(&mut self) {\n        todo!()\n    }\n}\n\nimpl Deref for Guard {\n    type Target = String;\n\n    fn deref(&self) -> &String {\n        todo!()\n    }\n}\n\nfn shout(text: &str) -> String {\n    text.to_uppercase()\n}\n\nfn main() {\n    let leaf = Tree::Leaf;\n    let pair = Tree::Node(Box::new(Tree::Leaf), Box::new(Tree::Leaf));\n    let lopsided = Tree::Node(\n        Box::new(Tree::Leaf),\n        Box::new(Tree::Node(\n            Box::new(Tree::Leaf),\n            Box::new(Tree::Node(Box::new(Tree::Leaf), Box::new(Tree::Leaf))),\n        )),\n    );\n    println!(\"depths: {} {} {}\", depth(&leaf), depth(&pair), depth(&lopsided));\n\n    let log = Rc::new(RefCell::new(Vec::new()));\n    {\n        let db = Guard::new(\"db\", &log);\n        let cache = Guard::new(\"cache\", &log);\n        println!(\"owners: {}\", Rc::strong_count(&log));\n        println!(\"{}\", shout(&db));\n        drop(cache);\n        println!(\"owners: {}\", Rc::strong_count(&log));\n        log.borrow_mut().push(String::from(\"working\"));\n    }\n    println!(\"owners: {}\", Rc::strong_count(&log));\n    for line in log.borrow().iter() {\n        println!(\"{line}\");\n    }\n}",
     "tests": [
       {
@@ -42,17 +42,17 @@
       },
       {
         "id": "guard-opens",
-        "label": "Guard::new ghi opened và tên vào log",
+        "label": "Guard::new ghi opened và tên vào nhật ký",
         "code": "let log: ::std::rc::Rc<::std::cell::RefCell<Vec<String>>> = ::std::rc::Rc::new(::std::cell::RefCell::new(Vec::new()));\nlet _db = Guard::new(\"db\", &log);\ncheck_eq!(log.borrow().clone(), vec![\"opened db\"]);"
       },
       {
         "id": "guard-shares-log",
-        "label": "Guard dùng chung log thay vì sao chép nó",
+        "label": "Guard dùng chung nhật ký thay vì sao chép nó",
         "code": "let log: ::std::rc::Rc<::std::cell::RefCell<Vec<String>>> = ::std::rc::Rc::new(::std::cell::RefCell::new(Vec::new()));\ncheck_eq!(::std::rc::Rc::strong_count(&log), 1);\nlet db = Guard::new(\"db\", &log);\ncheck_eq!(::std::rc::Rc::strong_count(&log), 2);\ndrop(db);\ncheck_eq!(::std::rc::Rc::strong_count(&log), 1);"
       },
       {
         "id": "guard-drop-logs",
-        "label": "Khi một guard bị drop, closed và tên được ghi vào log",
+        "label": "Khi một guard bị drop, closed và tên được ghi vào nhật ký",
         "code": "let log: ::std::rc::Rc<::std::cell::RefCell<Vec<String>>> = ::std::rc::Rc::new(::std::cell::RefCell::new(Vec::new()));\n{\n    let _db = Guard::new(\"db\", &log);\n}\ncheck_eq!(log.borrow().clone(), vec![\"opened db\", \"closed db\"]);"
       },
       {

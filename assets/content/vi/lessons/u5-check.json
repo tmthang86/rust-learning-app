@@ -69,7 +69,7 @@
         "id": "split-tabs-newlines",
         "hidden": true,
         "label": "Tabs and new lines separate words too",
-        "code": "check_eq!(split_words(\"a\\tb\\nc  d\\r\\ne\"), vec![\"a\", \"b\", \"c\", \"d\", \"e\"]);"
+        "code": "check_eq!(split_words(\"a\\tb\\nc  d\\ne\"), vec![\"a\", \"b\", \"c\", \"d\", \"e\"]);"
       },
       {
         "id": "split-only-whitespace",

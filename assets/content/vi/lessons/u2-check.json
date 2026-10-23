@@ -66,12 +66,12 @@
       },
       {
         "id": "rounds-already-passing",
-        "label": "Điểm 75 cần 0 vòng",
+        "label": "Điểm 75 cần 0 lượt",
         "code": "check_eq!(rounds_to_pass(75, 5), 0);"
       },
       {
         "id": "rounds-with-bonus",
-        "label": "Điểm 50 với bonus 4 cần 3 vòng",
+        "label": "Điểm 50 với bonus 4 cần 3 lượt",
         "code": "check_eq!(rounds_to_pass(50, 4), 3);"
       },
       {
