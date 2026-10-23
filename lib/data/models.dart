@@ -75,6 +75,40 @@ class Course {
 
   final List<Unit> units;
 
+  /// This course with the unit titles and summaries and the lesson titles
+  /// of [translated], matched by id. Structure (units, lessons, tracks,
+  /// order) always comes from this course; ids [translated] doesn't have
+  /// keep their own texts.
+  Course withTextsFrom(Course translated) {
+    final byUnit = {for (final u in translated.units) u.id: u};
+    return Course([
+      for (final unit in units)
+        if (byUnit[unit.id] case final t?)
+          Unit(
+            id: unit.id,
+            number: unit.number,
+            title: t.title,
+            summary: t.summary,
+            tracks: unit.tracks,
+            lessons: [
+              for (final lesson in unit.lessons)
+                LessonRef(
+                  id: lesson.id,
+                  checkpoint: lesson.checkpoint,
+                  title:
+                      t.lessons
+                          .where((l) => l.id == lesson.id)
+                          .firstOrNull
+                          ?.title ??
+                      lesson.title,
+                ),
+            ],
+          )
+        else
+          unit,
+    ]);
+  }
+
   /// The title of lesson [id] among the units [track] sees, or null when
   /// there is no such lesson there.
   String? lessonTitle(String id, {Track? track}) {
@@ -181,6 +215,41 @@ class Lesson {
   final List<LessonSection> sections;
   final Exercise? exercise;
   final List<QuizQuestion> quiz;
+
+  /// True when [other] differs from this lesson in texts only: the same
+  /// id, sections (types, tracks, code), exercise (starter, expected
+  /// output, solution) and quiz (number of options, right answer). A
+  /// translation must be this close to the English lesson to be used, so
+  /// completing it, checking the exercise and scoring the quiz work the
+  /// same in every language.
+  bool hasSameStructureAs(Lesson other) {
+    if (id != other.id || sections.length != other.sections.length) {
+      return false;
+    }
+    for (var i = 0; i < sections.length; i++) {
+      final a = sections[i], b = other.sections[i];
+      if (a.type != b.type || a.track != b.track) return false;
+      if (a.type == SectionType.code && a.body != b.body) return false;
+    }
+    final e = exercise, f = other.exercise;
+    if ((e == null) != (f == null)) return false;
+    if (e != null &&
+        f != null &&
+        (e.hints.length != f.hints.length ||
+            e.starter != f.starter ||
+            e.expectedOutput != f.expectedOutput ||
+            e.solution != f.solution)) {
+      return false;
+    }
+    if (quiz.length != other.quiz.length) return false;
+    for (var i = 0; i < quiz.length; i++) {
+      if (quiz[i].answer != other.quiz[i].answer ||
+          quiz[i].options.length != other.quiz[i].options.length) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   factory Lesson.fromJson(Map<String, dynamic> json) => Lesson(
         id: json['id'] as String,

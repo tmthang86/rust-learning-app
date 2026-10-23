@@ -1,0 +1,70 @@
+{
+  "id": "u1-l2",
+  "title": "Cargo, công cụ build của Rust",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Các dự án Rust thực tế được quản lý bằng Cargo. Nó tạo dự án, tải về các thư viện (gọi là crate), build code của bạn và chạy test."
+    },
+    {
+      "type": "text",
+      "track": "starter",
+      "text": "Build nghĩa là biến code của bạn thành một chương trình mà máy tính có thể chạy. Rust là một ngôn ngữ được biên dịch (compiled language): trình biên dịch (compiler) thực hiện việc chuyển đổi đó và kiểm tra toàn bộ chương trình của bạn xem có lỗi không trước khi nó kịp chạy."
+    },
+    {
+      "type": "note",
+      "track": "fast",
+      "text": "Nếu bạn đến từ một ngôn ngữ khác: Cargo đóng vai trò của npm, pip + venv, Maven hoặc Gradle, gộp trong một công cụ duy nhất đi kèm với Rust."
+    },
+    {
+      "type": "text",
+      "text": "Để bắt đầu một dự án, hãy chạy lệnh này trong terminal:"
+    },
+    {
+      "type": "code",
+      "code": "cargo new hello\ncd hello\ncargo run"
+    },
+    {
+      "type": "text",
+      "text": "cargo new tạo một thư mục chứa Cargo.toml (cài đặt của dự án và danh sách các dependency, tức thư viện phụ thuộc) và src/main.rs (code của bạn). cargo run build dự án rồi chạy nó."
+    },
+    {
+      "type": "code",
+      "code": "[package]\nname = \"hello\"\nversion = \"0.1.0\"\nedition = \"2024\"\n\n[dependencies]"
+    },
+    {
+      "type": "text",
+      "text": "Các lệnh khác bạn sẽ hay dùng: cargo build để biên dịch, cargo check để nhanh chóng tìm lỗi mà không tạo ra chương trình, và cargo test để chạy test. Trong ứng dụng này, nút Chạy sẽ build và chạy giúp bạn."
+    }
+  ],
+  "exercise": {
+    "prompt": "Chương trình mà Cargo tạo ra in ra \"Hello, world!\". Hãy sửa để nó in ra: Built with Cargo",
+    "starter": "fn main() {\n    println!(\"Hello, world!\");\n}",
+    "expectedOutput": "Built with Cargo",
+    "solution": "fn main() {\n    println!(\"Built with Cargo\");\n}",
+    "hints": [
+      "Hãy nhìn đoạn văn bản bên trong dấu nháy của println!. Bạn chỉ cần đổi nội dung mà nó nói.",
+      "Hãy thay Hello, world! bằng Built with Cargo, và giữ nguyên dấu nháy bao quanh nó."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Tệp nào liệt kê các dependency của một dự án?",
+      "options": [
+        "src/main.rs",
+        "Cargo.toml",
+        "Cargo.lock.rs"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Lệnh nào tìm lỗi nhanh nhất, mà không tạo ra chương trình?",
+      "options": [
+        "cargo check",
+        "cargo run",
+        "cargo new"
+      ],
+      "answer": 0
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "id": "u5-l2",
+  "title": "String và &str",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Rust có hai kiểu chuỗi chính. String là văn bản có chủ sở hữu (owned), bạn có thể kéo dài và thay đổi nó. &str là một khung nhìn mượn tới một đoạn văn bản nào đó, giống như một chuỗi literal."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let literal: &str = \"hello\";\n    let mut owned: String = String::from(literal);\n    owned.push_str(\", world\");\n    owned.push('!');\n    println!(\"{owned}\");\n    let view: &str = &owned;   // borrow a String as &str\n    println!(\"{} bytes\", view.len());\n}"
+    },
+    {
+      "type": "text",
+      "text": "len() đếm số byte, không phải số ký tự. Rust lưu văn bản dưới dạng UTF-8, trong đó một chữ cái tiếng Anh thông thường chiếm một byte, còn một chữ cái như é, hoặc một emoji, chiếm từ hai đến bốn byte. Để đếm số ký tự, hãy dùng chars().count():"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let word = \"café\";\n    println!(\"{} bytes\", word.len());\n    println!(\"{} characters\", word.chars().count());\n}"
+    },
+    {
+      "type": "text",
+      "text": "Vì một ký tự có thể chiếm nhiều hơn một byte, Rust không cho phép bạn viết s[0] để lấy ký tự đầu tiên. Thay vào đó, hãy dùng s.chars() để duyệt qua các ký tự."
+    },
+    {
+      "type": "text",
+      "text": "Nối các chuỗi bằng format!, cách này thường rõ ràng hơn dùng +:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let first = \"Ada\";\n    let last = \"Lovelace\";\n    let full = format!(\"{first} {last}\");\n    println!(\"{full}\");\n\n    let s = String::from(\"tic\") + \"-tac\" + \"-toe\";\n    println!(\"{s}\");\n}"
+    },
+    {
+      "type": "note",
+      "text": "Toán tử + nhận String ở bên trái theo giá trị: nó di chuyển (move) String đó, thêm &str ở bên phải vào cuối, rồi trả lại chính String ấy. Đó là lý do vế phải phải là một &str (hãy viết a + &b khi b là một String), và cũng là lý do bạn không thể dùng a sau a + b.",
+      "track": "fast"
+    },
+    {
+      "type": "text",
+      "text": "Chuỗi có sẵn nhiều phương thức hữu ích:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let line = \"  Rust is fun  \";\n    let clean = line.trim();\n    println!(\"[{clean}]\");\n    println!(\"{}\", clean.to_uppercase());\n    println!(\"{}\", clean.contains(\"fun\"));\n    println!(\"{}\", clean.replace(\"fun\", \"great\"));\n    for word in clean.split_whitespace() {\n        println!(\"word: {word}\");\n    }\n}"
+    },
+    {
+      "type": "note",
+      "text": "Chuỗi trong Rust luôn là UTF-8 hợp lệ. len() tức thì vì độ dài đã được lưu sẵn, còn chars().count() phải duyệt qua toàn bộ chuỗi. Hãy dùng bytes() để lấy các byte thô và char_indices() khi bạn cần vị trí của ký tự mà cắt chuỗi tại đó là an toàn. Một char là một Unicode scalar value, nên một chữ cái mà người đọc thấy là một ký tự, chẳng hạn é được gõ thành e kèm một dấu phụ, có thể là nhiều char; một crate như unicode-segmentation đếm chúng là một.",
+      "track": "fast"
+    },
+    {
+      "type": "note",
+      "text": "Một quy tắc hay: lưu văn bản trong một String, và nhận &str khi một hàm chỉ cần đọc nó.",
+      "track": "starter"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy tạo câu bằng format! với name và lang. Chương trình phải in ra: Thang is learning Rust",
+    "starter": "fn main() {\n    let name = \"Thang\";\n    let lang = \"Rust\";\n    let sentence = String::new();\n    println!(\"{sentence}\");\n}",
+    "expectedOutput": "Thang is learning Rust",
+    "solution": "fn main() {\n    let name = \"Thang\";\n    let lang = \"Rust\";\n    let sentence = format!(\"{name} is learning {lang}\");\n    println!(\"{sentence}\");\n}",
+    "hints": [
+      "Hiện giờ sentence là một String rỗng, nên một dòng trống được in ra. Hãy tạo nó từ name và lang.",
+      "format! hoạt động giống println! nhưng trả về một String. Hãy đặt tên các biến bên trong {} trong đoạn văn bản.",
+      "Hãy viết let sentence = format!(\"{name} is learning {lang}\");"
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Kiểu nào sở hữu văn bản của nó và có thể kéo dài?",
+      "options": [
+        "&str",
+        "String",
+        "char"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "\"  hi \".trim() trả về gì?",
+      "options": [
+        "\"hi\"",
+        "\"  hi\"",
+        "\"hi \""
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Vì sao bạn không thể viết s[0] để lấy ký tự đầu tiên?",
+      "options": [
+        "Một ký tự có thể chiếm nhiều hơn một byte",
+        "Theo mặc định, chuỗi là rỗng",
+        "Bạn cần viết s(0)"
+      ],
+      "answer": 0
+    }
+  ]
+}

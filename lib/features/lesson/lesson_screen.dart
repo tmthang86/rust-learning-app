@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../data/app_state.dart';
 import '../../data/models.dart';
+import '../../l10n/l10n.dart';
 import '../../monetization/ad_banner.dart';
 import '../../monetization/ads_service.dart';
 import '../../monetization/monetization.dart';
@@ -22,11 +23,22 @@ class LessonScreen extends StatefulWidget {
 
 class _LessonScreenState extends State<LessonScreen> {
   Future<Lesson?>? _lesson;
+  String? _language;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _lesson ??= AppScope.read(context).repository.loadLesson(widget.lessonId);
+    // Loaded again, in the new language, when the learner switches
+    // language while the lesson is open. The lesson on screen stays until
+    // the new one arrives (code typed in the editor is kept).
+    final state = AppScope.of(context);
+    if (_language != state.languageCode) {
+      _language = state.languageCode;
+      _lesson = state.repository.loadLesson(
+        widget.lessonId,
+        language: state.languageCode,
+      );
+    }
   }
 
   @override
@@ -34,17 +46,17 @@ class _LessonScreenState extends State<LessonScreen> {
     return FutureBuilder<Lesson?>(
       future: _lesson,
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
+        if (snapshot.connectionState != ConnectionState.done &&
+            snapshot.data == null) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
         if (snapshot.hasError) {
           debugPrint('Lesson ${widget.lessonId} failed to load: ${snapshot.error}');
-          return const LessonMessage(
-              "This lesson couldn't be opened. Please update the app or try again later.");
+          return LessonMessage(context.l10n.lessonLoadError);
         }
         final lesson = snapshot.data;
         if (lesson == null) {
-          return const LessonMessage('This lesson is still being written.');
+          return LessonMessage(context.l10n.lessonNotWritten);
         }
         return _LessonBody(lesson: lesson);
       },
@@ -73,7 +85,7 @@ class LessonMessage extends StatelessWidget {
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: () => context.go('/learn'),
-                child: const Text('Back to lessons'),
+                child: Text(context.l10n.backToLessons),
               ),
             ],
           ),
@@ -92,7 +104,7 @@ PreferredSizeWidget lessonAppBar(BuildContext context, {Widget? title}) => AppBa
           ? null
           : IconButton(
               icon: const Icon(Icons.arrow_back),
-              tooltip: 'Back to lessons',
+              tooltip: context.l10n.backToLessons,
               onPressed: () => context.go('/learn'),
             ),
     );
@@ -136,6 +148,7 @@ class _LessonBody extends StatelessWidget {
     final state = AppScope.of(context);
     final track = state.track ?? Track.starter;
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final exercise = lesson.exercise;
     final sections = lesson.sections.where((s) => s.visibleTo(track)).toList();
     // Taken now: the snackbar for a finished lesson must outlive the screen.
@@ -147,71 +160,83 @@ class _LessonBody extends StatelessWidget {
 
     return DeepLinkScope(
       child: Scaffold(
-      appBar: lessonAppBar(context, title: Text(lesson.title)),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 760),
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              for (final (i, section) in sections.indexed) ...[
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: _Section(section: section),
-                ),
-                if (i == bannerAfter)
-                  const AdBannerSlot(placement: AdPlacement.lessonReading),
-              ],
-              if (exercise != null) ...[
-                Text('Try it', style: theme.textTheme.titleLarge),
-                const SizedBox(height: 8),
-                Text(exercise.prompt),
-                const SizedBox(height: 12),
-                ExercisePanel(
-                  key: ValueKey(lesson.id),
-                  lessonId: lesson.id,
-                  exercise: exercise,
-                  // Solving the exercise completes the lesson, as does
-                  // passing the quiz.
-                  onSolved: () => state
-                      .markCompleted(lesson.id)
-                      .then((award) => showXpSnackBar(messenger, award)),
-                ),
-                const SizedBox(height: 24),
-              ],
-              if (state.isCompleted(lesson.id)) ...[
-                Row(
-                  children: [
-                    Icon(Icons.check_circle, color: theme.colorScheme.primary),
-                    const SizedBox(width: 8),
-                    const Text('Lesson complete'),
-                  ],
-                ),
-                const SizedBox(height: 12),
-              ],
-              if (lesson.quiz.isNotEmpty)
-                FilledButton(
-                  onPressed: () => context.push('/lesson/${lesson.id}/quiz'),
-                  child: const Text('Take the quiz'),
-                )
-              else if (exercise == null)
-                FilledButton(
-                  onPressed: () {
-                    state
+        appBar: lessonAppBar(
+          context,
+          // The course map's title, so the map and the lesson agree even when
+          // only one of them is translated.
+          title: Text(state.course?.lessonTitle(lesson.id) ?? lesson.title),
+        ),
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                for (final (i, section) in sections.indexed) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: _Section(section: section),
+                  ),
+                  if (i == bannerAfter)
+                    const AdBannerSlot(placement: AdPlacement.lessonReading),
+                ],
+                if (exercise != null) ...[
+                  Text(l10n.tryIt, style: theme.textTheme.titleLarge),
+                  const SizedBox(height: 8),
+                  Text(exercise.prompt),
+                  const SizedBox(height: 12),
+                  ExercisePanel(
+                    key: ValueKey(lesson.id),
+                    lessonId: lesson.id,
+                    exercise: exercise,
+                    // Solving the exercise completes the lesson, as does
+                    // passing the quiz.
+                    onSolved: () => state
                         .markCompleted(lesson.id)
-                        .then((award) => showXpSnackBar(messenger, award));
-                    final monetization = MonetizationScope.read(context);
-                    leaveLesson(context);
-                    // A natural break: the lesson is done and closed.
-                    // Repeat finishes are ignored there.
-                    monetization.onLessonFinished(lesson.id);
-                  },
-                  child: const Text('Mark as done'),
-                ),
-            ],
+                        .then(
+                          (award) => showXpSnackBar(messenger, award, l10n),
+                        ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+                if (state.isCompleted(lesson.id)) ...[
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(l10n.lessonComplete),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (lesson.quiz.isNotEmpty)
+                  FilledButton(
+                    onPressed: () => context.push('/lesson/${lesson.id}/quiz'),
+                    child: Text(l10n.takeQuiz),
+                  )
+                else if (exercise == null)
+                  FilledButton(
+                    onPressed: () {
+                      state
+                          .markCompleted(lesson.id)
+                          .then(
+                            (award) => showXpSnackBar(messenger, award, l10n),
+                          );
+                      final monetization = MonetizationScope.read(context);
+                      leaveLesson(context);
+                      // A natural break: the lesson is done and closed.
+                      // Repeat finishes are ignored there.
+                      monetization.onLessonFinished(lesson.id);
+                    },
+                    child: Text(l10n.markAsDone),
+                  ),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }

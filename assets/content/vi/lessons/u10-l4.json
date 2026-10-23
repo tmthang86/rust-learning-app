@@ -1,0 +1,104 @@
+{
+  "id": "u10-l4",
+  "title": "RefCell<T> và interior mutability",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Các quy tắc mượn nói: số lượng người đọc bất kỳ hoặc đúng một người ghi. Rust thường kiểm tra điều đó lúc biên dịch. Đôi khi bạn biết code của mình đúng, nhưng trình biên dịch không thể chứng minh, hoặc bạn cần thay đổi dữ liệu được chia sẻ (như với Rc). RefCell<T> chuyển cùng những kiểm tra đó từ lúc biên dịch sang lúc chạy. Điều này được gọi là interior mutability: bạn có thể thay đổi giá trị bên trong thông qua một tham chiếu chia sẻ (&), ngay cả khi các phần khác của code cũng đang giữ một tham chiếu. Đó cũng là lý do bản thân RefCell không cần mut."
+    },
+    {
+      "type": "text",
+      "text": "Bạn yêu cầu quyền truy cập từ một RefCell bằng hai phương thức. borrow() trả về một người đọc, một Ref<T> hoạt động như &T. borrow_mut() trả về một người ghi, một RefMut<T> hoạt động như &mut T. RefCell đếm các lần mượn đang hoạt động trong khi chương trình chạy."
+    },
+    {
+      "type": "code",
+      "code": "use std::cell::RefCell;\n\nfn main() {\n    let cell = RefCell::new(vec![1, 2]);   // note: no mut\n    cell.borrow_mut().push(3);\n    println!(\"{:?} has {} items\", cell.borrow(), cell.borrow().len());\n}\n\n// Output:\n// [1, 2, 3] has 3 items"
+    },
+    {
+      "type": "text",
+      "text": "Hai người đọc cùng lúc thì không sao. Một người đọc cộng một người ghi, hoặc hai người ghi, thì không được. Nếu bạn vi phạm các quy tắc, chương trình không bị lỗi biên dịch. Nó gây ra panic. Chương trình này cố ý gây ra panic. Chú thích ở cuối cho thấy thông báo."
+    },
+    {
+      "type": "code",
+      "code": "use std::cell::RefCell;\n\nfn main() {\n    let c = RefCell::new(5);\n    let a = c.borrow_mut();\n    let b = c.borrow_mut();   // panics: RefCell already borrowed\n    println!(\"{} {}\", a, b);\n}\n\n// What you would see (the program panics):\n// The program stops here with a panic, and prints a message like this\n// (the file name and numbers may differ):\n//   thread 'main' panicked at src/main.rs:6:15:\n//   RefCell already borrowed"
+    },
+    {
+      "type": "text",
+      "text": "Một lần mượn kéo dài cho đến khi giá trị guard của nó (a và b ở trên) ra khỏi phạm vi. Nếu bạn muốn thử mà không gây ra panic, try_borrow_mut() trả về một Result: Ok nếu việc mượn khả thi, Err nếu không."
+    },
+    {
+      "type": "code",
+      "code": "use std::cell::RefCell;\n\nfn main() {\n    let c = RefCell::new(5);\n    let reader = c.borrow();\n    println!(\"while reading: {}\", c.try_borrow_mut().is_err());\n    drop(reader);\n    println!(\"after dropping the reader: {}\", c.try_borrow_mut().is_err());\n}\n\n// Output:\n// while reading: true\n// after dropping the reader: false"
+    },
+    {
+      "type": "text",
+      "text": "Cách dùng phổ biến nhất là Rc<RefCell<T>>. Rc cho nhiều chủ sở hữu, và RefCell cho phép mỗi chủ sở hữu thay đổi giá trị. Ở đây hai bên nắm giữ dùng chung một tài khoản:"
+    },
+    {
+      "type": "code",
+      "code": "use std::cell::RefCell;\nuse std::rc::Rc;\n\nstruct Account {\n    balance: i64,\n}\n\nfn main() {\n    let account = Rc::new(RefCell::new(Account { balance: 100 }));\n    let shop = Rc::clone(&account);\n    let bank = Rc::clone(&account);\n\n    shop.borrow_mut().balance -= 30;\n    bank.borrow_mut().balance += 5;\n\n    println!(\"balance = {}\", account.borrow().balance);\n}\n\n// Output:\n// balance = 75"
+    },
+    {
+      "type": "text",
+      "text": "Có hai kiểu họ hàng gần đáng để biết. Cell<T> là phiên bản đơn giản hơn, chủ yếu dùng cho các giá trị Copy nhỏ như số. Bạn đọc bằng get() (cần Copy) và ghi bằng set(). Nó không bao giờ đưa ra tham chiếu tới bên trong, nên không có việc mượn nào để kiểm tra. Weak<T> là một con trỏ được tạo từ một Rc bằng Rc::downgrade(&rc). Nó không giữ cho giá trị còn sống và không được tính là chủ sở hữu. Để dùng nó, hãy gọi upgrade(), phương thức này trả về Some(rc) khi giá trị còn sống và None sau khi nó đã bị drop. Weak là cách bạn tránh các chu trình tham chiếu, nơi hai Rc trỏ tới nhau và không cái nào có thể được giải phóng."
+    },
+    {
+      "type": "code",
+      "code": "use std::cell::Cell;\nuse std::rc::Rc;\n\nfn main() {\n    let hits = Cell::new(0);\n    hits.set(hits.get() + 1);\n    hits.set(hits.get() + 1);\n    println!(\"hits = {}\", hits.get());\n\n    let strong = Rc::new(5);\n    let weak = Rc::downgrade(&strong);\n    println!(\"{:?}\", weak.upgrade());\n    drop(strong);\n    println!(\"{:?}\", weak.upgrade());\n}\n\n// Output:\n// hits = 2\n// Some(5)\n// None"
+    },
+    {
+      "type": "text",
+      "text": "Hãy dùng RefCell một cách tiết chế. Những lỗi mà trình biên dịch thường bắt được giờ xuất hiện dưới dạng panic lúc chạy. Hãy ưu tiên các tham chiếu thông thường khi chúng dùng được."
+    },
+    {
+      "type": "note",
+      "text": "Một cửa hàng có một ngăn kéo tiền (RefCell). Mỗi lần chỉ một thu ngân được mở nó để thay đổi, nhưng nhiều người có thể cùng nhìn vào bên trong. Thông thường một người gác kiểm tra điều đó trước khi bạn bắt đầu (lúc biên dịch). RefCell đặt người gác ngay tại ngăn kéo tiền: nó kiểm tra mỗi lần có ai đó với tay vào (lúc chạy).",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "RefCell<T> chỉ dành cho một thread: nó không phải Sync. Các phiên bản đa luồng tương ứng của nó là Mutex<T> và RwLock<T> (Unit 11). Rc<RefCell<T>> là phiên bản Rust của một đối tượng chia sẻ, có thể thay đổi trong Java hoặc Python, nhưng với các quy tắc được thực thi: thay đổi một danh sách trong khi bạn lặp qua nó là lỗi biên dịch hoặc một panic chắc chắn xảy ra, chứ không phải một ConcurrentModificationException (Java) mang tính cố gắng tối đa (best-effort) hay một vòng lặp dễ viết sai (Python). Hãy dùng try_borrow và try_borrow_mut khi việc mượn thất bại là một trường hợp bình thường chứ không phải một lỗi.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "other và counter chia sẻ một con số. Chương trình đã cộng 5 qua other. Hãy thêm một dòng cộng 10 qua counter, để chương trình in ra: counter = 15. Gợi ý: borrow_mut() cho một guard, và * chạm tới con số bên trong nó, nên hãy viết *counter.borrow_mut() += 10;",
+    "starter": "use std::cell::RefCell;\nuse std::rc::Rc;\n\nfn main() {\n    let counter = Rc::new(RefCell::new(0));\n    let other = Rc::clone(&counter);\n    *other.borrow_mut() += 5;\n    // add the line for counter here\n    println!(\"counter = {}\", counter.borrow());\n}",
+    "expectedOutput": "counter = 15",
+    "solution": "use std::cell::RefCell;\nuse std::rc::Rc;\n\nfn main() {\n    let counter = Rc::new(RefCell::new(0));\n    let other = Rc::clone(&counter);\n    *other.borrow_mut() += 5;\n    *counter.borrow_mut() += 10;\n    println!(\"counter = {}\", counter.borrow());\n}",
+    "hints": [
+      "counter và other trỏ tới cùng một con số. Dòng cho other đã thay đổi nó. Hãy viết một dòng tương tự đi qua counter.",
+      "borrow_mut() cho một guard ghi, và * chạm tới con số bên trong nó. Sau đó += 10 thay đổi con số.",
+      "Hãy sao chép dòng của other vào chỗ trống, dùng counter thay cho other, và cộng 10 thay vì 5."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "RefCell kiểm tra các quy tắc mượn khi nào?",
+      "options": [
+        "Trong khi chương trình chạy, mỗi lần borrow hoặc borrow_mut được gọi",
+        "Trong khi code được biên dịch, trước khi chương trình bắt đầu",
+        "Không bao giờ, vì RefCell tắt các quy tắc mượn"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Điều gì xảy ra nếu bạn gọi borrow_mut() hai lần và giữ cả hai guard còn sống?",
+      "options": [
+        "Lần gọi thứ hai chờ cho đến khi guard đầu tiên bị drop",
+        "Nó biên dịch với một cảnh báo và cả hai guard đều hoạt động",
+        "Chương trình gây ra panic với thông báo rằng nó đã được mượn rồi"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Rc<RefCell<T>> cho bạn cái gì?",
+      "options": [
+        "Một giá trị lưu trên stack, không cấp phát trên heap",
+        "Nhiều chủ sở hữu, mỗi người đều có thể thay đổi giá trị được chia sẻ",
+        "Một giá trị có thể được gửi sang các thread khác một cách an toàn"
+      ],
+      "answer": 1
+    }
+  ]
+}

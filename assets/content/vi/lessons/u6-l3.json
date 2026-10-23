@@ -1,0 +1,84 @@
+{
+  "id": "u6-l3",
+  "title": "Toán tử ?",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Viết một match cho mỗi Result sẽ trở nên dài dòng. Toán tử ? là một lối tắt: nếu giá trị là Ok, nó lấy giá trị ra; nếu là Err, nó trả lỗi đó về ngay từ hàm hiện tại."
+    },
+    {
+      "type": "code",
+      "code": "use std::num::ParseIntError;\n\nfn add_strings(a: &str, b: &str) -> Result<i32, ParseIntError> {\n    let x: i32 = a.parse()?;\n    let y: i32 = b.parse()?;\n    Ok(x + y)\n}\n\nfn main() {\n    println!(\"{:?}\", add_strings(\"2\", \"3\"));\n    println!(\"{:?}\", add_strings(\"2\", \"three\"));\n}"
+    },
+    {
+      "type": "text",
+      "text": "Nếu không có ?, cùng hàm đó cần một match cho mỗi lệnh parse. Có nó, đường chạy thuận lợi (happy path) được đọc từ trên xuống dưới. ParseIntError là kiểu lỗi mà parse trả về khi văn bản không thể trở thành kiểu số nguyên đó: nó không phải một số nguyên, nó rỗng, hoặc nó quá lớn hay quá nhỏ so với kiểu; dòng use ở đầu đưa tên của nó vào phạm vi."
+    },
+    {
+      "type": "text",
+      "text": "? chỉ hoạt động bên trong một hàm có kiểu trả về phù hợp: dùng ? trên một Result bên trong hàm trả về Result, và trên một Option bên trong hàm trả về Option. main cũng có thể trả về một Result:"
+    },
+    {
+      "type": "code",
+      "code": "use std::num::ParseIntError;\n\nfn main() -> Result<(), ParseIntError> {\n    let n: i32 = \"21\".parse()?;\n    println!(\"{}\", n * 2);\n    Ok(())\n}"
+    },
+    {
+      "type": "text",
+      "text": "Nó cũng hoạt động với Option: khi gặp None, nó trả về None từ hàm."
+    },
+    {
+      "type": "code",
+      "code": "fn first_char_upper(s: &str) -> Option<char> {\n    let c = s.chars().next()?;   // next() gives the first char, or None if s is empty\n    Some(c.to_ascii_uppercase())\n}\n\nfn main() {\n    println!(\"{:?}\", first_char_upper(\"rust\"));\n    println!(\"{:?}\", first_char_upper(\"\"));\n}"
+    },
+    {
+      "type": "note",
+      "text": "Ok(()) nghĩa là \"thành công, không có gì khác để báo cáo\". () là giá trị rỗng.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "? cũng chuyển đổi lỗi bằng From::from, nên các kiểu lỗi khác nhau có thể đi vào cùng một kiểu trả về. Box<dyn std::error::Error> là một kiểu lỗi bao quát nhanh gọn cho các ứng dụng.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy đặt x và y bằng a.parse()? và b.parse()? thay cho 0, để hàm cộng các số lại. Chương trình phải in ra: Ok(30)",
+    "starter": "use std::num::ParseIntError;\n\nfn total(a: &str, b: &str) -> Result<i32, ParseIntError> {\n    let x: i32 = 0;\n    let y: i32 = 0;\n    Ok(x + y)\n}\n\nfn main() {\n    println!(\"{:?}\", total(\"10\", \"20\"));\n}",
+    "expectedOutput": "Ok(30)",
+    "solution": "use std::num::ParseIntError;\n\nfn total(a: &str, b: &str) -> Result<i32, ParseIntError> {\n    let x: i32 = a.parse()?;\n    let y: i32 = b.parse()?;\n    Ok(x + y)\n}\n\nfn main() {\n    println!(\"{:?}\", total(\"10\", \"20\"));\n}",
+    "hints": [
+      "Hiện giờ x và y luôn bằng 0, nên nó in ra Ok(0). Chúng phải được lấy từ văn bản trong a và b.",
+      "Hãy gọi a.parse() để biến văn bản thành số. Hãy viết ? ngay sau nó. Nếu parse thất bại, hàm sẽ trả về lỗi sớm.",
+      "Hãy đổi hai dòng thành let x: i32 = a.parse()?; và let y: i32 = b.parse()?;"
+    ]
+  },
+  "quiz": [
+    {
+      "question": "? làm gì với một giá trị Err?",
+      "options": [
+        "Trả nó về từ hàm hiện tại",
+        "Gây ra panic",
+        "Biến nó thành 0"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Bạn có thể dùng ? trên một Result ở đâu?",
+      "options": [
+        "Bên trong một hàm trả về Result",
+        "Ở bất cứ đâu",
+        "Chỉ trong vòng lặp"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Ok(()) có nghĩa là gì?",
+      "options": [
+        "Thành công mà không có giá trị nào khác",
+        "Một lỗi rỗng",
+        "Một kết quả thất bại"
+      ],
+      "answer": 0
+    }
+  ]
+}

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../data/app_state.dart';
 import '../../data/models.dart';
+import '../../l10n/l10n.dart';
+import '../settings/language_picker.dart';
 
 /// First-launch screen: the learner picks where to start.
 class TrackPickerScreen extends StatelessWidget {
@@ -10,6 +12,7 @@ class TrackPickerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -22,13 +25,13 @@ class TrackPickerScreen extends StatelessWidget {
                 Icon(Icons.memory, size: 56, color: theme.colorScheme.primary),
                 const SizedBox(height: 16),
                 Text(
-                  'Learn Rust',
+                  l10n.appTitle,
                   style: theme.textTheme.headlineMedium,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Where would you like to start?',
+                  l10n.trackPickerPrompt,
                   style: theme.textTheme.bodyLarge,
                   textAlign: TextAlign.center,
                 ),
@@ -36,17 +39,18 @@ class TrackPickerScreen extends StatelessWidget {
                 _TrackCard(
                   track: Track.starter,
                   icon: Icons.emoji_objects_outlined,
-                  title: "I'm new to programming",
-                  subtitle: 'Start from the very basics. No experience needed.',
+                  title: l10n.trackStarterTitle,
+                  subtitle: l10n.trackStarterSubtitle,
                 ),
                 const SizedBox(height: 12),
                 _TrackCard(
                   track: Track.fast,
                   icon: Icons.rocket_launch_outlined,
-                  title: 'I already know another language',
-                  subtitle:
-                      'Skip the basics and see how Rust compares to what you know.',
+                  title: l10n.trackFastTitle,
+                  subtitle: l10n.trackFastSubtitle,
                 ),
+                const SizedBox(height: 32),
+                const LanguageSetting(),
               ],
             ),
           ),

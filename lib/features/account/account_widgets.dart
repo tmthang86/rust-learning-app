@@ -2,40 +2,28 @@ import 'package:flutter/material.dart';
 
 import '../../account/account_service.dart';
 import '../../data/app_state.dart';
+import '../../l10n/l10n.dart';
 
 /// What to tell the person when an account action didn't finish.
-String accountErrorMessage(AccountErrorKind kind, {SignInMethod? attempted}) =>
-    switch (kind) {
-      AccountErrorKind.cancelled => "Sign-in didn't finish. Please try again.",
-      AccountErrorKind.popupBlocked =>
-        'Your browser blocked the sign-in window. Allow pop-ups for this '
-            'site, then try again.',
-      AccountErrorKind.otherProvider => switch (attempted) {
-        SignInMethod.apple =>
-          'This email already has an account that uses Google. '
-              'Please use "Continue with Google" instead.',
-        SignInMethod.google =>
-          'This email already has an account that uses Apple. '
-              'Please use "Continue with Apple" instead.',
-        null =>
-          'This email already has an account with another sign-in method.',
-      },
-      AccountErrorKind.wrongAccount =>
-        'That was a different account. Please confirm with the account you '
-            'are signed in with.',
-      AccountErrorKind.network =>
-        "Couldn't reach the server. Check your connection and try again.",
-      AccountErrorKind.unconfirmed =>
-        "We couldn't confirm whether it went through. Your progress is kept "
-            'on this device and nothing is sent to the cloud for now. When '
-            "you're back online, open this again: the app checks with the "
-            'server and either shows the account as deleted or lets you '
-            'delete it again.',
-      AccountErrorKind.notSignedIn => 'Please sign in first.',
-      AccountErrorKind.ageRestricted =>
-        "Accounts aren't available. Your progress is saved on this device.",
-      AccountErrorKind.other => 'Something went wrong. Please try again.',
-    };
+String accountErrorMessage(
+  AppLocalizations l10n,
+  AccountErrorKind kind, {
+  SignInMethod? attempted,
+}) => switch (kind) {
+  AccountErrorKind.cancelled => l10n.errCancelled,
+  AccountErrorKind.popupBlocked => l10n.errPopupBlocked,
+  AccountErrorKind.otherProvider => switch (attempted) {
+    SignInMethod.apple => l10n.errOtherProviderGoogle,
+    SignInMethod.google => l10n.errOtherProviderApple,
+    null => l10n.errOtherProviderUnknown,
+  },
+  AccountErrorKind.wrongAccount => l10n.errWrongAccount,
+  AccountErrorKind.network => l10n.errNetwork,
+  AccountErrorKind.unconfirmed => l10n.errUnconfirmed,
+  AccountErrorKind.notSignedIn => l10n.errNotSignedIn,
+  AccountErrorKind.ageRestricted => l10n.errAgeRestricted,
+  AccountErrorKind.other => l10n.errOther,
+};
 
 /// "Continue with Google / Apple" buttons.
 class SignInButtons extends StatefulWidget {
@@ -54,6 +42,7 @@ class _SignInButtonsState extends State<SignInButtons> {
 
   Future<void> _signIn(SignInMethod method) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     // Start the sign-in before any await, so a browser treats the pop-up
     // as a response to the click.
     final signIn = AppScope.read(
@@ -65,7 +54,9 @@ class _SignInButtonsState extends State<SignInButtons> {
     } catch (e) {
       final kind = e is AccountException ? e.kind : AccountErrorKind.other;
       messenger.showSnackBar(
-        SnackBar(content: Text(accountErrorMessage(kind, attempted: method))),
+        SnackBar(
+          content: Text(accountErrorMessage(l10n, kind, attempted: method)),
+        ),
       );
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -75,6 +66,7 @@ class _SignInButtonsState extends State<SignInButtons> {
   @override
   Widget build(BuildContext context) {
     final accounts = AppScope.of(context).accounts;
+    final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -90,8 +82,8 @@ class _SignInButtonsState extends State<SignInButtons> {
               ),
               label: Text(
                 method == SignInMethod.apple
-                    ? 'Continue with Apple'
-                    : 'Continue with Google',
+                    ? l10n.continueWithApple
+                    : l10n.continueWithGoogle,
               ),
             ),
           ),
@@ -109,20 +101,16 @@ Future<void> signOutWithCheck(BuildContext context) async {
   final anyway = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('Sign out anyway?'),
-      content: const Text(
-        "Progress on this device isn't saved to your account yet. Signing "
-        'out removes it from this device, so it would be lost.\n\n'
-        'Stay signed in and try again when you are online to keep it.',
-      ),
+      title: Text(context.l10n.signOutAnywayTitle),
+      content: Text(context.l10n.signOutAnywayBody),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Stay signed in'),
+          child: Text(context.l10n.staySignedIn),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('Sign out anyway'),
+          child: Text(context.l10n.signOutAnyway),
         ),
       ],
     ),
@@ -163,6 +151,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
   Future<void> _delete() async {
     // The confirming sign-in starts right here, in the click handler, so
     // a browser lets its pop-up open.
+    final l10n = context.l10n;
     final deletion = AppScope.read(context).deleteAccount();
     setState(() {
       _busy = true;
@@ -177,9 +166,10 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
       final kind = e is AccountException ? e.kind : AccountErrorKind.other;
       setState(() {
         _busy = false;
+        final reason = accountErrorMessage(l10n, kind);
         _error = kind == AccountErrorKind.unconfirmed
-            ? 'Your account may not have been deleted. ${accountErrorMessage(kind)}'
-            : "Your account wasn't deleted. ${accountErrorMessage(kind)}";
+            ? l10n.deleteMaybeFailed(reason)
+            : l10n.deleteFailed(reason);
       });
     }
   }
@@ -187,21 +177,17 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l10n = context.l10n;
     // The system back button must not close the dialog mid-deletion.
     return PopScope(
       canPop: !_busy,
       child: AlertDialog(
-        title: const Text('Delete your account?'),
+        title: Text(l10n.deleteDialogTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'This permanently deletes your account and the progress saved '
-              'with it on all your devices. Progress on this device is cleared '
-              "too. This can't be undone.\n\n"
-              "You'll be asked to sign in again to confirm.",
-            ),
+            Text(l10n.deleteDialogBody),
             if (_busy) ...[
               const SizedBox(height: 16),
               const LinearProgressIndicator(),
@@ -218,7 +204,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
         actions: [
           TextButton(
             onPressed: _busy ? null : () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -226,7 +212,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
               foregroundColor: scheme.onError,
             ),
             onPressed: _busy ? null : _delete,
-            child: const Text('Delete account'),
+            child: Text(l10n.deleteAccount),
           ),
         ],
       ),

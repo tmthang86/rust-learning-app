@@ -213,11 +213,17 @@ class Monetization extends ChangeNotifier {
 
   /// Opens a report for an ad seen on [screen] (App Store guideline
   /// 2.5.18). Returns false if no mail app or browser could open it.
-  Future<bool> reportAd(String screen) async {
+  Future<bool> reportAd(
+    String screen, {
+    String? subject,
+    String? intro,
+  }) async {
     final uri = adReportUri(
       time: _clock(),
       screen: screen,
       adUnits: ads.unitIds,
+      subject: subject,
+      intro: intro,
     );
     try {
       return await _launch(uri);

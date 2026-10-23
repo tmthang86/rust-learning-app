@@ -1,4 +1,4 @@
-import '../l10n/streak_strings.dart';
+import 'reminder_text.dart';
 import 'reminder_scheduler.dart';
 
 /// Reminders are scheduled for this many days from today, as one-shot

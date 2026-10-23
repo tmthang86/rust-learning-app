@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import '../../data/age.dart';
 import '../../data/app_state.dart';
 import '../../data/streaks.dart';
-import '../../l10n/streak_strings.dart';
+import '../../l10n/l10n.dart';
+import '../../l10n/streak_l10n.dart';
 
 /// Home: the streak and today's XP against the daily goal, in one compact
 /// card read out as one sentence by screen readers.
@@ -17,7 +18,7 @@ class StreakCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const s = StreakStrings.english;
+    final s = context.l10n;
     final state = AppScope.of(context);
     final theme = Theme.of(context);
     final summary = state.summary;
@@ -132,7 +133,7 @@ class ReminderPromptCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const s = StreakStrings.english;
+    final s = context.l10n;
     final state = AppScope.of(context);
     if (kIsWeb || !state.showReminderPrompt) return const SizedBox.shrink();
     final theme = Theme.of(context);
@@ -167,11 +168,10 @@ class ReminderPromptCard extends StatelessWidget {
 
   Future<void> _turnOn(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
+    final denied = context.l10n.remindersDenied;
     final on = await AppScope.read(context).reminders.setEnabled(true);
     if (!on) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(StreakStrings.english.remindersDenied)),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(denied)));
     }
   }
 }
@@ -182,7 +182,7 @@ class StreakStatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const s = StreakStrings.english;
+    final s = context.l10n;
     final summary = AppScope.of(context).summary;
     final theme = Theme.of(context);
 
@@ -211,8 +211,8 @@ class StreakStatsCard extends StatelessWidget {
             const SizedBox(height: 12),
             Semantics(
               container: true,
-              label: s.statsSemantics(
-                totalXp: summary.totalXp,
+              label: s.statsSemanticsFor(
+                totalXpValue: summary.totalXp,
                 current: summary.currentStreak,
                 longest: summary.longestStreak,
                 freezes: summary.freezesHeld,
@@ -256,7 +256,7 @@ class DailyGoalPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const s = StreakStrings.english;
+    final s = context.l10n;
     final state = AppScope.of(context);
     final theme = Theme.of(context);
     return Column(
@@ -293,7 +293,7 @@ class ReminderSettings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const s = StreakStrings.english;
+    final s = context.l10n;
     final state = AppScope.of(context);
     final reminders = state.reminders;
     if (kIsWeb || !reminders.supported) return const SizedBox.shrink();
@@ -359,7 +359,7 @@ class XpEarnedNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const s = StreakStrings.english;
+    final s = context.l10n;
     final a = award;
     if (a == null || a.xp == 0) return const SizedBox.shrink();
     final theme = Theme.of(context);
@@ -389,9 +389,12 @@ class XpEarnedNote extends StatelessWidget {
 /// The same feedback as a snackbar, for places that have no room for the
 /// note (lessons that end the moment they are marked done, or solved
 /// exercises). Pass a messenger taken before the screen can close.
-void showXpSnackBar(ScaffoldMessengerState messenger, XpAward award) {
+void showXpSnackBar(
+  ScaffoldMessengerState messenger,
+  XpAward award,
+  AppLocalizations s,
+) {
   if (award.xp == 0) return;
-  const s = StreakStrings.english;
   messenger.showSnackBar(
     SnackBar(
       content: Text(

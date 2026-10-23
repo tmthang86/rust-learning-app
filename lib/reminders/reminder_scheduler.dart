@@ -1,4 +1,5 @@
-import '../l10n/streak_strings.dart';
+import '../l10n/app_localizations.dart';
+import 'reminder_text.dart';
 
 /// One notification to show at one moment.
 class ScheduledReminder {
@@ -37,8 +38,12 @@ abstract class ReminderScheduler {
   /// False where reminders can't work (the web): the UI hides them.
   bool get supported;
 
-  /// Prepares the plugin. Never asks for permission. Safe to call again.
-  Future<void> initialize(StreakStrings strings);
+  /// Prepares the plugin and takes the app's language. It runs before every
+  /// schedule: on Android it (re)creates the notification channel with the
+  /// current language's name and description, so a language change renames
+  /// it in the system settings.
+  /// Never asks for permission. Safe to call again.
+  Future<void> initialize(AppLocalizations l10n);
 
   /// Whether the system lets the app show notifications right now.
   Future<bool> hasPermission();
@@ -61,7 +66,7 @@ class NoopReminderScheduler implements ReminderScheduler {
   @override
   bool get supported => false;
   @override
-  Future<void> initialize(StreakStrings strings) async {}
+  Future<void> initialize(AppLocalizations l10n) async {}
   @override
   Future<bool> hasPermission() async => false;
   @override

@@ -45,6 +45,8 @@ jobs:
         with:
           toolchain: stable
       - run: python3 tool/check_lessons.py
+      - name: Translation checker tests
+        run: python3 tool/test_check_lessons.py
       - run: python3 tool/check_errors.py
 
   runner:

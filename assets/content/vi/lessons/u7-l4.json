@@ -1,0 +1,112 @@
+{
+  "id": "u7-l4",
+  "title": "Ràng buộc trait (trait bound)",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Một ràng buộc trait (trait bound) giới hạn một kiểu generic vào những kiểu có một trait nhất định. Bạn viết nó sau tham số kiểu: T: Display nghĩa là \"bất kỳ kiểu T nào implement Display\". Khi đó, bên trong hàm bạn có thể dùng mọi thứ Display cung cấp, như {} trong println!."
+    },
+    {
+      "type": "code",
+      "code": "use std::fmt::Display;\n\nfn show_twice<T: Display>(value: T) {\n    println!(\"{value} {value}\");\n}\n\nfn main() {\n    show_twice(7);\n    show_twice(\"hello\");\n    show_twice(2.5);\n}"
+    },
+    {
+      "type": "text",
+      "text": "use std::fmt::Display; đưa tên Display vào phạm vi, giống như use std::collections::HashMap; đã làm cho HashMap. Nếu không có ràng buộc, println! với {value} sẽ không biên dịch được, vì Rust không thể biết rằng mọi T đều có thể được hiển thị. Nếu bạn gọi hàm với một kiểu không có Display, lệnh gọi thất bại với lỗi E0277 (ràng buộc trait không được thỏa mãn)."
+    },
+    {
+      "type": "text",
+      "text": "Hãy dùng + để yêu cầu nhiều trait cùng lúc. Hàm này cần T vừa so sánh được vừa in được:"
+    },
+    {
+      "type": "code",
+      "code": "use std::fmt::Display;\n\nfn print_larger<T: PartialOrd + Display>(a: T, b: T) {\n    if a > b {\n        println!(\"{a} is larger than {b}\");\n    } else {\n        println!(\"{b} is at least as large as {a}\");\n    }\n}\n\nfn main() {\n    print_larger(3, 9);\n    print_larger(\"pear\", \"apple\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Khi có nhiều ràng buộc, chữ ký trở nên chật chội. Một mệnh đề where chuyển chúng ra sau chữ ký, với cùng ý nghĩa:"
+    },
+    {
+      "type": "code",
+      "code": "use std::fmt::{Debug, Display};\n\nfn report<T, U>(label: T, data: U) -> String\nwhere\n    T: Display,\n    U: Debug + Clone,\n{\n    let copy = data.clone();\n    format!(\"{label}: {:?}\", copy)\n}\n\nfn main() {\n    println!(\"{}\", report(\"scores\", vec![90, 85]));\n}"
+    },
+    {
+      "type": "text",
+      "text": "(use std::fmt::{Debug, Display}; đưa hai tên vào chỉ trong một dòng.) Debug là trait đứng sau {:?}, và Clone là trait có phương thức clone."
+    },
+    {
+      "type": "text",
+      "text": "Có hai lối tắt cho trait. Trong một đối số, impl Trait nghĩa là \"một kiểu nào đó có trait này\". Nó là cách viết tắt của một generic với một ràng buộc. Trong một kiểu trả về, nó nói \"tôi trả về một kiểu nào đó có trait này\" mà không nêu tên nó. Hàm vẫn trả về một kiểu cụ thể duy nhất:"
+    },
+    {
+      "type": "code",
+      "code": "trait Speak {\n    fn speak(&self) -> String;\n}\n\nstruct Dog;\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        String::from(\"woof\")\n    }\n}\n\nfn announce(item: &impl Speak) {\n    println!(\"it says {}\", item.speak());\n}\n\nfn make_pet() -> impl Speak {\n    Dog\n}\n\nfn main() {\n    let pet = make_pet();\n    announce(&pet);\n}"
+    },
+    {
+      "type": "text",
+      "text": "(struct Dog; là một struct hoàn toàn không có trường nào. Bạn tạo một giá trị chỉ bằng cách viết Dog.) Một hàm trả về impl Speak không thể trả về Dog ở một nhánh và Robot ở nhánh khác: trình biên dịch cần một kiểu thật duy nhất (nếu không sẽ là lỗi E0308). Việc trộn các kiểu trong một collection được giải quyết bằng Box<dyn Trait> trong Unit 10."
+    },
+    {
+      "type": "text",
+      "text": "Nhiều trait phổ biến đến mức Rust có thể viết impl giúp bạn. Hãy đặt #[derive(...)] phía trên một struct hoặc enum và liệt kê các trait. Debug cho phép bạn in bằng {:?}. Clone thêm một phương thức clone. PartialEq cho phép bạn so sánh bằng == và !=. Copy làm cho giá trị được sao chép thay vì di chuyển (mọi trường cũng phải là Copy, và kiểu đó cũng phải implement Clone; derive cả hai là cách dễ nhất). Default cho một giá trị mặc định, như 0 với các số."
+    },
+    {
+      "type": "code",
+      "code": "#[derive(Debug, Clone, Copy, PartialEq, Default)]\nstruct Point {\n    x: i32,\n    y: i32,\n}\n\nfn main() {\n    let a = Point { x: 1, y: 2 };\n    let b = a;   // Copy: a is still usable\n    println!(\"{:?} {:?} equal: {}\", a, b, a == b);\n    let origin = Point::default();\n    println!(\"{:?} equal: {}\", origin, a == origin);\n}\n\n// Output:\n// Point { x: 1, y: 2 } Point { x: 1, y: 2 } equal: true\n// Point { x: 0, y: 0 } equal: false"
+    },
+    {
+      "type": "text",
+      "text": "Chú thích Output cho thấy a và b in ra giống nhau, và a vẫn dùng được sau let b = a, vì Point là Copy. Point::default() cho x và y giá trị mặc định của chúng, 0, nên origin không bằng a."
+    },
+    {
+      "type": "note",
+      "text": "Một ràng buộc giống như một yêu cầu trong tin tuyển dụng: \"ai làm được X và Y đều có thể ứng tuyển\". Trình biên dịch kiểm tra rằng mọi kiểu bạn truyền vào đều đáp ứng nó, nên sai sót hiện ra dưới dạng lỗi biên dịch, không phải sập chương trình (crash).",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "T: Trait là <T extends Comparable<T>> của Java, concept của C++20, hay một constraint của Go. impl Trait ở vị trí đối số là cú pháp rút gọn của generic: bạn không thể nêu tên kiểu đó, nên hãy dùng <T: Trait> khi hai đối số phải cùng kiểu (a: T, b: T). Lưu ý rằng derive(PartialEq) so sánh từng trường một, giống equals của một record trong Java.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "show chỉ nhận một i32. Hãy làm cho nó hoạt động với bất kỳ kiểu nào có thể được in bằng {}, và thêm một lệnh gọi với một chuỗi ở cuối main. Chương trình phải in ra hai dòng: <5> và <hi>. Gợi ý: thêm use std::fmt::Display; ở đầu, và viết fn show<T: Display>(item: T).",
+    "starter": "fn show(item: i32) {\n    println!(\"<{item}>\");\n}\n\nfn main() {\n    show(5);\n}",
+    "expectedOutput": "<5>\n<hi>",
+    "solution": "use std::fmt::Display;\n\nfn show<T: Display>(item: T) {\n    println!(\"<{item}>\");\n}\n\nfn main() {\n    show(5);\n    show(\"hi\");\n}",
+    "hints": [
+      "Hiện giờ show chỉ nhận một i32. Nó phải chấp nhận bất kỳ kiểu nào có thể được in bằng {}. Trait nào là trait cho {}?",
+      "Hãy thêm một tham số kiểu với một ràng buộc trait sau tên hàm: <T: Display>. Hãy dùng T làm kiểu của item. Display cần một dòng use ở đầu tệp.",
+      "Hãy thêm use std::fmt::Display; ở đầu và đổi chữ ký thành fn show<T: Display>(item: T). Sau đó hãy gọi show(\"hi\") ở cuối main."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "fn f<T: Display + Clone>(x: T) yêu cầu gì ở T?",
+      "options": [
+        "T phải implement Display hoặc Clone, tùy bên gọi thích cái nào",
+        "T phải implement Display, còn Clone chỉ là một gợi ý",
+        "T phải implement cả Display lẫn Clone"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "#[derive(Debug)] làm gì?",
+      "options": [
+        "Nó chuyển chương trình sang chế độ debug, để các kiểm tra bổ sung được thực hiện lúc chạy",
+        "Nó yêu cầu trình biên dịch viết impl Debug, để {:?} hoạt động trên kiểu đó",
+        "Nó in struct ra màn hình mỗi khi một giá trị được tạo"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "fn make() -> impl Speak có thể trả về Dog ở một nhánh và Robot ở nhánh khác không?",
+      "options": [
+        "Không, nó phải luôn trả về một kiểu cụ thể duy nhất",
+        "Có, bất kỳ kiểu nào implement Speak đều có thể được trả về từ các nhánh khác nhau",
+        "Có, miễn là cả hai kiểu có cùng số trường"
+      ],
+      "answer": 0
+    }
+  ]
+}

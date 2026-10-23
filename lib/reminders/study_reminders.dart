@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../l10n/streak_strings.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/app_localizations_en.dart';
 import 'reminder_plan.dart';
 import 'reminder_scheduler.dart';
+import 'reminder_text.dart';
 
 /// The learner's reminder settings and the schedule that follows from them.
 ///
@@ -20,8 +22,9 @@ class StudyReminders extends ChangeNotifier {
     required this.scheduler,
     required this.clock,
     required this.goalMetToday,
-    this.strings = StreakStrings.english,
-  }) : _enabled = prefs.getBool(enabledKey) ?? false,
+    AppLocalizations Function()? l10n,
+  }) : l10n = l10n ?? AppLocalizationsEn.new,
+       _enabled = prefs.getBool(enabledKey) ?? false,
        _minutes = _readMinutes(prefs),
        _promptSeen = prefs.getBool(promptSeenKey) ?? false;
 
@@ -36,8 +39,9 @@ class StudyReminders extends ChangeNotifier {
   /// Whether today's XP already reached the daily goal.
   final bool Function() goalMetToday;
 
-  /// Text for the notification and its channel. Replace it to localize.
-  StreakStrings strings;
+  /// The words of the notification and its channel, in the app's language
+  /// at the moment of scheduling (asked every time, not stored).
+  final AppLocalizations Function() l10n;
 
   bool _enabled;
   int _minutes;
@@ -92,7 +96,7 @@ class StudyReminders extends ChangeNotifier {
 
   Future<void> _refresh() async {
     if (!supported || !_enabled) return;
-    await scheduler.initialize(strings);
+    await scheduler.initialize(l10n());
     if (!await scheduler.hasPermission()) {
       // The learner blocked notifications in the system settings.
       _enabled = false;
@@ -109,7 +113,7 @@ class StudyReminders extends ChangeNotifier {
         now: clock(),
         minutesOfDay: _minutes,
         goalMetToday: goalMetToday(),
-        text: reminderText(strings),
+        text: reminderText(l10n()),
       ),
     );
   }
@@ -131,7 +135,7 @@ class StudyReminders extends ChangeNotifier {
       }
       if (!supported) return;
       final epoch = _resetEpoch;
-      await scheduler.initialize(strings);
+      await scheduler.initialize(l10n());
       final granted =
           await scheduler.hasPermission() ||
           await scheduler.requestPermission();

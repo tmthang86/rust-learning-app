@@ -9,7 +9,7 @@ import 'package:rust_learn/account/progress_sync.dart';
 import 'package:rust_learn/data/app_state.dart';
 import 'package:rust_learn/data/course_repository.dart';
 import 'package:rust_learn/data/models.dart';
-import 'package:rust_learn/l10n/streak_strings.dart';
+import 'package:rust_learn/l10n/app_localizations.dart';
 import 'package:rust_learn/reminders/reminder_scheduler.dart';
 import 'package:rust_learn/monetization/ad_config.dart';
 import 'package:rust_learn/monetization/ads_service.dart';
@@ -341,8 +341,12 @@ class FakeReminderScheduler implements ReminderScheduler {
   /// Every [replaceAll] call, in order.
   final List<List<ScheduledReminder>> schedules = [];
 
+  /// The language of the last [initialize] call (the notification text).
+  AppLocalizations? l10n;
+
   @override
-  Future<void> initialize(StreakStrings strings) async {
+  Future<void> initialize(AppLocalizations l10n) async {
+    this.l10n = l10n;
     if (throws) throw StateError('plugin failed');
     initializes++;
   }

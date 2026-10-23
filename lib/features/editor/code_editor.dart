@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../../app/theme.dart';
 import '../../data/app_state.dart';
+import '../../l10n/l10n.dart';
 import '../../runner/code_runner.dart';
 import 'error_explanation_cards.dart';
 
@@ -121,7 +122,11 @@ class _CodeEditorState extends State<CodeEditor>
     if (MediaQuery.supportsAnnounceOf(context)) {
       SemanticsService.sendAnnouncement(
         View.of(context),
-        runAnnouncement(result, solved: expected == null ? null : solved),
+        runAnnouncement(
+          context.l10n,
+          result,
+          solved: expected == null ? null : solved,
+        ),
         Directionality.of(context),
       );
     }
@@ -139,6 +144,7 @@ class _CodeEditorState extends State<CodeEditor>
   Widget build(BuildContext context) {
     super.build(context);
     final scheme = Theme.of(context).colorScheme;
+    final l10n = context.l10n;
     final result = _result;
 
     return Column(
@@ -182,11 +188,8 @@ class _CodeEditorState extends State<CodeEditor>
                 ),
               },
               child: Semantics(
-                label: 'Rust code',
-                hint:
-                    'Tab indents. Shift+Tab outdents selected lines, or '
-                    'leaves the editor when nothing is selected. '
-                    'Control+Enter runs the code.',
+                label: l10n.editorLabel,
+                hint: l10n.editorHint,
                 child: TextField(
                   controller: _controller,
                   style: codeTextStyle,
@@ -219,13 +222,13 @@ class _CodeEditorState extends State<CodeEditor>
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.play_arrow),
-              label: const Text('Run'),
+              label: Text(l10n.runButton),
             ),
             const SizedBox(width: 8),
             TextButton.icon(
               onPressed: _running ? null : _reset,
               icon: const Icon(Icons.restart_alt),
-              label: const Text('Reset'),
+              label: Text(l10n.resetButton),
             ),
           ],
         ),
@@ -238,7 +241,8 @@ class _CodeEditorState extends State<CodeEditor>
             // whose label changes on every run, so repeats are read too.
             liveLabel: MediaQuery.supportsAnnounceOf(context)
                 ? null
-                : 'Run $_runCount. ${runAnnouncement(result, solved: widget.expectedOutput == null ? null : _solved)}',
+                : '${l10n.announceRunCount(_runCount)} '
+                      '${runAnnouncement(l10n, result, solved: widget.expectedOutput == null ? null : _solved)}',
           ),
           if (widget.expectedOutput != null &&
               result.stage != RunStage.unavailable) ...[
@@ -257,8 +261,8 @@ class _CodeEditorState extends State<CodeEditor>
                   Expanded(
                     child: Text(
                       _solved
-                          ? 'Correct! Nice work.'
-                          : 'Not quite yet. Keep trying.',
+                          ? l10n.exerciseSolved
+                          : l10n.exerciseNotYet,
                       style: TextStyle(
                         color: _solved ? scheme.primary : scheme.error,
                         fontWeight: FontWeight.w600,
@@ -383,7 +387,7 @@ TextEditingValue outdentLines(TextEditingValue value) {
 
 /// What a screen reader says when a run finishes.
 @visibleForTesting
-String runAnnouncement(RunResult r, {bool? solved}) {
+String runAnnouncement(AppLocalizations l10n, RunResult r, {bool? solved}) {
   String clip(String s) {
     final t = s.trim();
     return t.length > 200 ? '${t.substring(0, 200)}…' : t;
@@ -394,20 +398,20 @@ String runAnnouncement(RunResult r, {bool? solved}) {
     r.stderr,
   ].where((s) => s.trim().isNotEmpty).join('\n');
   final base = switch (r.stage) {
-    RunStage.compile => "Your code didn't compile. ${clip(r.stderr)}",
-    RunStage.unavailable => "Couldn't run your code. ${clip(r.stderr)}",
-    RunStage.timeout => 'Your program took too long.',
+    RunStage.compile => l10n.announceCompile(clip(r.stderr)),
+    RunStage.unavailable => l10n.announceUnavailable(clip(r.errorText(l10n))),
+    RunStage.timeout => l10n.announceTimeout,
     RunStage.run =>
       output.isEmpty
-          ? 'Your program ran with no output.'
-          : 'Output: ${clip(output)}',
+          ? l10n.announceNoOutput
+          : l10n.announceOutput(clip(output)),
   };
   final verdict = switch (solved) {
-    true => ' Correct! Nice work.',
-    false => ' Not quite yet. Keep trying.',
+    true => ' ${l10n.exerciseSolved}',
+    false => ' ${l10n.exerciseNotYet}',
     null => '',
   };
-  final warn = r.warnings.trim().isEmpty ? '' : ' There are compiler warnings.';
+  final warn = r.warnings.trim().isEmpty ? '' : ' ${l10n.announceWarnings}';
   return '$base$verdict$warn';
 }
 
@@ -424,16 +428,20 @@ class _RunOutput extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final l10n = context.l10n;
 
     final (String heading, String body) = switch (result.stage) {
-      RunStage.compile => ("Your code didn't compile", result.stderr),
-      RunStage.unavailable => ("Couldn't run your code", result.stderr),
+      RunStage.compile => (l10n.runHeadingCompile, result.stderr),
+      RunStage.unavailable => (
+        l10n.runHeadingUnavailable,
+        result.errorText(l10n),
+      ),
       RunStage.timeout => (
-        'Your program took too long',
+        l10n.runHeadingTimeout,
         [result.stdout, result.stderr].where((s) => s.isNotEmpty).join('\n'),
       ),
       RunStage.run => (
-        'Output',
+        l10n.runHeadingOutput,
         [result.stdout, result.stderr].where((s) => s.isNotEmpty).join('\n'),
       ),
     };
@@ -478,7 +486,7 @@ class _RunOutput extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 SelectableText(
-                  body.isEmpty ? '(no output)' : body,
+                  body.isEmpty ? l10n.runNoOutput : body,
                   style: codeTextStyle.copyWith(color: scheme.onInverseSurface),
                 ),
               ],
@@ -498,7 +506,7 @@ class _RunOutput extends StatelessWidget {
                 color: scheme.onSurfaceVariant,
               ),
               title: Text(
-                'Compiler warnings (your program still ran)',
+                l10n.runWarningsTitle,
                 style: textTheme.bodyMedium?.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),

@@ -1,0 +1,104 @@
+{
+  "id": "u8-l5",
+  "title": "Tiêu thụ iterator",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Adapter xây dựng một pipeline, và một consumer (bộ tiêu thụ) chạy nó. Một phương thức tiêu thụ (Rust Book gọi chúng là consuming adapter) tiếp tục gọi next cho đến khi iterator kết thúc và trả về một kết quả. Bạn chọn phương thức nào sẽ quyết định bạn nhận được gì: một collection, một con số, một Option hay một bool."
+    },
+    {
+      "type": "text",
+      "text": "collect gom các phần tử vào một collection. Nó có thể xây dựng nhiều loại: một Vec, một String, một HashMap. Rust cần biết là loại nào, nên bạn chỉ định bằng khai báo kiểu (type annotation) trên biến, hoặc bằng ::<Type> sau collect (cái ::<> trông lạ mắt đó được gọi là turbofish). Rust cũng có thể nhìn ra từ nơi kết quả được đưa tới, chẳng hạn kiểu trả về của một hàm. Dấu _ cho phép Rust tự điền phần mà nó đã suy ra được."
+    },
+    {
+      "type": "code",
+      "code": "use std::collections::HashMap;\n\nfn main() {\n    // into a Vec\n    let squares: Vec<i32> = (1..=4).map(|n| n * n).collect();\n    println!(\"{:?}\", squares);\n\n    // _ lets Rust fill in the item type itself (i32 here)\n    let cubes: Vec<_> = (1..4).map(|n| n * n * n).collect();\n    println!(\"{:?}\", cubes);\n\n    // into a String: chars() is an iterator over the characters of a &str\n    let shout: String = \"hello\".chars().map(|c| c.to_ascii_uppercase()).collect();\n    let reversed = \"hello\".chars().rev().collect::<String>();\n    println!(\"{shout} {reversed}\");\n\n    // into a HashMap: the items must be (key, value) tuples\n    // iter() gives &&str items; *w turns each one into the &str used as the key\n    let words = [\"fig\", \"pear\", \"banana\"];\n    let lengths: HashMap<&str, usize> = words.iter().map(|w| (*w, w.len())).collect();\n    println!(\"pear has {} letters\", lengths[\"pear\"]);\n    println!(\"{} entries\", lengths.len());\n}"
+    },
+    {
+      "type": "text",
+      "text": "Các consumer khác biến cả dãy phần tử thành một giá trị duy nhất. sum cộng các phần tử lại, và count cho biết có bao nhiêu phần tử. fold là cái tổng quát: bạn đưa cho nó một giá trị khởi đầu và một closure nhận tổng tích lũy (acc) cùng phần tử tiếp theo, rồi trả về tổng mới."
+    },
+    {
+      "type": "text",
+      "text": "min và max trả về một Option, vì một iterator rỗng không có phần tử nhỏ nhất. Chúng cần các phần tử có thể sắp thứ tự đầy đủ (Ord), nên chạy được trên số nguyên và chuỗi nhưng không chạy được trên f64. find trả về phần tử đầu tiên khớp, cũng dưới dạng một Option."
+    },
+    {
+      "type": "text",
+      "text": "any và all trả lời có hoặc không: có ít nhất một phần tử khớp, hay tất cả đều khớp?"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let nums = vec![4, 8, 15, 16, 23, 42];\n\n    let total: i32 = nums.iter().sum();\n    let how_many = nums.iter().count();\n    let squares_sum = nums.iter().fold(0, |acc, n| acc + n * n);\n    println!(\"sum {total}, count {how_many}, sum of squares {squares_sum}\");\n\n    println!(\"max {:?}, min {:?}\", nums.iter().max(), nums.iter().min());\n\n    let first_big = nums.iter().find(|n| **n > 10);\n    println!(\"first over 10: {:?}\", first_big);\n\n    let any_odd = nums.iter().any(|n| n % 2 == 1);\n    let all_positive = nums.iter().all(|n| *n > 0);\n    println!(\"any odd: {any_odd}, all positive: {all_positive}\");\n}\n\n// Output:\n// sum 108, count 6, sum of squares 2854\n// max Some(42), min Some(4)\n// first over 10: Some(15)\n// any odd: true, all positive: true"
+    },
+    {
+      "type": "text",
+      "text": "nums.iter() đưa ra các tham chiếu (&i32), và một số phương thức truyền cho closure của bạn thêm một tham chiếu nữa chồng lên. find làm vậy, nên closure của nó thấy một &&i32 và **n gỡ cả hai lớp. any và all truyền phần tử nguyên như nó vốn có, nên n là một &i32: n % 2 dùng được trên tham chiếu, nhưng một phép so sánh như *n > 0 cần dấu sao. Khi các kiểu trông rối, lỗi của trình biên dịch cho bạn biết chính xác nó mong đợi kiểu nào."
+    },
+    {
+      "type": "text",
+      "text": "sum cần biết cộng dồn theo kiểu nào. Đó là lý do total có khai báo kiểu: i32. Bạn cũng có thể viết nums.iter().sum::<i32>(). max và min trả về Option<&i32>, một tham chiếu vào Vec. Tham chiếu được in giống giá trị mà nó trỏ tới, nên {:?} hiển thị Some(42), như trong chú thích Output."
+    },
+    {
+      "type": "text",
+      "text": "Một pipeline thường kết thúc bằng một consumer. Hãy đếm các từ trong một câu dài hơn ba chữ cái:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let text = \"the quick brown fox jumps over the lazy dog\";\n    let long_words = text.split_whitespace().filter(|w| w.len() > 3).count();\n    println!(\"{long_words} long words\");\n\n    let longest = text.split_whitespace().max_by_key(|w| w.len());\n    println!(\"longest: {:?}\", longest);\n}"
+    },
+    {
+      "type": "text",
+      "text": "split_whitespace cho một iterator trên các từ, nên mọi adapter và consumer trong bài này đều dùng được trên nó. max_by_key chọn phần tử có khóa lớn nhất từ closure. Nếu nhiều phần tử có khóa lớn nhất bằng nhau, nó trả về phần tử cuối cùng."
+    },
+    {
+      "type": "note",
+      "text": "Hãy nghĩ về collect như \"đổ băng chuyền vào một cái hộp\", còn sum, count và max như \"chỉ cần cho tôi một con số từ băng chuyền\". Cả hai đều tiêu thụ iterator, nên sau đó không thể dùng lại nó.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Các cách tương đương: Python sum(), len(list(...)), max(), any(), all(), functools.reduce (fold); Java toList() (hoặc collect(Collectors.toList())), reduce, anyMatch, allMatch; JS reduce, some, every, find. Một mẹo hay của Rust: collect có thể gom một iterator của các Result thành một Result<Vec<_>, _> duy nhất, dừng ở Err đầu tiên, ví dụ let nums: Result<Vec<i32>, _> = [\"1\", \"2\"].iter().map(|s| s.parse::<i32>()).collect();",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Code khởi đầu cộng độ dài các từ bằng một vòng lặp for và in ra 9. Hãy thay vòng lặp bằng một pipeline iterator dùng map để biến mỗi từ thành độ dài của nó rồi cộng chúng lại, giữ nguyên tổng được in. Sau đó, trên một dòng mới, in ra có bao nhiêu từ dài hơn 2 byte, đếm bằng filter và count. Chương trình phải in ra hai dòng: 9 và 2. Gợi ý: tổng cần một kiểu, nên hãy viết let total: usize = ... và kết thúc pipeline bằng .sum().",
+    "starter": "fn main() {\n    let words = [\"rust\", \"is\", \"fun\"];\n    let mut total = 0;\n    for w in words {\n        total += w.len();\n    }\n    println!(\"{total}\");\n}",
+    "expectedOutput": "9\n2",
+    "solution": "fn main() {\n    let words = [\"rust\", \"is\", \"fun\"];\n    let total: usize = words.iter().map(|w| w.len()).sum();\n    println!(\"{total}\");\n    let long = words.iter().filter(|w| w.len() > 2).count();\n    println!(\"{long}\");\n}",
+    "hints": [
+      "Cả hai dòng đều kết thúc một pipeline bằng một phương thức tiêu thụ. Dòng thứ nhất biến mỗi từ thành một con số rồi cộng các số lại. Dòng thứ hai giữ lại một số từ và đếm chúng.",
+      "Với tổng: words.iter().map(|w| w.len()).sum(). Phép sum cần biết kiểu của nó, nên hãy viết let total: usize = ở phía trước.",
+      "Với dòng thứ hai, hãy dùng filter với w.len() > 2 và kết thúc bằng count(). Đặt kết quả vào một biến và in nó trên một dòng mới sau tổng."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Cái nào trong những cái này là phương thức tiêu thụ, không phải adapter?",
+      "options": [
+        "sum, vì nó chạy toàn bộ iterator và trả về một giá trị",
+        "map, vì nó áp dụng closure cho mọi phần tử trong pipeline",
+        "filter, vì nó quyết định những phần tử nào ở lại trong pipeline"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Tại sao max() trả về một Option?",
+      "options": [
+        "max có thể không so sánh được hai số, ví dụ khi một số âm",
+        "max cần một closure, và closure có thể không cho ra kết quả",
+        "Một iterator rỗng không có phần tử lớn nhất, nên có thể không có gì để trả về"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "collect() biết bằng cách nào nên xây dựng Vec, String hay HashMap?",
+      "options": [
+        "Nó luôn xây dựng một Vec trước, rồi bạn chuyển sang các kiểu khác sau",
+        "Từ kiểu mà nó được yêu cầu trả về: một khai báo kiểu, turbofish, hoặc code xung quanh",
+        "Từ kiểu của phần tử đầu tiên mà iterator tạo ra khi chạy"
+      ],
+      "answer": 1
+    }
+  ]
+}

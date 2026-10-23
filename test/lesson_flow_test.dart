@@ -4,12 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:rust_learn/app/router.dart';
 import 'package:rust_learn/data/app_state.dart';
 import 'package:rust_learn/data/models.dart';
-import 'package:rust_learn/features/home/checkpoint_strings.dart';
 
 import 'dart:async';
 
 import 'package:rust_learn/data/course_repository.dart';
 import 'package:rust_learn/features/editor/code_editor.dart';
+import 'package:rust_learn/l10n/app_localizations_en.dart';
 import 'package:rust_learn/main.dart';
 import 'package:rust_learn/runner/code_runner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -65,19 +65,18 @@ void main() {
     await tester.pumpAndSettle();
 
     // Only the checkpoint row carries the label, not the normal lessons.
-    expect(find.text(CheckpointStrings.label), findsOneWidget);
+    expect(find.text('Checkpoint'), findsOneWidget);
     expect(find.byIcon(Icons.circle_outlined), findsNWidgets(3));
-    Finder icon(String label) => find.byWidgetPredicate(
-          (w) => w is Icon && w.semanticLabel == label,
-        );
-    expect(icon(CheckpointStrings.notStarted), findsNWidgets(4));
+    Finder icon(String label) =>
+        find.byWidgetPredicate((w) => w is Icon && w.semanticLabel == label);
+    expect(icon('Not started'), findsNWidgets(4));
     expect(find.byIcon(Icons.emoji_events_outlined), findsOneWidget);
     expect(find.textContaining('0 of 4 lessons done'), findsOneWidget);
 
     await tester.runAsync(() => state.markCompleted('u1-check'));
     await tester.pumpAndSettle();
     expect(find.byIcon(Icons.emoji_events), findsOneWidget);
-    expect(icon(CheckpointStrings.completed), findsOneWidget);
+    expect(icon('Completed'), findsOneWidget);
     expect(find.textContaining('1 of 4 lessons done'), findsOneWidget);
     expect(state.totalLessons, 4);
     expect(state.completedCount, 1);
@@ -423,6 +422,7 @@ void main() {
   test('compile errors and failures are announced too (F5)', () {
     expect(
       runAnnouncement(
+        AppLocalizationsEn(),
         const RunResult(
           success: false,
           stage: RunStage.compile,
@@ -433,6 +433,7 @@ void main() {
     );
     expect(
       runAnnouncement(
+        AppLocalizationsEn(),
         const RunResult(success: true, stage: RunStage.run, warnings: 'w'),
       ),
       'Your program ran with no output. There are compiler warnings.',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/app_state.dart';
+import '../../l10n/l10n.dart';
 import 'account_widgets.dart';
 
 /// Public page at /delete-account (on the web: `<site>/#/delete-account`).
@@ -52,6 +53,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final user = state.user;
 
     final Widget action;
@@ -59,16 +61,12 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       action = Semantics(
         liveRegion: true,
         child: Text(
-          'Your account has been deleted.',
+          l10n.accountDeletedSnack,
           style: theme.textTheme.titleMedium,
         ),
       );
     } else if (!state.accounts.available) {
-      action = const Text(
-        "Accounts aren't switched on in this version of the app, so there is "
-        'no account to delete. Progress stays only on your device; '
-        'uninstalling the app or clearing its data removes it.',
-      );
+      action = Text(l10n.deletePageNoAccounts);
     } else if (user == null) {
       action = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -76,14 +74,11 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
           if (state.signInCreatedNoAccount) ...[
             Semantics(
               liveRegion: true,
-              child: const Text(
-                'There was no Learn Rust account for that sign-in, so there '
-                'is nothing to delete. The sign-in was not kept.',
-              ),
+              child: Text(l10n.deletePageNothingToDelete),
             ),
             const SizedBox(height: 12),
           ],
-          const Text('Sign in with the account you want to delete.'),
+          Text(l10n.deletePageSignInPrompt),
           const SizedBox(height: 4),
           const SignInButtons(toDelete: true),
         ],
@@ -92,7 +87,9 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       action = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Signed in as ${user.label}.'),
+          Text(
+            l10n.deletePageSignedInAs(user.name ?? l10n.signedInFallback),
+          ),
           const SizedBox(height: 12),
           FilledButton.icon(
             style: FilledButton.styleFrom(
@@ -101,14 +98,14 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
             ),
             onPressed: _delete,
             icon: const Icon(Icons.delete_forever_outlined),
-            label: const Text('Delete account'),
+            label: Text(l10n.deleteAccount),
           ),
         ],
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Delete your account')),
+      appBar: AppBar(title: Text(l10n.deleteYourAccount)),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 640),
@@ -116,29 +113,16 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
             padding: const EdgeInsets.all(24),
             children: [
               Text(
-                'Learn Rust: account deletion',
+                l10n.deletePageHeading,
                 style: theme.textTheme.headlineSmall,
               ),
               const SizedBox(height: 12),
-              const Text(
-                'You can delete your Learn Rust account at any time, here or '
-                'in the app under Progress → Delete account.',
-              ),
+              Text(l10n.deletePageIntro),
               const SizedBox(height: 12),
-              const Text(
-                'Deleting removes, right away and for good:\n'
-                '• your account (the link to your Google or Apple sign-in)\n'
-                '• your saved progress: your learning track and the lessons '
-                'you finished\n\n'
-                'Nothing is kept after deletion. Progress on the device you '
-                'delete from is cleared too; on other devices it stays only '
-                'until you uninstall the app or clear its data.',
-              ),
+              Text(l10n.deletePageWhatRemoved),
               if (!state.accountsAllowed) ...[
                 const SizedBox(height: 12),
-                const Text(
-                  'For you, progress on this device stays, saved only here.',
-                ),
+                Text(l10n.deletePageChildNote),
               ],
               const SizedBox(height: 24),
               action,
@@ -147,7 +131,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                 alignment: Alignment.centerLeft,
                 child: TextButton(
                   onPressed: () => context.go('/learn'),
-                  child: const Text('Go to the app'),
+                  child: Text(l10n.goToApp),
                 ),
               ),
             ],

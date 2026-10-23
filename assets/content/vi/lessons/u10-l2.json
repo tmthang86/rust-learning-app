@@ -1,0 +1,96 @@
+{
+  "id": "u10-l2",
+  "title": "Deref và Drop",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Hai trait nhỏ mang lại cho con trỏ thông minh (smart pointer) cảm giác đặc biệt của chúng. Deref điều khiển việc toán tử * làm gì. Drop cho phép bạn chạy code khi một giá trị biến mất. Bạn đã biết ý tưởng của * từ tham chiếu: nó đi theo tham chiếu để lấy giá trị mà nó trỏ tới. Một Box hoạt động theo cùng cách đó."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let x = 5;\n    let y = &x;\n    let b = Box::new(x);\n    println!(\"{} {} {}\", x, *y, *b);\n    assert_eq!(5, *y);   // y is a reference, so *y is the number 5\n}\n\n// Output:\n// 5 5 5"
+    },
+    {
+      "type": "text",
+      "text": "Bạn có thể làm cho kiểu của riêng mình hoạt động như vậy bằng cách implement trait Deref. Dưới đây là một kiểu box nhỏ tên là MyBox. struct MyBox<T>(T); là một tuple struct: một struct có các trường không tên, ở đây là một trường thuộc kiểu T bất kỳ, mà bạn truy cập bằng .0. Trait Deref cần hai thứ. type Target = T; cho biết * trả về kiểu gì (đây được gọi là kiểu liên kết, hay associated type). Phương thức deref trả về một tham chiếu tới giá trị bên trong đó."
+    },
+    {
+      "type": "code",
+      "code": "use std::ops::Deref;\n\nstruct MyBox<T>(T);\n\nimpl<T> MyBox<T> {\n    fn new(x: T) -> MyBox<T> {\n        MyBox(x)\n    }\n}\n\nimpl<T> Deref for MyBox<T> {\n    type Target = T;\n\n    fn deref(&self) -> &T {\n        &self.0\n    }\n}\n\nfn hello(name: &str) {\n    println!(\"Hello, {name}!\");\n}\n\nfn main() {\n    let y = MyBox::new(5);\n    println!(\"{}\", *y);   // Rust runs *(y.deref()) behind the scenes\n\n    let name = MyBox::new(String::from(\"Rust\"));\n    hello(&name);         // &MyBox<String> becomes &String, then &str\n}\n\n// Output:\n// 5\n// Hello, Rust!"
+    },
+    {
+      "type": "text",
+      "text": "Dòng cuối cùng cho thấy deref coercion. hello muốn một &str, nhưng chúng ta truyền &MyBox<String>. Rust thấy MyBox implement Deref, nên nó gọi deref để lấy một &String, và String cũng implement Deref, nên nó đi thêm một bước nữa để lấy một &str. Tất cả điều này xảy ra lúc biên dịch, không tốn chi phí lúc chạy. Đó là lý do bạn có thể truyền &String vào nơi cần &str, và là lý do &Box<List> ở bài trước hoạt động ở nơi cần một &List."
+    },
+    {
+      "type": "text",
+      "text": "Bây giờ là Drop. Nếu một kiểu implement Drop, Rust tự động gọi phương thức drop của nó khi một giá trị ra khỏi phạm vi. Đó là nơi để đóng một file, giải phóng một lock, hoặc in một thông báo. Bạn không bao giờ tự viết lời gọi dọn dẹp."
+    },
+    {
+      "type": "code",
+      "code": "struct Noisy {\n    name: String,\n}\n\nimpl Noisy {\n    fn new(name: &str) -> Noisy {\n        Noisy { name: String::from(name) }\n    }\n}\n\nimpl Drop for Noisy {\n    fn drop(&mut self) {\n        println!(\"dropping {}\", self.name);\n    }\n}\n\nfn main() {\n    let first = Noisy::new(\"first\");\n    let second = Noisy::new(\"second\");\n    println!(\"made {} and {}\", first.name, second.name);\n    {\n        let temp = Noisy::new(\"temp\");\n        println!(\"inside block with {}\", temp.name);\n    }\n    let early = Noisy::new(\"early\");\n    drop(early);   // std's drop function: cleans up right now\n    println!(\"end of main\");\n}\n\n// Output:\n// made first and second\n// inside block with temp\n// dropping temp\n// dropping early\n// end of main\n// dropping second\n// dropping first"
+    },
+    {
+      "type": "text",
+      "text": "Hãy đọc kết quả, được hiển thị trong chú thích ở cuối code, từ trên xuống. temp bị drop ở dấu ngoặc nhọn đóng của khối của nó. early bị drop bởi lời gọi drop(early). Ở cuối main, các giá trị còn lại bị drop theo thứ tự ngược với thứ tự tạo: second trước, rồi đến first. Vì vậy giá trị được tạo cuối cùng là giá trị được dọn dẹp đầu tiên."
+    },
+    {
+      "type": "text",
+      "text": "Để dọn dẹp sớm, hãy gọi hàm drop(value). Nó nằm trong prelude của Rust, nên bạn không cần dòng use. Nó nhận giá trị theo quyền sở hữu, nên sau drop(early) bạn không thể dùng early nữa. Tự gọi phương thức, early.drop(), là không được phép. Code này không biên dịch được. Rust báo E0040: explicit use of destructor method. Lý do là Rust sẽ gọi drop lần nữa ở cuối phạm vi, và dọn dẹp hai lần sẽ là một lỗi."
+    },
+    {
+      "type": "code",
+      "code": "// This does NOT compile: E0040, explicit use of destructor method.\nstruct Noisy;\n\nimpl Drop for Noisy {\n    fn drop(&mut self) {\n        println!(\"dropping\");\n    }\n}\n\nfn clean_up(n: Noisy) {\n    n.drop();\n}"
+    },
+    {
+      "type": "note",
+      "text": "Hãy nghĩ về Drop như một mục trong danh sách việc cần làm mà Rust đánh dấu xong giúp bạn: \"khi thứ này ra khỏi phạm vi, hãy làm việc này\". Vì nó tự động, bạn không thể quên dọn dẹp. Bạn đã thấy cùng ý tưởng này trước đó: khi một String ra khỏi phạm vi, bộ nhớ của nó được giải phóng. Drop là cách điều đó xảy ra.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Nếu bạn đến từ C++: Drop là destructor, và việc dọn dẹp theo thứ tự ngược là RAII, giống như trong C++. try-with-resources của Java, using của C# và with của Python cho việc dọn dẹp xác định cho một khối. Rust làm điều đó cho mọi giá trị một cách tự động, không cần cú pháp đặc biệt. Ngược lại, finalizer của Java có thể chạy muộn hoặc không bao giờ chạy, và đã bị đánh dấu lỗi thời (deprecated), sẽ bị gỡ bỏ. Deref cũng có một trait anh em, DerefMut, cho *x trên một giá trị có thể thay đổi. Các trường của một struct bị drop sau drop của chính struct đó, theo thứ tự chúng được khai báo. Điều này ngược với C++, vốn hủy các thành viên theo thứ tự ngược lại.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hiện giờ first bị drop ở tận cuối main. Hãy đổi chương trình để first được dọn dẹp trước dòng in working, trong khi second vẫn tồn tại đến cuối. Chương trình phải in ra bốn dòng: guards: first and second, dropping first, working, dropping second. Gợi ý: gọi drop(first); ngay trước println!(\"working\").",
+    "starter": "struct Guard {\n    name: String,\n}\n\nimpl Drop for Guard {\n    fn drop(&mut self) {\n        println!(\"dropping {}\", self.name);\n    }\n}\n\nfn main() {\n    let first = Guard { name: String::from(\"first\") };\n    let second = Guard { name: String::from(\"second\") };\n    println!(\"guards: {} and {}\", first.name, second.name);\n    // add drop(first); here\n    println!(\"working\");\n}",
+    "expectedOutput": "guards: first and second\ndropping first\nworking\ndropping second",
+    "solution": "struct Guard {\n    name: String,\n}\n\nimpl Drop for Guard {\n    fn drop(&mut self) {\n        println!(\"dropping {}\", self.name);\n    }\n}\n\nfn main() {\n    let first = Guard { name: String::from(\"first\") };\n    let second = Guard { name: String::from(\"second\") };\n    println!(\"guards: {} and {}\", first.name, second.name);\n    drop(first);\n    println!(\"working\");\n}",
+    "hints": [
+      "Một giá trị bị drop ở cuối phạm vi của nó. Để dọn dẹp một giá trị sớm hơn, có một hàm nhận giá trị và drop nó ngay lập tức.",
+      "Hàm đó là drop(value). Nó nằm trong prelude, nên không cần dòng use. Nó nhận quyền sở hữu, nên giá trị không thể được dùng sau nó.",
+      "Hãy thay chú thích bằng drop(first); để nó nằm ngay sau dòng guards và trước println!(\"working\"). Đừng đụng đến second."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Rust drop các biến cục bộ theo thứ tự nào ở cuối một phạm vi?",
+      "options": [
+        "Theo thứ tự chúng được tạo, tạo trước thì bị drop trước",
+        "Theo thứ tự ngược với thứ tự tạo, tạo sau cùng thì bị drop trước",
+        "Theo thứ tự bảng chữ cái của tên biến"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Việc implement trait Deref tùy chỉnh điều gì?",
+      "options": [
+        "Cách một giá trị được in ra khi bạn dùng {}",
+        "Cách một giá trị được sao chép khi bạn gán nó",
+        "Thứ mà toán tử * trả về cho giá trị đó"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Làm thế nào để dọn dẹp một giá trị trước khi hết phạm vi của nó?",
+      "options": [
+        "Gọi drop(value), hàm của thư viện chuẩn",
+        "Gọi value.drop(), phương thức trên giá trị",
+        "Đặt biến thành None để nó được giải phóng"
+      ],
+      "answer": 0
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "id": "u0-l1",
+  "title": "Chương trình là gì?",
+  "sections": [
+    { "type": "text", "text": "Chương trình là một danh sách các lệnh dành cho máy tính. Máy tính làm theo chúng một cách chính xác, lần lượt từng lệnh một, từ trên xuống dưới, trừ khi có một lệnh bảo nó nhảy sang chỗ khác (bạn sẽ biết cách làm điều đó trong các bài học tiếp theo)." },
+    { "type": "text", "text": "Máy tính rất nhanh nhưng hiểu mọi thứ theo đúng nghĩa đen. Chúng làm đúng những gì bạn viết, chứ không phải những gì bạn muốn nói. Đó là lý do ngôn ngữ lập trình có những quy tắc nghiêm ngặt: thiếu một ký hiệu thôi cũng có thể làm cả chương trình dừng lại." },
+    { "type": "text", "text": "Đây là một chương trình Rust hoàn chỉnh. Bạn chưa cần lo về từng ký hiệu đâu. Hãy nhìn ba dòng bên trong cặp dấu ngoặc nhọn:" },
+    { "type": "code", "code": "fn main() {\n    println!(\"Good morning!\");\n    println!(\"Let's learn Rust.\");\n    println!(\"Ready?\");\n}" },
+    { "type": "text", "text": "Mỗi dòng println! hiển thị một dòng văn bản. Vì máy tính chạy từ trên xuống dưới, ba thông báo luôn xuất hiện theo đúng thứ tự này." },
+    { "type": "note", "text": "Trước khi một chương trình Rust chạy, một công cụ gọi là trình biên dịch (compiler) sẽ dịch nó thành các lệnh mà máy tính có thể chạy. Trong lúc làm việc đó, nó kiểm tra xem có lỗi không. Nếu tìm thấy lỗi, nó giải thích vấn đề thay vì tạo ra chương trình. Lỗi biên dịch là chuyện bình thường và hữu ích, không phải dấu hiệu cho thấy bạn đang làm chưa tốt." }
+  ],
+  "exercise": {
+    "prompt": "Hoán đổi các dòng để chương trình in ra First, rồi Second, mỗi từ trên một dòng riêng.",
+    "starter": "fn main() {\n    println!(\"Second\");\n    println!(\"First\");\n}",
+    "expectedOutput": "First\nSecond",
+    "solution": "fn main() {\n    println!(\"First\");\n    println!(\"Second\");\n}",
+    "hints": ["Máy tính chạy các dòng của bạn từ trên xuống dưới. Dòng nào nên chạy trước?", "Mỗi dòng println! là một lệnh hoàn chỉnh kết thúc bằng ;. Hãy chuyển println!(\"First\"); lên trên println!(\"Second\");, vẫn nằm trong cặp dấu ngoặc nhọn."]
+  },
+  "quiz": [
+    {
+      "question": "Khi không có gì bảo máy tính nhảy sang chỗ khác, nó chạy các dòng bên trong main theo thứ tự nào?",
+      "options": ["Thứ tự ngẫu nhiên", "Từ trên xuống dưới", "Từ dưới lên trên"],
+      "answer": 1
+    },
+    {
+      "question": "Trình biên dịch làm gì?",
+      "options": ["Biến code của bạn thành một chương trình chạy được, sau khi kiểm tra lỗi trong code của bạn", "Lưu code của bạn vào một tệp và giữ một bản sao dự phòng của nó", "Tự viết chương trình cho bạn từ một mô tả bằng ngôn ngữ đời thường"],
+      "answer": 0
+    }
+  ]
+}

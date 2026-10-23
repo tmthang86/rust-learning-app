@@ -6,7 +6,9 @@ import 'package:rust_learn/account/account_service.dart';
 import 'package:rust_learn/data/age.dart';
 import 'package:rust_learn/data/app_state.dart';
 import 'package:rust_learn/data/streaks.dart';
-import 'package:rust_learn/l10n/streak_strings.dart';
+import 'package:rust_learn/l10n/app_localizations.dart';
+import 'package:rust_learn/l10n/app_localizations_en.dart';
+import 'package:rust_learn/reminders/reminder_text.dart';
 import 'package:rust_learn/features/streak/streak_widgets.dart';
 import 'package:rust_learn/main.dart';
 import 'package:rust_learn/reminders/reminder_plan.dart';
@@ -20,7 +22,7 @@ import 'fakes.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const strings = StreakStrings.english;
+  final strings = AppLocalizationsEn();
   final text = reminderText(strings);
   const childYear = 2018;
   const teenYear = 2012; // youngest possible age 13 in 2026
@@ -788,7 +790,11 @@ void main() {
         await tester.pumpWidget(
           AppScope(
             state: unknown,
-            child: const MaterialApp(home: Scaffold(body: StreakCard())),
+            child: const MaterialApp(
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: Scaffold(body: StreakCard()),
+            ),
           ),
         );
         await tester.pumpAndSettle();

@@ -1,0 +1,36 @@
+{
+  "id": "u0-l3",
+  "title": "Đưa ra quyết định",
+  "sections": [
+    { "type": "text", "text": "Chương trình thường cần quyết định sẽ làm gì. if chạy một đoạn code chỉ khi một điều kiện đúng (true). else chạy khi điều kiện không đúng." },
+    { "type": "code", "code": "fn main() {\n    let temperature = 30;\n    if temperature > 25 {\n        println!(\"It's hot. Drink water!\");\n    } else {\n        println!(\"Nice weather.\");\n    }\n}" },
+    { "type": "text", "text": "Điều kiện là một câu hỏi có câu trả lời đúng hoặc sai. Các phép so sánh thường gặp là > (lớn hơn), < (nhỏ hơn), >= (lớn hơn hoặc bằng), <= (nhỏ hơn hoặc bằng), == (bằng) và != (khác)." },
+    { "type": "note", "text": "Hãy cẩn thận: một dấu = lưu một giá trị, còn hai dấu == so sánh các giá trị. if age == 18 đặt một câu hỏi; let age = 18 đặt giá trị cho biến." },
+    { "type": "text", "text": "Dùng else if để kiểm tra nhiều hơn hai trường hợp. Rust kiểm tra chúng từ trên xuống dưới và chỉ chạy trường hợp đầu tiên đúng:" },
+    { "type": "code", "code": "fn main() {\n    let score = 72;\n    if score >= 90 {\n        println!(\"Grade A\");\n    } else if score >= 70 {\n        println!(\"Grade B\");\n    } else {\n        println!(\"Keep practising\");\n    }\n}" }
+  ],
+  "exercise": {
+    "prompt": "Hoàn thành chương trình để nó in ra Even khi number là số chẵn và Odd trong trường hợp còn lại. number % 2 cho phần dư sau khi chia cho 2. Với số 8, chương trình phải in ra: Even",
+    "starter": "fn main() {\n    let number = 8;\n    // print Even or Odd here\n}",
+    "expectedOutput": "Even",
+    "solution": "fn main() {\n    let number = 8;\n    if number % 2 == 0 {\n        println!(\"Even\");\n    } else {\n        println!(\"Odd\");\n    }\n}",
+    "hints": ["Bạn cần đưa ra một lựa chọn, và bài học này có công cụ cho việc đó. Câu hỏi cần đặt ra là phần dư có bằng 0 hay không.", "Hãy dùng if với điều kiện so sánh number % 2 dùng ==. Thêm else phía sau cho trường hợp còn lại.", "Hãy viết if number % 2 == 0 { ... } else { ... }. Đặt một println! trong mỗi khối: Even ở khối đầu, Odd ở khối else."]
+  },
+  "quiz": [
+    {
+      "question": "Khi nào đoạn code bên trong if chạy?",
+      "options": ["Luôn luôn", "Khi điều kiện đúng", "Khi điều kiện sai"],
+      "answer": 1
+    },
+    {
+      "question": "Cái nào so sánh hai giá trị?",
+      "options": ["=", "==", "=>"],
+      "answer": 1
+    },
+    {
+      "question": "Với score = 95, ví dụ chấm điểm in ra gì?",
+      "options": ["Grade A", "Grade B", "Grade A and Grade B"],
+      "answer": 0
+    }
+  ]
+}

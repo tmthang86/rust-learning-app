@@ -1,0 +1,88 @@
+{
+  "id": "u5-l3",
+  "title": "HashMap",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Một HashMap lưu các giá trị theo khóa, để bạn có thể tra cứu theo tên thay vì theo vị trí. Hãy đưa nó vào bằng use."
+    },
+    {
+      "type": "code",
+      "code": "use std::collections::HashMap;\n\nfn main() {\n    let mut stock = HashMap::new();\n    stock.insert(\"apples\", 12);\n    stock.insert(\"pears\", 5);\n\n    println!(\"apples: {:?}\", stock.get(\"apples\"));\n    println!(\"kiwis: {:?}\", stock.get(\"kiwis\"));\n\n    stock.insert(\"pears\", 9);   // replaces the old value\n    println!(\"pears now {}\", stock[\"pears\"]);\n}"
+    },
+    {
+      "type": "text",
+      "text": "stock[\"pears\"] đọc trực tiếp một giá trị, nhưng nó gây ra panic (dừng chương trình) nếu khóa không tồn tại. Chỉ dùng nó khi bạn biết chắc khóa có mặt; nếu không, hãy dùng get."
+    },
+    {
+      "type": "text",
+      "text": "get trả về một Option vì khóa có thể không tồn tại. Entry API chèn một giá trị mặc định vào lần đầu tiên nó thấy một khóa, rất thích hợp để đếm:"
+    },
+    {
+      "type": "code",
+      "code": "use std::collections::HashMap;\n\nfn main() {\n    let text = \"the cat and the hat\";\n    let mut counts = HashMap::new();\n    for word in text.split_whitespace() {\n        *counts.entry(word).or_insert(0) += 1;\n    }\n    println!(\"the: {}\", counts[\"the\"]);\n    println!(\"cat: {}\", counts[\"cat\"]);\n}"
+    },
+    {
+      "type": "text",
+      "text": "entry(word).or_insert(0) chèn 0 nếu word là từ mới, rồi trả về một tham chiếu có thể thay đổi (&mut) tới số đếm được lưu trong map. Dấu * ở phía trước đi theo tham chiếu đó, nên += 1 thay đổi số đếm bên trong map, giống như *n trong bài Tham chiếu có thể thay đổi (&mut). get thì khác: nó trả về một Option chứa một tham chiếu tới giá trị, nên giá trị dự phòng cũng phải là một tham chiếu, như trong unwrap_or(&0). get cũng nhận một tham chiếu tới khóa. Một literal như \"apples\" vốn đã là một tham chiếu (&str), nên stock.get(\"apples\") không cần &, nhưng khóa kiểu char thì cần: counts.get(&'a')."
+    },
+    {
+      "type": "text",
+      "text": "Bạn có thể lặp qua tất cả các khóa. Thứ tự không được đảm bảo, nên hãy sắp xếp chúng nếu bạn cần một thứ tự cố định. Ở dưới, ages.keys() lần lượt đưa ra từng khóa và .collect() gom chúng vào một Vec mới. Viết Vec<_> là yêu cầu một Vec và để Rust tự suy ra kiểu của phần tử (ở đây là các tham chiếu tới những cái tên). Unit 8 sẽ nói về iterator và collect."
+    },
+    {
+      "type": "code",
+      "code": "use std::collections::HashMap;\n\nfn main() {\n    let mut ages = HashMap::new();\n    ages.insert(\"Minh\", 31);\n    ages.insert(\"Lan\", 28);\n    let mut names: Vec<_> = ages.keys().collect();\n    names.sort();\n    for name in names {\n        println!(\"{name} is {}\", ages[name]);\n    }\n}"
+    },
+    {
+      "type": "note",
+      "text": "Một HashMap giống như một cuốn từ điển: bạn tra một từ (khóa) để tìm nghĩa của nó (giá trị).",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Khóa cần có Eq + Hash. Hãy dùng BTreeMap từ cùng module khi bạn muốn các khóa được giữ theo thứ tự đã sắp xếp.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy dùng entry API để đếm mỗi chữ cái xuất hiện bao nhiêu lần, rồi in số đếm của 'a'. Chương trình phải in ra: 3",
+    "starter": "use std::collections::HashMap;\n\nfn main() {\n    let word = \"banana\";\n    let mut counts: HashMap<char, i32> = HashMap::new();   // keep mut: you'll add counts\n    for c in word.chars() {\n        // count c here\n    }\n    println!(\"{}\", counts.get(&'a').unwrap_or(&0));\n}",
+    "expectedOutput": "3",
+    "solution": "use std::collections::HashMap;\n\nfn main() {\n    let word = \"banana\";\n    let mut counts: HashMap<char, i32> = HashMap::new();\n    for c in word.chars() {\n        *counts.entry(c).or_insert(0) += 1;\n    }\n    println!(\"{}\", counts.get(&'a').unwrap_or(&0));\n}",
+    "hints": [
+      "Với mỗi chữ cái, bạn cần bắt đầu một số đếm hoặc cộng thêm 1 vào số đếm đã có. entry API làm được việc này.",
+      "counts.entry(c).or_insert(0) trả về một tham chiếu có thể thay đổi tới số đếm. Hãy đặt * phía trước nó để đi theo tham chiếu, rồi cộng thêm 1 bằng += 1.",
+      "Bên trong vòng lặp, hãy viết *counts.entry(c).or_insert(0) += 1;"
+    ]
+  },
+  "quiz": [
+    {
+      "question": "map.get(key) trả về gì?",
+      "options": [
+        "Giá trị, hoặc chương trình bị sập (crash)",
+        "Một Option chứa tham chiếu tới giá trị",
+        "Một bool"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Điều gì xảy ra khi bạn chèn một khóa đã tồn tại?",
+      "options": [
+        "Giá trị cũ bị thay thế",
+        "Nó bị bỏ qua",
+        "Chương trình dừng lại"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Thứ tự các phần tử của một HashMap có được đảm bảo không?",
+      "options": [
+        "Có, theo thứ tự chèn",
+        "Có, theo thứ tự đã sắp xếp",
+        "Không"
+      ],
+      "answer": 2
+    }
+  ]
+}

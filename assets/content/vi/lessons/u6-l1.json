@@ -1,0 +1,84 @@
+{
+  "id": "u6-l1",
+  "title": "panic!",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Một số lỗi không thể khôi phục, như một bug khiến chương trình rơi vào trạng thái hỏng. Với những lỗi đó, Rust gây ra panic: nó in một thông báo rồi dừng lại."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    println!(\"Starting\");\n    let ok = true;\n    if !ok {   // ! means \"not\": this runs only when ok is false\n        panic!(\"Something went badly wrong\");\n    }\n    println!(\"Still running\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Bạn cũng sẽ gặp panic từ những việc như truy cập chỉ số vượt quá cuối mảng, chia một số nguyên cho 0, hoặc gọi unwrap trên None."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let v = vec![1, 2, 3];\n    // let x = v[10];   // panics: index out of bounds\n    let safe = v.get(10);\n    println!(\"{:?}\", safe);\n}"
+    },
+    {
+      "type": "text",
+      "text": "expect giống unwrap, nhưng cho phép bạn viết thông báo sẽ hiện ra nếu nó thất bại. Đây là một thói quen tốt khi bạn chắc chắn rằng giá trị có mặt:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let port: u16 = \"8080\".parse().expect(\"port should be a number\");\n    println!(\"Listening on {port}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Hãy dùng panic! cho các bug: những tình huống không bao giờ nên xảy ra. Với những vấn đề có thể xảy ra bình thường, như thiếu một tệp hoặc đầu vào sai từ người dùng, hãy trả về một Result. Đó là bài học tiếp theo."
+    },
+    {
+      "type": "note",
+      "text": "Nếu bạn thử một panic trong ứng dụng này, thông báo panic sẽ xuất hiện trong kết quả, sau bất cứ thứ gì đã được in ra trước đó. Điều đó là bình thường.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Theo mặc định, một panic unwind stack, chạy các destructor. Hãy đặt RUST_BACKTRACE=1 để xem nó đến từ đâu. Code thư viện nên trả về Result cho những thất bại mà bên gọi có thể lường trước, như đầu vào sai định dạng. Panic dành cho các hợp đồng bị vi phạm, nghĩa là các bug ở phía bên gọi; hãy nêu trong tài liệu của hàm khi nào nó có thể panic.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "parse trả về một Result. Hãy dùng expect với một thông báo để lấy con số ra, nhờ đó có thể nhân đôi nó. Chương trình phải in ra: 84",
+    "starter": "fn main() {\n    let n: i32 = \"42\".parse();\n    println!(\"{}\", n * 2);\n}",
+    "expectedOutput": "84",
+    "solution": "fn main() {\n    let n: i32 = \"42\".parse().expect(\"not a number\");\n    println!(\"{}\", n * 2);\n}",
+    "hints": [
+      "Lệnh gọi parse trả về một Result, không phải một con số. Bạn cần lấy con số ra khỏi nó.",
+      "Result có phương thức expect. Nó trả cho bạn giá trị, hoặc dừng chương trình với thông báo của bạn nếu việc parse thất bại. Hãy thêm nó sau parse().",
+      "Hãy viết \"42\".parse().expect(\"not a number\"). Hãy đặt một thông báo ngắn trong cặp dấu nháy."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Một panic làm gì?",
+      "options": [
+        "Dừng chương trình với một thông báo",
+        "Thử lại dòng đó",
+        "Trả về None"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Khi nào bạn nên dùng panic!?",
+      "options": [
+        "Cho các bug không bao giờ nên xảy ra",
+        "Cho mọi lỗi của người dùng",
+        "Thay cho println!"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "expect khác unwrap ở điểm nào?",
+      "options": [
+        "Nó cho phép bạn đặt thông báo lỗi",
+        "Nó không bao giờ gây ra panic",
+        "Nó trả về một String"
+      ],
+      "answer": 0
+    }
+  ]
+}

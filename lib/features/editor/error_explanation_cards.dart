@@ -5,7 +5,7 @@ import '../../app/theme.dart';
 import '../../data/app_state.dart';
 import '../../data/error_explanations.dart';
 import '../../data/models.dart';
-import '../../l10n/help_strings.dart';
+import '../../l10n/l10n.dart';
 
 /// Tells the cards which lesson the learner is in, so they don't offer a
 /// second copy of it.
@@ -28,11 +28,13 @@ class ErrorExplanationCards extends StatefulWidget {
   const ErrorExplanationCards({
     super.key,
     required this.stderr,
-    this.languageCode = 'en',
+    this.languageCode,
   });
 
   final String stderr;
-  final String languageCode;
+
+  /// The language of the explanations; the app's language when null.
+  final String? languageCode;
 
   @override
   State<ErrorExplanationCards> createState() => _ErrorExplanationCardsState();
@@ -40,11 +42,17 @@ class ErrorExplanationCards extends StatefulWidget {
 
 class _ErrorExplanationCardsState extends State<ErrorExplanationCards> {
   Future<List<ErrorHelp>>? _help;
+  String? _loadedLanguage;
+
+  String get _language =>
+      widget.languageCode ?? AppScope.of(context).languageCode;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _help ??= _load();
+    // Also runs when the app language changes, so the cards come back in
+    // the new language.
+    if (_help == null || _loadedLanguage != _language) _help = _load();
   }
 
   @override
@@ -56,9 +64,10 @@ class _ErrorExplanationCardsState extends State<ErrorExplanationCards> {
     }
   }
 
-  Future<List<ErrorHelp>> _load() =>
-      AppScope.read(context).errors
-          .explain(widget.stderr, lang: widget.languageCode);
+  Future<List<ErrorHelp>> _load() {
+    final lang = _loadedLanguage = _language;
+    return AppScope.read(context).errors.explain(widget.stderr, lang: lang);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -118,7 +127,7 @@ class ErrorExplanationCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                HelpStrings.errorCardHeading,
+                context.l10n.errorCardHeading,
                 style: textTheme.labelLarge?.copyWith(
                   color: scheme.onSecondaryContainer,
                 ),
@@ -131,7 +140,7 @@ class ErrorExplanationCard extends StatelessWidget {
                       ? help.key
                       : help.code == null
                       ? text.title
-                      : HelpStrings.errorTitle(help.key, text.title),
+                      : context.l10n.errorTitle(help.key, text.title),
                   style: textTheme.titleMedium?.copyWith(
                     color: scheme.onSecondaryContainer,
                     fontWeight: FontWeight.w700,
@@ -149,7 +158,7 @@ class ErrorExplanationCard extends StatelessWidget {
                 if (text.fixes.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text(
-                    HelpStrings.fixesHeading,
+                    context.l10n.fixesHeading,
                     style: textTheme.labelLarge?.copyWith(
                       color: scheme.onSecondaryContainer,
                     ),
@@ -184,13 +193,13 @@ class ErrorExplanationCard extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: TextButton(
                     onPressed: () => context.push('/lesson/$id'),
-                    child: Text(HelpStrings.reviewLesson(title)),
+                    child: Text(context.l10n.reviewLesson(title)),
                   ),
                 ),
               if (url != null) ...[
                 const SizedBox(height: 8),
                 Text(
-                  HelpStrings.officialPage,
+                  context.l10n.officialPage,
                   style: textTheme.bodySmall?.copyWith(
                     color: scheme.onSecondaryContainer,
                   ),

@@ -1,0 +1,106 @@
+{
+  "id": "u6-l4",
+  "title": "Kiểu lỗi tùy chỉnh",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Một String dùng làm lỗi thì được với các chương trình nhỏ, nhưng một enum mô tả chính xác điều gì đã sai và cho phép bên gọi phản ứng với từng trường hợp."
+    },
+    {
+      "type": "code",
+      "code": "enum LoginError {\n    UnknownUser,\n    WrongPassword,\n    Locked { minutes: u32 },\n}\n\nfn login(user: &str, password: &str) -> Result<(), LoginError> {\n    if user != \"admin\" {\n        return Err(LoginError::UnknownUser);\n    }\n    if password == \"locked\" {\n        return Err(LoginError::Locked { minutes: 5 });\n    }\n    if password != \"secret\" {\n        return Err(LoginError::WrongPassword);\n    }\n    Ok(())\n}\n\nfn main() {\n    let attempts = [(\"admin\", \"secret\"), (\"bob\", \"x\"), (\"admin\", \"oops\"), (\"admin\", \"locked\")];\n    for (user, password) in attempts {\n        match login(user, password) {\n            Ok(()) => println!(\"{user}: welcome\"),\n            Err(LoginError::UnknownUser) => println!(\"{user}: no such user\"),\n            Err(LoginError::WrongPassword) => println!(\"{user}: wrong password\"),\n            Err(LoginError::Locked { minutes }) => {\n                println!(\"{user}: locked, try again in {minutes} minutes\")\n            }\n        }\n    }\n}"
+    },
+    {
+      "type": "text",
+      "text": "Mỗi nhánh xử lý một loại lỗi. Nhánh Locked còn lấy ra minutes được lưu bên trong variant."
+    },
+    {
+      "type": "text",
+      "text": "Để in một lỗi bằng {}, kiểu của nó cần implement Display. Display là một trait. Một trait là một tập các khả năng hoặc phương thức có tên mà một kiểu hứa là sẽ có, và nhiều kiểu có thể dùng chung một trait. Display là trait nói rằng \"kiểu này có thể được hiển thị cho con người bằng {}\". Bạn cấp một trait cho một kiểu bằng cách viết impl Trait for Type và điền các phương thức mà trait yêu cầu. Trait sẽ có cả một unit riêng ở phần sau (Unit 7), nên bây giờ bạn cứ làm theo mẫu."
+    },
+    {
+      "type": "text",
+      "text": "Display yêu cầu một phương thức, fmt. Hãy chép dòng đầu tiên của nó đúng như được hiển thị. Bên trong, write! hoạt động giống println!, nhưng thay vì in ra màn hình, nó ghi văn bản vào f, formatter mà Rust đưa cho bạn. write! trả về một fmt::Result cho biết việc đó có thành công hay không, và fmt trả nó về, nên không có dấu chấm phẩy sau nó."
+    },
+    {
+      "type": "code",
+      "code": "use std::fmt;\n\nenum LoginError {\n    UnknownUser,\n    WrongPassword,\n}\n\nimpl fmt::Display for LoginError {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        match self {\n            LoginError::UnknownUser => write!(f, \"no such user\"),\n            LoginError::WrongPassword => write!(f, \"wrong password\"),\n        }\n    }\n}\n\nfn main() {\n    let errors = [LoginError::UnknownUser, LoginError::WrongPassword];\n    for e in errors {\n        println!(\"Login failed: {e}\");\n    }\n}"
+    },
+    {
+      "type": "note",
+      "text": "Các kiểu lỗi thường cũng implement trait chuẩn std::error::Error. Nó không có phương thức nào bạn bắt buộc phải viết, nhưng nó yêu cầu Debug và Display. Vì vậy, với một LoginError cũng có #[derive(Debug)], impl std::error::Error for LoginError {} là đủ; không có Debug thì nó sẽ không biên dịch được. Nó cho phép lỗi của bạn hoạt động với Box<dyn Error> và với các thư viện khác.",
+      "track": "fast"
+    },
+    {
+      "type": "text",
+      "text": "From là một trait chuẩn khác. impl From<ParseIntError> for ConfigError cho Rust biết cách tạo một ConfigError từ một ParseIntError (kiểu trong dấu ngoặc góc là kiểu nguồn mà bạn chuyển đổi từ đó). Toán tử ? dùng nó một cách tự động: khi parse thất bại, ? biến ParseIntError thành ConfigError trước khi trả về nó."
+    },
+    {
+      "type": "code",
+      "code": "use std::num::ParseIntError;\n\nenum ConfigError {\n    BadNumber(ParseIntError),\n    TooLoud(u32),\n}\n\nimpl From<ParseIntError> for ConfigError {\n    fn from(e: ParseIntError) -> ConfigError {\n        ConfigError::BadNumber(e)\n    }\n}\n\nfn read_volume(s: &str) -> Result<u32, ConfigError> {\n    let v: u32 = s.parse()?;   // a ParseIntError becomes a ConfigError\n    if v > 100 {\n        return Err(ConfigError::TooLoud(v));\n    }\n    Ok(v)\n}\n\nfn main() {\n    for input in [\"70\", \"150\", \"loud\"] {\n        match read_volume(input) {\n            Ok(v) => println!(\"volume set to {v}\"),\n            Err(ConfigError::TooLoud(v)) => println!(\"{v} is over the limit of 100\"),\n            Err(ConfigError::BadNumber(e)) => println!(\"{input} is not a number: {e}\"),\n        }\n    }\n}"
+    },
+    {
+      "type": "text",
+      "text": "ParseIntError cũng implement Display, đó là lý do {e} in ra một thông báo dễ đọc."
+    },
+    {
+      "type": "note",
+      "text": "Bài học này kết hợp enum, match, impl và Result, và giúp bạn làm quen bước đầu với trait. Nếu bạn thấy nó nhiều quá, đó là chuyện bình thường. Hãy quay lại bài này sau Unit 7.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Trong các dự án thực tế, crate thiserror sinh ra Display và From cho các enum lỗi, và anyhow cung cấp cho ứng dụng một kiểu lỗi bao quát tiện lợi.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy thêm một impl Display cho ShopError, làm theo ví dụ LoginError, với thông báo \"out of stock\". Sau đó đổi println!(\"Error: {:?}\", e) thành println!(\"Error: {e}\"), để nó dùng thông báo của bạn thay vì dạng debug. Chương trình phải in ra: Error: out of stock",
+    "starter": "use std::fmt;   // keep this: your Display impl needs fmt\n\n#[derive(Debug)]\nenum ShopError {\n    OutOfStock,\n}\n\nfn main() {\n    let e = ShopError::OutOfStock;\n    println!(\"Error: {:?}\", e);\n}",
+    "expectedOutput": "Error: out of stock",
+    "solution": "use std::fmt;\n\n#[derive(Debug)]\nenum ShopError {\n    OutOfStock,\n}\n\nimpl fmt::Display for ShopError {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        match self {\n            ShopError::OutOfStock => write!(f, \"out of stock\"),\n        }\n    }\n}\n\nfn main() {\n    let e = ShopError::OutOfStock;\n    println!(\"Error: {e}\");\n}",
+    "hints": [
+      "Hãy xem LoginError có được một thông báo dễ đọc như thế nào: một khối impl với một phương thức bên trong. ShopError cần giống như vậy, chỉ với một variant để xử lý.",
+      "Hãy viết impl fmt::Display for ShopError và chép dòng fmt đúng như trong bài học. Bên trong, match self với một nhánh cho ShopError::OutOfStock gọi write!(f, \"...\").",
+      "Hãy dùng write!(f, \"out of stock\") không có dấu chấm phẩy sau nó. Sau đó đổi println! để in {e} thay vì {:?}."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Vì sao dùng enum cho lỗi thay vì String?",
+      "options": [
+        "Bên gọi có thể phản ứng với từng loại lỗi",
+        "Enum gõ ngắn hơn",
+        "String không thể là lỗi"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Trait nào cho phép một lỗi được in bằng {}?",
+      "options": [
+        "Debug",
+        "Display",
+        "Clone"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Bên trong phương thức fmt của Display, write!(f, \"no such user\") làm gì?",
+      "options": [
+        "Ghi văn bản vào formatter f",
+        "In văn bản thẳng ra màn hình",
+        "Lưu văn bản vào một tệp"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Việc implement From<ParseIntError> cho kiểu lỗi của bạn cho phép bạn làm gì?",
+      "options": [
+        "Dùng ? trên kết quả parse trong các hàm của bạn",
+        "Parse nhanh hơn",
+        "Bỏ qua việc xử lý lỗi"
+      ],
+      "answer": 0
+    }
+  ]
+}

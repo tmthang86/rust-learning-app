@@ -1,0 +1,83 @@
+{
+  "id": "u1-l5",
+  "title": "Shadowing",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Bạn có thể khai báo một biến mới trùng tên với một biến trước đó. Biến mới che khuất (shadow) biến cũ: từ dòng đó trở đi, cái tên chỉ giá trị mới."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let x = 5;\n    let x = x + 1;\n    let x = x * 2;\n    println!(\"x is {x}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Đoạn này in ra x is 12. Mỗi let tạo ra một biến hoàn toàn mới; không biến nào bị thay đổi, nên không cần mut."
+    },
+    {
+      "type": "text",
+      "text": "Shadowing cũng có thể thay đổi kiểu, điều mà mut không làm được. Điều này hữu ích khi chuyển đổi một giá trị:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let input = \"42\";\n    let input: i32 = input.parse().unwrap();\n    println!(\"{}\", input + 1);\n}"
+    },
+    {
+      "type": "text",
+      "text": "\"42\" là văn bản, không phải số. parse() biến văn bản thành số, và : i32 cho nó biết cần tạo ra loại số nào. Việc parse có thể thất bại (hãy nghĩ đến \"hello\"), nên parse() trả về một kết quả mà bạn phải unwrap. unwrap() nói rằng \"tôi chắc là việc này đã thành công\" và dừng chương trình nếu không phải vậy. Bạn sẽ học những cách an toàn hơn để xử lý thất bại ở unit về xử lý lỗi."
+    },
+    {
+      "type": "note",
+      "track": "fast",
+      "text": "Nếu bạn đến từ một ngôn ngữ khác: ở nhiều ngôn ngữ, khai báo lại một cái tên trong cùng phạm vi là lỗi. Trong Rust thì đó là cách viết quen thuộc (idiomatic), nhất là với các bước parse rồi thay thế như ở trên."
+    },
+    {
+      "type": "text",
+      "text": "Shadowing bên trong một khối chỉ kéo dài đến khi khối kết thúc:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let level = 1;\n    {\n        let level = 2;\n        println!(\"inside: {level}\");\n    }\n    println!(\"outside: {level}\");\n}"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy dùng shadowing (không dùng mut) để biến văn bản \"7\" thành một số và in ra giá trị gấp đôi của nó. Kết quả mong đợi: 14",
+    "starter": "fn main() {\n    let value = \"7\";\n    // shadow value here\n    println!(\"{}\", value);\n}",
+    "expectedOutput": "14",
+    "solution": "fn main() {\n    let value = \"7\";\n    let value: i32 = value.parse().unwrap();\n    println!(\"{}\", value * 2);\n}",
+    "hints": [
+      "Shadowing nghĩa là một let mới dùng lại cái tên cũ. Ở đây giá trị mới nên là một số, không phải văn bản.",
+      "Hãy viết let value: i32 = ... và biến văn bản cũ thành số bằng .parse().unwrap(). Kiểu cho parse biết cần tạo ra gì.",
+      "Hãy viết let value: i32 = value.parse().unwrap(); Sau đó đổi println! để in value * 2."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Đoạn này in ra gì? let a = 2; let a = a + 3; println!(\"{a}\");",
+      "options": [
+        "2",
+        "5",
+        "Nó không biên dịch được"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Shadowing làm được gì mà mut không làm được?",
+      "options": [
+        "Thay đổi kiểu của biến",
+        "Thay đổi giá trị",
+        "Làm cho biến trở thành biến toàn cục"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Sau khi một khối kết thúc, một cái tên đã bị shadow bên trong khối đó chỉ đến...",
+      "options": [
+        "Giá trị từ bên trong khối",
+        "Giá trị từ trước khối",
+        "Không gì cả; đó là một lỗi"
+      ],
+      "answer": 1
+    }
+  ]
+}

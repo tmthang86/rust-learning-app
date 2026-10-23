@@ -1,0 +1,38 @@
+{
+  "id": "u0-l5",
+  "title": "Hàm",
+  "sections": [
+    { "type": "text", "text": "Hàm là một khối code có tên mà bạn có thể chạy bất cứ khi nào cần. Bạn đã dùng một hàm rồi: main là hàm mà mọi chương trình Rust bắt đầu từ đó. Các hàm có thể nằm theo thứ tự bất kỳ trong tệp; các dòng của một hàm chỉ chạy khi hàm đó được gọi." },
+    { "type": "text", "text": "Tự tạo hàm với fn, rồi gọi nó bằng cách viết tên của nó, theo sau là ():" },
+    { "type": "code", "code": "fn greet() {\n    println!(\"Hello there!\");\n}\n\nfn main() {\n    greet();\n    greet();\n}" },
+    { "type": "text", "text": "Hàm có thể nhận đầu vào, gọi là tham số (parameter). Mỗi tham số cần có tên và kiểu. i32 là kiểu số nguyên thông dụng của Rust:" },
+    { "type": "code", "code": "fn show_double(n: i32) {\n    println!(\"Double of {n} is {}\", n * 2);\n}\n\nfn main() {\n    show_double(4);\n    show_double(10);\n}" },
+    { "type": "text", "text": "Hàm cũng có thể trả về một kết quả. Viết -> và kiểu của kết quả sau các tham số. Dòng cuối cùng, viết không có dấu chấm phẩy, là giá trị được trả về:" },
+    { "type": "code", "code": "fn area(width: i32, height: i32) -> i32 {\n    width * height\n}\n\nfn main() {\n    let room = area(4, 5);\n    println!(\"The room is {room} square metres\");\n}" },
+    { "type": "note", "text": "Những hàm được đặt tên tốt giúp chương trình dễ đọc hơn. area(4, 5) cho bạn biết chuyện gì đang diễn ra mà không cần đọc phép tính bên trong." }
+  ],
+  "exercise": {
+    "prompt": "Viết một hàm tên là add nhận hai tham số i32, a và b, và trả về a + b dưới dạng i32. Sau đó xóa // ở đầu dòng trong main để nó gọi hàm của bạn. Chương trình phải in ra: 7",
+    "starter": "// write fn add here\n\nfn main() {\n    // println!(\"{}\", add(3, 4));\n}",
+    "expectedOutput": "7",
+    "solution": "fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\nfn main() {\n    println!(\"{}\", add(3, 4));\n}",
+    "hints": ["Hãy nhìn hàm area trong bài học. Hàm của bạn có cùng cấu trúc, với hai đầu vào và một kết quả.", "Hãy bắt đầu với fn add(a: i32, b: i32) -> i32. Dòng cuối cùng, không có dấu chấm phẩy, là giá trị được trả về.", "Giữa cặp dấu ngoặc nhọn, chỉ cần viết a + b, không có dấu chấm phẩy. Sau đó xóa // ở trước dòng println! trong main."]
+  },
+  "quiz": [
+    {
+      "question": "Làm thế nào để chạy (gọi) một hàm tên là greet?",
+      "options": ["fn greet", "greet();", "call greet"],
+      "answer": 1
+    },
+    {
+      "question": "Trong fn square(n: i32) -> i32, -> i32 có nghĩa là gì?",
+      "options": ["Hàm trả về một số nguyên", "n phải bằng 32", "Hàm chạy 32 lần"],
+      "answer": 0
+    },
+    {
+      "question": "Giá trị mà một hàm trả về là gì?",
+      "options": ["Dòng đầu tiên của nó", "Dòng cuối cùng của nó, không có dấu chấm phẩy", "Bất cứ thứ gì println! hiển thị"],
+      "answer": 1
+    }
+  ]
+}

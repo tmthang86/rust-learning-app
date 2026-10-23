@@ -13,7 +13,8 @@ compares learners with each other.
 Code: `lib/data/streaks.dart` (all the rules, pure functions),
 `lib/data/app_state.dart` (earning and syncing), `lib/reminders/` (settings
 and scheduling), `lib/features/streak/` (screens),
-`lib/l10n/streak_strings.dart` (every string).
+`lib/l10n/app_*.arb` (every string; `lib/l10n/streak_l10n.dart` composes the
+spoken sentences).
 
 ## The numbers
 
@@ -163,9 +164,14 @@ account keeps their settings, like their progress.
 hidden (`kIsWeb` and `ReminderScheduler.supported`) and the scheduler is a
 no-op.
 
-**Text.** `reminderText(StreakStrings)` is the single place a notification's
-text is made; the scheduler runs outside any widget, so it is handed the
-strings.
+**Text.** `reminderText(AppLocalizations)` is the single place a
+notification's text is made. The scheduler runs outside any widget, so
+`StudyReminders` asks for the strings each time it plans:
+`lookupAppLocalizations(Locale(languageCode))` for the app's current
+language (see `AppState`). A language change (the picker, or the device
+language while the setting is System) calls `reminders.refresh()`, which
+cancels the waiting notifications and plans them again, so none stays in
+the old language.
 
 ### Platform setup
 
@@ -241,11 +247,12 @@ an unconfirmed deletion). Under-13s keep everything on the device.
 
 ## Strings
 
-A parallel change adds Flutter gen-l10n, but it was not on `main` when this
-was written, so all the new text lives in one class,
-`lib/l10n/streak_strings.dart`. Moving it into the ARB files later means
-turning each member into a key; the notification text already goes through
-one function that takes a `StreakStrings`.
+All the text is in `lib/l10n/app_en.arb` and `app_vi.arb` (see
+`docs/i18n/README.md`). Sentences made of several parts (the spoken Home
+and stats summaries, the "earned" snackbar, the goal names) are composed in
+`lib/l10n/streak_l10n.dart`, an extension on `AppLocalizations`, from
+separate keys so a translation can reorder the parts. "streak" and "XP"
+stay in English in Vietnamese (see the glossary).
 
 ## Tests
 

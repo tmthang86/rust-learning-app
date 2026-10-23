@@ -1,0 +1,93 @@
+{
+  "id": "u3-l1",
+  "title": "Quyền sở hữu và việc di chuyển (move)",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Quyền sở hữu (ownership) là cách Rust quản lý bộ nhớ mà không cần bộ thu gom rác (garbage collector) và không bắt bạn tự giải phóng bộ nhớ bằng tay. Nó dựa trên ba quy tắc."
+    },
+    {
+      "type": "text",
+      "text": "1. Mỗi giá trị có một chủ sở hữu, thường là một biến. 2. Tại một thời điểm chỉ có một chủ sở hữu. 3. Khi chủ sở hữu ra khỏi phạm vi, giá trị bị drop (bộ nhớ của nó được giải phóng)."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    {\n        let greeting = String::from(\"hello\");\n        println!(\"{greeting}\");\n    } // greeting goes out of scope here and its memory is freed\n    println!(\"done\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Một String lưu văn bản của nó trên heap. Khi bạn gán nó cho một biến khác, quyền sở hữu được di chuyển (move). Biến cũ không thể được dùng nữa:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let a = String::from(\"crab\");\n    let b = a;              // ownership moves from a to b\n    // println!(\"{a}\");     // error: borrow of moved value: `a`\n    println!(\"{b}\");\n}"
+    },
+    {
+      "type": "note",
+      "track": "starter",
+      "text": "Heap là vùng bộ nhớ mà một chương trình yêu cầu trong lúc chạy, dành cho dữ liệu như văn bản có thể lớn lên. Vùng bộ nhớ đó phải được trả lại khi không còn cần đến, và quyền sở hữu là cách Rust quyết định thời điểm đó."
+    },
+    {
+      "type": "text",
+      "text": "Truyền một String vào một hàm cũng làm nó bị di chuyển (bài tiếp theo sẽ cho thấy các kiểu được sao chép thay vì di chuyển). Tham số trở thành chủ sở hữu mới, và bên gọi không thể dùng giá trị đó nữa. Một hàm có thể trao quyền sở hữu cho bên gọi bằng cách trả về một giá trị. Ở đây shout trả về một String hoàn toàn mới, và loud sở hữu nó:"
+    },
+    {
+      "type": "code",
+      "code": "fn shout(text: String) -> String {\n    text.to_uppercase()   // makes a new String and returns it\n}   // text goes out of scope here and is dropped\n\nfn main() {\n    let word = String::from(\"hi\");\n    let loud = shout(word);   // word moves into shout\n    // println!(\"{word}\");    // error: borrow of moved value: `word`\n    println!(\"{loud}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Nếu bạn muốn tiếp tục dùng một giá trị sau khi một hàm đã dùng nó thì sao? Thay vì trao nó đi, bạn có thể cho mượn. Đó gọi là mượn (borrowing), và bạn sẽ học nó sau hai bài nữa."
+    },
+    {
+      "type": "note",
+      "text": "Hãy hình dung như đưa cho ai đó một cuốn sách thật. Một khi đã đưa đi, bạn không còn nó nữa. Đó là cách Rust biết chính xác khi nào việc giải phóng bộ nhớ là an toàn.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Một move là một phép sao chép nông (shallow copy) rẻ của con trỏ, độ dài và dung lượng (capacity); dữ liệu trên heap không được sao chép. Vì chỉ tồn tại một chủ sở hữu, nên không có double free và không cần đếm tham chiếu. Dành cho lập trình viên C++: trong Rust, move là mặc định, trình biên dịch cấm mọi lần dùng biến cũ sau đó, và biến cũ không bị drop (chỉ có chủ sở hữu mới của giá trị bị drop). Một đối tượng C++ sau khi bị move đi vẫn còn sống và destructor của nó vẫn chạy sau đó; các kiểu trong thư viện chuẩn được để lại ở trạng thái hợp lệ nhưng không xác định (valid but unspecified).",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Chương trình dùng name sau khi nó đã được di chuyển vào greet. Hãy sửa greet để nó không cần sở hữu String: đổi tham số thành một tham chiếu (&String) và gọi nó với &name. Một tham chiếu cho phép greet mượn String thay vì sở hữu nó; bạn sẽ học cách tham chiếu hoạt động trong bài học Mượn (borrowing) của unit này. Chương trình phải in ra: Hello, Ferris\nBye, Ferris",
+    "starter": "fn greet(name: String) {\n    println!(\"Hello, {name}\");\n}\n\nfn main() {\n    let name = String::from(\"Ferris\");\n    greet(name);\n    println!(\"Bye, {name}\");\n}",
+    "expectedOutput": "Hello, Ferris\nBye, Ferris",
+    "solution": "fn greet(name: &String) {\n    println!(\"Hello, {name}\");\n}\n\nfn main() {\n    let name = String::from(\"Ferris\");\n    greet(&name);\n    println!(\"Bye, {name}\");\n}",
+    "hints": [
+      "Truyền name vào greet làm nó bị di chuyển, nên main không thể dùng nó sau đó. Thay vào đó, hãy để greet mượn nó.",
+      "Một tham chiếu cho phép một hàm mượn một giá trị. Trong danh sách tham số, hãy đặt & trước kiểu. Ở chỗ gọi, hãy đặt & trước biến.",
+      "Hãy đổi tham số thành name: &String. Sau đó gọi greet(&name) trong main."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Một giá trị có thể có bao nhiêu chủ sở hữu tại một thời điểm?",
+      "options": [
+        "Một",
+        "Hai",
+        "Bao nhiêu cũng được"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Điều gì xảy ra với một giá trị khi chủ sở hữu của nó ra khỏi phạm vi?",
+      "options": [
+        "Nó bị drop và bộ nhớ của nó được giải phóng",
+        "Nó tồn tại cho đến khi chương trình kết thúc",
+        "Nó di chuyển sang main"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Sau let b = a; với a là một String, bạn còn dùng được a không?",
+      "options": [
+        "Được",
+        "Không, nó đã bị di chuyển",
+        "Chỉ để in ra"
+      ],
+      "answer": 1
+    }
+  ]
+}

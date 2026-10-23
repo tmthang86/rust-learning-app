@@ -3,7 +3,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/app_state.dart';
 import '../../data/models.dart';
+import '../../l10n/l10n.dart';
 import '../account/account_widgets.dart';
+import '../settings/language_picker.dart';
 import '../streak/streak_widgets.dart';
 import 'monetization_widgets.dart';
 
@@ -29,10 +31,9 @@ class _AccountCardState extends State<_AccountCard> {
 
   Future<void> _deleteAccount() async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     if (await confirmAndDeleteAccount(context)) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Your account has been deleted.')),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(l10n.accountDeletedSnack)));
     }
   }
 
@@ -40,6 +41,7 @@ class _AccountCardState extends State<_AccountCard> {
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final user = state.user;
 
     return Card(
@@ -51,24 +53,31 @@ class _AccountCardState extends State<_AccountCard> {
                 children: [
                   Row(
                     children: [
-                      Icon(state.syncFailed
-                          ? Icons.cloud_off_outlined
-                          : Icons.cloud_done_outlined),
+                      Icon(
+                        state.syncFailed
+                            ? Icons.cloud_off_outlined
+                            : Icons.cloud_done_outlined,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(user.label, style: theme.textTheme.titleMedium),
-                            Text(state.syncFailed
-                                ? "Couldn't sync your progress right now."
-                                : 'Progress is synced across your devices.'),
+                            Text(
+                              user.name ?? l10n.signedInFallback,
+                              style: theme.textTheme.titleMedium,
+                            ),
+                            Text(
+                              state.syncFailed
+                                  ? l10n.accountSyncFailed
+                                  : l10n.accountSynced,
+                            ),
                           ],
                         ),
                       ),
                       TextButton(
                         onPressed: _busy ? null : _signOut,
-                        child: const Text('Sign out'),
+                        child: Text(l10n.signOut),
                       ),
                     ],
                   ),
@@ -77,7 +86,7 @@ class _AccountCardState extends State<_AccountCard> {
                       alignment: Alignment.centerLeft,
                       child: TextButton(
                         onPressed: _busy ? null : state.retrySync,
-                        child: const Text('Try syncing again'),
+                        child: Text(l10n.trySyncAgain),
                       ),
                     ),
                   const SizedBox(height: 8),
@@ -85,10 +94,11 @@ class _AccountCardState extends State<_AccountCard> {
                     alignment: Alignment.centerLeft,
                     child: TextButton.icon(
                       style: TextButton.styleFrom(
-                          foregroundColor: theme.colorScheme.error),
+                        foregroundColor: theme.colorScheme.error,
+                      ),
                       onPressed: _busy ? null : _deleteAccount,
                       icon: const Icon(Icons.delete_forever_outlined),
-                      label: const Text('Delete account'),
+                      label: Text(l10n.deleteAccount),
                     ),
                   ),
                 ],
@@ -96,9 +106,12 @@ class _AccountCardState extends State<_AccountCard> {
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Save your progress', style: theme.textTheme.titleMedium),
+                  Text(
+                    l10n.saveProgressTitle,
+                    style: theme.textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 4),
-                  const Text('Sign in to keep your progress on all your devices.'),
+                  Text(l10n.saveProgressBody),
                   const SizedBox(height: 12),
                   const SignInButtons(),
                 ],
@@ -118,6 +131,7 @@ class _DeviceOnlyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -130,7 +144,7 @@ class _DeviceOnlyCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Your progress is saved on this device',
+                    l10n.deviceOnlyTitle,
                     style: theme.textTheme.titleMedium,
                   ),
                 ),
@@ -138,10 +152,7 @@ class _DeviceOnlyCard extends StatelessWidget {
             ),
             if (state.childAccountToDelete) ...[
               const SizedBox(height: 12),
-              const Text(
-                'You were signed out of your account on this device. You can '
-                'delete the account and the progress saved with it.',
-              ),
+              Text(l10n.childAccountOffer),
               const SizedBox(height: 12),
               FilledButton.icon(
                 style: FilledButton.styleFrom(
@@ -150,11 +161,11 @@ class _DeviceOnlyCard extends StatelessWidget {
                 ),
                 onPressed: () => context.push('/delete-account'),
                 icon: const Icon(Icons.delete_forever_outlined),
-                label: const Text('Delete your account'),
+                label: Text(l10n.deleteYourAccount),
               ),
               TextButton(
                 onPressed: state.dismissChildAccountOffer,
-                child: const Text('Already deleted? Hide this'),
+                child: Text(l10n.hideChildOffer),
               ),
             ],
           ],
@@ -172,11 +183,12 @@ class ProgressScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final total = state.totalLessons;
     final done = state.completedCount;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Progress')),
+      appBar: AppBar(title: Text(l10n.navProgress)),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 760),
@@ -189,8 +201,10 @@ class ProgressScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('$done of $total lessons done',
-                          style: theme.textTheme.titleLarge),
+                      Text(
+                        l10n.lessonsDoneProgress(done, total),
+                        style: theme.textTheme.titleLarge,
+                      ),
                       const SizedBox(height: 12),
                       LinearProgressIndicator(
                         value: total == 0 ? 0 : done / total,
@@ -221,12 +235,18 @@ class ProgressScreen extends StatelessWidget {
                   ),
                 ),
               const Divider(height: 32),
-              Text('Learning track', style: theme.textTheme.titleMedium),
+              Text(l10n.learningTrack, style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
               SegmentedButton<Track>(
-                segments: const [
-                  ButtonSegment(value: Track.starter, label: Text('New to coding')),
-                  ButtonSegment(value: Track.fast, label: Text('Experienced')),
+                segments: [
+                  ButtonSegment(
+                    value: Track.starter,
+                    label: Text(l10n.trackNewToCoding),
+                  ),
+                  ButtonSegment(
+                    value: Track.fast,
+                    label: Text(l10n.trackExperienced),
+                  ),
                 ],
                 selected: {if (state.track != null) state.track!},
                 emptySelectionAllowed: true,
@@ -238,6 +258,8 @@ class ProgressScreen extends StatelessWidget {
               const DailyGoalPicker(),
               const SizedBox(height: 8),
               const ReminderSettings(),
+              const SizedBox(height: 24),
+              const LanguageSetting(),
               const SizedBox(height: 24),
               const RemoveAdsCard(),
               const PrivacyOptionsTile(),

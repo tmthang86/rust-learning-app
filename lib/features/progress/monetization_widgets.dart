@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import '../../monetization/ad_banner.dart';
 import '../../monetization/monetization.dart';
 import '../../monetization/purchase_controller.dart';
@@ -33,6 +34,7 @@ class _RemoveAdsCardState extends State<RemoveAdsCard> {
     if (!m.showRemoveAdsCard) return const SizedBox.shrink();
     final p = m.purchases;
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     if (p.entitled) {
       return Card(
         child: ListTile(
@@ -41,29 +43,26 @@ class _RemoveAdsCardState extends State<RemoveAdsCard> {
             Icons.verified_outlined,
             color: theme.colorScheme.primary,
           ),
-          title: const Text('Ads removed'),
+          title: Text(l10n.adsRemovedTitle),
           subtitle: Text(
             p.state == PurchaseFlowState.restored
-                ? 'Your purchase was restored. Thank you!'
-                : 'Thank you for supporting the app.',
+                ? l10n.adsRestoredThanks
+                : l10n.adsThanks,
           ),
         ),
       );
     }
     final product = p.product;
-    final message = purchaseMessage(p);
+    final message = purchaseMessage(l10n, p);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Remove ads', style: theme.textTheme.titleMedium),
+            Text(l10n.removeAdsTitle, style: theme.textTheme.titleMedium),
             const SizedBox(height: 4),
-            const Text(
-              'A one-time purchase. Lessons and running code stay free '
-              'either way.',
-            ),
+            Text(l10n.removeAdsBody),
             if (message != null) ...[
               const SizedBox(height: 12),
               Semantics(
@@ -88,14 +87,14 @@ class _RemoveAdsCardState extends State<RemoveAdsCard> {
                   : p.buy,
               child: Text(
                 product == null
-                    ? 'Remove ads'
-                    : 'Remove ads for ${product.price}',
+                    ? l10n.removeAdsTitle
+                    : l10n.removeAdsFor(product.price),
               ),
             ),
             const SizedBox(height: 8),
             OutlinedButton(
               onPressed: p.busy || !p.storeAvailable ? null : p.restore,
-              child: const Text('Restore purchases'),
+              child: Text(l10n.restorePurchases),
             ),
           ],
         ),
@@ -105,60 +104,52 @@ class _RemoveAdsCardState extends State<RemoveAdsCard> {
 }
 
 /// The card's status line, in plain words (never a raw store error).
-String? purchaseMessage(PurchaseController p) {
+String? purchaseMessage(AppLocalizations l10n, PurchaseController p) {
   switch (p.state) {
     case PurchaseFlowState.idle:
     case PurchaseFlowState.purchased:
     case PurchaseFlowState.restored:
       if (!p.storeAvailable) {
-        return "The store isn't available right now.";
+        return l10n.purchaseStoreUnavailable;
       }
       if (p.product == null) {
-        return "This purchase isn't available right now.";
+        return l10n.purchaseItemMissing;
       }
       return null;
     case PurchaseFlowState.buying:
-      return 'Opening the store…';
+      return l10n.purchaseOpeningStore;
     case PurchaseFlowState.restoring:
-      return 'Checking for earlier purchases…';
+      return l10n.purchaseRestoring;
     case PurchaseFlowState.pending:
-      return 'Your purchase is pending. Ads will be removed once the '
-          'store confirms it.';
+      return l10n.purchasePending;
     case PurchaseFlowState.nothingToRestore:
-      return 'No earlier purchase was found for this store account.';
+      return l10n.purchaseNothingToRestore;
     case PurchaseFlowState.cancelled:
-      return 'Purchase cancelled.';
+      return l10n.purchaseCancelled;
     case PurchaseFlowState.error:
       final error = p.error ?? StoreError.other;
       return p.errorWhileRestoring
-          ? restoreErrorMessage(error)
-          : storeErrorMessage(error);
+          ? restoreErrorMessage(l10n, error)
+          : storeErrorMessage(l10n, error);
   }
 }
 
-String storeErrorMessage(StoreError error) => switch (error) {
-  StoreError.alreadyOwned =>
-    'You already own this. Tap "Restore purchases" to get it back.',
-  StoreError.network =>
-    "Couldn't reach the store. Check your connection and try again.",
-  StoreError.storeUnavailable =>
-    "Purchases aren't available on this device or account.",
-  StoreError.itemUnavailable =>
-    "This purchase isn't available right now. Please try again later.",
-  StoreError.pendingTransaction =>
-    'An earlier purchase is still being processed. Please try again in a '
-        'moment.',
-  StoreError.other => "The purchase didn't go through. Please try again.",
-};
+String storeErrorMessage(AppLocalizations l10n, StoreError error) =>
+    switch (error) {
+      StoreError.alreadyOwned => l10n.storeAlreadyOwned,
+      StoreError.network => l10n.storeNetwork,
+      StoreError.storeUnavailable => l10n.storeUnavailable,
+      StoreError.itemUnavailable => l10n.storeItemUnavailable,
+      StoreError.pendingTransaction => l10n.storePendingTransaction,
+      StoreError.other => l10n.storeOther,
+    };
 
-String restoreErrorMessage(StoreError error) => switch (error) {
-  StoreError.network =>
-    "Couldn't reach the store to check for earlier purchases. Check your "
-        'connection and try again.',
-  StoreError.storeUnavailable =>
-    "Purchases aren't available on this device or account.",
-  _ => "Couldn't check for earlier purchases. Please try again.",
-};
+String restoreErrorMessage(AppLocalizations l10n, StoreError error) =>
+    switch (error) {
+      StoreError.network => l10n.restoreNetwork,
+      StoreError.storeUnavailable => l10n.storeUnavailable,
+      _ => l10n.restoreOther,
+    };
 
 /// Lets the learner change their ad privacy choices. Shown only when UMP
 /// says the app must offer it.
@@ -171,8 +162,8 @@ class PrivacyOptionsTile extends StatelessWidget {
     if (!m.privacyOptionsRequired) return const SizedBox.shrink();
     return ListTile(
       leading: const Icon(Icons.privacy_tip_outlined),
-      title: const Text('Privacy options'),
-      subtitle: const Text('Change your choices about ads and data.'),
+      title: Text(context.l10n.privacyOptionsTitle),
+      subtitle: Text(context.l10n.privacyOptionsSubtitle),
       onTap: m.showPrivacyOptions,
     );
   }
@@ -190,8 +181,8 @@ class ReportAdTile extends StatelessWidget {
     if (!m.adsEnabled) return const SizedBox.shrink();
     return ListTile(
       leading: const Icon(Icons.flag_outlined),
-      title: const Text('Report an ad'),
-      subtitle: const Text('Tell us about an ad that seemed inappropriate.'),
+      title: Text(context.l10n.reportAdTitle),
+      subtitle: Text(context.l10n.reportAdSubtitle),
       onTap: () => reportAdFrom(context, m.lastAdScreen ?? 'progress'),
     );
   }

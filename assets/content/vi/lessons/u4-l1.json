@@ -1,0 +1,80 @@
+{
+  "id": "u4-l1",
+  "title": "Struct",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Một struct gom các giá trị liên quan dưới một cái tên. Mỗi giá trị là một trường với tên và kiểu riêng của nó."
+    },
+    {
+      "type": "code",
+      "code": "struct Player {\n    name: String,\n    level: u32,\n    online: bool,\n}\n\nfn main() {\n    let p = Player {\n        name: String::from(\"Mai\"),\n        level: 7,\n        online: true,\n    };\n    println!(\"{} is level {} (online: {})\", p.name, p.level, p.online);\n}"
+    },
+    {
+      "type": "text",
+      "text": "Hãy đọc một trường bằng dấu chấm: p.name. Để thay đổi các trường, cả biến phải là mut:"
+    },
+    {
+      "type": "code",
+      "code": "struct Counter {\n    count: u32,\n}\n\nfn main() {\n    let mut c = Counter { count: 0 };\n    c.count += 1;\n    c.count += 1;\n    println!(\"{}\", c.count);\n}"
+    },
+    {
+      "type": "text",
+      "text": "Hãy thêm #[derive(Debug)] phía trên một struct để in nó bằng {:?}, hoặc {:#?} để có dạng nhiều dòng gọn gàng:"
+    },
+    {
+      "type": "code",
+      "code": "#[derive(Debug)]\nstruct Point {\n    x: i32,\n    y: i32,\n}\n\nfn main() {\n    let x = 4;\n    let p = Point { x, y: -2 };   // x is shorthand for x: x\n    println!(\"{:?}\", p);\n    println!(\"{:#?}\", p);\n    println!(\"x is {}, y is {}\", p.x, p.y);\n}"
+    },
+    {
+      "type": "note",
+      "text": "Một struct giống như một biểu mẫu có các ô được dán nhãn: mỗi Player có một ô name, một ô level và một ô online.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Rust không có class hay kế thừa (inheritance). Dữ liệu nằm trong struct và enum, hành vi nằm trong các khối impl (bài tiếp theo), và hành vi dùng chung đến từ trait. Tuple struct như struct Meters(f64); giúp một giá trị đơn thuần có kiểu riêng của nó.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy tạo một Book với title \"Dune\" và pages 412, rồi in nó như được chỉ ra. Chương trình phải in ra: Dune has 412 pages",
+    "starter": "struct Book {\n    title: String,\n    pages: u32,\n}\n\nfn main() {\n    // create the book here\n    println!(\"? has ? pages\");\n}",
+    "expectedOutput": "Dune has 412 pages",
+    "solution": "struct Book {\n    title: String,\n    pages: u32,\n}\n\nfn main() {\n    let book = Book {\n        title: String::from(\"Dune\"),\n        pages: 412,\n    };\n    println!(\"{} has {} pages\", book.title, book.pages);\n}",
+    "hints": [
+      "Hãy xem struct được định nghĩa thế nào, rồi tạo một giá trị với một trường cho mỗi phần dữ liệu. Hãy làm việc đó trước println!.",
+      "Hãy tạo nó như thế này: let book = Book { title: ..., pages: ... }. Một String cần String::from(\"...\"). Hãy đọc các trường bằng book.title.",
+      "Hãy viết let book = Book { title: String::from(\"Dune\"), pages: 412 }; Sau đó in bằng println!(\"{} has {} pages\", book.title, book.pages);"
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Làm thế nào để đọc trường level của một giá trị struct p?",
+      "options": [
+        "p[level]",
+        "p.level",
+        "p->level"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Bạn cần gì để thay đổi một trường?",
+      "options": [
+        "Biến phải được khai báo mut",
+        "Không cần gì cả",
+        "Một setter đặc biệt"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "#[derive(Debug)] cho phép bạn làm gì?",
+      "options": [
+        "In struct bằng {:?}",
+        "Chạy trình gỡ lỗi (debugger)",
+        "Sao chép struct"
+      ],
+      "answer": 0
+    }
+  ]
+}
