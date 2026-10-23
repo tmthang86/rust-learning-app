@@ -38,14 +38,48 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy dùng push để thêm 4 và 5 vào vector, rồi in nó ra. Chương trình phải in ra: [1, 2, 3, 4, 5]",
-    "starter": "fn main() {\n    let mut numbers = vec![1, 2, 3];   // keep mut: you'll push onto it\n    println!(\"{:?}\", numbers);\n}",
-    "expectedOutput": "[1, 2, 3, 4, 5]",
-    "solution": "fn main() {\n    let mut numbers = vec![1, 2, 3];\n    numbers.push(4);\n    numbers.push(5);\n    println!(\"{:?}\", numbers);\n}",
+    "prompt": "Hãy hoàn thành add_four_and_five để nó push 4 rồi push 5 vào vector được truyền vào. Với [1, 2, 3], main phải in ra: [1, 2, 3, 4, 5]",
+    "starter": "fn add_four_and_five(numbers: &mut Vec<i32>) {\n    // push 4 and then 5 onto numbers\n    let _ = &numbers; // delete this line when you use numbers for real\n}\n\nfn main() {\n    let mut numbers = vec![1, 2, 3];\n    add_four_and_five(&mut numbers);\n    println!(\"{:?}\", numbers);\n}",
+    "tests": [
+      {
+        "id": "one-two-three",
+        "label": "Push 4 và 5 vào [1, 2, 3]",
+        "code": "let mut v = vec![1, 2, 3];\nadd_four_and_five(&mut v);\ncheck_eq!(v, vec![1, 2, 3, 4, 5]);"
+      },
+      {
+        "id": "empty-vector",
+        "label": "Một vector rỗng trở thành [4, 5]",
+        "code": "let mut v: Vec<i32> = Vec::new();\nadd_four_and_five(&mut v);\ncheck_eq!(v, vec![4, 5]);"
+      },
+      {
+        "id": "main-prints-the-vector",
+        "label": "Chương trình in ra vector",
+        "output": "[1, 2, 3, 4, 5]"
+      },
+      {
+        "id": "keeps-old-items",
+        "hidden": true,
+        "label": "items already there stay in front",
+        "code": "let mut v = vec![9];\nadd_four_and_five(&mut v);\ncheck_eq!(v, vec![9, 4, 5]);"
+      },
+      {
+        "id": "called-twice",
+        "hidden": true,
+        "label": "pushes, does not replace",
+        "code": "let mut v: Vec<i32> = Vec::new();\nadd_four_and_five(&mut v);\nadd_four_and_five(&mut v);\ncheck_eq!(v, vec![4, 5, 4, 5]);"
+      },
+      {
+        "id": "order-is-four-then-five",
+        "hidden": true,
+        "label": "4 before 5",
+        "code": "let mut v = vec![0];\nadd_four_and_five(&mut v);\ncheck_eq!(v.len(), 3);\ncheck_eq!(v[1], 4);\ncheck_eq!(v[2], 5);"
+      }
+    ],
+    "solution": "fn add_four_and_five(numbers: &mut Vec<i32>) {\n    numbers.push(4);\n    numbers.push(5);\n}\n\nfn main() {\n    let mut numbers = vec![1, 2, 3];\n    add_four_and_five(&mut numbers);\n    println!(\"{:?}\", numbers);\n}",
     "hints": [
-      "Vector cần thêm hai phần tử nữa trước khi được in ra. Phương thức nào thêm một phần tử vào cuối?",
-      "Hãy dùng phương thức push, mỗi giá trị một lần gọi. Hãy làm việc đó ở một dòng phía trước println!.",
-      "Hãy viết numbers.push(4); và numbers.push(5); trước println!."
+      "Vector cần thêm hai phần tử ở cuối. Phương thức nào thêm một phần tử vào cuối?",
+      "Hãy dùng phương thức push, mỗi giá trị một lần gọi. numbers là một tham chiếu có thể thay đổi tới vector, và bạn có thể gọi push trực tiếp trên nó.",
+      "Hãy viết numbers.push(4); và numbers.push(5); bên trong hàm."
     ]
   },
   "quiz": [

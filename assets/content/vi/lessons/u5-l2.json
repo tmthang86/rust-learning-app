@@ -55,14 +55,43 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy tạo câu bằng format! với name và lang. Chương trình phải in ra: Thang is learning Rust",
-    "starter": "fn main() {\n    let name = \"Thang\";\n    let lang = \"Rust\";\n    let sentence = String::new();\n    println!(\"{sentence}\");\n}",
-    "expectedOutput": "Thang is learning Rust",
-    "solution": "fn main() {\n    let name = \"Thang\";\n    let lang = \"Rust\";\n    let sentence = format!(\"{name} is learning {lang}\");\n    println!(\"{sentence}\");\n}",
+    "prompt": "Hãy hoàn thành sentence để nó tạo câu \"<name> is learning <lang>\" bằng format!, dùng name và lang. Với \"Thang\" và \"Rust\", main phải in ra: Thang is learning Rust",
+    "starter": "fn sentence(name: &str, lang: &str) -> String {\n    let _ = (name, lang); // delete this line when you use them for real\n    String::new()\n}\n\nfn main() {\n    println!(\"{}\", sentence(\"Thang\", \"Rust\"));\n}",
+    "tests": [
+      {
+        "id": "thang-rust",
+        "label": "sentence(\"Thang\", \"Rust\") là \"Thang is learning Rust\"",
+        "code": "check_eq!(sentence(\"Thang\", \"Rust\"), \"Thang is learning Rust\");"
+      },
+      {
+        "id": "main-prints-sentence",
+        "label": "Chương trình in ra Thang is learning Rust",
+        "output": "Thang is learning Rust"
+      },
+      {
+        "id": "other-words",
+        "hidden": true,
+        "label": "words a hard-coded sentence would not match",
+        "code": "check_eq!(sentence(\"Ferris\", \"Cargo\"), \"Ferris is learning Cargo\");"
+      },
+      {
+        "id": "empty-parts",
+        "hidden": true,
+        "label": "empty name and language",
+        "code": "check_eq!(sentence(\"\", \"\"), \" is learning \");"
+      },
+      {
+        "id": "words-with-spaces",
+        "hidden": true,
+        "label": "spaces inside the arguments",
+        "code": "check_eq!(sentence(\"Mai Anh\", \"Rust 2024\"), \"Mai Anh is learning Rust 2024\");"
+      }
+    ],
+    "solution": "fn sentence(name: &str, lang: &str) -> String {\n    format!(\"{name} is learning {lang}\")\n}\n\nfn main() {\n    println!(\"{}\", sentence(\"Thang\", \"Rust\"));\n}",
     "hints": [
-      "Hiện giờ sentence là một String rỗng, nên một dòng trống được in ra. Hãy tạo nó từ name và lang.",
+      "Hiện giờ sentence trả về một String rỗng. Hãy tạo nó từ name và lang.",
       "format! hoạt động giống println! nhưng trả về một String. Hãy đặt tên các biến bên trong {} trong đoạn văn bản.",
-      "Hãy viết let sentence = format!(\"{name} is learning {lang}\");"
+      "Hãy thay hai dòng cuối của hàm bằng format!(\"{name} is learning {lang}\") và không có dấu chấm phẩy, để nó là giá trị mà hàm trả về."
     ]
   },
   "quiz": [

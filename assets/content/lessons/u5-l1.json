@@ -38,14 +38,48 @@
     }
   ],
   "exercise": {
-    "prompt": "Push 4 and 5 onto the vector, then print it. It should print: [1, 2, 3, 4, 5]",
-    "starter": "fn main() {\n    let mut numbers = vec![1, 2, 3];   // keep mut: you'll push onto it\n    println!(\"{:?}\", numbers);\n}",
-    "expectedOutput": "[1, 2, 3, 4, 5]",
-    "solution": "fn main() {\n    let mut numbers = vec![1, 2, 3];\n    numbers.push(4);\n    numbers.push(5);\n    println!(\"{:?}\", numbers);\n}",
+    "prompt": "Finish add_four_and_five so it pushes 4 and then 5 onto the vector it is given. For [1, 2, 3], main should print: [1, 2, 3, 4, 5]",
+    "starter": "fn add_four_and_five(numbers: &mut Vec<i32>) {\n    // push 4 and then 5 onto numbers\n    let _ = &numbers; // delete this line when you use numbers for real\n}\n\nfn main() {\n    let mut numbers = vec![1, 2, 3];\n    add_four_and_five(&mut numbers);\n    println!(\"{:?}\", numbers);\n}",
+    "tests": [
+      {
+        "id": "one-two-three",
+        "label": "Pushes 4 and 5 onto [1, 2, 3]",
+        "code": "let mut v = vec![1, 2, 3];\nadd_four_and_five(&mut v);\ncheck_eq!(v, vec![1, 2, 3, 4, 5]);"
+      },
+      {
+        "id": "empty-vector",
+        "label": "An empty vector becomes [4, 5]",
+        "code": "let mut v: Vec<i32> = Vec::new();\nadd_four_and_five(&mut v);\ncheck_eq!(v, vec![4, 5]);"
+      },
+      {
+        "id": "main-prints-the-vector",
+        "label": "The program prints the vector",
+        "output": "[1, 2, 3, 4, 5]"
+      },
+      {
+        "id": "keeps-old-items",
+        "hidden": true,
+        "label": "items already there stay in front",
+        "code": "let mut v = vec![9];\nadd_four_and_five(&mut v);\ncheck_eq!(v, vec![9, 4, 5]);"
+      },
+      {
+        "id": "called-twice",
+        "hidden": true,
+        "label": "pushes, does not replace",
+        "code": "let mut v: Vec<i32> = Vec::new();\nadd_four_and_five(&mut v);\nadd_four_and_five(&mut v);\ncheck_eq!(v, vec![4, 5, 4, 5]);"
+      },
+      {
+        "id": "order-is-four-then-five",
+        "hidden": true,
+        "label": "4 before 5",
+        "code": "let mut v = vec![0];\nadd_four_and_five(&mut v);\ncheck_eq!(v.len(), 3);\ncheck_eq!(v[1], 4);\ncheck_eq!(v[2], 5);"
+      }
+    ],
+    "solution": "fn add_four_and_five(numbers: &mut Vec<i32>) {\n    numbers.push(4);\n    numbers.push(5);\n}\n\nfn main() {\n    let mut numbers = vec![1, 2, 3];\n    add_four_and_five(&mut numbers);\n    println!(\"{:?}\", numbers);\n}",
     "hints": [
-      "The vector needs two more items before it is printed. Which method adds one item at the end?",
-      "Use the push method, one call for each value. Do it on a line before the println!.",
-      "Write numbers.push(4); and numbers.push(5); before the println!."
+      "The vector needs two more items at its end. Which method adds one item at the end?",
+      "Use the push method, one call for each value. numbers is a mutable reference to the vector, and you can call push on it directly.",
+      "Write numbers.push(4); and numbers.push(5); inside the function."
     ]
   },
   "quiz": [

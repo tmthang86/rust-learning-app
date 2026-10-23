@@ -55,14 +55,48 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy thêm một impl Display cho ShopError, làm theo ví dụ LoginError, với thông báo \"out of stock\". Sau đó đổi println!(\"Error: {:?}\", e) thành println!(\"Error: {e}\"), để nó dùng thông báo của bạn thay vì dạng debug. Chương trình phải in ra: Error: out of stock",
-    "starter": "use std::fmt;   // keep this: your Display impl needs fmt\n\n#[derive(Debug)]\nenum ShopError {\n    OutOfStock,\n}\n\nfn main() {\n    let e = ShopError::OutOfStock;\n    println!(\"Error: {:?}\", e);\n}",
-    "expectedOutput": "Error: out of stock",
+    "prompt": "main đã in lỗi bằng {e}, điều này cần ShopError triển khai Display. Hãy thêm một impl Display cho ShopError, theo ví dụ LoginError, với thông báo \"out of stock\". Nó phải in ra: Error: out of stock",
+    "starter": "use std::fmt;   // keep this: your Display impl needs fmt\n\n#[derive(Debug)]\nenum ShopError {\n    OutOfStock,\n}\n\nfn main() {\n    let e = ShopError::OutOfStock;\n    println!(\"Error: {e}\");\n}",
+    "tests": [
+      {
+        "id": "displays-message",
+        "label": "OutOfStock hiển thị là out of stock",
+        "code": "check_eq!(ShopError::OutOfStock.to_string(), \"out of stock\");"
+      },
+      {
+        "id": "in-a-sentence",
+        "label": "Nó hoạt động bên trong format!",
+        "code": "check_eq!(format!(\"Error: {}\", ShopError::OutOfStock), \"Error: out of stock\");"
+      },
+      {
+        "id": "main-prints-error",
+        "label": "Chương trình in ra Error: out of stock",
+        "output": "Error: out of stock"
+      },
+      {
+        "id": "debug-still-works",
+        "hidden": true,
+        "label": "the derived Debug is kept",
+        "code": "check_eq!(format!(\"{:?}\", ShopError::OutOfStock), \"OutOfStock\");"
+      },
+      {
+        "id": "through-a-reference",
+        "hidden": true,
+        "label": "Display on a reference",
+        "code": "let e = ShopError::OutOfStock;\nlet r = &e;\ncheck_eq!(format!(\"{r}\"), \"out of stock\");"
+      },
+      {
+        "id": "not-the-debug-text",
+        "hidden": true,
+        "label": "Display is not the Debug text",
+        "code": "check!(ShopError::OutOfStock.to_string() != \"OutOfStock\");"
+      }
+    ],
     "solution": "use std::fmt;\n\n#[derive(Debug)]\nenum ShopError {\n    OutOfStock,\n}\n\nimpl fmt::Display for ShopError {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        match self {\n            ShopError::OutOfStock => write!(f, \"out of stock\"),\n        }\n    }\n}\n\nfn main() {\n    let e = ShopError::OutOfStock;\n    println!(\"Error: {e}\");\n}",
     "hints": [
-      "Hãy xem LoginError có được một thông báo dễ đọc như thế nào: một khối impl với một phương thức bên trong. ShopError cần giống như vậy, chỉ với một variant để xử lý.",
-      "Hãy viết impl fmt::Display for ShopError và chép dòng fmt đúng như trong bài học. Bên trong, match self với một nhánh cho ShopError::OutOfStock gọi write!(f, \"...\").",
-      "Hãy dùng write!(f, \"out of stock\") không có dấu chấm phẩy sau nó. Sau đó đổi println! để in {e} thay vì {:?}."
+      "Hãy xem LoginError có được thông báo dễ đọc như thế nào: một khối impl với một phương thức bên trong. ShopError cần điều tương tự, chỉ với một variant để xử lý.",
+      "Hãy viết impl fmt::Display for ShopError và sao chép dòng fmt đúng như trong bài học. Bên trong, hãy match self với một nhánh cho ShopError::OutOfStock gọi write!(f, \"...\").",
+      "Hãy dùng write!(f, \"out of stock\") và không có dấu chấm phẩy sau nó. main đã in bằng {e}, và chính nó sẽ dùng thông báo của bạn."
     ]
   },
   "quiz": [

@@ -44,7 +44,41 @@
   "exercise": {
     "prompt": "Hãy đặt x và y bằng a.parse()? và b.parse()? thay cho 0, để hàm cộng các số lại. Chương trình phải in ra: Ok(30)",
     "starter": "use std::num::ParseIntError;\n\nfn total(a: &str, b: &str) -> Result<i32, ParseIntError> {\n    let x: i32 = 0;\n    let y: i32 = 0;\n    Ok(x + y)\n}\n\nfn main() {\n    println!(\"{:?}\", total(\"10\", \"20\"));\n}",
-    "expectedOutput": "Ok(30)",
+    "tests": [
+      {
+        "id": "ten-plus-twenty",
+        "label": "total(\"10\", \"20\") là Ok(30)",
+        "code": "check_eq!(total(\"10\", \"20\"), Ok(30));"
+      },
+      {
+        "id": "one-plus-two",
+        "label": "total(\"1\", \"2\") là Ok(3)",
+        "code": "check_eq!(total(\"1\", \"2\"), Ok(3));"
+      },
+      {
+        "id": "main-prints-ok-30",
+        "label": "Chương trình in ra Ok(30)",
+        "output": "Ok(30)"
+      },
+      {
+        "id": "first-is-not-a-number",
+        "hidden": true,
+        "label": "bad first text gives Err",
+        "code": "check!(total(\"x\", \"2\").is_err());"
+      },
+      {
+        "id": "second-is-not-a-number",
+        "hidden": true,
+        "label": "bad second text gives Err",
+        "code": "check!(total(\"1\", \"y\").is_err());"
+      },
+      {
+        "id": "negative-numbers",
+        "hidden": true,
+        "label": "negative numbers",
+        "code": "check_eq!(total(\"-5\", \"5\"), Ok(0));"
+      }
+    ],
     "solution": "use std::num::ParseIntError;\n\nfn total(a: &str, b: &str) -> Result<i32, ParseIntError> {\n    let x: i32 = a.parse()?;\n    let y: i32 = b.parse()?;\n    Ok(x + y)\n}\n\nfn main() {\n    println!(\"{:?}\", total(\"10\", \"20\"));\n}",
     "hints": [
       "Hiện giờ x và y luôn bằng 0, nên nó in ra Ok(0). Chúng phải được lấy từ văn bản trong a và b.",

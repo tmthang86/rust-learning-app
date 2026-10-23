@@ -42,14 +42,50 @@
     }
   ],
   "exercise": {
-    "prompt": "parse returns a Result. Use expect with a message to get the number out so it can be doubled. It should print: 84",
-    "starter": "fn main() {\n    let n: i32 = \"42\".parse();\n    println!(\"{}\", n * 2);\n}",
-    "expectedOutput": "84",
-    "solution": "fn main() {\n    let n: i32 = \"42\".parse().expect(\"not a number\");\n    println!(\"{}\", n * 2);\n}",
+    "prompt": "parse returns a Result. In parse_and_double, use expect with a message to get the number out so it can be doubled. For \"42\", main should print: 84",
+    "starter": "fn parse_and_double(text: &str) -> i32 {\n    let n: i32 = text.parse();\n    n * 2\n}\n\nfn main() {\n    println!(\"{}\", parse_and_double(\"42\"));\n}",
+    "tests": [
+      {
+        "id": "forty-two",
+        "label": "parse_and_double(\"42\") is 84",
+        "code": "check_eq!(parse_and_double(\"42\"), 84);"
+      },
+      {
+        "id": "main-prints-84",
+        "label": "The program prints 84",
+        "output": "84"
+      },
+      {
+        "id": "another-number",
+        "hidden": true,
+        "label": "a number a hard-coded 84 would not match",
+        "code": "check_eq!(parse_and_double(\"5\"), 10);"
+      },
+      {
+        "id": "negative-number",
+        "hidden": true,
+        "label": "a negative number",
+        "code": "check_eq!(parse_and_double(\"-3\"), -6);"
+      },
+      {
+        "id": "zero",
+        "hidden": true,
+        "label": "zero",
+        "code": "check_eq!(parse_and_double(\"0\"), 0);"
+      },
+      {
+        "id": "not-a-number-panics",
+        "hidden": true,
+        "label": "expect stops the program on bad text",
+        "code": "let _ = parse_and_double(\"abc\");",
+        "panics": ""
+      }
+    ],
+    "solution": "fn parse_and_double(text: &str) -> i32 {\n    let n: i32 = text.parse().expect(\"not a number\");\n    n * 2\n}\n\nfn main() {\n    println!(\"{}\", parse_and_double(\"42\"));\n}",
     "hints": [
       "The parse call gives back a Result, not a number. You need to get the number out of it.",
       "A Result has a method expect. It gives you the value, or stops the program with your message if parsing failed. Add it after parse().",
-      "Write \"42\".parse().expect(\"not a number\"). Put a short message in the quotes."
+      "Write text.parse().expect(\"not a number\"). Put a short message in the quotes."
     ]
   },
   "quiz": [
