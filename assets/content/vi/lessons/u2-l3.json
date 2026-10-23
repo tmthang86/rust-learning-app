@@ -46,7 +46,13 @@
   "exercise": {
     "prompt": "Hãy dùng if như một biểu thức để gán size bằng \"big\" khi n lớn hơn 100 và \"small\" trong trường hợp còn lại. Chương trình phải in ra: big",
     "starter": "fn main() {\n    let n = 250;\n    let size = \"?\";\n    println!(\"{size}\");\n}",
-    "expectedOutput": "big",
+    "tests": [
+      {
+        "id": "size-big",
+        "label": "In ra big",
+        "output": "big"
+      }
+    ],
     "solution": "fn main() {\n    let n = 250;\n    let size = if n > 100 { \"big\" } else { \"small\" };\n    println!(\"{size}\");\n}",
     "hints": [
       "Bạn cần if tạo ra một giá trị, chứ không chỉ chạy code. Dòng nào nên nhận giá trị đó?",

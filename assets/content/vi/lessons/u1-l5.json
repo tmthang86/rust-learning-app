@@ -43,7 +43,13 @@
   "exercise": {
     "prompt": "Hãy dùng shadowing (không dùng mut) để biến văn bản \"7\" thành một số và in ra giá trị gấp đôi của nó. Kết quả mong đợi: 14",
     "starter": "fn main() {\n    let value = \"7\";\n    // shadow value here\n    println!(\"{}\", value);\n}",
-    "expectedOutput": "14",
+    "tests": [
+      {
+        "id": "doubled-14",
+        "label": "In ra số đã nhân đôi, 14",
+        "output": "14"
+      }
+    ],
     "solution": "fn main() {\n    let value = \"7\";\n    let value: i32 = value.parse().unwrap();\n    println!(\"{}\", value * 2);\n}",
     "hints": [
       "Shadowing nghĩa là một let mới dùng lại cái tên cũ. Ở đây giá trị mới nên là một số, không phải văn bản.",

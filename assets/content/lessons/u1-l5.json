@@ -43,7 +43,13 @@
   "exercise": {
     "prompt": "Use shadowing (not mut) to turn the text \"7\" into a number and print it doubled. Expected output: 14",
     "starter": "fn main() {\n    let value = \"7\";\n    // shadow value here\n    println!(\"{}\", value);\n}",
-    "expectedOutput": "14",
+    "tests": [
+      {
+        "id": "doubled-14",
+        "label": "Prints the doubled number, 14",
+        "output": "14"
+      }
+    ],
     "solution": "fn main() {\n    let value = \"7\";\n    let value: i32 = value.parse().unwrap();\n    println!(\"{}\", value * 2);\n}",
     "hints": [
       "Shadowing means a new let that reuses the name. Here the new value should be a number, not text.",

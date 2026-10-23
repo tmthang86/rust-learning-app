@@ -35,7 +35,13 @@
   "exercise": {
     "prompt": "Use a for loop to add up the numbers 1 to 10 and print the total. It should print: 55",
     "starter": "fn main() {\n    // keep mut: your loop will change total\n    let mut total = 0;\n    // loop here\n    println!(\"{total}\");\n}",
-    "expectedOutput": "55",
+    "tests": [
+      {
+        "id": "sum-1-to-10",
+        "label": "Prints the total of 1 to 10, 55",
+        "output": "55"
+      }
+    ],
     "solution": "fn main() {\n    let mut total = 0;\n    for n in 1..=10 {\n        total += n;\n    }\n    println!(\"{total}\");\n}",
     "hints": [
       "You want to repeat the same step for each number from 1 to 10. Which loop goes through a range?",

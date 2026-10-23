@@ -63,7 +63,13 @@
   "exercise": {
     "prompt": "This program doesn't compile. Fix it so it prints: score is 15",
     "starter": "fn main() {\n    let score = 10;\n    score = score + 5;\n    println!(\"score is {score}\");\n}",
-    "expectedOutput": "score is 15",
+    "tests": [
+      {
+        "id": "score-is-15",
+        "label": "Prints score is 15",
+        "output": "score is 15"
+      }
+    ],
     "solution": "fn main() {\n    let mut score = 10;\n    score = score + 5;\n    println!(\"score is {score}\");\n}",
     "hints": [
       "Variables can't change unless you say so. Which keyword from this lesson allows a variable to change?",

@@ -63,7 +63,13 @@
   "exercise": {
     "prompt": "Chương trình này không biên dịch được. Hãy sửa để nó in ra: score is 15",
     "starter": "fn main() {\n    let score = 10;\n    score = score + 5;\n    println!(\"score is {score}\");\n}",
-    "expectedOutput": "score is 15",
+    "tests": [
+      {
+        "id": "score-is-15",
+        "label": "In ra score is 15",
+        "output": "score is 15"
+      }
+    ],
     "solution": "fn main() {\n    let mut score = 10;\n    score = score + 5;\n    println!(\"score is {score}\");\n}",
     "hints": [
       "Biến không thể thay đổi trừ khi bạn nói rõ. Từ khóa nào trong bài học này cho phép một biến thay đổi?",

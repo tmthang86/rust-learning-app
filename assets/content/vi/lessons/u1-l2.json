@@ -40,7 +40,13 @@
   "exercise": {
     "prompt": "Chương trình mà Cargo tạo ra in ra \"Hello, world!\". Hãy sửa để nó in ra: Built with Cargo",
     "starter": "fn main() {\n    println!(\"Hello, world!\");\n}",
-    "expectedOutput": "Built with Cargo",
+    "tests": [
+      {
+        "id": "built-with-cargo",
+        "label": "In ra Built with Cargo",
+        "output": "Built with Cargo"
+      }
+    ],
     "solution": "fn main() {\n    println!(\"Built with Cargo\");\n}",
     "hints": [
       "Hãy nhìn đoạn văn bản bên trong dấu nháy của println!. Bạn chỉ cần đổi nội dung mà nó nói.",
