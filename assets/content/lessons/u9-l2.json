@@ -58,14 +58,54 @@
     }
   ],
   "exercise": {
-    "prompt": "Make three changes. 1) Add a method pub fn withdraw(&mut self, amount: i64) to Account that subtracts the amount from the balance. 2) Add the line use bank::Account; above main and write Account::new(\"Ada\") instead of bank::Account::new(\"Ada\"). 3) In main, call acc.withdraw(10) right after the deposit. It should print: Ada: 30",
-    "starter": "mod bank {\n    pub struct Account {\n        pub owner: String,\n        balance: i64,\n    }\n\n    impl Account {\n        pub fn new(owner: &str) -> Account {\n            Account { owner: String::from(owner), balance: 0 }\n        }\n\n        pub fn deposit(&mut self, amount: i64) {\n            self.balance += amount;\n        }\n\n        pub fn balance(&self) -> i64 {\n            self.balance\n        }\n\n        // add pub fn withdraw here\n    }\n}\n\nfn main() {\n    let mut acc = bank::Account::new(\"Ada\");\n    acc.deposit(40);\n    println!(\"{}: {}\", acc.owner, acc.balance());\n}",
-    "expectedOutput": "Ada: 30",
+    "prompt": "main is already written, but it needs two things from you. 1) Add a method pub fn withdraw(&mut self, amount: i64) to Account that subtracts the amount from the balance. 2) Add the line use bank::Account; above main, so that Account::new(\"Ada\") works. It should print: Ada: 30",
+    "starter": "mod bank {\n    pub struct Account {\n        pub owner: String,\n        balance: i64,\n    }\n\n    impl Account {\n        pub fn new(owner: &str) -> Account {\n            Account { owner: String::from(owner), balance: 0 }\n        }\n\n        pub fn deposit(&mut self, amount: i64) {\n            self.balance += amount;\n        }\n\n        pub fn balance(&self) -> i64 {\n            self.balance\n        }\n\n        // add pub fn withdraw here\n    }\n}\n\n// add use bank::Account; here\n\nfn main() {\n    let mut acc = Account::new(\"Ada\");\n    acc.deposit(40);\n    acc.withdraw(10);\n    println!(\"{}: {}\", acc.owner, acc.balance());\n}",
+    "tests": [
+      {
+        "id": "withdraw-subtracts",
+        "label": "Withdrawing 10 from 40 leaves 30",
+        "code": "let mut acc = bank::Account::new(\"Ada\");\nacc.deposit(40);\nacc.withdraw(10);\ncheck_eq!(acc.balance(), 30);"
+      },
+      {
+        "id": "use-line-brings-account-in",
+        "label": "After use bank::Account; the name Account works on its own",
+        "code": "let acc = Account::new(\"Ada\");\ncheck_eq!(acc.balance(), 0);"
+      },
+      {
+        "id": "main-prints-ada-30",
+        "label": "The program prints Ada: 30",
+        "output": "Ada: 30"
+      },
+      {
+        "id": "withdraw-everything",
+        "hidden": true,
+        "label": "down to zero",
+        "code": "let mut acc = bank::Account::new(\"Bo\");\nacc.deposit(25);\nacc.withdraw(25);\ncheck_eq!(acc.balance(), 0);"
+      },
+      {
+        "id": "withdraw-twice",
+        "hidden": true,
+        "label": "two withdrawals add up",
+        "code": "let mut acc = bank::Account::new(\"Bo\");\nacc.deposit(100);\nacc.withdraw(30);\nacc.withdraw(5);\ncheck_eq!(acc.balance(), 65);"
+      },
+      {
+        "id": "goes-below-zero",
+        "hidden": true,
+        "label": "the balance is a plain subtraction",
+        "code": "let mut acc = bank::Account::new(\"Bo\");\nacc.deposit(5);\nacc.withdraw(10);\ncheck_eq!(acc.balance(), -5);"
+      },
+      {
+        "id": "owner-is-kept",
+        "hidden": true,
+        "label": "the owner does not change",
+        "code": "let mut acc = bank::Account::new(\"Ada\");\nacc.deposit(1);\nacc.withdraw(1);\ncheck_eq!(acc.owner, \"Ada\");"
+      }
+    ],
     "solution": "mod bank {\n    pub struct Account {\n        pub owner: String,\n        balance: i64,\n    }\n\n    impl Account {\n        pub fn new(owner: &str) -> Account {\n            Account { owner: String::from(owner), balance: 0 }\n        }\n\n        pub fn deposit(&mut self, amount: i64) {\n            self.balance += amount;\n        }\n\n        pub fn balance(&self) -> i64 {\n            self.balance\n        }\n\n        pub fn withdraw(&mut self, amount: i64) {\n            self.balance -= amount;\n        }\n    }\n}\n\nuse bank::Account;\n\nfn main() {\n    let mut acc = Account::new(\"Ada\");\n    acc.deposit(40);\n    acc.withdraw(10);\n    println!(\"{}: {}\", acc.owner, acc.balance());\n}",
     "hints": [
-      "There are three small changes: a method inside the impl, a use line above main, and a call in main. Start with the method. It looks a lot like deposit.",
+      "There are two small changes: a method inside the impl, and a use line above main. Start with the method. It looks a lot like deposit.",
       "Write pub fn withdraw(&mut self, amount: i64) inside the impl, with the same shape as deposit but subtracting. It needs pub so main can call it.",
-      "Inside withdraw, write self.balance -= amount; (deposit uses +=). Then add use bank::Account; above main, use Account::new(\"Ada\"), and call acc.withdraw(10); right after acc.deposit(40);"
+      "Inside withdraw, write self.balance -= amount; (deposit uses +=). Then add use bank::Account; above main. main already calls Account::new(\"Ada\") and acc.withdraw(10)."
     ]
   },
   "quiz": [

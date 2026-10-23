@@ -50,14 +50,48 @@
     }
   ],
   "exercise": {
-    "prompt": "Make a second owner b of the same string (share it, don't copy it). Then print how many owners there are, and change the last println! so it prints a and b separated by a space. It should print two lines: count = 2 and hello hello. Hint: let b = Rc::clone(&a); and println!(\"count = {}\", Rc::strong_count(&a));",
-    "starter": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(String::from(\"hello\"));\n    // add b and the count line here\n    println!(\"{a}\");\n}",
-    "expectedOutput": "count = 2\nhello hello",
-    "solution": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(String::from(\"hello\"));\n    let b = Rc::clone(&a);\n    println!(\"count = {}\", Rc::strong_count(&a));\n    println!(\"{a} {b}\");\n}",
+    "prompt": "Finish share so it returns a second owner of the same string (share it, don't copy it). main then prints how many owners there are, and prints a and b separated by a space. It should print two lines: count = 2 and hello hello. Hint: Rc::clone(a)",
+    "starter": "use std::rc::Rc;\n\nfn share(a: &Rc<String>) -> Rc<String> {\n    // return a second owner of the same string\n    let _ = a; // delete this line when you use a for real\n    todo!()\n}\n\nfn main() {\n    let a = Rc::new(String::from(\"hello\"));\n    let b = share(&a);\n    println!(\"count = {}\", Rc::strong_count(&a));\n    println!(\"{a} {b}\");\n}",
+    "tests": [
+      {
+        "id": "count-is-two",
+        "label": "After sharing, there are 2 owners",
+        "code": "let a = Rc::new(String::from(\"hello\"));\nlet b = share(&a);\ncheck_eq!(Rc::strong_count(&a), 2);\ncheck_eq!(*b, \"hello\");"
+      },
+      {
+        "id": "same-string-not-a-copy",
+        "label": "The new owner points to the same string, not a copy",
+        "code": "let a = Rc::new(String::from(\"hello\"));\nlet b = share(&a);\ncheck!(Rc::ptr_eq(&a, &b));"
+      },
+      {
+        "id": "main-prints-count-and-text",
+        "label": "The program prints count = 2, then hello hello",
+        "output": "count = 2\nhello hello"
+      },
+      {
+        "id": "shared-twice",
+        "hidden": true,
+        "label": "two more owners",
+        "code": "let a = Rc::new(String::from(\"x\"));\nlet b = share(&a);\nlet c = share(&a);\ncheck_eq!(Rc::strong_count(&a), 3);\ncheck!(Rc::ptr_eq(&b, &c));"
+      },
+      {
+        "id": "other-text",
+        "hidden": true,
+        "label": "text a hard-coded hello would not match",
+        "code": "let a = Rc::new(String::from(\"rust\"));\nlet b = share(&a);\ncheck_eq!(*b, \"rust\");\ncheck_eq!(Rc::strong_count(&b), 2);"
+      },
+      {
+        "id": "count-drops-with-the-owner",
+        "hidden": true,
+        "label": "dropping the new owner lowers the count",
+        "code": "let a = Rc::new(String::from(\"hello\"));\nlet b = share(&a);\ndrop(b);\ncheck_eq!(Rc::strong_count(&a), 1);"
+      }
+    ],
+    "solution": "use std::rc::Rc;\n\nfn share(a: &Rc<String>) -> Rc<String> {\n    Rc::clone(a)\n}\n\nfn main() {\n    let a = Rc::new(String::from(\"hello\"));\n    let b = share(&a);\n    println!(\"count = {}\", Rc::strong_count(&a));\n    println!(\"{a} {b}\");\n}",
     "hints": [
-      "b should be another owner of the same String, not a copy. Which Rc function adds an owner, and which one tells you how many there are?",
-      "Rc::clone(&a) makes a new owner and adds 1 to the count. Rc::strong_count(&a) gives the current count.",
-      "Write let b = Rc::clone(&a); then println!(\"count = {}\", Rc::strong_count(&a));. Finally change the last println! to print a and b with a space between: \"{a} {b}\"."
+      "The function must return another owner of the same String, not a copy. Which Rc function adds an owner?",
+      "Rc::clone(&x) makes a new owner of the value behind x and adds 1 to the count. Here the parameter a is already a reference to an Rc, so write Rc::clone(a). main reads the count with Rc::strong_count(&a).",
+      "Replace the let _ line and todo!() with Rc::clone(a) and no semicolon, so it is the value the function returns. main already prints the count and both strings."
     ]
   },
   "quiz": [

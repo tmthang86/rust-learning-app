@@ -74,14 +74,43 @@
     }
   ],
   "exercise": {
-    "prompt": "Pretend the nested module is the file src/shop/fruits.rs. Inside mod shop, add pub mod fruits with a function pub fn count() -> u32 that returns 5. Then replace the 0 in main with shop::fruits::count(). It should print: shop is open, 5 kinds of fruit",
-    "starter": "mod shop {\n    pub fn open() -> String {\n        String::from(\"shop is open\")\n    }\n\n    // add pub mod fruits here\n}\n\nfn main() {\n    let count = 0;   // replace 0 with shop::fruits::count()\n    println!(\"{}, {} kinds of fruit\", shop::open(), count);\n}",
-    "expectedOutput": "shop is open, 5 kinds of fruit",
+    "prompt": "Pretend the nested module is the file src/shop/fruits.rs. main already calls shop::fruits::count(). Inside mod shop, add pub mod fruits with a function pub fn count() -> u32 that returns 5. It should print: shop is open, 5 kinds of fruit",
+    "starter": "mod shop {\n    pub fn open() -> String {\n        String::from(\"shop is open\")\n    }\n\n    // add pub mod fruits here\n}\n\nfn main() {\n    let count = shop::fruits::count();\n    println!(\"{}, {} kinds of fruit\", shop::open(), count);\n}",
+    "tests": [
+      {
+        "id": "count-is-five",
+        "label": "shop::fruits::count() is 5",
+        "code": "check_eq!(shop::fruits::count(), 5);"
+      },
+      {
+        "id": "main-prints-the-sentence",
+        "label": "The program prints shop is open, 5 kinds of fruit",
+        "output": "shop is open, 5 kinds of fruit"
+      },
+      {
+        "id": "count-is-a-u32",
+        "hidden": true,
+        "label": "the count is a u32",
+        "code": "let n: u32 = shop::fruits::count();\ncheck_eq!(n + 1, 6);"
+      },
+      {
+        "id": "same-every-time",
+        "hidden": true,
+        "label": "calling twice gives the same",
+        "code": "check_eq!(shop::fruits::count(), shop::fruits::count());"
+      },
+      {
+        "id": "open-unchanged",
+        "hidden": true,
+        "label": "open is left alone",
+        "code": "check_eq!(shop::open(), \"shop is open\");"
+      }
+    ],
     "solution": "mod shop {\n    pub fn open() -> String {\n        String::from(\"shop is open\")\n    }\n\n    pub mod fruits {\n        pub fn count() -> u32 {\n            5\n        }\n    }\n}\n\nfn main() {\n    let count = shop::fruits::count();\n    println!(\"{}, {} kinds of fruit\", shop::open(), count);\n}",
     "hints": [
       "The shop module needs a module nested inside it, like a folder inside a folder. Look at how formal sat inside greetings.",
       "Inside mod shop, write pub mod fruits { ... } and put a function in it: pub fn count() -> u32 that returns 5. Both need pub, because main is outside.",
-      "In main, replace the 0 with the full path to the function: shop::fruits::count()."
+      "main already calls the function by its full path: shop::fruits::count(). Once the module and the function exist, that line works."
     ]
   },
   "quiz": [

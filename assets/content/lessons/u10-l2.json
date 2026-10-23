@@ -54,10 +54,39 @@
     }
   ],
   "exercise": {
-    "prompt": "Right now first is dropped at the very end of main. Change the program so first is cleaned up before the line that prints working, while second stays alive until the end. It should print four lines: guards: first and second, dropping first, working, dropping second. Hint: call drop(first); just before println!(\"working\").",
-    "starter": "struct Guard {\n    name: String,\n}\n\nimpl Drop for Guard {\n    fn drop(&mut self) {\n        println!(\"dropping {}\", self.name);\n    }\n}\n\nfn main() {\n    let first = Guard { name: String::from(\"first\") };\n    let second = Guard { name: String::from(\"second\") };\n    println!(\"guards: {} and {}\", first.name, second.name);\n    // add drop(first); here\n    println!(\"working\");\n}",
-    "expectedOutput": "guards: first and second\ndropping first\nworking\ndropping second",
-    "solution": "struct Guard {\n    name: String,\n}\n\nimpl Drop for Guard {\n    fn drop(&mut self) {\n        println!(\"dropping {}\", self.name);\n    }\n}\n\nfn main() {\n    let first = Guard { name: String::from(\"first\") };\n    let second = Guard { name: String::from(\"second\") };\n    println!(\"guards: {} and {}\", first.name, second.name);\n    drop(first);\n    println!(\"working\");\n}",
+    "prompt": "Right now first is not cleaned up until work ends. Change work so first is cleaned up before the line that prints working, while second stays alive until the end of work. It should print four lines: guards: first and second, dropping first, working, dropping second. Hint: call drop(first); just before println!(\"working\")",
+    "starter": "struct Guard {\n    name: String,\n}\n\nimpl Drop for Guard {\n    fn drop(&mut self) {\n        println!(\"dropping {}\", self.name);\n    }\n}\n\nfn work(first: Guard, second: Guard) {\n    println!(\"guards: {} and {}\", first.name, second.name);\n    // add drop(first); here\n    println!(\"working\");\n}\n\nfn main() {\n    let first = Guard { name: String::from(\"first\") };\n    let second = Guard { name: String::from(\"second\") };\n    work(first, second);\n}",
+    "tests": [
+      {
+        "id": "first-dropped-before-working",
+        "label": "first is dropped before working is printed, second after",
+        "code": "let out = output_of(|| work(Guard { name: String::from(\"first\") }, Guard { name: String::from(\"second\") }));\ncheck_eq!(out, \"guards: first and second\\ndropping first\\nworking\\ndropping second\\n\");"
+      },
+      {
+        "id": "main-prints-four-lines",
+        "label": "The program prints the four lines",
+        "output": "guards: first and second\ndropping first\nworking\ndropping second"
+      },
+      {
+        "id": "other-names",
+        "hidden": true,
+        "label": "names a hard-coded first/second would not match",
+        "code": "let out = output_of(|| work(Guard { name: String::from(\"a\") }, Guard { name: String::from(\"b\") }));\ncheck_eq!(out, \"guards: a and b\\ndropping a\\nworking\\ndropping b\\n\");"
+      },
+      {
+        "id": "names-with-spaces",
+        "hidden": true,
+        "label": "names with spaces",
+        "code": "let out = output_of(|| work(Guard { name: String::from(\"big one\") }, Guard { name: String::from(\"small one\") }));\ncheck_eq!(out, \"guards: big one and small one\\ndropping big one\\nworking\\ndropping small one\\n\");"
+      },
+      {
+        "id": "same-names",
+        "hidden": true,
+        "label": "both guards named alike",
+        "code": "let out = output_of(|| work(Guard { name: String::from(\"x\") }, Guard { name: String::from(\"x\") }));\ncheck_eq!(out, \"guards: x and x\\ndropping x\\nworking\\ndropping x\\n\");"
+      }
+    ],
+    "solution": "struct Guard {\n    name: String,\n}\n\nimpl Drop for Guard {\n    fn drop(&mut self) {\n        println!(\"dropping {}\", self.name);\n    }\n}\n\nfn work(first: Guard, second: Guard) {\n    println!(\"guards: {} and {}\", first.name, second.name);\n    drop(first);\n    println!(\"working\");\n}\n\nfn main() {\n    let first = Guard { name: String::from(\"first\") };\n    let second = Guard { name: String::from(\"second\") };\n    work(first, second);\n}",
     "hints": [
       "A value is dropped at the end of its scope. To clean one up sooner, there is a function that takes the value and drops it right now.",
       "The function is drop(value). It is in the prelude, so no use line is needed. It takes ownership, so the value cannot be used after it.",

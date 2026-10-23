@@ -42,14 +42,49 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy thêm một hàm double(n: i32) -> i32 vào module math, trả về n * 2. Đừng quên pub. Sau đó hãy thêm một println! thứ hai trong main in ra math::double(21). Chương trình phải in ra hai dòng: 36 và sau đó là 42",
-    "starter": "mod math {\n    pub fn square(n: i32) -> i32 {\n        n * n\n    }\n\n    // add pub fn double here\n}\n\nfn main() {\n    println!(\"{}\", math::square(6));\n}",
-    "expectedOutput": "36\n42",
+    "prompt": "main đã gọi math::double(21), nhưng module math chưa có hàm đó. Hãy thêm hàm double(n: i32) -> i32 vào module math, trả về n * 2. Đừng quên pub. Chương trình phải in ra hai dòng: 36 và sau đó là 42",
+    "starter": "mod math {\n    pub fn square(n: i32) -> i32 {\n        n * n\n    }\n\n    // add pub fn double here\n}\n\nfn main() {\n    println!(\"{}\", math::square(6));\n    println!(\"{}\", math::double(21));\n}",
+    "tests": [
+      {
+        "id": "double-21",
+        "label": "math::double(21) là 42",
+        "code": "check_eq!(math::double(21), 42);"
+      },
+      {
+        "id": "main-prints-36-and-42",
+        "label": "Chương trình in ra 36, rồi 42",
+        "output": "36\n42"
+      },
+      {
+        "id": "double-zero",
+        "hidden": true,
+        "label": "zero",
+        "code": "check_eq!(math::double(0), 0);"
+      },
+      {
+        "id": "double-negative",
+        "hidden": true,
+        "label": "a negative number",
+        "code": "check_eq!(math::double(-4), -8);"
+      },
+      {
+        "id": "double-other",
+        "hidden": true,
+        "label": "a number a hard-coded 42 would not match",
+        "code": "check_eq!(math::double(500), 1000);"
+      },
+      {
+        "id": "square-unchanged",
+        "hidden": true,
+        "label": "square is left alone",
+        "code": "check_eq!(math::square(6), 36);"
+      }
+    ],
     "solution": "mod math {\n    pub fn square(n: i32) -> i32 {\n        n * n\n    }\n\n    pub fn double(n: i32) -> i32 {\n        n * 2\n    }\n}\n\nfn main() {\n    println!(\"{}\", math::square(6));\n    println!(\"{}\", math::double(21));\n}",
     "hints": [
-      "double thuộc về bên trong module math, cạnh square. Hãy xem square được viết thế nào, và main cần gì để có thể gọi nó.",
+      "double thuộc về bên trong module math, bên cạnh square. Hãy xem square được viết thế nào, và main cần gì để có thể gọi nó.",
       "main nằm ngoài module, nên hàm cần pub: pub fn double(n: i32) -> i32. Phần thân là n * 2.",
-      "Hãy thêm hàm vào chỗ có chú thích. Sau đó, trong main, hãy thêm một println! thứ hai gọi nó bằng đường dẫn của nó: math::double(21)."
+      "Hãy thêm hàm vào chỗ có chú thích. main đã gọi nó bằng đường dẫn của nó rồi: math::double(21)."
     ]
   },
   "quiz": [

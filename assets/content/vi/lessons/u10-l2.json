@@ -54,10 +54,39 @@
     }
   ],
   "exercise": {
-    "prompt": "Hiện giờ first bị drop ở tận cuối main. Hãy đổi chương trình để first được dọn dẹp trước dòng in working, trong khi second vẫn tồn tại đến cuối. Chương trình phải in ra bốn dòng: guards: first and second, dropping first, working, dropping second. Gợi ý: gọi drop(first); ngay trước println!(\"working\").",
-    "starter": "struct Guard {\n    name: String,\n}\n\nimpl Drop for Guard {\n    fn drop(&mut self) {\n        println!(\"dropping {}\", self.name);\n    }\n}\n\nfn main() {\n    let first = Guard { name: String::from(\"first\") };\n    let second = Guard { name: String::from(\"second\") };\n    println!(\"guards: {} and {}\", first.name, second.name);\n    // add drop(first); here\n    println!(\"working\");\n}",
-    "expectedOutput": "guards: first and second\ndropping first\nworking\ndropping second",
-    "solution": "struct Guard {\n    name: String,\n}\n\nimpl Drop for Guard {\n    fn drop(&mut self) {\n        println!(\"dropping {}\", self.name);\n    }\n}\n\nfn main() {\n    let first = Guard { name: String::from(\"first\") };\n    let second = Guard { name: String::from(\"second\") };\n    println!(\"guards: {} and {}\", first.name, second.name);\n    drop(first);\n    println!(\"working\");\n}",
+    "prompt": "Hiện giờ first chưa được dọn dẹp cho đến khi work kết thúc. Hãy sửa work để first được dọn dẹp trước dòng in working, trong khi second vẫn còn sống đến hết work. Nó phải in ra bốn dòng: guards: first and second, dropping first, working, dropping second. Gợi ý: gọi drop(first); ngay trước println!(\"working\")",
+    "starter": "struct Guard {\n    name: String,\n}\n\nimpl Drop for Guard {\n    fn drop(&mut self) {\n        println!(\"dropping {}\", self.name);\n    }\n}\n\nfn work(first: Guard, second: Guard) {\n    println!(\"guards: {} and {}\", first.name, second.name);\n    // add drop(first); here\n    println!(\"working\");\n}\n\nfn main() {\n    let first = Guard { name: String::from(\"first\") };\n    let second = Guard { name: String::from(\"second\") };\n    work(first, second);\n}",
+    "tests": [
+      {
+        "id": "first-dropped-before-working",
+        "label": "first bị drop trước khi in working, second thì sau đó",
+        "code": "let out = output_of(|| work(Guard { name: String::from(\"first\") }, Guard { name: String::from(\"second\") }));\ncheck_eq!(out, \"guards: first and second\\ndropping first\\nworking\\ndropping second\\n\");"
+      },
+      {
+        "id": "main-prints-four-lines",
+        "label": "Chương trình in ra bốn dòng",
+        "output": "guards: first and second\ndropping first\nworking\ndropping second"
+      },
+      {
+        "id": "other-names",
+        "hidden": true,
+        "label": "names a hard-coded first/second would not match",
+        "code": "let out = output_of(|| work(Guard { name: String::from(\"a\") }, Guard { name: String::from(\"b\") }));\ncheck_eq!(out, \"guards: a and b\\ndropping a\\nworking\\ndropping b\\n\");"
+      },
+      {
+        "id": "names-with-spaces",
+        "hidden": true,
+        "label": "names with spaces",
+        "code": "let out = output_of(|| work(Guard { name: String::from(\"big one\") }, Guard { name: String::from(\"small one\") }));\ncheck_eq!(out, \"guards: big one and small one\\ndropping big one\\nworking\\ndropping small one\\n\");"
+      },
+      {
+        "id": "same-names",
+        "hidden": true,
+        "label": "both guards named alike",
+        "code": "let out = output_of(|| work(Guard { name: String::from(\"x\") }, Guard { name: String::from(\"x\") }));\ncheck_eq!(out, \"guards: x and x\\ndropping x\\nworking\\ndropping x\\n\");"
+      }
+    ],
+    "solution": "struct Guard {\n    name: String,\n}\n\nimpl Drop for Guard {\n    fn drop(&mut self) {\n        println!(\"dropping {}\", self.name);\n    }\n}\n\nfn work(first: Guard, second: Guard) {\n    println!(\"guards: {} and {}\", first.name, second.name);\n    drop(first);\n    println!(\"working\");\n}\n\nfn main() {\n    let first = Guard { name: String::from(\"first\") };\n    let second = Guard { name: String::from(\"second\") };\n    work(first, second);\n}",
     "hints": [
       "Một giá trị bị drop ở cuối phạm vi của nó. Để dọn dẹp một giá trị sớm hơn, có một hàm nhận giá trị và drop nó ngay lập tức.",
       "Hàm đó là drop(value). Nó nằm trong prelude, nên không cần dòng use. Nó nhận quyền sở hữu, nên giá trị không thể được dùng sau nó.",

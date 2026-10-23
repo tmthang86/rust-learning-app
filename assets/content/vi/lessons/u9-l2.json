@@ -58,14 +58,54 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy thực hiện ba thay đổi. 1) Thêm một phương thức pub fn withdraw(&mut self, amount: i64) vào Account, trừ số tiền khỏi số dư. 2) Thêm dòng use bank::Account; phía trên main và viết Account::new(\"Ada\") thay cho bank::Account::new(\"Ada\"). 3) Trong main, gọi acc.withdraw(10) ngay sau lệnh deposit. Chương trình phải in ra: Ada: 30",
-    "starter": "mod bank {\n    pub struct Account {\n        pub owner: String,\n        balance: i64,\n    }\n\n    impl Account {\n        pub fn new(owner: &str) -> Account {\n            Account { owner: String::from(owner), balance: 0 }\n        }\n\n        pub fn deposit(&mut self, amount: i64) {\n            self.balance += amount;\n        }\n\n        pub fn balance(&self) -> i64 {\n            self.balance\n        }\n\n        // add pub fn withdraw here\n    }\n}\n\nfn main() {\n    let mut acc = bank::Account::new(\"Ada\");\n    acc.deposit(40);\n    println!(\"{}: {}\", acc.owner, acc.balance());\n}",
-    "expectedOutput": "Ada: 30",
+    "prompt": "main đã được viết sẵn, nhưng nó cần bạn làm hai việc. 1) Thêm phương thức pub fn withdraw(&mut self, amount: i64) vào Account, trừ số tiền đó khỏi số dư. 2) Thêm dòng use bank::Account; phía trên main, để Account::new(\"Ada\") hoạt động. Nó phải in ra: Ada: 30",
+    "starter": "mod bank {\n    pub struct Account {\n        pub owner: String,\n        balance: i64,\n    }\n\n    impl Account {\n        pub fn new(owner: &str) -> Account {\n            Account { owner: String::from(owner), balance: 0 }\n        }\n\n        pub fn deposit(&mut self, amount: i64) {\n            self.balance += amount;\n        }\n\n        pub fn balance(&self) -> i64 {\n            self.balance\n        }\n\n        // add pub fn withdraw here\n    }\n}\n\n// add use bank::Account; here\n\nfn main() {\n    let mut acc = Account::new(\"Ada\");\n    acc.deposit(40);\n    acc.withdraw(10);\n    println!(\"{}: {}\", acc.owner, acc.balance());\n}",
+    "tests": [
+      {
+        "id": "withdraw-subtracts",
+        "label": "Rút 10 từ 40 còn lại 30",
+        "code": "let mut acc = bank::Account::new(\"Ada\");\nacc.deposit(40);\nacc.withdraw(10);\ncheck_eq!(acc.balance(), 30);"
+      },
+      {
+        "id": "use-line-brings-account-in",
+        "label": "Sau use bank::Account; tên Account dùng được một mình",
+        "code": "let acc = Account::new(\"Ada\");\ncheck_eq!(acc.balance(), 0);"
+      },
+      {
+        "id": "main-prints-ada-30",
+        "label": "Chương trình in ra Ada: 30",
+        "output": "Ada: 30"
+      },
+      {
+        "id": "withdraw-everything",
+        "hidden": true,
+        "label": "down to zero",
+        "code": "let mut acc = bank::Account::new(\"Bo\");\nacc.deposit(25);\nacc.withdraw(25);\ncheck_eq!(acc.balance(), 0);"
+      },
+      {
+        "id": "withdraw-twice",
+        "hidden": true,
+        "label": "two withdrawals add up",
+        "code": "let mut acc = bank::Account::new(\"Bo\");\nacc.deposit(100);\nacc.withdraw(30);\nacc.withdraw(5);\ncheck_eq!(acc.balance(), 65);"
+      },
+      {
+        "id": "goes-below-zero",
+        "hidden": true,
+        "label": "the balance is a plain subtraction",
+        "code": "let mut acc = bank::Account::new(\"Bo\");\nacc.deposit(5);\nacc.withdraw(10);\ncheck_eq!(acc.balance(), -5);"
+      },
+      {
+        "id": "owner-is-kept",
+        "hidden": true,
+        "label": "the owner does not change",
+        "code": "let mut acc = bank::Account::new(\"Ada\");\nacc.deposit(1);\nacc.withdraw(1);\ncheck_eq!(acc.owner, \"Ada\");"
+      }
+    ],
     "solution": "mod bank {\n    pub struct Account {\n        pub owner: String,\n        balance: i64,\n    }\n\n    impl Account {\n        pub fn new(owner: &str) -> Account {\n            Account { owner: String::from(owner), balance: 0 }\n        }\n\n        pub fn deposit(&mut self, amount: i64) {\n            self.balance += amount;\n        }\n\n        pub fn balance(&self) -> i64 {\n            self.balance\n        }\n\n        pub fn withdraw(&mut self, amount: i64) {\n            self.balance -= amount;\n        }\n    }\n}\n\nuse bank::Account;\n\nfn main() {\n    let mut acc = Account::new(\"Ada\");\n    acc.deposit(40);\n    acc.withdraw(10);\n    println!(\"{}: {}\", acc.owner, acc.balance());\n}",
     "hints": [
-      "Có ba thay đổi nhỏ: một phương thức bên trong impl, một dòng use phía trên main, và một lời gọi trong main. Hãy bắt đầu với phương thức. Nó trông rất giống deposit.",
-      "Hãy viết pub fn withdraw(&mut self, amount: i64) bên trong impl, có cùng dạng với deposit nhưng thực hiện phép trừ. Nó cần pub để main có thể gọi nó.",
-      "Bên trong withdraw, hãy viết self.balance -= amount; (deposit dùng +=). Sau đó thêm use bank::Account; phía trên main, dùng Account::new(\"Ada\"), và gọi acc.withdraw(10); ngay sau acc.deposit(40);"
+      "Có hai thay đổi nhỏ: một phương thức bên trong impl, và một dòng use phía trên main. Hãy bắt đầu với phương thức. Nó trông rất giống deposit.",
+      "Hãy viết pub fn withdraw(&mut self, amount: i64) bên trong impl, cùng hình dạng với deposit nhưng thực hiện phép trừ. Nó cần pub để main có thể gọi.",
+      "Bên trong withdraw, hãy viết self.balance -= amount; (deposit dùng +=). Sau đó thêm use bank::Account; phía trên main. main đã gọi Account::new(\"Ada\") và acc.withdraw(10) rồi."
     ]
   },
   "quiz": [
