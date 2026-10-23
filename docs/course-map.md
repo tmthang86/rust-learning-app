@@ -51,10 +51,11 @@ against the real output.
 
 An exercise is graded by `exercise.tests`, a list of 1 to 50 tests that run in
 order on the runner's `POST /grade` (design: `exercise-tests-design.md`). The
-exercise is solved when every test passes, hidden ones included. Lessons not
-yet migrated keep `expectedOutput`: the checker reads it as one output test,
-and the app runs it with plain `/run` and compares the output itself, showing
-one test (`tests` and `expectedOutput` are never both present).
+exercise is solved when every test passes, hidden ones included. Every regular
+lesson uses `tests`. Only the unit checkpoints (`uN-check`) still have
+`expectedOutput` until they are converted: the checker reads it as one output
+test, and the app runs it with plain `/run` and compares the output itself,
+showing one test (`tests` and `expectedOutput` are never both present).
 
 | Field | Meaning |
 |---|---|
@@ -73,9 +74,15 @@ solution (must pass everything) and the starter (must fail something) with the
 runner's own grading crate. Minimums: a print-only exercise needs 1 visible
 output test (Units 0-2 only); a function exercise needs 2 visible and 2 hidden
 code tests; an exercise restructured so a function holds the learner's change
-needs 1 visible and 2 hidden; a checkpoint challenge needs 3 and 3. `--strict`
-(turned on once every lesson is migrated) makes `expectedOutput` and the
-minimums errors.
+needs 1 visible and 2 hidden; a checkpoint challenge needs 3 and 3. CI runs
+`--strict`, which makes `expectedOutput` and the minimums errors; checkpoints
+that still have only `expectedOutput` are exempt until they are converted.
+
+When the learner's task is to add something new (a function, a method, a trait
+impl, a generic parameter), the starter's `main` already calls it, so the
+starter does not compile yet: the tests can't be checked against it, and the
+compiler error shows what is missing. Otherwise the starter compiles and
+fails the tests.
 
 ### Checkpoint challenges
 

@@ -39,7 +39,10 @@ must always meet them. One that still has only `expectedOutput` is not
 checked against them, unless --strict is given: then it is an error, as is a
 missing `tests`. A legacy exercise is otherwise graded as one output test.
 
---strict: see above (used for the lessons that have been migrated).
+--strict: see above. CI runs with it. The unit checkpoints (`uN-check`) are
+exempt while they still have only `expectedOutput` (they are converted by
+their own workstream; see CHECKPOINT_RE): --strict prints a note for them
+instead of an error. A checkpoint that has `tests` is held to its minimums.
 --self-test: checks the checker on made-up exercises (a broken hidden test
 must be caught).
 
@@ -102,6 +105,9 @@ ONE_VISIBLE_OK = {"u0-l5"}
 PRINT_ONLY_OK = {}
 # Units whose exercises may be print-only.
 PRINT_ONLY_UNITS = ("u0-", "u1-", "u2-")
+
+# A unit's end-of-unit challenge (`"checkpoint": true` in course.json).
+CHECKPOINT_RE = re.compile(r"u\d+-check")
 
 TEST_KEYS = {"id", "label", "hidden", "code", "panics", "output"}
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,39}$")
@@ -287,7 +293,7 @@ def minimum_problems(lid, lesson, exercise):
     visible = [t for t in code_tests if not t.get("hidden")]
     hidden = [t for t in code_tests if t.get("hidden")]
     # A unit's end-of-unit challenge: `uN-check`, `"checkpoint": true` in course.json.
-    checkpoint = re.fullmatch(r"u\d+-check", lid) is not None
+    checkpoint = CHECKPOINT_RE.fullmatch(lid) is not None
     group = GROUP.get(lid)
     msgs = []
     if group is None and not checkpoint:
@@ -314,6 +320,12 @@ def minimum_problems(lid, lesson, exercise):
     return msgs
 
 
+def is_legacy_checkpoint(lid, exercise):
+    """A unit checkpoint that has not been converted to `tests` yet (exempt
+    from --strict)."""
+    return "tests" not in exercise and CHECKPOINT_RE.fullmatch(lid) is not None
+
+
 def squash(code):
     return re.sub(r"\s+", " ", code).strip()
 
@@ -335,8 +347,13 @@ def check_exercise(lid, lesson, exercise):
     if schema or not solution:
         return problems
 
+    # Checkpoints still on expectedOutput are converted elsewhere: not an error yet.
+    legacy_checkpoint = is_legacy_checkpoint(lid, exercise)
     if "tests" not in exercise and STRICT:
-        problems.append(f"{lid}: still uses expectedOutput (strict mode wants tests)")
+        if legacy_checkpoint:
+            LEGACY_CHECKPOINTS.append(lid)
+        else:
+            problems.append(f"{lid}: still uses expectedOutput (strict mode wants tests)")
     tests = exercise_tests(exercise)
 
     # Hidden tests must not repeat a visible one.
@@ -347,7 +364,7 @@ def check_exercise(lid, lesson, exercise):
 
     # Old lessons are graded as they are until strict mode; the minimums are
     # for exercises that already have tests.
-    if STRICT or "tests" in exercise:
+    if (STRICT and not legacy_checkpoint) or "tests" in exercise:
         problems += minimum_problems(lid, lesson, exercise)
 
     # The solution passes everything, without warnings.
@@ -402,6 +419,7 @@ def describe(t):
 
 STRICT = False
 NOTES = []
+LEGACY_CHECKPOINTS = []
 
 
 def check(path):
@@ -719,6 +737,11 @@ def lesson_vocabulary(lesson):
                 literals.add(code)
     if isinstance(exercise, dict) and isinstance(exercise.get("expectedOutput"), str):
         outputs.update(l.strip() for l in exercise["expectedOutput"].splitlines())
+    # An output test is the same thing under its new name.
+    if isinstance(exercise, dict) and isinstance(exercise.get("tests"), list):
+        for t in exercise["tests"]:
+            if isinstance(t, dict) and isinstance(t.get("output"), str):
+                outputs.update(l.strip() for l in t["output"].splitlines())
     # Text the program prints can appear in prose without quotes ("prints
     # Even when ..."), and then it has to stay as it is. Plain lowercase
     # words are left out: they are as likely to be ordinary English.
@@ -1101,6 +1124,11 @@ def main():
         problems += translation_problems
     for n in NOTES:
         print("NOTE", n)
+    if LEGACY_CHECKPOINTS:
+        print(
+            "NOTE checkpoints still on expectedOutput, exempt from --strict until converted: "
+            + ", ".join(sorted(LEGACY_CHECKPOINTS))
+        )
     for p in problems:
         print("FAIL", p)
     for line in summary:
