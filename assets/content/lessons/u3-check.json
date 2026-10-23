@@ -1,0 +1,78 @@
+{
+  "id": "u3-check",
+  "title": "Checkpoint: Borrowing helpers",
+  "sections": [
+    {
+      "type": "text",
+      "text": "This checkpoint practises Unit 3: moves, Copy and Clone, borrowing, mutable references and slices. You will write three small functions. Each one receives its input in a different way: by value, through a mutable reference and as a slice."
+    },
+    {
+      "type": "text",
+      "text": "It draws on the lessons Ownership and moves, Copy and Clone, Mutable references and Slices. Look at how main calls each function. The way a value is passed shows who owns it afterwards."
+    },
+    {
+      "type": "note",
+      "text": "todo!() is a placeholder. If the program reaches it, it stops with the message \"not yet implemented\". Replace each todo!() with your own code. Until you do, the compiler may warn that some names are unused. That is expected."
+    },
+    {
+      "type": "note",
+      "text": "Hint for double_up: the function owns word. You need the text twice, so make an owned copy with word.clone() and build the result in it. Then add a space with push_str(\" \") and add the original with push_str(&word). The last line gives back the result."
+    },
+    {
+      "type": "note",
+      "text": "In main, double_up(word.clone()) gives the function a copy. Without .clone(), word would move into the function and main could not print it afterwards."
+    },
+    {
+      "type": "note",
+      "text": "Hint for apply_bonus: score is a &mut u32, a reference to a number. Write *score to reach the number itself, for example *score += 10;. If the number is then above 100, set it to 100."
+    },
+    {
+      "type": "note",
+      "text": "In main, let mut score = start; copies the number, because integers are Copy. That is why start can still be printed afterwards."
+    },
+    {
+      "type": "note",
+      "text": "Hint for first_half: s.len() is the length in bytes. The examples use plain English letters, where each letter is one byte. Take a slice from the start up to half of the length: &s[..end]. Dividing whole numbers drops the remainder, so 9 / 2 is 4."
+    }
+  ],
+  "exercise": {
+    "prompt": "Replace each todo!() with working code. Do not change main.\n\nfn double_up(word: String) -> String\nGives back the word twice with a space between: \"ha\" becomes \"ha ha\".\n\nfn apply_bonus(score: &mut u32)\nAdds 10 to the number that score points to. The result must never be more than 100. The number starts at 100 or less.\n\nfn first_half(s: &str) -> &str\nGives back a slice with the first s.len() / 2 bytes of s. The text s holds only plain English letters, so each letter is one byte. For 9 letters that is the first 4. For one letter or for an empty text it is the empty text.\n\nThe program should print:\nha -> ha ha\n40 -> 50\n90 -> 100\n100 -> 100\n[Owne]\n[h]\n[]\n[]",
+    "starter": "fn double_up(word: String) -> String {\n    todo!()\n}\n\nfn apply_bonus(score: &mut u32) {\n    todo!()\n}\n\nfn first_half(s: &str) -> &str {\n    todo!()\n}\n\nfn main() {\n    let word = String::from(\"ha\");\n    let laugh = double_up(word.clone());\n    println!(\"{word} -> {laugh}\");\n\n    for start in [40, 90, 100] {\n        let mut score = start;\n        apply_bonus(&mut score);\n        println!(\"{start} -> {score}\");\n    }\n\n    let title = String::from(\"Ownership\");\n    println!(\"[{}]\", first_half(&title));\n    println!(\"[{}]\", first_half(\"hi\"));\n    println!(\"[{}]\", first_half(\"a\"));\n    println!(\"[{}]\", first_half(\"\"));\n}",
+    "expectedOutput": "ha -> ha ha\n40 -> 50\n90 -> 100\n100 -> 100\n[Owne]\n[h]\n[]\n[]",
+    "solution": "fn double_up(word: String) -> String {\n    let mut result = word.clone();\n    result.push_str(\" \");\n    result.push_str(&word);\n    result\n}\n\nfn apply_bonus(score: &mut u32) {\n    *score += 10;\n    if *score > 100 {\n        *score = 100;\n    }\n}\n\nfn first_half(s: &str) -> &str {\n    &s[..s.len() / 2]\n}\n\nfn main() {\n    let word = String::from(\"ha\");\n    let laugh = double_up(word.clone());\n    println!(\"{word} -> {laugh}\");\n\n    for start in [40, 90, 100] {\n        let mut score = start;\n        apply_bonus(&mut score);\n        println!(\"{start} -> {score}\");\n    }\n\n    let title = String::from(\"Ownership\");\n    println!(\"[{}]\", first_half(&title));\n    println!(\"[{}]\", first_half(\"hi\"));\n    println!(\"[{}]\", first_half(\"a\"));\n    println!(\"[{}]\", first_half(\"\"));\n}",
+    "hints": [
+      "double_up owns word, so you need a copy to build the result and still use word. apply_bonus changes a number through a &mut reference. first_half gives back a slice of s, not a new String.",
+      "In double_up, make let mut result = word.clone(); then push_str a space and then &word. In apply_bonus, write *score to reach the number. In first_half, a slice looks like &s[..end], where end is half of s.len().",
+      "In apply_bonus, write *score += 10; and then if *score > 100 { *score = 100; }. In first_half, the last line is &s[..s.len() / 2], with no semicolon."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Why does main call double_up(word.clone()) and not double_up(word)?",
+      "options": [
+        "clone makes the function faster",
+        "Passing word would move it, so main could not print it afterwards",
+        "A function can never take a String"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "After let mut score = start; where start is a u32, can you still use start?",
+      "options": [
+        "Yes, because integers are Copy",
+        "No, it was moved",
+        "Only if you add .clone()"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "What type does &s[..3] have when s is a String?",
+      "options": [
+        "String",
+        "&String",
+        "&str"
+      ],
+      "answer": 2
+    }
+  ]
+}

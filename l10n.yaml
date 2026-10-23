@@ -1,0 +1,9 @@
+# Flutter gen-l10n: UI strings. Template is English; every other locale
+# is a translation. See docs/i18n/README.md.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+# Generated files are not committed (see .gitignore); `flutter pub get`
+# creates them.
+nullable-getter: false

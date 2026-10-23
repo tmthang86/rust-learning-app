@@ -1,0 +1,68 @@
+{
+  "id": "u9-check",
+  "title": "Checkpoint: Scoreboard module",
+  "sections": [
+    {
+      "type": "text",
+      "text": "This checkpoint practices three lessons of the unit: Modules, Visibility and use, and Writing tests. (Packages, crates and Cargo is not part of it, because this app compiles a single file.) You will decide what must be public, add the missing use lines, fill in three function bodies and write one check with assert_eq!."
+    },
+    {
+      "type": "text",
+      "text": "The starter does not compile yet, on purpose. Player lives in mod scoreboard, and the module rank is nested inside it. Nothing is marked pub, and main has no use line. Read the compiler errors one at a time: each one names an item that is private or a name that cannot be found. Make public only what main needs. The field points must stay private, because only the methods should change it. Three function bodies are also marked todo!(), a placeholder that panics with \"not yet implemented\" when it runs. The compiler shows warnings about unused variables until you are done. That is expected."
+    },
+    {
+      "type": "text",
+      "text": "At the bottom there is a #[cfg(test)] module with two tests. The app skips it, because it compiles your file without tests. On your own computer, cargo test would run them. The assert_eq! lines in main do the same job here: if a value is wrong, the program panics and shows the left and right values. You will add one of them yourself."
+    },
+    {
+      "type": "note",
+      "text": "Fix the compile errors in this order. In main, bring Player and rank into scope with one use line above main. Inside mod rank, a use line is needed too, because use only works in the module where it is written. Then add pub to the items that the errors name. Methods and new need pub too (error E0624), and so does a field that main reads (error E0616). The list of errors gets long, but each one names the item. For the three bodies: add_points must not overflow, so check amount >= MAX_POINTS - self.points first and set the points to MAX_POINTS in that case. Otherwise add the amount. spend: check cost > self.points first and return Err before you change anything. The number of missing points is cost - self.points. title: use a match with range patterns such as 0..=9 and a last arm _ for everything else.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Signatures to match: Player::add_points(&mut self, amount: u32), Player::spend(&mut self, cost: u32) -> Result<(), String>, and rank::title(player: &Player) -> &'static str. The error text is built with format!(\"{} needs {} more points\", name, missing). A failed spend must leave the points unchanged. add_points must give 100 even for u32::MAX, so do not add before you compare.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Finish the scoreboard.\n\n(1) Make the program compile. Add the pub words and the use lines that are needed, and make public only what main needs. The field points must stay private.\n\n(2) Player::add_points(&mut self, amount: u32) adds the amount to the points. The points never go above MAX_POINTS (100), for any amount, even u32::MAX.\n\n(3) Player::spend(&mut self, cost: u32) -> Result<(), String> subtracts cost from the points and returns Ok(()). If cost is more than the points, it changes nothing and returns Err with the text NAME needs N more points, where NAME is the player's name and N is how many points are missing (for example Ada needs 20 more points).\n\n(4) rank::title(player: &Player) -> &'static str gives rookie for 0 to 9 points, regular for 10 to 49, expert for 50 to 99 and legend for 100.\n\n(5) In main, replace the TODO comment with an assert_eq! that checks that ada has 25 points. Do not change the other lines of main. It should print:\n\nAda: 0 points, rookie\nAda: 40 points, regular\nerror: Ada needs 20 more points\nspent 15\nAda: 100 points, legend\nAda: 49 points, regular\nall checks passed",
+    "starter": "// TODO: main does not compile yet. Make public what main needs (and nothing more),\n// and add the use lines that are missing.\nmod scoreboard {\n    const MAX_POINTS: u32 = 100;\n\n    struct Player {\n        name: String,\n        points: u32,\n    }\n\n    impl Player {\n        fn new(name: &str) -> Player {\n            Player { name: String::from(name), points: 0 }\n        }\n\n        fn points(&self) -> u32 {\n            self.points\n        }\n\n        // Adds points, but the total never goes above MAX_POINTS.\n        fn add_points(&mut self, amount: u32) {\n            todo!()\n        }\n\n        // Takes points away. Fails, and changes nothing, if there are too few.\n        fn spend(&mut self, cost: u32) -> Result<(), String> {\n            todo!()\n        }\n    }\n\n    mod rank {\n        fn title(player: &Player) -> &'static str {\n            todo!()\n        }\n    }\n}\n\nfn main() {\n    let mut ada = Player::new(\"Ada\");\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n\n    ada.add_points(40);\n    assert_eq!(ada.points(), 40);\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n\n    for cost in [60, 15] {\n        match ada.spend(cost) {\n            Ok(()) => println!(\"spent {cost}\"),\n            Err(e) => println!(\"error: {e}\"),\n        }\n    }\n    // TODO: add an assert_eq! here that checks ada has 25 points\n\n    ada.add_points(500);\n    assert_eq!(ada.points(), 100);\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n\n    ada.spend(51).unwrap();\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n    println!(\"all checks passed\");\n}\n\n#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n    fn points_are_capped() {\n        let mut p = Player::new(\"Bo\");\n        p.add_points(90);\n        p.add_points(90);\n        assert_eq!(p.points(), 100);\n        p.add_points(u32::MAX);\n        assert_eq!(p.points(), 100);\n    }\n\n    #[test]\n    fn spend_fails_when_too_poor() {\n        let mut p = Player::new(\"Bo\");\n        p.add_points(5);\n        assert!(p.spend(6).is_err());\n        assert_eq!(p.points(), 5);\n    }\n}",
+    "expectedOutput": "Ada: 0 points, rookie\nAda: 40 points, regular\nerror: Ada needs 20 more points\nspent 15\nAda: 100 points, legend\nAda: 49 points, regular\nall checks passed",
+    "solution": "mod scoreboard {\n    const MAX_POINTS: u32 = 100;\n\n    pub struct Player {\n        pub name: String,\n        points: u32,\n    }\n\n    impl Player {\n        pub fn new(name: &str) -> Player {\n            Player { name: String::from(name), points: 0 }\n        }\n\n        pub fn points(&self) -> u32 {\n            self.points\n        }\n\n        // Adds points, but the total never goes above MAX_POINTS.\n        pub fn add_points(&mut self, amount: u32) {\n            if amount >= MAX_POINTS - self.points {\n                self.points = MAX_POINTS;\n            } else {\n                self.points += amount;\n            }\n        }\n\n        // Takes points away. Fails, and changes nothing, if there are too few.\n        pub fn spend(&mut self, cost: u32) -> Result<(), String> {\n            if cost > self.points {\n                return Err(format!(\"{} needs {} more points\", self.name, cost - self.points));\n            }\n            self.points -= cost;\n            Ok(())\n        }\n    }\n\n    pub mod rank {\n        use super::Player;\n\n        // A child module may read the private field of its parent's struct.\n        pub fn title(player: &Player) -> &'static str {\n            match player.points {\n                0..=9 => \"rookie\",\n                10..=49 => \"regular\",\n                50..=99 => \"expert\",\n                _ => \"legend\",\n            }\n        }\n    }\n}\n\nuse scoreboard::{Player, rank};\n\nfn main() {\n    let mut ada = Player::new(\"Ada\");\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n\n    ada.add_points(40);\n    assert_eq!(ada.points(), 40);\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n\n    for cost in [60, 15] {\n        match ada.spend(cost) {\n            Ok(()) => println!(\"spent {cost}\"),\n            Err(e) => println!(\"error: {e}\"),\n        }\n    }\n    assert_eq!(ada.points(), 25);\n\n    ada.add_points(500);\n    assert_eq!(ada.points(), 100);\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n\n    ada.spend(51).unwrap();\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n    println!(\"all checks passed\");\n}\n\n#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n    fn points_are_capped() {\n        let mut p = Player::new(\"Bo\");\n        p.add_points(90);\n        p.add_points(90);\n        assert_eq!(p.points(), 100);\n        p.add_points(u32::MAX);\n        assert_eq!(p.points(), 100);\n    }\n\n    #[test]\n    fn spend_fails_when_too_poor() {\n        let mut p = Player::new(\"Bo\");\n        p.add_points(5);\n        assert!(p.spend(6).is_err());\n        assert_eq!(p.points(), 5);\n    }\n}",
+    "hints": [
+      "Read the compile errors from the top and fix them one at a time. Each error names an item that is private or not in scope. main reads the points through a method, so the field points stays private.",
+      "Add one use line above main for Player and rank. Inside mod rank, add use super::Player; because use works only in the module where it is written. Then add pub to each item that an error names.",
+      "In add_points, write if amount >= MAX_POINTS - self.points { self.points = MAX_POINTS; } else { self.points += amount; }. Compare before you add, so a huge amount cannot overflow. In spend, return Err before you change anything."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Which code may use a private item of mod scoreboard, such as the const MAX_POINTS?",
+      "options": [
+        "Only the code that is written directly inside scoreboard, not the modules nested in it",
+        "The code inside scoreboard and inside the modules nested in it, such as rank",
+        "Any code in the same file"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "What does use scoreboard::{Player, rank}; at the top of main's file do?",
+      "options": [
+        "It lets main write Player and rank::title instead of the full paths scoreboard::Player and scoreboard::rank::title",
+        "It makes Player and rank public",
+        "It copies the code of the scoreboard module into main"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "What does #[cfg(test)] above mod tests do?",
+      "options": [
+        "It marks the module as private",
+        "It makes main run the tests every time",
+        "The module is compiled only when the tests are built, not in a normal build"
+      ],
+      "answer": 2
+    }
+  ]
+}

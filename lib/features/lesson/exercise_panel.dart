@@ -3,7 +3,7 @@ import 'package:flutter/semantics.dart';
 
 import '../../app/theme.dart';
 import '../../data/models.dart';
-import '../../l10n/help_strings.dart';
+import '../../l10n/l10n.dart';
 import '../../runner/code_runner.dart';
 import '../editor/code_editor.dart';
 import '../editor/error_explanation_cards.dart';
@@ -104,7 +104,7 @@ class _ExercisePanelState extends State<ExercisePanel> {
     setState(() {
       _hintsShown++;
       _say(
-        HelpStrings.hintLabel(
+        context.l10n.hintLabel(
           _hintsShown,
           hints.length,
           hints[_hintsShown - 1],
@@ -119,7 +119,7 @@ class _ExercisePanelState extends State<ExercisePanel> {
   void _showSolution() {
     setState(() {
       _solutionShown = true;
-      _say(HelpStrings.solutionShown);
+      _say(context.l10n.solutionShown);
     });
     _focusAfterBuild(_solutionFocus);
   }
@@ -130,7 +130,7 @@ class _ExercisePanelState extends State<ExercisePanel> {
       // learner's own code.
       if (_backup == null && _code.text != solution) _backup = _code.text;
       _code.text = solution;
-      _say(HelpStrings.copiedToEditor);
+      _say(context.l10n.copiedToEditor);
     });
   }
 
@@ -138,7 +138,7 @@ class _ExercisePanelState extends State<ExercisePanel> {
     setState(() {
       _code.text = _backup ?? _code.text;
       _backup = null;
-      _say(HelpStrings.codeRestored);
+      _say(context.l10n.codeRestored);
     });
     _focusAfterBuild(_copyFocus);
   }
@@ -183,13 +183,13 @@ class _ExercisePanelState extends State<ExercisePanel> {
                       OutlinedButton.icon(
                         onPressed: _showHint,
                         icon: const Icon(Icons.lightbulb_outline),
-                        label: Text(HelpStrings.showHintLeft(left)),
+                        label: Text(context.l10n.showHintLeft(left)),
                       ),
                     if (canShowSolution)
                       OutlinedButton.icon(
                         onPressed: _showSolution,
                         icon: const Icon(Icons.visibility_outlined),
-                        label: const Text(HelpStrings.showSolution),
+                        label: Text(context.l10n.showSolution),
                       ),
                   ],
                 ),
@@ -199,7 +199,7 @@ class _ExercisePanelState extends State<ExercisePanel> {
                 padding: const EdgeInsets.only(top: 8),
                 child: _HintCard(
                   focusNode: _hintFocus[i],
-                  text: HelpStrings.hintLabel(i + 1, hints.length, hints[i]),
+                  text: context.l10n.hintLabel(i + 1, hints.length, hints[i]),
                 ),
               ),
             if (_solutionShown && solution != null)
@@ -302,12 +302,12 @@ class _SolutionCard extends StatelessWidget {
               Semantics(
                 header: true,
                 child: Text(
-                  HelpStrings.solutionHeading,
+                  context.l10n.solutionHeading,
                   style: textTheme.titleSmall,
                 ),
               ),
               const SizedBox(height: 4),
-              Text(HelpStrings.solutionNote, style: textTheme.bodySmall),
+              Text(context.l10n.solutionNote, style: textTheme.bodySmall),
               const SizedBox(height: 8),
               SelectableText(solution, style: codeTextStyle),
               const SizedBox(height: 8),
@@ -318,12 +318,12 @@ class _SolutionCard extends StatelessWidget {
                     focusNode: copyFocus,
                     onPressed: onCopy,
                     icon: const Icon(Icons.content_paste_go),
-                    label: const Text(HelpStrings.copyToEditor),
+                    label: Text(context.l10n.copyToEditor),
                   ),
                   OutlinedButton.icon(
                     onPressed: onPutBack,
                     icon: const Icon(Icons.undo),
-                    label: const Text(HelpStrings.putMyCodeBack),
+                    label: Text(context.l10n.putMyCodeBack),
                   ),
                 ],
               ),

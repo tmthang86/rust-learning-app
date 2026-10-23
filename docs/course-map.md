@@ -77,6 +77,22 @@ needs 1 visible and 2 hidden; a checkpoint challenge needs 3 and 3. `--strict`
 (turned on once every lesson is migrated) makes `expectedOutput` and the
 minimums errors.
 
+### Checkpoint challenges
+
+Every unit ends with a checkpoint: a lesson with id `uN-check` (for example
+`u3-check`) listed last in the unit in `course.json` with `"checkpoint": true`.
+The file has the same schema as any lesson (sections, `exercise`, `quiz`) and
+`tool/check_lessons.py` requires an exercise with a solution. For now it is
+graded by `expectedOutput` (the program's printed output is compared with it);
+checkpoints move to `exercise.tests` later (3 visible and 3 hidden code tests,
+see Exercise tests above),
+counts as a normal lesson for progress (`N of M lessons done`) and syncs under
+its id like any other lesson. The app shows it with a trophy icon and a
+"Checkpoint" label in the course map. A checkpoint is designed around named
+functions with fixed signatures (the learner implements `fn is_even(n: i32) ->
+bool`, and so on), so the multi-test grader can call those functions with several
+inputs instead of only comparing one printed output.
+
 ## Release scope
 
 - **First release:** Units 0–6 fully written (enough for a learner to write real

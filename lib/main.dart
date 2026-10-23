@@ -14,10 +14,13 @@ import 'firebase_options.dart';
 import 'app/theme.dart';
 import 'data/app_state.dart';
 import 'data/course_repository.dart';
+import 'l10n/app_localizations.dart';
 import 'monetization/monetization.dart';
 import 'monetization/platform_services.dart';
 import 'monetization/purchase_controller.dart';
 import 'monetization/purchase_service.dart';
+import 'reminders/local_notifications_scheduler.dart';
+import 'reminders/reminder_scheduler.dart';
 import 'runner/code_runner.dart';
 import 'runner/firebase_runner_auth.dart';
 
@@ -35,6 +38,10 @@ Future<void> main() async {
     prefs: await SharedPreferences.getInstance(),
     accounts: firebase ? FirebaseAccountService() : const DisabledAccountService(),
     sync: firebase ? FirestoreProgressSync() : null,
+    // The web can't schedule reminders; there the UI hides them.
+    reminderScheduler: kIsWeb
+        ? const NoopReminderScheduler()
+        : LocalNotificationsScheduler(),
   );
   await state.load();
   final services = createPlatformServices();
@@ -54,6 +61,9 @@ Future<void> main() async {
   // Not awaited: the consent form and store run alongside the UI and
   // never block lessons.
   unawaited(monetization.start());
+  // Plans the reminders again (does nothing unless the learner turned them
+  // on). Not awaited, and never asks for permission.
+  unawaited(state.reminders.refresh());
 }
 
 /// Starts Firebase if this build is configured for it (see
@@ -126,7 +136,8 @@ class RustLearnApp extends StatefulWidget {
   State<RustLearnApp> createState() => _RustLearnAppState();
 }
 
-class _RustLearnAppState extends State<RustLearnApp> {
+class _RustLearnAppState extends State<RustLearnApp>
+    with WidgetsBindingObserver {
   late final Monetization _monetization =
       widget.monetization ??
       Monetization(
@@ -144,7 +155,10 @@ class _RustLearnAppState extends State<RustLearnApp> {
 
   /// Store and consent retries when the app comes back to the foreground.
   late final AppLifecycleListener _lifecycle = AppLifecycleListener(
-    onResume: () => _monetization.onResume(),
+    onResume: () {
+      _monetization.onResume();
+      widget.state.onResume();
+    },
   );
 
   @override
@@ -155,10 +169,40 @@ class _RustLearnAppState extends State<RustLearnApp> {
       'Monetization and AppState must share one AgeStore',
     );
     _lifecycle; // start listening
+    // The device's language list, for the "System" language setting.
+    // (After this build: it may notify listeners.)
+    scheduleMicrotask(() {
+      if (mounted) {
+        widget.state.updateDeviceLocales(
+          WidgetsBinding.instance.platformDispatcher.locales,
+        );
+      }
+    });
+    WidgetsBinding.instance.addObserver(this);
+    _locale = widget.state.locale;
+    widget.state.addListener(_onStateChanged);
+  }
+
+  late Locale _locale;
+
+  /// AppState notifies for everything; the app itself only needs to be
+  /// rebuilt when the language changes.
+  void _onStateChanged() {
+    final locale = widget.state.locale;
+    if (locale != _locale) setState(() => _locale = locale);
+  }
+
+  @override
+  void didChangeLocales(List<Locale>? locales) {
+    widget.state.updateDeviceLocales(
+      locales ?? WidgetsBinding.instance.platformDispatcher.locales,
+    );
   }
 
   @override
   void dispose() {
+    widget.state.removeListener(_onStateChanged);
+    WidgetsBinding.instance.removeObserver(this);
     _lifecycle.dispose();
     _router.dispose();
     if (widget.monetization == null) {
@@ -175,7 +219,10 @@ class _RustLearnAppState extends State<RustLearnApp> {
       child: MonetizationScope(
         monetization: _monetization,
         child: MaterialApp.router(
-          title: 'Learn Rust',
+          onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
+          locale: _locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           debugShowCheckedModeBanner: false,
           theme: buildTheme(Brightness.light),
           darkTheme: buildTheme(Brightness.dark),

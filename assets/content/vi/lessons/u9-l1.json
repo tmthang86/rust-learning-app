@@ -1,0 +1,84 @@
+{
+  "id": "u9-l1",
+  "title": "Module",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Khi một chương trình lớn dần, bạn muốn nhóm các đoạn code liên quan lại và tránh trùng tên. Một module là một nhóm các mục có tên: hàm, struct, enum và hơn thế nữa. Bạn viết một module bằng từ khóa mod và một khối trong dấu ngoặc nhọn."
+    },
+    {
+      "type": "code",
+      "code": "mod greetings {\n    pub fn hello() -> String {\n        String::from(\"Hello\")\n    }\n\n    pub mod formal {\n        pub fn hello(name: &str) -> String {\n            format!(\"Good day, {name}\")\n        }\n    }\n}\n\nfn main() {\n    println!(\"{}\", greetings::hello());\n    println!(\"{}\", greetings::formal::hello(\"Ada\"));\n}\n\n// Output:\n// Hello\n// Good day, Ada"
+    },
+    {
+      "type": "text",
+      "text": "Bạn truy cập vào một module bằng ::, như một đường dẫn đến một file. greetings::hello là hàm hello bên trong greetings. Ở đây có hai hàm tên là hello, và chúng không xung đột, vì mỗi hàm nằm trong module riêng của nó. Các module có thể lồng nhau, nên greetings::formal::hello là một hàm bên trong formal, nằm bên trong greetings."
+    },
+    {
+      "type": "text",
+      "text": "Từ pub đứng trước một mục có nghĩa là \"công khai\" (public): code bên ngoài module có thể dùng nó. Không có pub, một mục là riêng tư (private). Chúng ta sẽ nói đầy đủ về điều đó ở bài sau. Hiện giờ, hãy đặt pub lên bất cứ thứ gì main cần truy cập tới."
+    },
+    {
+      "type": "text",
+      "text": "Mọi chương trình bắt đầu từ một file, gọi là crate root. Nội dung của nó tạo thành module cấp cao nhất, có tên là crate. Đó là lý do một đường dẫn tuyệt đối bắt đầu bằng crate::. Trong một chương trình một file, crate root chính là file đó, và main nằm ở đó. Một đường dẫn có thể bắt đầu từ trên cùng bằng crate::, từ module hiện tại bằng self::, hoặc từ module cha bằng super::."
+    },
+    {
+      "type": "code",
+      "code": "fn shout(text: &str) -> String {\n    text.to_uppercase()\n}\n\nmod greetings {\n    pub fn hello() -> String {\n        String::from(\"hello\")\n    }\n\n    pub fn loud() -> String {\n        // shout isn't pub, but a child module may use its parent's items (more next lesson)\n        // self:: starts in this module, super:: starts in the parent (the crate root here)\n        super::shout(&self::hello())\n    }\n\n    pub mod formal {\n        pub fn bow() -> String {\n            // crate:: always starts at the top\n            format!(\"{} (bows)\", crate::greetings::loud())\n        }\n    }\n}\n\nfn main() {\n    println!(\"{}\", greetings::loud());\n    println!(\"{}\", greetings::formal::bow());\n}\n\n// Output:\n// HELLO\n// HELLO (bows)"
+    },
+    {
+      "type": "text",
+      "text": "Bên trong main bạn cũng có thể viết một đường dẫn từ vị trí hiện tại, như greetings::loud(). Đó là một đường dẫn tương đối. crate::greetings::loud() là cùng hàm đó theo đường dẫn tuyệt đối. Cách nào cũng được. Đường dẫn tuyệt đối tiện khi sau này bạn có thể di chuyển code đi nơi khác."
+    },
+    {
+      "type": "note",
+      "text": "Hãy nghĩ về module như các thư mục trên máy tính của bạn. Một đường dẫn như /home/docs/notes.txt gọi tên một file bên trong các thư mục; greetings::formal::hello gọi tên một hàm bên trong các module. crate:: giống như dấu / ở đầu: điểm cao nhất.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Nếu bạn đến từ Python, JS hoặc Java: một module Rust giống như một namespace, một module Python hoặc một package Java. Giống như export của một module JS, không có gì rời khỏi một module Rust trừ khi bạn đánh dấu nó pub. Ngược lại, Python chỉ có quy ước _name. Trong bài này các module được viết inline bằng một khối. Sau này bạn sẽ thấy mod garden; với dấu chấm phẩy, dạng này tải module từ một file.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy thêm một hàm double(n: i32) -> i32 vào module math, trả về n * 2. Đừng quên pub. Sau đó hãy thêm một println! thứ hai trong main in ra math::double(21). Chương trình phải in ra hai dòng: 36 và sau đó là 42",
+    "starter": "mod math {\n    pub fn square(n: i32) -> i32 {\n        n * n\n    }\n\n    // add pub fn double here\n}\n\nfn main() {\n    println!(\"{}\", math::square(6));\n}",
+    "expectedOutput": "36\n42",
+    "solution": "mod math {\n    pub fn square(n: i32) -> i32 {\n        n * n\n    }\n\n    pub fn double(n: i32) -> i32 {\n        n * 2\n    }\n}\n\nfn main() {\n    println!(\"{}\", math::square(6));\n    println!(\"{}\", math::double(21));\n}",
+    "hints": [
+      "double thuộc về bên trong module math, cạnh square. Hãy xem square được viết thế nào, và main cần gì để có thể gọi nó.",
+      "main nằm ngoài module, nên hàm cần pub: pub fn double(n: i32) -> i32. Phần thân là n * 2.",
+      "Hãy thêm hàm vào chỗ có chú thích. Sau đó, trong main, hãy thêm một println! thứ hai gọi nó bằng đường dẫn của nó: math::double(21)."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "super:: trong một đường dẫn chỉ đến cái gì?",
+      "options": [
+        "crate root, bất kể bạn đang ở module nào",
+        "Module cha của module nơi đường dẫn được viết",
+        "Module nơi đường dẫn được viết, như một lối tắt"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Từ main ở crate root, đường dẫn tuyệt đối nào gọi tên hàm hello bên trong formal, nằm trong greetings?",
+      "options": [
+        "crate::formal::greetings::hello",
+        "crate::greetings::hello::formal",
+        "crate::greetings::formal::hello"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "crate root là gì khi toàn bộ chương trình của bạn là một file?",
+      "options": [
+        "Chính file đó, với main nằm trong nó",
+        "Khối mod đầu tiên được viết trong file",
+        "Hàm main và mọi thứ nó gọi"
+      ],
+      "answer": 0
+    }
+  ]
+}

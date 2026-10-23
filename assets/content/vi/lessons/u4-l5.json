@@ -1,0 +1,92 @@
+{
+  "id": "u4-l5",
+  "title": "match và if let",
+  "sections": [
+    {
+      "type": "text",
+      "text": "match so sánh một giá trị với các mẫu (pattern) và chạy code của mẫu đầu tiên khớp. Nó giống một if/else được tăng cường sức mạnh."
+    },
+    {
+      "type": "code",
+      "code": "enum Coin {\n    Penny,\n    Nickel,\n    Dime,\n    Quarter,\n}\n\nfn cents(coin: Coin) -> u32 {\n    match coin {\n        Coin::Penny => 1,\n        Coin::Nickel => 5,\n        Coin::Dime => 10,\n        Coin::Quarter => 25,\n    }\n}\n\nfn main() {\n    let mut total = 0;\n    for coin in [Coin::Penny, Coin::Nickel, Coin::Dime, Coin::Quarter] {\n        total += cents(coin);\n    }\n    println!(\"All four coins: {total} cents\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Một match phải bao quát mọi trường hợp có thể. Nếu bạn thêm một variant mà quên nó ở đâu đó, chương trình sẽ không biên dịch. Hãy dùng _ để chỉ \"bất kỳ thứ gì khác\", nhưng một nhánh _ cũng bắt cả mọi variant bạn thêm sau này, nên trình biên dịch không thể cảnh báo bạn về nó."
+    },
+    {
+      "type": "text",
+      "text": "Mẫu có thể lấy dữ liệu ra khỏi variant, và match cũng hoạt động với số và dãy số:"
+    },
+    {
+      "type": "code",
+      "code": "fn describe(n: Option<i32>) -> String {\n    match n {\n        Some(0) => String::from(\"zero\"),\n        Some(x) if x < 0 => format!(\"negative {x}\"),\n        Some(1..=9) => String::from(\"a single digit\"),\n        Some(x) => format!(\"big number {x}\"),\n        None => String::from(\"nothing\"),\n    }\n}\n\nfn main() {\n    println!(\"{}\", describe(Some(0)));\n    println!(\"{}\", describe(Some(-4)));\n    println!(\"{}\", describe(Some(7)));\n    println!(\"{}\", describe(Some(250)));\n    println!(\"{}\", describe(None));\n}"
+    },
+    {
+      "type": "text",
+      "text": "Có hai mẹo mới ở đó. Some(x) if x < 0 là một match guard: nhánh chỉ khớp khi điều kiện if thêm vào cũng đúng. 1..=9 là một mẫu dãy số (range pattern): nó khớp mọi số từ 1 đến 9, gồm cả hai đầu. Các nhánh được thử từ trên xuống dưới, nên 250 bỏ qua ba nhánh đầu và rơi vào Some(x)."
+    },
+    {
+      "type": "text",
+      "text": "Khi bạn chỉ quan tâm đến một mẫu, if let ngắn gọn hơn:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let maybe_name = Some(\"Linh\");\n    if let Some(name) = maybe_name {\n        println!(\"Hello, {name}\");\n    } else {\n        println!(\"Hello, stranger\");\n    }\n}"
+    },
+    {
+      "type": "note",
+      "text": "format! hoạt động như println! nhưng trả về một String thay vì in nó ra.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Việc kiểm tra tính đầy đủ (exhaustiveness checking) là điều khiến enum an toàn khi refactor. Rust cũng có let-else: let Some(x) = opt else { return; }; cho các lần thoát sớm.",
+      "track": "fast"
+    },
+    {
+      "type": "note",
+      "text": "Trong bài tập, advice trả về &'static str. Đó là một chuỗi slice còn hợp lệ trong suốt chương trình, điều đúng với mọi chuỗi literal như \"Wear sunscreen\". Phần 'static được gọi là một lifetime; Unit 7 giải thích lifetime."
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy thay nhánh _ bằng một nhánh cho Weather::Rain trả về \"Take an umbrella\" và một nhánh cho Weather::Snow trả về \"Wear a warm coat\". Chương trình phải in ra: Wear sunscreen\nTake an umbrella\nWear a warm coat",
+    "starter": "enum Weather {\n    Sun,\n    Rain,\n    Snow,\n}\n\nfn advice(w: Weather) -> &'static str {\n    match w {\n        Weather::Sun => \"Wear sunscreen\",\n        _ => \"Stay inside\",\n    }\n}\n\nfn main() {\n    for w in [Weather::Sun, Weather::Rain, Weather::Snow] {\n        println!(\"{}\", advice(w));\n    }\n}",
+    "expectedOutput": "Wear sunscreen\nTake an umbrella\nWear a warm coat",
+    "solution": "enum Weather {\n    Sun,\n    Rain,\n    Snow,\n}\n\nfn advice(w: Weather) -> &'static str {\n    match w {\n        Weather::Sun => \"Wear sunscreen\",\n        Weather::Rain => \"Take an umbrella\",\n        Weather::Snow => \"Wear a warm coat\",\n    }\n}\n\nfn main() {\n    for w in [Weather::Sun, Weather::Rain, Weather::Snow] {\n        println!(\"{}\", advice(w));\n    }\n}",
+    "hints": [
+      "Nhánh _ bắt mọi trường hợp khác. Hãy thay nó bằng một nhánh cho mỗi trường hợp bạn muốn xử lý.",
+      "Mỗi nhánh được viết là Weather::Name => value, theo sau là dấu phẩy. Hãy viết một nhánh cho Rain và một nhánh cho Snow.",
+      "Hãy xóa dòng _. Thay vào đó hãy viết hai nhánh: Weather::Rain => \"Take an umbrella\", và ở dòng tiếp theo Weather::Snow => \"Wear a warm coat\","
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Điều gì xảy ra nếu một match không bao quát mọi trường hợp?",
+      "options": [
+        "Chương trình không biên dịch được",
+        "Nó trả về None",
+        "Nó chọn nhánh đầu tiên"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "_ có nghĩa là gì trong một match?",
+      "options": [
+        "Bất kỳ giá trị nào chưa khớp ở trên",
+        "Số không",
+        "Một lỗi"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Khi nào if let là một lựa chọn tốt?",
+      "options": [
+        "Khi bạn chỉ quan tâm đến một mẫu",
+        "Khi bạn cần mọi trường hợp",
+        "Cho vòng lặp"
+      ],
+      "answer": 0
+    }
+  ]
+}

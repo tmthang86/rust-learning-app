@@ -1,0 +1,96 @@
+{
+  "id": "u8-l4",
+  "title": "Iterator adapter",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Một adapter nhận một iterator và cho bạn một iterator mới thay đổi các phần tử theo một cách nào đó. Bạn nối các adapter bằng dấu chấm, như một pipeline. Những adapter phổ biến nhất là map (thay đổi từng phần tử), filter (chỉ giữ lại một số phần tử), enumerate (thêm một bộ đếm), zip (ghép cặp hai iterator), take và skip (giới hạn số phần tử), chain (nối hai iterator) và rev (đi ngược lại)."
+    },
+    {
+      "type": "text",
+      "text": "Adapter là lazy. Gọi map không chạy closure của bạn, nó chỉ xây dựng một iterator mới sẽ chạy closure đó sau, khi có ai đó yêu cầu các phần tử. Ở đây không có gì xảy ra cho đến khi vòng lặp for kéo các giá trị ra:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let numbers = vec![1, 2, 3];\n    let doubled = numbers.iter().map(|n| {\n        println!(\"doubling {n}\");\n        n * 2\n    });\n    println!(\"nothing has been doubled yet\");\n    for d in doubled {\n        println!(\"got {d}\");\n    }\n}\n\n// Output:\n// nothing has been doubled yet\n// doubling 1\n// got 2\n// doubling 2\n// got 4\n// doubling 3\n// got 6"
+    },
+    {
+      "type": "text",
+      "text": "Hãy nhìn chú thích Output. Dòng đầu tiên đến trước mọi phép nhân đôi, và sau đó \"doubling\" và \"got\" xen kẽ nhau: mỗi lượt lặp yêu cầu một phần tử, và chỉ khi đó closure mới chạy. Rust thậm chí còn cảnh báo bạn nếu bạn tạo một adapter mà không bao giờ dùng nó."
+    },
+    {
+      "type": "text",
+      "text": "Vòng lặp for không phải là cách duy nhất để dùng hết một iterator. collect() gom các phần tử vào một collection. Khai báo kiểu (type annotation), ở đây là Vec<i32>, cho collect biết cần xây dựng gì. Bài sau sẽ nói về collect và các cách kết thúc khác. Bây giờ là một pipeline gồm ba adapter:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let result: Vec<i32> = (1..=10)\n        .filter(|n| n % 2 == 0)   // keep 2, 4, 6, 8, 10\n        .map(|n| n * n)           // square them\n        .take(3)                  // stop after three\n        .collect();\n    println!(\"{:?}\", result);\n}"
+    },
+    {
+      "type": "text",
+      "text": "(1..=10) là một dãy số (range) từ 1 đến 10 (bao gồm cả 10), và range là iterator. filter gọi closure của nó với một tham chiếu đến từng phần tử (ở đây là một &i32), và giữ phần tử lại khi closure trả về true. n % 2 cũng dùng được trên tham chiếu, nhưng khi bạn so sánh chính giá trị đó thì cần viết *n, ví dụ *n > 5. map nhận chính phần tử và trả về một phần tử mới."
+    },
+    {
+      "type": "text",
+      "text": "Các adapter còn lại, từng cái một:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let names = [\"Ana\", \"Binh\", \"Chi\"];\n    let scores = [90, 75, 82];\n\n    // enumerate pairs each item with its index, starting at 0\n    for (i, name) in names.iter().enumerate() {\n        println!(\"{i}: {name}\");\n    }\n\n    // zip walks two iterators together and pairs their items up\n    for (name, score) in names.iter().zip(scores.iter()) {\n        println!(\"{name} scored {score}\");\n    }\n\n    // chain joins one iterator after another; skip drops items from the front\n    let joined: Vec<i32> = (1..=3).chain(10..=11).skip(1).collect();\n    println!(\"{:?}\", joined);\n\n    // rev goes backwards\n    for n in (1..=3).rev() {\n        println!(\"countdown {n}\");\n    }\n}\n\n// Output:\n// 0: Ana\n// 1: Binh\n// 2: Chi\n// Ana scored 90\n// Binh scored 75\n// Chi scored 82\n// [2, 3, 10, 11]\n// countdown 3\n// countdown 2\n// countdown 1"
+    },
+    {
+      "type": "text",
+      "text": "enumerate và zip cho bạn các tuple, mà vòng lặp for có thể tách ra ngay trong mẫu (pattern), như trong for (i, name). zip dừng ngay khi iterator ngắn hơn hết phần tử."
+    },
+    {
+      "type": "note",
+      "text": "Hãy nghĩ đến một dây chuyền lắp ráp. Mỗi adapter là một trạm nhìn vào một phần tử, thay đổi nó hoặc vứt nó đi, rồi chuyển nó tiếp. Không có gì di chuyển cho đến khi có ai đó ở cuối yêu cầu sản phẩm.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Điều này giống Java Streams, C# LINQ, các phương thức mảng của JavaScript và generator của Python, nhưng vì mỗi adapter là một kiểu generic cụ thể, trình biên dịch có thể inline cả chuỗi adapter thành một vòng lặp đơn giản, nên nó thường nhanh như một vòng lặp viết tay. Không như các phương thức mảng của JS (nhưng giống các iterator helper mới hơn của JS, như Iterator.prototype.map), không có gì chạy cho đến khi bạn tiêu thụ iterator, và closure của filter mượn phần tử (&Item).",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Code khởi đầu in ra mọi từ. Hãy thay đổi vòng lặp để nó đi qua một pipeline iterator: chỉ giữ các từ dài hơn 3 chữ cái, và đổi mỗi từ thành chữ hoa trước khi in. Chương trình phải in ra ba dòng: APPLE, BANANA và KIWI. Gợi ý: words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase())",
+    "starter": "fn main() {\n    let words = [\"apple\", \"fig\", \"banana\", \"kiwi\"];\n    for w in words.iter() {\n        println!(\"{w}\");\n    }\n}",
+    "expectedOutput": "APPLE\nBANANA\nKIWI",
+    "solution": "fn main() {\n    let words = [\"apple\", \"fig\", \"banana\", \"kiwi\"];\n    for w in words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase()) {\n        println!(\"{w}\");\n    }\n}",
+    "hints": [
+      "Hai bước xảy ra với mỗi từ: một số từ bị loại bỏ, và những từ còn lại bị thay đổi. Hai adapter nào làm hai việc đó?",
+      "Hãy bắt đầu từ words.iter(). Hãy nối filter với một closure trả về true cho các từ cần giữ, rồi map với một closure tạo từ mới. to_uppercase() tạo chữ hoa.",
+      "Vòng lặp for có thể nhận cả chuỗi sau in: words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase()). println! bên trong giữ nguyên."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Điều gì xảy ra khi bạn viết let d = v.iter().map(|x| x * 2); và không bao giờ dùng d?",
+      "options": [
+        "Mọi phần tử được nhân đôi ngay lập tức và kết quả được lưu bên trong d",
+        "Chương trình gây ra panic, vì d không bao giờ được dùng",
+        "Không có gì: map là lazy, nên closure không bao giờ chạy trừ khi có thứ gì đó tiêu thụ d"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "zip làm gì?",
+      "options": [
+        "Nối hai iterator đầu nối đuôi thành một iterator dài hơn",
+        "Ghép cặp các phần tử của hai iterator thành các tuple",
+        "Loại bỏ các phần tử xuất hiện ở cả hai iterator"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "enumerate cho ra gì với mỗi phần tử?",
+      "options": [
+        "Một tuple (index, item), đếm từ 0",
+        "Chỉ có chỉ số, kiểu usize, còn phần tử bị bỏ đi",
+        "Một tuple (item, item) từ hai vị trí liền kề nhau"
+      ],
+      "answer": 0
+    }
+  ]
+}

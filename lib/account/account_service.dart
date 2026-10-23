@@ -8,8 +8,9 @@ class AccountUser {
   final String? displayName;
   final String? email;
 
-  /// Best short label for the signed-in person.
-  String get label => displayName ?? email ?? 'Signed in';
+  /// Best short name for the signed-in person, or null when the account has
+  /// neither a display name nor an email.
+  String? get name => displayName ?? email;
 }
 
 enum SignInMethod { google, apple }

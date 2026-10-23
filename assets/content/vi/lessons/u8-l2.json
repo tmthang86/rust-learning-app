@@ -1,0 +1,104 @@
+{
+  "id": "u8-l2",
+  "title": "Capture và move",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Một closure có thể dùng các biến từ phạm vi nơi nó được viết. Một hàm thông thường thì không. Điều này được gọi là capture (nắm bắt). Theo mặc định, một closure capture những gì nó dùng theo cách nhẹ nhất có thể: nó mượn bằng tham chiếu chia sẻ nếu chỉ đọc, mượn dưới dạng có thể thay đổi nếu nó thay đổi giá trị, và lấy quyền sở hữu nếu phần thân của nó di chuyển giá trị đi nơi khác (ví dụ bằng cách trả về nó)."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let threshold = 10;\n    let is_big = |n: i32| n > threshold;   // reads threshold: borrows it\n    println!(\"{} {}\", is_big(5), is_big(15));\n\n    let mut count = 0;\n    let mut bump = || count += 1;           // changes count: borrows it mutably\n    bump();\n    bump();\n    println!(\"count is {count}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "Một closure thay đổi một biến đã capture phải được lưu trong một biến khai báo với mut, vì việc gọi nó làm thay đổi trạng thái. Các quy tắc mượn thông thường vẫn áp dụng: khi bump vẫn còn có thể được gọi, bạn không thể đọc count. Đó là lý do println! nằm sau lần gọi bump cuối cùng. Nếu bạn in count giữa hai lần gọi bump(), bạn sẽ gặp lỗi E0502 (cannot borrow as immutable because it is also borrowed as mutable)."
+    },
+    {
+      "type": "text",
+      "text": "Viết move trước các dấu gạch đứng khiến closure lấy quyền sở hữu mọi thứ nó dùng. Các giá trị implement Copy (như số) được sao chép. Các giá trị khác, như String, được di chuyển vào trong và không thể dùng ở bên ngoài nữa:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let name = String::from(\"Ana\");\n    let greet = move || println!(\"hi {name}\");\n    greet();\n    greet();\n    // println!(\"{name}\");  // would not compile: E0382, borrow of moved value\n}"
+    },
+    {
+      "type": "text",
+      "text": "Tại sao bạn lại muốn điều đó? Vì một closure đang mượn không thể rời khỏi hàm nơi giá trị được mượn tồn tại. Khi bạn trả về một closure, hoặc gửi nó sang một thread khác (Unit 11), nó phải sở hữu dữ liệu của mình. Hàm này trả về một closure, nên nó cần move:"
+    },
+    {
+      "type": "code",
+      "code": "fn make_adder(n: i32) -> impl Fn(i32) -> i32 {\n    move |x| x + n\n}\n\nfn main() {\n    let add_five = make_adder(5);\n    let add_ten = make_adder(10);\n    println!(\"{} {}\", add_five(1), add_ten(1));\n}"
+    },
+    {
+      "type": "text",
+      "text": "impl Fn(i32) -> i32 trong kiểu trả về có nghĩa là \"tôi trả về một closure nào đó có dạng này\". Nếu không có move, closure sẽ chỉ mượn n, mà n biến mất khi make_adder kết thúc: lỗi E0373, closure may outlive the current function."
+    },
+    {
+      "type": "text",
+      "text": "Mọi closure implement một hoặc nhiều trong ba trait, tùy thuộc vào việc nó làm gì với các giá trị mà nó capture:"
+    },
+    {
+      "type": "text",
+      "text": "Fn: chỉ đọc các giá trị đã capture, nên có thể được gọi bao nhiêu lần tùy ý. FnMut: thay đổi các giá trị đã capture, nên có thể được gọi nhiều lần nhưng cần mut. FnOnce: di chuyển một giá trị đã capture ra ngoài, nên chỉ có thể được gọi một lần. Một closure là Fn thì cũng là FnMut và FnOnce, và mọi closure ít nhất là FnOnce. Khi bạn nhận một closure, hãy yêu cầu mức tối thiểu bạn cần. Nếu bạn chỉ gọi nó một lần, hãy yêu cầu FnOnce. Nếu bạn gọi nó nhiều lần, hãy yêu cầu FnMut. Chỉ yêu cầu Fn nếu nó không được thay đổi bất cứ thứ gì. Càng đi xuống danh sách đó, càng ít closure được chấp nhận."
+    },
+    {
+      "type": "code",
+      "code": "fn call_twice(f: impl Fn()) {\n    f();\n    f();\n}\n\nfn call_mut_twice(mut f: impl FnMut()) {\n    f();\n    f();\n}\n\nfn call_once(f: impl FnOnce() -> String) -> String {\n    f()\n}\n\nfn main() {\n    call_twice(|| println!(\"hello\"));\n\n    let mut total = 0;\n    call_mut_twice(|| total += 5);\n    println!(\"total {total}\");\n\n    let name = String::from(\"Ana\");\n    let reply = call_once(move || name);   // gives name away, so only once\n    println!(\"{reply}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "call_mut_twice khai báo tham số của nó là mut f, vì việc gọi một FnMut làm thay đổi closure. call_once di chuyển name ra khỏi closure bằng cách trả về nó. (move ở đó là tùy chọn, vì việc trả về một giá trị vốn đã khiến closure lấy quyền sở hữu giá trị đó. Nó chỉ làm cho ý định rõ ràng hơn.) Gọi closure đó lần thứ hai sẽ thất bại (E0382), vì String đã không còn nữa."
+    },
+    {
+      "type": "note",
+      "text": "Quy tắc nhớ nhanh: Fn chỉ nhìn, FnMut thay đổi, FnOnce dùng hết. Bạn gọi tên các trait này trong chữ ký hàm, nhưng không bao giờ tự implement chúng. Trình biên dịch tự xác định closure có những trait nào từ phần thân của nó.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "So sánh với các ngôn ngữ khác. C++ bắt bạn chọn một danh sách capture ([&], [=], [x, &y]) và thản nhiên cho phép bạn capture một tham chiếu treo (dangling reference). JavaScript, Python và Java capture biến một cách ngầm định (Python cần nonlocal để gán cho một biến; Java yêu cầu chúng phải là effectively final). Rust suy ra chế độ capture từ phần thân, và borrow checker (trình kiểm tra mượn) từ chối mọi capture có thể bị treo. move tương đương với [=] theo giá trị, nhưng nó di chuyển các kiểu không phải Copy.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Code khởi đầu in ra 15. Bên dưới println! đầu tiên, hãy thêm một bộ đếm số lần gọi: một biến bắt đầu từ 0, và một closure cộng 1 vào nó. Hãy gọi closure ba lần, rồi in bộ đếm. Chương trình phải in ra hai dòng: 15 và 3. Gợi ý: let mut calls = 0; let mut count_call = || calls += 1;",
+    "starter": "fn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n}",
+    "expectedOutput": "15\n3",
+    "solution": "fn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n\n    let mut calls = 0;\n    let mut count_call = || calls += 1;\n    count_call();\n    count_call();\n    count_call();\n    println!(\"{calls}\");\n}",
+    "hints": [
+      "Bạn cần một bộ đếm mà closure thay đổi mỗi lần nó được gọi. Một closure thay đổi một biến đã capture cần được chú ý đặc biệt về mut.",
+      "Hãy khai báo cả hai với mut: let mut calls = 0; và let mut count_call = || calls += 1;. Closure phải là mut vì việc gọi nó làm thay đổi bộ đếm.",
+      "Hãy gọi count_call() ba lần, mỗi lần một dòng. Chỉ in calls sau lần gọi cuối cùng, vì cho đến lúc đó closure vẫn đang mượn nó."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Từ khóa move làm gì với một closure?",
+      "options": [
+        "Closure chạy trên một thread khác và kết quả của nó được gửi trở lại",
+        "Closure có thể thay đổi các biến đã capture mà không cần chúng được khai báo mut",
+        "Closure lấy quyền sở hữu các biến mà nó dùng, thay vì mượn chúng"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Sau let greet = move || println!(\"hi {name}\"); với name là một String, bạn có thể dùng lại name trong main không?",
+      "options": [
+        "Không, name đã được di chuyển vào closure, nên main không thể dùng nó",
+        "Có, move sao chép mọi giá trị đã capture, nên name vẫn hợp lệ",
+        "Có, nhưng chỉ khi bạn mượn nó bằng & trước khi closure chạy"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Closure có trait nào nếu nó thay đổi một biến đã capture nhưng có thể được gọi nhiều lần?",
+      "options": [
+        "Fn: nó có thể được gọi nhiều lần và có thể thay đổi những gì nó đã capture",
+        "FnMut: nó có thể thay đổi các giá trị đã capture và có thể được gọi nhiều lần",
+        "FnOnce: nó thay đổi các giá trị đã capture, nên chỉ có thể được gọi một lần"
+      ],
+      "answer": 1
+    }
+  ]
+}

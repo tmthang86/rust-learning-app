@@ -1,0 +1,92 @@
+{
+  "id": "u9-l4",
+  "title": "Viết test",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Một test là một hàm nhỏ kiểm tra code của bạn và thất bại nếu câu trả lời sai. Rust có sẵn hỗ trợ viết test. Bạn đánh dấu một hàm bằng #[test] và chạy tất cả chúng bằng cargo test."
+    },
+    {
+      "type": "text",
+      "text": "Bên trong một test, bạn dùng các macro gây ra panic khi có điều gì sai. assert!(condition) gây ra panic nếu điều kiện là false. assert_eq!(left, right) gây ra panic nếu hai giá trị không bằng nhau, và nó in cả hai giá trị để bạn thấy sự khác biệt. assert_ne! thì ngược lại: nó gây ra panic nếu chúng bằng nhau. Một test đạt nếu nó chạy xong, và thất bại nếu nó gây ra panic."
+    },
+    {
+      "type": "text",
+      "text": "Theo quy ước, các test nằm trong một module ở cuối chính file đó, tên là tests. Nó được đánh dấu #[cfg(test)], điều này báo cho Rust chỉ biên dịch module đó khi chạy test, không phải trong một bản build thông thường. Bên trong nó, use super::*; đưa mọi thứ từ module cha vào phạm vi để các test có thể gọi các hàm của bạn. Việc import bằng * hiếm gặp ở nơi khác, nhưng ở đây đó là thói quen thông thường."
+    },
+    {
+      "type": "code",
+      "code": "fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\nfn divide(a: i32, b: i32) -> i32 {\n    if b == 0 {\n        panic!(\"divide by zero\");\n    }\n    a / b\n}\n\nfn main() {\n    println!(\"{} {}\", add(2, 3), divide(10, 2));\n}\n\n#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n    fn add_works() {\n        assert_eq!(add(2, 3), 5);\n    }\n\n    #[test]\n    fn add_opposites() {\n        assert_eq!(add(-2, 2), 0, \"adding opposites should give zero\");\n    }\n\n    #[test]\n    fn divide_works() {\n        assert!(divide(10, 2) == 5);\n    }\n\n    #[test]\n    #[should_panic(expected = \"divide by zero\")]\n    fn divide_by_zero_panics() {\n        divide(1, 0);\n    }\n}\n\n// Output when run normally (the tests are left out):\n// 5 5"
+    },
+    {
+      "type": "text",
+      "text": "Đối số thứ ba của assert_eq! (\"adding opposites should give zero\") là một thông báo tùy chọn, hiển thị nếu phép kiểm tra thất bại. #[should_panic] dành cho trường hợp ngược lại: test chỉ đạt nếu code gây ra panic. Phần expected = \"...\" cũng kiểm tra rằng thông báo panic chứa văn bản đó."
+    },
+    {
+      "type": "text",
+      "text": "Các phần code trong bài học không thể chạy. Để thử phần này, hãy dán nó vào tab Thử code và nhấn Chạy: ứng dụng biên dịch nó mà không có các test, nên nó chỉ in ra 5 5. Trên máy tính của bạn, cargo test build các test và chạy mọi hàm #[test]. Bạn sẽ thấy đại loại như sau (thứ tự có thể khác, vì các test chạy song song):"
+    },
+    {
+      "type": "code",
+      "code": "     Running unittests src/main.rs (target/debug/deps/my_app-1a2b3c4d5e6f)\n\nrunning 4 tests\ntest tests::add_opposites ... ok\ntest tests::divide_works ... ok\ntest tests::add_works ... ok\ntest tests::divide_by_zero_panics - should panic ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+    },
+    {
+      "type": "text",
+      "text": "Nếu một phép kiểm tra thất bại, test đó được đánh dấu FAILED. Với assert_eq! và assert_ne!, kết quả cũng hiển thị giá trị left và right. Các test khác vẫn chạy. Bạn cũng có thể chỉ chạy một số test bằng cách đưa một phần của tên: cargo test divide chạy hai test có divide trong tên."
+    },
+    {
+      "type": "text",
+      "text": "Vì ứng dụng không thể chạy các hàm #[test], bài tập bên dưới dùng cùng ý tưởng theo cách bạn có thể chạy ở đây. Hãy đặt các lời gọi assert_eq! thẳng trong main. Nếu tất cả đều đạt, chương trình đến được println! ở cuối. Nếu một cái thất bại, chương trình gây ra panic với một thông báo cho thấy điều gì được mong đợi."
+    },
+    {
+      "type": "note",
+      "text": "Một test là một chương trình nhỏ nói rằng \"tôi mong đợi đầu vào này cho ra đầu ra này\". Khi sau này bạn thay đổi code, bạn chạy lại các test, và chúng cho bạn biết ngay nếu có gì đó ngừng hoạt động. Cách đó nhanh hơn nhiều so với kiểm tra bằng tay.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Giống package testing của Go, và không như pytest hay JUnit, việc test có sẵn: không có framework test nào cần cài đặt (unittest của Python cũng có sẵn, nhưng nó cần các class test; trong Rust bất kỳ hàm nào được đánh dấu #[test] đều là một test). Các test có thể nằm trong cùng file với code, nên chúng cũng có thể test các hàm riêng tư. Các integration test lớn hơn nằm trong thư mục tests/ cạnh src/, nơi chúng chỉ có thể dùng API công khai của bạn. Chúng cần một library crate (src/lib.rs), nên các chương trình thường giữ logic trong lib.rs và một main.rs mỏng. Các hàm test có thể trả về Result<(), E> và dùng ? thay vì gây ra panic. Trong các library crate, cargo test cũng chạy các ví dụ code trong doc comment (doctest).",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hàm is_even có một lỗi, nên assert_eq! đầu tiên gây ra panic. Hãy sửa is_even để nó trả về true khi n % 2 == 0. Sau đó thêm một phép kiểm tra nữa trước println!: assert!(!is_even(7)); Chương trình phải in ra: all tests passed",
+    "starter": "fn is_even(n: i32) -> bool {\n    n % 2 == 1\n}\n\nfn main() {\n    assert_eq!(is_even(4), true);\n    assert_eq!(is_even(10), true);\n    // add assert!(!is_even(7)); here\n    println!(\"all tests passed\");\n}",
+    "expectedOutput": "all tests passed",
+    "solution": "fn is_even(n: i32) -> bool {\n    n % 2 == 0\n}\n\nfn main() {\n    assert_eq!(is_even(4), true);\n    assert_eq!(is_even(10), true);\n    assert!(!is_even(7));\n    println!(\"all tests passed\");\n}",
+    "hints": [
+      "assert_eq! đầu tiên gây ra panic vì is_even đưa ra câu trả lời sai cho 4. Số dư là bao nhiêu khi một số chẵn được chia cho 2?",
+      "Một số chẵn có số dư bằng 0. Hãy đổi phép so sánh trong is_even từ 1 thành 0.",
+      "Sau đó, trước println! cuối cùng, hãy thêm assert!(!is_even(7)); Dấu ! đảo true thành false, nên phép kiểm tra đạt khi 7 không phải là số chẵn."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Điều gì làm một test Rust thất bại?",
+      "options": [
+        "Hàm trả về false ở cuối",
+        "Hàm gây ra panic khi chạy",
+        "Hàm không in gì ra màn hình"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Tại sao module tests được đánh dấu #[cfg(test)]?",
+      "options": [
+        "Để module chỉ được biên dịch khi chạy test, không phải trong một bản build thông thường",
+        "Để cargo build chạy các test cũng như biên dịch code",
+        "Để các test có thể gọi các hàm riêng tư nằm trong các crate khác"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Attribute nào đánh dấu một hàm là một test?",
+      "options": [
+        "#[cfg(test)], đặt phía trên hàm",
+        "#[derive(Debug)], đặt phía trên hàm",
+        "#[test], đặt phía trên hàm"
+      ],
+      "answer": 2
+    }
+  ]
+}

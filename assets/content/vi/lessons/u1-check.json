@@ -1,0 +1,83 @@
+{
+  "id": "u1-check",
+  "title": "Checkpoint: Quầy trái cây",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Checkpoint này luyện tập Unit 1: hằng số, let và mut, shadowing và in ra màn hình với println!. Một quầy trái cây bán trái cây theo kilôgam. Bạn sẽ viết ba hàm: một hàm biến văn bản thành số và hai hàm tính giá. Hàm main in ra các kết quả."
+    },
+    {
+      "type": "text",
+      "text": "Nó dựa trên các bài học In ra màn hình với println!, Biến và tính có thể thay đổi và Shadowing. Hãy đọc cả main nữa. Nó dùng print! để bắt đầu một dòng mà println! kết thúc, và in một nhóm số bằng {:?}."
+    },
+    {
+      "type": "note",
+      "text": "Cú pháp hàm trong một dòng: fn name(parameter: type) -> type { ... }. Biểu thức cuối cùng, viết không có dấu chấm phẩy, là giá trị mà hàm trả về. Kiểu của các tham số và của kết quả luôn được viết ra.",
+      "track": "fast"
+    },
+    {
+      "type": "note",
+      "text": "todo!() là một ô giữ chỗ (placeholder). Nếu chương trình chạy tới nó, chương trình sẽ dừng với thông báo \"not yet implemented\". Hãy thay mỗi todo!() bằng code của riêng bạn. Cho đến khi bạn làm xong, trình biên dịch có thể cảnh báo rằng một số tên không được dùng. Điều đó là bình thường."
+    },
+    {
+      "type": "note",
+      "text": "Ba hằng số được viết bên ngoài mọi hàm, nên mọi hàm đều có thể dùng chúng theo tên. Một hằng số luôn có kiểu được viết ra."
+    },
+    {
+      "type": "note",
+      "text": "Trong parse_kilos, &str là kiểu của văn bản viết trong dấu nháy kép, chẳng hạn \"3.5\". Hãy gõ &str đúng như thế này; Unit 3 sẽ giải thích dấu &."
+    },
+    {
+      "type": "note",
+      "text": "Gợi ý cho parse_kilos: hãy dùng cách shadowing trong bài học Shadowing. Viết let text: f64 = text.parse().unwrap(); để text mới là một số, rồi trả nó về ở dòng cuối. parse() tự suy ra loại số cần tạo từ : f64."
+    },
+    {
+      "type": "note",
+      "text": "Gợi ý cho fruit_cost: hãy tạo total bằng let mut, nhân kilos với PRICE_PER_KILO, rồi cộng BAG_FEE bằng +=. Dòng cuối là total."
+    },
+    {
+      "type": "note",
+      "text": "Gợi ý cho after_coupon: hãy viết let cost = cost - COUPON; rồi thêm một dòng let cost nữa để chia đôi nó. Mỗi cost mới shadow cost trước đó, nên không cần mut. Dòng cuối trả về cost."
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy thay mỗi todo!() bằng code chạy được. Đừng thay đổi các hằng số hay main. Đầu vào không bao giờ âm.\n\nfn parse_kilos(text: &str) -> f64\nBiến văn bản như \"3.5\" thành một f64. Văn bản luôn là một số hợp lệ. Hãy shadow text bằng một let mới có kiểu f64, và dùng parse().unwrap().\n\nfn fruit_cost(kilos: f64) -> f64\nNhân kilos với PRICE_PER_KILO, rồi cộng BAG_FEE. Hãy tạo total bằng let mut và thay đổi nó bằng +=.\n\nfn after_coupon(cost: f64) -> f64\nTrừ COUPON khỏi cost, rồi chia đôi kết quả. Không dùng mut. Thay vào đó hãy shadow cost bằng các dòng let mới.\n\nChương trình phải in ra:\n3.5 kg costs 9.25\n0 kg costs 0.5\nCost 10.5, after coupon 4.25\nCost 3, after coupon 0.5\nCosts: [4.25, 5.5]",
+    "starter": "const PRICE_PER_KILO: f64 = 2.5;\nconst BAG_FEE: f64 = 0.5;\nconst COUPON: f64 = 2.0;\n\nfn parse_kilos(text: &str) -> f64 {\n    todo!()\n}\n\nfn fruit_cost(kilos: f64) -> f64 {\n    todo!()\n}\n\nfn after_coupon(cost: f64) -> f64 {\n    todo!()\n}\n\nfn main() {\n    let weight = parse_kilos(\"3.5\");\n    println!(\"{weight} kg costs {}\", fruit_cost(weight));\n    println!(\"0 kg costs {}\", fruit_cost(0.0));\n\n    let cost = fruit_cost(4.0);\n    println!(\"Cost {cost}, after coupon {}\", after_coupon(cost));\n    println!(\"Cost 3, after coupon {}\", after_coupon(3.0));\n\n    let costs = [fruit_cost(1.5), fruit_cost(2.0)];\n    print!(\"Costs: \");\n    println!(\"{:?}\", costs);\n}",
+    "expectedOutput": "3.5 kg costs 9.25\n0 kg costs 0.5\nCost 10.5, after coupon 4.25\nCost 3, after coupon 0.5\nCosts: [4.25, 5.5]",
+    "solution": "const PRICE_PER_KILO: f64 = 2.5;\nconst BAG_FEE: f64 = 0.5;\nconst COUPON: f64 = 2.0;\n\nfn parse_kilos(text: &str) -> f64 {\n    let text: f64 = text.parse().unwrap();\n    text\n}\n\nfn fruit_cost(kilos: f64) -> f64 {\n    let mut total = kilos * PRICE_PER_KILO;\n    total += BAG_FEE;\n    total\n}\n\nfn after_coupon(cost: f64) -> f64 {\n    let cost = cost - COUPON;\n    let cost = cost / 2.0;\n    cost\n}\n\nfn main() {\n    let weight = parse_kilos(\"3.5\");\n    println!(\"{weight} kg costs {}\", fruit_cost(weight));\n    println!(\"0 kg costs {}\", fruit_cost(0.0));\n\n    let cost = fruit_cost(4.0);\n    println!(\"Cost {cost}, after coupon {}\", after_coupon(cost));\n    println!(\"Cost 3, after coupon {}\", after_coupon(3.0));\n\n    let costs = [fruit_cost(1.5), fruit_cost(2.0)];\n    print!(\"Costs: \");\n    println!(\"{:?}\", costs);\n}",
+    "hints": [
+      "Hãy dùng các hằng số theo tên bên trong các hàm. Hai hàm cần shadowing: parse_kilos cho text một kiểu mới, và after_coupon tạo các biến cost mới thay vì thay đổi một biến. fruit_cost thay đổi total từng bước.",
+      "Trong parse_kilos, hãy shadow text bằng một let mới có kiểu f64, và gọi parse() trên text cũ. Hãy thêm unwrap(), vì parse có thể thất bại. Trong after_coupon, dùng một dòng let cost để trừ COUPON và một dòng để chia đôi.",
+      "Hãy viết let text: f64 = text.parse().unwrap(); rồi text ở dòng cuối. Trong after_coupon, hãy viết let cost = cost - COUPON; rồi let cost = cost / 2.0; rồi cost ở dòng cuối."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Bạn chạy cargo new fruit. Bạn viết code của chương trình ở đâu?",
+      "options": [
+        "Trong Cargo.toml",
+        "Trong src/main.rs",
+        "Trong thư mục target"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Cách nào sau đây có thể gán một kiểu mới cho một tên, ví dụ từ văn bản thành số?",
+      "options": [
+        "let mut, rồi gán lại bằng =",
+        "const",
+        "Shadowing với một let mới"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Điều nào đúng về một hằng số như PRICE_PER_KILO?",
+      "options": [
+        "Nó luôn cần một kiểu được viết ra",
+        "Nó phải được khai báo bên trong main",
+        "Nó có thể thay đổi bằng mut"
+      ],
+      "answer": 0
+    }
+  ]
+}

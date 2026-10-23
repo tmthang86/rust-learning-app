@@ -1,0 +1,84 @@
+{
+  "id": "u12-l3",
+  "title": "Máy chủ web mini, phần 1",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Máy chủ web là một chương trình đọc văn bản từ một client và ghi văn bản trả lại. Văn bản đó tuân theo một bộ quy tắc gọi là HTTP. Trong bài học này, chúng ta viết bộ não của một máy chủ nhỏ chỉ bằng các hàm thuần túy (pure function): chúng nhận vào một String và trả ra một String, không có mạng nào liên quan. Điều đó giúp chúng dễ viết và dễ test. Trong bài học tiếp theo, chúng ta sẽ cắm chúng vào một kết nối mạng thật."
+    },
+    {
+      "type": "text",
+      "text": "Một request HTTP là văn bản thuần. Dòng đầu tiên (request line) có phương thức, đường dẫn và phiên bản. Sau đó là các dòng header như Name: value. Một dòng trống kết thúc phần header, và mọi thứ sau nó là body. Các dòng kết thúc bằng \\r\\n (carriage return, line feed), được viết là \"\\r\\n\" trong một chuỗi Rust."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let raw = \"GET /hello HTTP/1.1\\r\\nHost: localhost\\r\\nUser-Agent: demo\\r\\n\\r\\n\";\n    println!(\"{raw:?}\");   // {:?} shows the \\r\\n escapes instead of line breaks\n    for line in raw.lines() {\n        println!(\"line: {line}\");\n    }\n    let (head, body) = raw.split_once(\"\\r\\n\\r\\n\").unwrap();\n    println!(\"head has {} lines, body is {body:?}\", head.lines().count());\n}\n\n// Output:\n// \"GET /hello HTTP/1.1\\r\\nHost: localhost\\r\\nUser-Agent: demo\\r\\n\\r\\n\"\n// line: GET /hello HTTP/1.1\n// line: Host: localhost\n// line: User-Agent: demo\n// line:\n// head has 3 lines, body is \"\""
+    },
+    {
+      "type": "text",
+      "text": "split_once cắt một chuỗi tại lần khớp đầu tiên và trả về hai nửa dưới dạng tuple, được bọc trong một Option (None nếu không tìm thấy văn bản). Chúng ta dùng nó rất nhiều bên dưới."
+    },
+    {
+      "type": "text",
+      "text": "Bây giờ là chương trình đầy đủ, gồm ba bước. (1) parse_request biến văn bản thô thành một struct Request, hoặc một ParseError nếu văn bản bị hỏng. Tên header được chuyển thành chữ thường vì tên header HTTP không phân biệt chữ hoa chữ thường. (2) route xem phương thức và đường dẫn rồi quyết định trả lời gì. (3) Response::to_text tạo ra văn bản phản hồi: một dòng trạng thái, các header, một dòng trống và body. Content-Length phải là độ dài của body tính bằng byte, đúng là thứ len() trả về."
+    },
+    {
+      "type": "code",
+      "code": "use std::collections::HashMap;\nuse std::fmt;\n\n#[derive(Clone, Copy)]   // so that route can copy req.method into a tuple\nenum Method {\n    Get,\n    Post,\n}\n\nstruct Request {\n    method: Method,\n    path: String,\n    headers: HashMap<String, String>,\n    body: String,\n}\n\nenum ParseError {\n    Empty,\n    BadRequestLine(String),\n    UnknownMethod(String),\n}\n\nimpl fmt::Display for ParseError {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        match self {\n            ParseError::Empty => write!(f, \"empty request\"),\n            ParseError::BadRequestLine(line) => write!(f, \"bad request line '{line}'\"),\n            ParseError::UnknownMethod(m) => write!(f, \"unknown method {m}\"),\n        }\n    }\n}\n\nfn parse_request(raw: &str) -> Result<Request, ParseError> {\n    let (head, body) = raw.split_once(\"\\r\\n\\r\\n\").unwrap_or((raw, \"\"));\n    let mut lines = head.lines();\n    // ok_or turns None into the given error, so that ? can return it.\n    let request_line = lines.next().ok_or(ParseError::Empty)?;\n    let parts: Vec<&str> = request_line.split_whitespace().collect();\n    if parts.len() != 3 {\n        return Err(ParseError::BadRequestLine(request_line.to_string()));\n    }\n    let method = match parts[0] {\n        \"GET\" => Method::Get,\n        \"POST\" => Method::Post,\n        other => return Err(ParseError::UnknownMethod(other.to_string())),\n    };\n    let mut headers = HashMap::new();\n    for line in lines {\n        if let Some((name, value)) = line.split_once(':') {\n            headers.insert(name.trim().to_lowercase(), value.trim().to_string());\n        }\n    }\n    Ok(Request {\n        method,\n        path: parts[1].to_string(),\n        headers,\n        body: body.to_string(),\n    })\n}\n\nstruct Response {\n    status: u16,\n    content_type: &'static str,\n    body: String,\n}\n\nimpl Response {\n    fn new(status: u16, content_type: &'static str, body: &str) -> Response {\n        Response { status, content_type, body: body.to_string() }\n    }\n\n    fn to_text(&self) -> String {\n        let reason = match self.status {\n            200 => \"OK\",\n            400 => \"Bad Request\",\n            404 => \"Not Found\",\n            _ => \"Unknown\",\n        };\n        format!(\n            \"HTTP/1.1 {} {}\\r\\nContent-Type: {}\\r\\nContent-Length: {}\\r\\n\\r\\n{}\",\n            self.status, reason, self.content_type, self.body.len(), self.body\n        )\n    }\n}\n\nfn route(req: &Request) -> Response {\n    match (req.method, req.path.as_str()) {\n        (Method::Get, \"/\") => Response::new(200, \"text/html\", \"<h1>Welcome</h1>\"),\n        (Method::Get, \"/hello\") => Response::new(200, \"text/plain\", \"Hello, world!\"),\n        (Method::Get, \"/agent\") => {\n            // get gives an Option<&String>. map changes the value inside Some (to a &str);\n            // unwrap_or supplies \"unknown\" when the header is missing.\n            let agent = req.headers.get(\"user-agent\").map(|a| a.as_str()).unwrap_or(\"unknown\");\n            Response::new(200, \"text/plain\", &format!(\"You are {agent}\"))\n        }\n        (Method::Post, \"/echo\") => Response::new(200, \"text/plain\", &req.body),\n        _ => Response::new(404, \"text/plain\", \"Not found\"),\n    }\n}\n\nfn handle(raw: &str) -> Response {\n    match parse_request(raw) {\n        Ok(req) => route(&req),\n        Err(e) => Response::new(400, \"text/plain\", &format!(\"Bad request: {e}\")),\n    }\n}\n\nfn main() {\n    let first = handle(\"GET / HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\n\");\n    println!(\"{}\", first.to_text());\n    println!(\"-----\");\n\n    let requests = [\n        \"GET /agent HTTP/1.1\\r\\nUser-Agent: curl/8.0\\r\\n\\r\\n\",\n        \"POST /echo HTTP/1.1\\r\\nContent-Length: 5\\r\\n\\r\\nhello\",\n        \"GET /missing HTTP/1.1\\r\\n\\r\\n\",\n        \"FETCH / HTTP/1.1\\r\\n\\r\\n\",\n        \"GET /\\r\\n\\r\\n\",\n        \"\",\n    ];\n    for raw in requests {\n        let response = handle(raw);\n        println!(\"{} {}\", response.status, response.body);\n    }\n}\n\n// Output:\n// HTTP/1.1 200 OK\n// Content-Type: text/html\n// Content-Length: 16\n//\n// <h1>Welcome</h1>\n// -----\n// 200 You are curl/8.0\n// 200 hello\n// 404 Not found\n// 400 Bad request: unknown method FETCH\n// 400 Bad request: bad request line 'GET /'\n// 400 Bad request: empty request"
+    },
+    {
+      "type": "text",
+      "text": "match trong route xem phương thức và đường dẫn cùng nhau, dưới dạng một tuple, giống hệt các lệnh trong trò phiêu lưu bằng văn bản. Nhánh cuối trả lời 404 Not Found cho mọi trường hợp còn lại. handle gắn mọi thứ lại với nhau: đầu vào bị hỏng trở thành một 400 Bad Request thay vì làm chương trình sập. Không có gì ở đây chạm đến mạng, nên bạn có thể thử bất kỳ văn bản request nào bạn muốn."
+    },
+    {
+      "type": "note",
+      "text": "Mã trạng thái (status code) là một con số mà client đọc: 200 nghĩa là thành công, 404 nghĩa là không tìm thấy thứ đó, 400 nghĩa là client gửi thứ gì đó bị hỏng, và 500 nghĩa là chính máy chủ bị lỗi. Trình duyệt hiển thị chúng thành các trang như \"404 Not Found\".",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Đây là khuôn mẫu chung của hầu hết các web framework: phân tích byte thành một request có kiểu, định tuyến theo (method, path), trả về một phản hồi có kiểu. Các framework như axum, actix-web và rocket làm điều tương tự với extractor và macro. Một parser thực sự còn phải xử lý các chi tiết của HTTP/1.1 mà ví dụ đồ chơi này bỏ qua: từ chối các dòng header gập đã lỗi thời, các body chunked, kiểm tra Content-Length, và giới hạn kích thước request. Phân tích đầu vào không đáng tin cậy bằng Result thay vì panic là điều giúp máy chủ tiếp tục chạy.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Máy chủ nhỏ trong route() mới chỉ biết trang chủ. Hãy thêm một trang About: một request cho đường dẫn /about phải trả lời với trạng thái 200 và body About us, trong khi các đường dẫn lạ khác vẫn cho 404. Chương trình phải in ra ba dòng: 200 Home page, 200 About us, 404 Not found. Gợi ý: thêm nhánh match \"/about\" => (200, \"About us\") trước nhánh _.",
+    "starter": "fn route(path: &str) -> (u16, &'static str) {\n    match path {\n        \"/\" => (200, \"Home page\"),\n        _ => (404, \"Not found\"),\n    }\n}\n\nfn main() {\n    for path in [\"/\", \"/about\", \"/nope\"] {\n        let (status, body) = route(path);\n        println!(\"{status} {body}\");\n    }\n}",
+    "expectedOutput": "200 Home page\n200 About us\n404 Not found",
+    "solution": "fn route(path: &str) -> (u16, &'static str) {\n    match path {\n        \"/\" => (200, \"Home page\"),\n        \"/about\" => (200, \"About us\"),\n        _ => (404, \"Not found\"),\n    }\n}\n\nfn main() {\n    for path in [\"/\", \"/about\", \"/nope\"] {\n        let (status, body) = route(path);\n        println!(\"{status} {body}\");\n    }\n}",
+    "hints": [
+      "Hiện giờ /about rơi vào nhánh _ và cho 404. Hãy nhìn nhánh cho \"/\" và thêm một nhánh giống vậy cho /about.",
+      "Mỗi nhánh có một văn bản đường dẫn ở bên trái và một tuple ở bên phải: con số trạng thái và văn bản body.",
+      "Hãy thêm \"/about\" => (200, \"About us\"), phía trên nhánh _. Nhánh _ khớp với mọi thứ, nên một nhánh đặt sau nó sẽ không bao giờ chạy."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Cái gì ngăn cách các header của một request HTTP với body của nó?",
+      "options": [
+        "Một dấu chấm phẩy trên một dòng riêng sau header cuối cùng",
+        "Một dòng trống: \\r\\n của header cuối cùng cộng thêm một \\r\\n nữa",
+        "Từ BODY theo sau là dấu hai chấm ở đầu một dòng"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Máy chủ trả lời gì khi không có route nào khớp?",
+      "options": [
+        "Một phản hồi 404 Not Found, từ nhánh match cuối cùng",
+        "Một phản hồi 200 OK có body rỗng",
+        "Một panic, vì một match phải nêu tên mọi đường dẫn có thể có"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Tại sao parse_request, route và handle dễ test?",
+      "options": [
+        "Chúng dùng code unsafe mà trình biên dịch đã kiểm tra giúp bạn rồi",
+        "Chúng cần một kết nối mạng đang chạy trước khi có thể được gọi dù chỉ một lần",
+        "Chúng là các hàm thuần túy: văn bản vào, văn bản ra, không có mạng nào liên quan"
+      ],
+      "answer": 2
+    }
+  ]
+}

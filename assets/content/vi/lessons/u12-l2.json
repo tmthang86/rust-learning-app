@@ -1,0 +1,76 @@
+{
+  "id": "u12-l2",
+  "title": "Trò phiêu lưu bằng văn bản",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Trong dự án tổng hợp này, chúng ta xây dựng một trò phiêu lưu bằng văn bản nhỏ: các căn phòng bạn đi qua lại, một chiếc chìa khóa để tìm, và một hầm chứa (vault) bị khóa để mở. Một trò chơi thật sẽ đọc những gì bạn gõ. Ứng dụng này không có đầu vào từ bàn phím, nên các lệnh đến từ một danh sách trong main."
+    },
+    {
+      "type": "text",
+      "text": "Các thành phần: một enum Command, để trò chơi làm việc với các giá trị đúng nghĩa thay vì chuỗi. Các căn phòng được lưu trong một HashMap, để chúng ta có thể tra một phòng theo tên. Và một enum State, biến trò chơi thành một máy trạng thái (state machine): nó luôn ở đúng một State, và các lệnh chuyển nó từ trạng thái này sang trạng thái khác. struct Game giữ các phòng, vị trí của bạn, thứ bạn đang mang và trạng thái. Phương thức step của nó nhận một Command, thay đổi trò chơi, và trả về văn bản để hiển thị. Option<&'static str> nghĩa là \"có thể có một đoạn văn bản\"; &'static str là văn bản vẫn hợp lệ trong suốt chương trình, chẳng hạn một chuỗi literal viết thẳng vào code."
+    },
+    {
+      "type": "code",
+      "code": "use std::collections::HashMap;\n\n// #[derive(...)] asks the compiler to write standard trait code for us:\n// Clone and Copy let us copy a Direction freely, PartialEq lets us compare with ==,\n// and Eq and Hash let us use a Direction as a HashMap key.\n#[derive(Clone, Copy, PartialEq, Eq, Hash)]\nenum Direction {\n    North,\n    South,\n    West,\n}\n\nenum Command {\n    Look,\n    Go(Direction),\n    Take,\n    Unknown(String),\n}\n\n#[derive(PartialEq)]   // needed for `game.state == State::Won` in main\nenum State {\n    Playing,\n    Won,\n}\n\nstruct Room {\n    description: &'static str,\n    exits: HashMap<Direction, &'static str>,\n    item: Option<&'static str>,\n}\n\nstruct Game {\n    rooms: HashMap<&'static str, Room>,\n    current: &'static str,\n    inventory: Vec<&'static str>,\n    state: State,\n}\n\nfn parse(input: &str) -> Command {\n    let mut words = input.split_whitespace();\n    let verb = words.next().unwrap_or(\"\");\n    let target = words.next().unwrap_or(\"\");\n    // Match on both words at once. `_` means \"any value here\".\n    match (verb, target) {\n        (\"look\", _) => Command::Look,\n        (\"go\", \"north\") => Command::Go(Direction::North),\n        (\"go\", \"south\") => Command::Go(Direction::South),\n        (\"go\", \"west\") => Command::Go(Direction::West),\n        (\"take\", _) => Command::Take,\n        _ => Command::Unknown(input.to_string()),\n    }\n}\n\nimpl Game {\n    fn new() -> Game {\n        let mut rooms = HashMap::new();\n        rooms.insert(\"hall\", Room {\n            description: \"a dusty hall with doors north and west\",\n            // HashMap::from builds a map from (key, value) pairs\n            exits: HashMap::from([\n                (Direction::North, \"library\"),\n                (Direction::West, \"vault\"),\n            ]),\n            item: None,\n        });\n        rooms.insert(\"library\", Room {\n            description: \"a quiet library\",\n            exits: HashMap::from([(Direction::South, \"hall\")]),\n            item: Some(\"key\"),\n        });\n        rooms.insert(\"vault\", Room { description: \"a vault full of gold\", exits: HashMap::new(), item: None });\n        Game { rooms, current: \"hall\", inventory: Vec::new(), state: State::Playing }\n    }\n\n    fn step(&mut self, command: Command) -> String {\n        match command {\n            Command::Look => {\n                let room = &self.rooms[self.current];\n                let mut text = format!(\"You are in {}.\", room.description);\n                if let Some(item) = room.item {\n                    text.push_str(&format!(\" You see a {item}.\"));\n                }\n                text\n            }\n            Command::Go(direction) => {\n                let target = match self.rooms[self.current].exits.get(&direction) {\n                    Some(name) => *name,   // get returns a reference; * copies the &str out\n                    None => return String::from(\"You can't go that way.\"),\n                };\n                // contains(&\"key\") asks whether the Vec holds that text\n                if target == \"vault\" && !self.inventory.contains(&\"key\") {\n                    return String::from(\"The vault door is locked. Maybe a key would help.\");\n                }\n                self.current = target;\n                if target == \"vault\" {\n                    self.state = State::Won;\n                    return String::from(\"You unlock the vault with the key. You win!\");\n                }\n                format!(\"You walk to the {target}.\")\n            }\n            Command::Take => {\n                // get_mut: a mutable reference to the room (current always names one)\n                let room = self.rooms.get_mut(self.current).unwrap();\n                // take() empties room.item and hands back what was there\n                match room.item.take() {\n                    Some(item) => {\n                        self.inventory.push(item);\n                        format!(\"You take the {item}.\")\n                    }\n                    None => String::from(\"There is nothing to take.\"),\n                }\n            }\n            Command::Unknown(text) => format!(\"I don't understand '{text}'.\"),\n        }\n    }\n}\n\nfn main() {\n    let script = [\n        \"look\", \"go west\", \"go north\", \"look\", \"take\", \"take\",\n        \"dance\", \"go south\", \"go west\", \"look\",\n    ];\n    let mut game = Game::new();\n    for line in script {\n        if game.state == State::Won {\n            println!(\"(the game is over)\");\n            break;\n        }\n        println!(\"> {line}\");\n        println!(\"{}\", game.step(parse(line)));\n    }\n}\n\n// Output:\n// > look\n// You are in a dusty hall with doors north and west.\n// > go west\n// The vault door is locked. Maybe a key would help.\n// > go north\n// You walk to the library.\n// > look\n// You are in a quiet library. You see a key.\n// > take\n// You take the key.\n// > take\n// There is nothing to take.\n// > dance\n// I don't understand 'dance'.\n// > go south\n// You walk to the hall.\n// > go west\n// You unlock the vault with the key. You win!\n// (the game is over)"
+    },
+    {
+      "type": "text",
+      "text": "Hãy cùng xem qua step, từng nhánh một. Look đọc phòng hiện tại và nhắc đến một món đồ nếu có. Go tìm lối ra theo hướng đó, từ chối nếu hầm chứa bị khóa, và nếu không thì di chuyển bạn (vào hầm chứa sẽ đặt trạng thái thành Won). Take chuyển món đồ của phòng vào túi đồ (inventory) của bạn, và Unknown trả lời mọi thứ mà parse không nhận ra. Trong script (xem chú thích Output), go west đầu tiên thất bại (bị khóa), sau đó người chơi đi lấy chìa khóa và go west lần thứ hai thắng."
+    },
+    {
+      "type": "text",
+      "text": "Để mở rộng trò chơi, hãy thêm một phòng trong Game::new. Một variant mới của Command khiến trình biên dịch chỉ ra mọi match phải xử lý nó, nhưng một từ mới cho một lệnh đã có thì cần thêm một nhánh trong parse bằng tay: parse đưa các từ không biết vào Unknown, và trình biên dịch không thể cảnh báo về điều đó."
+    },
+    {
+      "type": "note",
+      "text": "Tại sao dùng enum ở đây thay vì dùng chuỗi ở mọi nơi? Một chuỗi như \"go wset\" có thể che giấu lỗi gõ sai. Một Command::Go(Direction::West) không thể bị viết sai chính tả, và match buộc bạn xử lý mọi trường hợp.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Đây là một máy trạng thái theo phong cách dựa trên kiểu (type-driven): Command mô hình hóa đầu vào, State mô hình hóa giai đoạn, và match buộc mọi trường hợp phải được xử lý. Một lỗi gõ sai trong tên phòng vẫn là một panic lúc chạy; một enum RoomId sẽ biến nó thành lỗi biên dịch.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Trong parser nhỏ này, parse chỉ biết look. Hãy dạy nó từ inventory, và cả dạng ngắn i, để cả hai cùng cho ra Command::Inventory. Chương trình phải in ra ba dòng: You see a dusty hall., You carry: key, lamp, I don't understand 'dance'. Gợi ý: trong một match, a | b khớp với a hoặc b, nên nhánh có thể là \"inventory\" | \"i\" => Command::Inventory.",
+    "starter": "enum Command {\n    Look,\n    Inventory,\n    Unknown(String),\n}\n\nfn parse(input: &str) -> Command {\n    match input {\n        \"look\" => Command::Look,\n        // Until you add the arm for inventory, Command::Inventory is never created,\n        // so the compiler warns about it. The warning goes away when you are done.\n        _ => Command::Unknown(input.to_string()),\n    }\n}\n\nfn main() {\n    let inventory = [\"key\", \"lamp\"];\n    for input in [\"look\", \"i\", \"dance\"] {\n        match parse(input) {\n            Command::Look => println!(\"You see a dusty hall.\"),\n            Command::Inventory => println!(\"You carry: {}\", inventory.join(\", \")),\n            Command::Unknown(text) => println!(\"I don't understand '{text}'.\"),\n        }\n    }\n}",
+    "expectedOutput": "You see a dusty hall.\nYou carry: key, lamp\nI don't understand 'dance'.",
+    "solution": "enum Command {\n    Look,\n    Inventory,\n    Unknown(String),\n}\n\nfn parse(input: &str) -> Command {\n    match input {\n        \"look\" => Command::Look,\n        \"inventory\" | \"i\" => Command::Inventory,\n        _ => Command::Unknown(input.to_string()),\n    }\n}\n\nfn main() {\n    let inventory = [\"key\", \"lamp\"];\n    for input in [\"look\", \"i\", \"dance\"] {\n        match parse(input) {\n            Command::Look => println!(\"You see a dusty hall.\"),\n            Command::Inventory => println!(\"You carry: {}\", inventory.join(\", \")),\n            Command::Unknown(text) => println!(\"I don't understand '{text}'.\"),\n        }\n    }\n}",
+    "hints": [
+      "parse so khớp đầu vào với các từ chính xác. Cần có hai từ khác nhau cùng dẫn tới Inventory. Một nhánh match có thể có hai mẫu (pattern) không?",
+      "Có: a | b khớp với a hoặc b. Hãy viết cả hai từ trong một mẫu, với | giữa chúng, và gán cho nhánh giá trị Command::Inventory.",
+      "Hãy thêm \"inventory\" | \"i\" => Command::Inventory, phía trên nhánh _, vì nhánh _ khớp với mọi thứ và các nhánh sau nó không bao giờ chạy."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Tại sao các phòng được lưu trong một HashMap?",
+      "options": [
+        "HashMap giữ các phòng được sắp xếp theo tên, để trò chơi có thể in chúng theo thứ tự",
+        "Có thể tra một phòng nhanh chóng theo tên của nó, chẳng hạn \"hall\" hoặc \"vault\"",
+        "Một Vec không thể chứa struct, nên các phòng cần một collection khác"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Trong parse, nhánh cuối _ => Command::Unknown(...) làm gì?",
+      "options": [
+        "Bắt mọi đầu vào mà không nhánh nào trước đó khớp và giữ lại văn bản",
+        "Chỉ khớp với chuỗi rỗng và kết thúc trò chơi bằng một lỗi",
+        "Dừng cả chương trình bằng một panic khi người chơi gõ một từ nó không biết"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Kiểu enum State mô hình hóa điều gì?",
+      "options": [
+        "Danh sách mọi phòng mà người chơi đã ghé thăm",
+        "Văn bản người chơi đã gõ ở dấu nhắc lệnh gần nhất, được giữ cho lượt kế tiếp",
+        "Giai đoạn mà trò chơi đang ở: đúng một trong Playing hoặc Won tại mỗi thời điểm"
+      ],
+      "answer": 2
+    }
+  ]
+}

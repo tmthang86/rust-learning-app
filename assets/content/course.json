@@ -11,7 +11,8 @@
         { "id": "u0-l2", "title": "Values and variables" },
         { "id": "u0-l3", "title": "Making decisions" },
         { "id": "u0-l4", "title": "Repeating with loops" },
-        { "id": "u0-l5", "title": "Functions" }
+        { "id": "u0-l5", "title": "Functions" },
+        { "id": "u0-check", "title": "Checkpoint: Piggy bank", "checkpoint": true }
       ]
     },
     {
@@ -25,7 +26,8 @@
         { "id": "u1-l2", "title": "Cargo, Rust's build tool" },
         { "id": "u1-l3", "title": "Printing with println!" },
         { "id": "u1-l4", "title": "Variables and mutability" },
-        { "id": "u1-l5", "title": "Shadowing" }
+        { "id": "u1-l5", "title": "Shadowing" },
+        { "id": "u1-check", "title": "Checkpoint: Fruit stall", "checkpoint": true }
       ]
     },
     {
@@ -39,7 +41,8 @@
         { "id": "u2-l2", "title": "Tuples and arrays" },
         { "id": "u2-l3", "title": "if is an expression" },
         { "id": "u2-l4", "title": "loop, while and for" },
-        { "id": "u2-l5", "title": "Functions and return values" }
+        { "id": "u2-l5", "title": "Functions and return values" },
+        { "id": "u2-check", "title": "Checkpoint: Grade calculator", "checkpoint": true }
       ]
     },
     {
@@ -53,7 +56,8 @@
         { "id": "u3-l2", "title": "Copy and Clone" },
         { "id": "u3-l3", "title": "Borrowing and references" },
         { "id": "u3-l4", "title": "Mutable references" },
-        { "id": "u3-l5", "title": "Slices" }
+        { "id": "u3-l5", "title": "Slices" },
+        { "id": "u3-check", "title": "Checkpoint: Borrowing helpers", "checkpoint": true }
       ]
     },
     {
@@ -67,7 +71,8 @@
         { "id": "u4-l2", "title": "Methods" },
         { "id": "u4-l3", "title": "Enums" },
         { "id": "u4-l4", "title": "Option" },
-        { "id": "u4-l5", "title": "match and if let" }
+        { "id": "u4-l5", "title": "match and if let" },
+        { "id": "u4-check", "title": "Checkpoint: Parking garage", "checkpoint": true }
       ]
     },
     {
@@ -79,7 +84,8 @@
       "lessons": [
         { "id": "u5-l1", "title": "Vectors" },
         { "id": "u5-l2", "title": "String and &str" },
-        { "id": "u5-l3", "title": "HashMap" }
+        { "id": "u5-l3", "title": "HashMap" },
+        { "id": "u5-check", "title": "Checkpoint: Word counter", "checkpoint": true }
       ]
     },
     {
@@ -92,7 +98,8 @@
         { "id": "u6-l1", "title": "panic!" },
         { "id": "u6-l2", "title": "Result" },
         { "id": "u6-l3", "title": "The ? operator" },
-        { "id": "u6-l4", "title": "Custom error types" }
+        { "id": "u6-l4", "title": "Custom error types" },
+        { "id": "u6-check", "title": "Checkpoint: Order checker", "checkpoint": true }
       ]
     },
     {
@@ -106,7 +113,8 @@
         { "id": "u7-l2", "title": "Generic structs and enums" },
         { "id": "u7-l3", "title": "Traits" },
         { "id": "u7-l4", "title": "Trait bounds" },
-        { "id": "u7-l5", "title": "Lifetimes" }
+        { "id": "u7-l5", "title": "Lifetimes" },
+        { "id": "u7-check", "title": "Checkpoint: Storage inventory", "checkpoint": true }
       ]
     },
     {
@@ -120,7 +128,8 @@
         { "id": "u8-l2", "title": "Capturing and move" },
         { "id": "u8-l3", "title": "The Iterator trait" },
         { "id": "u8-l4", "title": "Iterator adapters" },
-        { "id": "u8-l5", "title": "Consuming iterators" }
+        { "id": "u8-l5", "title": "Consuming iterators" },
+        { "id": "u8-check", "title": "Checkpoint: Number pipeline", "checkpoint": true }
       ]
     },
     {
@@ -133,7 +142,8 @@
         { "id": "u9-l1", "title": "Modules" },
         { "id": "u9-l2", "title": "Visibility and use" },
         { "id": "u9-l3", "title": "Packages, crates and Cargo" },
-        { "id": "u9-l4", "title": "Writing tests" }
+        { "id": "u9-l4", "title": "Writing tests" },
+        { "id": "u9-check", "title": "Checkpoint: Scoreboard module", "checkpoint": true }
       ]
     },
     {
@@ -146,7 +156,8 @@
         { "id": "u10-l1", "title": "Box<T>" },
         { "id": "u10-l2", "title": "Deref and Drop" },
         { "id": "u10-l3", "title": "Rc<T>" },
-        { "id": "u10-l4", "title": "RefCell<T> and interior mutability" }
+        { "id": "u10-l4", "title": "RefCell<T> and interior mutability" },
+        { "id": "u10-check", "title": "Checkpoint: Shared log", "checkpoint": true }
       ]
     },
     {
@@ -159,7 +170,8 @@
         { "id": "u11-l1", "title": "Threads" },
         { "id": "u11-l2", "title": "Channels" },
         { "id": "u11-l3", "title": "Shared state with Arc and Mutex" },
-        { "id": "u11-l4", "title": "Intro to async" }
+        { "id": "u11-l4", "title": "Intro to async" },
+        { "id": "u11-check", "title": "Checkpoint: Parallel helpers", "checkpoint": true }
       ]
     },
     {
@@ -172,7 +184,8 @@
         { "id": "u12-l1", "title": "A command-line tool" },
         { "id": "u12-l2", "title": "A text adventure" },
         { "id": "u12-l3", "title": "Mini web server, part 1" },
-        { "id": "u12-l4", "title": "Mini web server, part 2" }
+        { "id": "u12-l4", "title": "Mini web server, part 2" },
+        { "id": "u12-check", "title": "Checkpoint: Stock keeper", "checkpoint": true }
       ]
     }
   ]

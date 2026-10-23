@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
 import '../../data/models.dart';
-import '../../l10n/exercise_test_strings.dart';
+import '../../l10n/l10n.dart';
 import '../../runner/code_runner.dart';
 
 /// Whether a run shows the tests panel: the runner graded the tests and the
@@ -19,6 +19,20 @@ bool showsTestsPanel(RunResult r) =>
 bool testsCouldNotUseCode(RunResult r) =>
     r is GradeResult && r.compileErrorsIn == 'tests';
 
+/// The sentence for a runner `reason` code (`exit:3` and the like).
+String testReasonText(AppLocalizations l10n, String code) {
+  if (code.startsWith('exit:')) return l10n.testReasonExit(code.substring(5));
+  return switch (code) {
+    'mem_limit' => l10n.testReasonMemLimit,
+    'output_limit' => l10n.testReasonOutputLimit,
+    'stack_overflow' => l10n.testReasonStackOverflow,
+    'no_main' => l10n.testReasonNoMain,
+    'tests_dont_fit' => l10n.testReasonTestsDontFit,
+    'harness' => l10n.testReasonHarness,
+    _ => l10n.testReasonUnknown,
+  };
+}
+
 TestStatus _statusOf(GradeResult r, ExerciseTest t) =>
     r.testById(t.id)?.status ?? TestStatus.notRun;
 
@@ -27,20 +41,21 @@ TestStatus _statusOf(GradeResult r, ExerciseTest t) =>
 /// hidden test failed." It names the first visible failure only, is clipped
 /// at 200 characters, and ends with the verdict when solved.
 String gradeAnnouncement(
+  AppLocalizations l10n,
   GradeResult r,
   List<ExerciseTest> tests, {
   required bool solved,
 }) {
   if (r.compileErrorsIn == 'tests') {
-    return ExerciseTestStrings.testsCantUseYourCode;
+    return l10n.testsCantUseYourCode;
   }
   final passed = tests.where((t) => _statusOf(r, t) == TestStatus.pass).length;
-  final parts = [ExerciseTestStrings.announceSummary(passed, tests.length)];
+  final parts = [l10n.announceTestsSummary(passed, tests.length)];
   for (final t in tests.where((t) => !t.hidden)) {
     final status = _statusOf(r, t);
     if (status == TestStatus.pass) continue;
-    parts.add(ExerciseTestStrings.announceFailed(_labelOf(t)));
-    final detail = _detailSentence(t, r.testById(t.id));
+    parts.add(l10n.announceTestFailed(_labelOf(l10n, t)));
+    final detail = _detailSentence(l10n, t, r.testById(t.id));
     if (detail != null) parts.add(detail);
     break;
   }
@@ -48,50 +63,48 @@ String gradeAnnouncement(
       .where((t) => t.hidden && _statusOf(r, t) != TestStatus.pass)
       .length;
   if (hiddenFailed > 0) {
-    parts.add(ExerciseTestStrings.announceHiddenFailed(hiddenFailed));
+    parts.add(l10n.announceHiddenFailed(hiddenFailed));
   }
   var text = parts.join(' ');
   if (text.length > 200) text = '${text.substring(0, 200)}…';
-  return solved ? '$text ${ExerciseTestStrings.allTestsPassed}' : text;
+  return solved ? '$text ${l10n.exerciseSolved}' : text;
 }
 
-String? _detailSentence(ExerciseTest t, TestResult? r) {
+String? _detailSentence(AppLocalizations l10n, ExerciseTest t, TestResult? r) {
   if (r == null) return null;
   switch (r.status) {
     case TestStatus.fail:
       final expected = r.expected ?? t.output;
       final got = r.actual;
       if (expected == null || got == null) return null;
-      return '${ExerciseTestStrings.testExpected} $expected, '
-          '${ExerciseTestStrings.testGot.toLowerCase()} $got.';
+      return '${l10n.testExpected} $expected, '
+          '${l10n.testGot.toLowerCase()} $got.';
     case TestStatus.panic:
-      return ExerciseTestStrings.testPanicked(r.message ?? '');
+      return l10n.testPanicked(r.message ?? '');
     case TestStatus.nopanic:
-      return ExerciseTestStrings.testDidNotPanic;
+      return l10n.testDidNotPanic;
     case TestStatus.timeout:
-      return ExerciseTestStrings.testTimedOut;
+      return l10n.testTimedOut;
     default:
       return null;
   }
 }
 
-String _labelOf(ExerciseTest t) {
+String _labelOf(AppLocalizations l10n, ExerciseTest t) {
   final label = t.label;
   if (label != null && label.trim().isNotEmpty) return label;
-  return t.id == ExerciseTest.legacyId
-      ? ExerciseTestStrings.legacyOutputLabel
-      : t.id;
+  return t.id == ExerciseTest.legacyId ? l10n.legacyOutputLabel : t.id;
 }
 
-String _statusWord(TestStatus s) => switch (s) {
-  TestStatus.pass => ExerciseTestStrings.statusPassed,
+String _statusWord(AppLocalizations l10n, TestStatus s) => switch (s) {
+  TestStatus.pass => l10n.testStatusPassed,
   TestStatus.fail ||
   TestStatus.panic ||
-  TestStatus.nopanic => ExerciseTestStrings.statusFailed,
-  TestStatus.timeout => ExerciseTestStrings.statusTookTooLong,
-  TestStatus.notRun => ExerciseTestStrings.statusDidNotRun,
-  TestStatus.crashed => ExerciseTestStrings.statusCrashed,
-  TestStatus.error => ExerciseTestStrings.statusCouldNotRun,
+  TestStatus.nopanic => l10n.testStatusFailed,
+  TestStatus.timeout => l10n.testStatusTookTooLong,
+  TestStatus.notRun => l10n.testStatusDidNotRun,
+  TestStatus.crashed => l10n.testStatusCrashed,
+  TestStatus.error => l10n.testStatusCouldNotRun,
 };
 
 /// Output comparison as the runner does it: `\r\n` is `\n`, trailing
@@ -151,6 +164,7 @@ class _TestsPanelState extends State<TestsPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final r = widget.result;
     final tests = widget.tests;
     final scheme = Theme.of(context).colorScheme;
@@ -203,7 +217,7 @@ class _TestsPanelState extends State<TestsPanel> {
             Semantics(
               header: true,
               child: Text(
-                ExerciseTestStrings.testsSummary(passed, tests.length),
+                l10n.testsSummary(passed, tests.length),
                 style: textTheme.titleSmall,
               ),
             ),
@@ -229,9 +243,9 @@ class _TestsPanelState extends State<TestsPanel> {
                     Expanded(
                       child: Text(
                         r.reason == null || r.reason == 'tests_dont_fit'
-                            ? ExerciseTestStrings.testsCantUseYourCode
-                            : '${ExerciseTestStrings.testsCantUseYourCode} '
-                                  '${ExerciseTestStrings.reason(r.reason!)}',
+                            ? l10n.testsCantUseYourCode
+                            : '${l10n.testsCantUseYourCode} '
+                                  '${testReasonText(l10n, r.reason!)}',
                         style: TextStyle(color: scheme.error),
                       ),
                     ),
@@ -266,10 +280,7 @@ class _TestsPanelState extends State<TestsPanel> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        ExerciseTestStrings.hiddenSummary(
-                          hiddenPassed,
-                          hidden.length,
-                        ),
+                        l10n.hiddenSummary(hiddenPassed, hidden.length),
                       ),
                     ),
                   ],
@@ -278,14 +289,14 @@ class _TestsPanelState extends State<TestsPanel> {
               if (visiblePass && hiddenFailing)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: Text(ExerciseTestStrings.hiddenOnlyFailing),
+                  child: Text(l10n.hiddenOnlyFailing),
                 ),
               for (final t in hidden)
                 if (_statusOf(r, t) == TestStatus.error)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
-                      ExerciseTestStrings.hiddenTestCantUseYourCode(
+                      l10n.hiddenTestCantUseYourCode(
                         r.testById(t.id)?.message ?? '',
                       ),
                       style: TextStyle(color: scheme.error),
@@ -317,8 +328,9 @@ class _TestRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final word = _statusWord(status);
-    final label = _labelOf(test);
+    final l10n = context.l10n;
+    final word = _statusWord(l10n, status);
+    final label = _labelOf(l10n, test);
     final (IconData icon, Color color) = switch (status) {
       TestStatus.pass => (Icons.check_circle, scheme.primary),
       TestStatus.fail ||
@@ -342,10 +354,8 @@ class _TestRow extends StatelessWidget {
           child: Semantics(
             button: true,
             expanded: open,
-            label: ExerciseTestStrings.rowLabel(word, label),
-            hint: open
-                ? ExerciseTestStrings.rowHintHide
-                : ExerciseTestStrings.rowHintShow,
+            label: l10n.testRowLabel(word, label),
+            hint: open ? l10n.testRowHintHide : l10n.testRowHintShow,
             onTap: onToggle,
             child: ExcludeSemantics(
               child: InkWell(
@@ -403,6 +413,7 @@ class _Details extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final r = result;
     final children = <Widget>[];
@@ -433,13 +444,13 @@ class _Details extends StatelessWidget {
           );
         } else {
           if (r?.expr != null && r!.expr!.isNotEmpty) {
-            children.add(field(ExerciseTestStrings.testChecked, r.expr!));
+            children.add(field(l10n.testChecked, r.expr!));
           }
           if (r?.expected != null) {
-            children.add(field(ExerciseTestStrings.testExpected, r!.expected!));
+            children.add(field(l10n.testExpected, r!.expected!));
           }
           if (r?.actual != null) {
-            children.add(field(ExerciseTestStrings.testGot, r!.actual!));
+            children.add(field(l10n.testGot, r!.actual!));
           }
         }
       case TestStatus.panic:
@@ -447,23 +458,21 @@ class _Details extends StatelessWidget {
         children.add(
           note(
             line == null
-                ? ExerciseTestStrings.testPanicked(r?.message ?? '')
-                : ExerciseTestStrings.testPanickedAt(r?.message ?? '', line),
+                ? l10n.testPanicked(r?.message ?? '')
+                : l10n.testPanickedAt(line, r?.message ?? ''),
           ),
         );
       case TestStatus.nopanic:
-        children.add(note(ExerciseTestStrings.testDidNotPanic));
+        children.add(note(l10n.testDidNotPanic));
       case TestStatus.timeout:
-        children.add(note(ExerciseTestStrings.testTimedOut));
+        children.add(note(l10n.testTimedOut));
       case TestStatus.crashed:
-        children.add(note(ExerciseTestStrings.reason(r?.reason ?? 'unknown')));
+        children.add(note(testReasonText(l10n, r?.reason ?? 'unknown')));
       case TestStatus.error:
-        children.add(
-          note(ExerciseTestStrings.reason(r?.reason ?? 'tests_dont_fit')),
-        );
+        children.add(note(testReasonText(l10n, r?.reason ?? 'tests_dont_fit')));
         if (r?.message != null) children.add(note(r!.message!));
       case TestStatus.notRun:
-        children.add(note(ExerciseTestStrings.testNotRun));
+        children.add(note(l10n.testNotRun));
       case TestStatus.pass:
         break;
     }
@@ -472,7 +481,7 @@ class _Details extends StatelessWidget {
     if (printed != null && printed.trim().isNotEmpty) {
       children.add(
         _Folded(
-          title: ExerciseTestStrings.testPrinted,
+          title: l10n.testPrinted,
           child: SelectableText(printed, style: codeTextStyle),
         ),
       );
@@ -481,7 +490,7 @@ class _Details extends StatelessWidget {
     if (code != null && !test.hidden) {
       children.add(
         _Folded(
-          title: ExerciseTestStrings.testShowCode,
+          title: l10n.testShowCode,
           child: SelectableText(code, style: codeTextStyle),
         ),
       );
@@ -532,23 +541,20 @@ class _OutputDiff extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final want = normalizedLines(expected);
     final have = normalizedLines(got);
     final diff = firstDifferingLine(want, have);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _Lines(
-          title: ExerciseTestStrings.testExpected,
-          lines: want,
-          mark: diff,
-        ),
+        _Lines(title: l10n.testExpected, lines: want, mark: diff),
         const SizedBox(height: 8),
-        _Lines(title: ExerciseTestStrings.testGot, lines: have, mark: diff),
+        _Lines(title: l10n.testGot, lines: have, mark: diff),
         if (diff != null)
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text(ExerciseTestStrings.firstDifference(diff + 1)),
+            child: Text(l10n.testFirstDifference(diff + 1)),
           ),
       ],
     );
@@ -566,6 +572,7 @@ class _Lines extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final shown = lines.isEmpty && mark == 0 ? [''] : lines;
     return Column(
@@ -588,7 +595,7 @@ class _Lines extends StatelessWidget {
             color: scheme.errorContainer,
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(
-              ExerciseTestStrings.missingLine,
+              l10n.testMissingLine,
               style: codeTextStyle.copyWith(color: scheme.onErrorContainer),
             ),
           ),

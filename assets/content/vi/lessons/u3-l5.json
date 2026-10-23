@@ -1,0 +1,87 @@
+{
+  "id": "u3-l5",
+  "title": "Slice",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Một slice là một tham chiếu tới một phần của một collection, mà không sao chép nó. Một chuỗi slice có kiểu &str."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let text = String::from(\"hello world\");\n    let hello = &text[0..5];\n    let world = &text[6..];\n    println!(\"{hello} / {world}\");\n}"
+    },
+    {
+      "type": "text",
+      "text": "[0..5] nghĩa là từ chỉ số 0 đến (không bao gồm) 5. Bỏ trống số bắt đầu hoặc số kết thúc để chỉ đầu chuỗi hoặc cuối chuỗi. Chỉ số của String đếm theo byte, không phải ký tự. Trong văn bản tiếng Anh thông thường, mỗi chữ cái là một byte, nên hai cách đếm cho cùng kết quả. Những chữ cái như é chiếm nhiều hơn một byte; Unit 5 sẽ giải thích lý do."
+    },
+    {
+      "type": "text",
+      "text": "Các chuỗi literal như \"hi\" vốn đã là &str. Một hàm nhận &str chấp nhận cả literal lẫn String được mượn, nên hãy ưu tiên &str cho tham số:"
+    },
+    {
+      "type": "code",
+      "code": "fn first_word(s: &str) -> &str {\n    match s.find(' ') {\n        Some(i) => &s[..i],\n        None => s,\n    }\n}\n\nfn main() {\n    let owned = String::from(\"quick brown fox\");\n    println!(\"{}\", first_word(&owned));\n    println!(\"{}\", first_word(\"lazy dog\"));\n}"
+    },
+    {
+      "type": "text",
+      "text": "first_word trả về một tham chiếu, điều mà ví dụ dangle trong bài học Mượn (borrowing) không làm được. Điểm khác nhau: slice này mượn từ s, đoạn văn bản được truyền vào, nên nó còn hợp lệ chừng nào đoạn văn bản đó còn. dangle không có gì để mượn ngoài một String đã bị drop khi hàm kết thúc."
+    },
+    {
+      "type": "text",
+      "text": "Mảng cũng có slice, được viết là &[T]:"
+    },
+    {
+      "type": "code",
+      "code": "fn sum(numbers: &[i32]) -> i32 {\n    let mut total = 0;\n    for n in numbers {\n        total += n;\n    }\n    total\n}\n\nfn main() {\n    let all = [1, 2, 3, 4, 5];\n    println!(\"{}\", sum(&all));\n    println!(\"{}\", sum(&all[1..3]));\n}"
+    },
+    {
+      "type": "note",
+      "text": "Chưa cần lo về match và Some; chúng sẽ đến ở Unit 4. Ý chính ở đây là một slice trỏ vào dữ liệu đã có sẵn."
+    },
+    {
+      "type": "note",
+      "text": "Cắt slice ở giữa một ký tự UTF-8 nhiều byte sẽ gây panic. Với văn bản của người dùng, hãy ưu tiên các phương thức như split_whitespace hoặc chars thay vì chỉ số viết tay.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy làm cho last_three trả về một slice gồm ba byte cuối (dùng &s[s.len() - 3..]). Với văn bản tiếng Anh thông thường như \"rust\", đó là ba chữ cái cuối. Chương trình phải in ra: ust",
+    "starter": "fn last_three(s: &str) -> &str {\n    s\n}\n\nfn main() {\n    println!(\"{}\", last_three(\"rust\"));\n}",
+    "expectedOutput": "ust",
+    "solution": "fn last_three(s: &str) -> &str {\n    &s[s.len() - 3..]\n}\n\nfn main() {\n    println!(\"{}\", last_three(\"rust\"));\n}",
+    "hints": [
+      "Hiện giờ hàm trả về toàn bộ s. Bạn muốn một slice bắt đầu cách cuối 3 byte và chạy đến hết.",
+      "Một slice như &s[start..] lấy mọi thứ từ start đến cuối. Điểm bắt đầu là độ dài trừ 3.",
+      "Hãy thay s ở dòng bên trong hàm bằng &s[s.len() - 3..]."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "&text[0..3] cho bạn cái gì?",
+      "options": [
+        "Một bản sao của 3 ký tự đầu",
+        "Một tham chiếu tới 3 byte đầu",
+        "Ký tự thứ 3"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Kiểu của literal \"hi\" là gì?",
+      "options": [
+        "String",
+        "&str",
+        "char"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Vì sao nên ưu tiên &str hơn &String cho tham số?",
+      "options": [
+        "Nó chấp nhận cả literal lẫn String",
+        "Gõ nhanh hơn",
+        "&String không hoạt động"
+      ],
+      "answer": 0
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "id": "u0-check",
+  "title": "Checkpoint: Heo đất",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Checkpoint này luyện tập mọi thứ từ Unit 0: biến, quyết định, vòng lặp và hàm. Bạn sẽ viết ba hàm nhỏ cho một con heo đất. Vào ngày 1 bạn tiết kiệm 1 đồng xu, vào ngày 2 bạn tiết kiệm 2 đồng xu, vào ngày 3 bạn tiết kiệm 3 đồng xu, và cứ thế tiếp tục."
+    },
+    {
+      "type": "text",
+      "text": "Nó dựa trên bốn bài học: Giá trị và biến, Đưa ra quyết định, Lặp lại với vòng lặp và Hàm. Mỗi hàm dùng một ý tưởng khác nhau. Hàm main đã gọi sẵn cả ba hàm."
+    },
+    {
+      "type": "note",
+      "text": "todo!() là một ô giữ chỗ (placeholder). Nếu chương trình chạy tới nó, chương trình sẽ dừng với thông báo \"not yet implemented\". Hãy thay mỗi todo!() bằng code của riêng bạn. Cho đến khi bạn làm xong, trình biên dịch có thể cảnh báo rằng một số tên không được dùng. Điều đó là bình thường."
+    },
+    {
+      "type": "note",
+      "text": "Gợi ý cho total_saved: hãy bắt đầu với let mut total = 0;. Sau đó dùng for day in 1..=days và cộng day vào total mỗi lần lặp. Khi days là 0, dãy số (range) 1..=0 không chứa số nào, nên vòng lặp không chạy và total vẫn là 0."
+    },
+    {
+      "type": "note",
+      "text": "Gợi ý cho stars: hãy bắt đầu với let mut result = 1;. Sau đó dùng if total >= 50 và else if total >= 10 để thay đổi result. Hãy đặt phép kiểm tra 50 lên trước, vì Rust chỉ chạy nhánh đầu tiên có điều kiện đúng. Dòng cuối của hàm là result, không có dấu chấm phẩy."
+    },
+    {
+      "type": "note",
+      "text": "Gợi ý cho days_to_reach: hãy giữ hai biến với let mut, days và total, cả hai bắt đầu từ 0. Dùng while total < goal. Bên trong vòng lặp, cộng 1 vào days, rồi cộng days vào total. Sau vòng lặp, dòng cuối là days."
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy thay mỗi todo!() bằng code chạy được. Đừng thay đổi main.\n\nfn total_saved(days: i32) -> i32\nTrả về 1 + 2 + ... + days. Với 0 ngày, nó trả về 0.\n\nfn stars(total: i32) -> i32\nTrả về 3 nếu total từ 50 trở lên. Nếu không, trả về 2 nếu total từ 10 trở lên. Nếu không, trả về 1.\n\nfn days_to_reach(goal: i32) -> i32\nBạn tiết kiệm 1 đồng xu vào ngày 1, 2 đồng xu vào ngày 2, và cứ thế. Hàm này trả về ngày đầu tiên mà tổng số đồng xu đã tiết kiệm ít nhất bằng goal. Nếu goal là 0, không cần ngày nào, nên nó trả về 0.\n\nCác số được đưa cho những hàm này không bao giờ âm, và days cùng goal tối đa là 1000.\n\nChương trình phải in ra:\nAfter 0 days: 0 coins, stars: 1\nAfter 4 days: 10 coins, stars: 2\nAfter 10 days: 55 coins, stars: 3\nGoal 0 takes 0 days\nGoal 15 takes 5 days\nGoal 20 takes 6 days",
+    "starter": "// Day 1 you save 1 coin, day 2 you save 2 coins, and so on.\nfn total_saved(days: i32) -> i32 {\n    todo!()\n}\n\nfn stars(total: i32) -> i32 {\n    todo!()\n}\n\nfn days_to_reach(goal: i32) -> i32 {\n    todo!()\n}\n\nfn main() {\n    let mut coins = total_saved(0);\n    println!(\"After 0 days: {coins} coins, stars: {}\", stars(coins));\n    coins = total_saved(4);\n    println!(\"After 4 days: {coins} coins, stars: {}\", stars(coins));\n    coins = total_saved(10);\n    println!(\"After 10 days: {coins} coins, stars: {}\", stars(coins));\n\n    println!(\"Goal 0 takes {} days\", days_to_reach(0));\n    println!(\"Goal 15 takes {} days\", days_to_reach(15));\n    println!(\"Goal 20 takes {} days\", days_to_reach(20));\n}",
+    "expectedOutput": "After 0 days: 0 coins, stars: 1\nAfter 4 days: 10 coins, stars: 2\nAfter 10 days: 55 coins, stars: 3\nGoal 0 takes 0 days\nGoal 15 takes 5 days\nGoal 20 takes 6 days",
+    "solution": "fn total_saved(days: i32) -> i32 {\n    let mut total = 0;\n    for day in 1..=days {\n        total = total + day;\n    }\n    total\n}\n\nfn stars(total: i32) -> i32 {\n    let mut result = 1;\n    if total >= 50 {\n        result = 3;\n    } else if total >= 10 {\n        result = 2;\n    }\n    result\n}\n\nfn days_to_reach(goal: i32) -> i32 {\n    let mut days = 0;\n    let mut total = 0;\n    while total < goal {\n        days = days + 1;\n        total = total + days;\n    }\n    days\n}\n\nfn main() {\n    let mut coins = total_saved(0);\n    println!(\"After 0 days: {coins} coins, stars: {}\", stars(coins));\n    coins = total_saved(4);\n    println!(\"After 4 days: {coins} coins, stars: {}\", stars(coins));\n    coins = total_saved(10);\n    println!(\"After 10 days: {coins} coins, stars: {}\", stars(coins));\n\n    println!(\"Goal 0 takes {} days\", days_to_reach(0));\n    println!(\"Goal 15 takes {} days\", days_to_reach(15));\n    println!(\"Goal 20 takes {} days\", days_to_reach(20));\n}",
+    "hints": [
+      "Mỗi hàm cần những biến thay đổi được, nên hãy làm cho chúng có thể thay đổi. total_saved cộng dồn các số bằng một vòng lặp for. stars thay đổi một giá trị bằng if và else if. days_to_reach là hàm khó nhất, và nó cần một vòng lặp while.",
+      "Trong days_to_reach, hãy giữ hai biến, days và total, cả hai bắt đầu từ 0. Hãy lặp trong khi total < goal. Trong mỗi vòng, trước hết cộng 1 vào days, rồi cộng days vào total. Khi goal bằng 0, chương trình không bao giờ vào vòng lặp.",
+      "Hãy viết let mut days = 0; và let mut total = 0; rồi while total < goal { days = days + 1; total = total + days; } và đặt days ở dòng cuối, không có dấu chấm phẩy."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "total là bao nhiêu sau khi code này chạy? let mut total = 0; for n in 1..=3 { total = total + n; }",
+      "options": [
+        "3",
+        "6",
+        "9"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Một hàm kết thúc bằng dòng total (không có dấu chấm phẩy). Dòng đó làm gì?",
+      "options": [
+        "Nó in ra total",
+        "Nó dừng chương trình",
+        "Nó trả total về làm kết quả"
+      ],
+      "answer": 2
+    },
+    {
+      "question": "Trong stars, tại sao phép kiểm tra 50 được viết trước phép kiểm tra 10?",
+      "options": [
+        "Tổng 55 sẽ khớp với total >= 10 trước và nhận 2 sao thay vì 3",
+        "Thứ tự của các phép kiểm tra không có gì khác biệt",
+        "Rust kiểm tra các điều kiện từ dưới lên"
+      ],
+      "answer": 0
+    }
+  ]
+}

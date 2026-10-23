@@ -1067,12 +1067,35 @@ fn main() {{
     loop {{ v.push(vec![1u8; 16 << 20]); }}
 }}"#
     );
+    // Use the production run limit (5 s), not the suite's 2 s: on slow CI
+    // hosts touching ~300 MB of pages can take over 2 s by itself.
+    let limits = Limits::default();
     for attempt in 1..=5 {
-        let (status, out) = post_run(docker_state(), &code).await;
+        let (status, out) = post_run(
+            Arc::new(AppState::for_tests(docker(), limits.clone())),
+            &code,
+        )
+        .await;
         assert_eq!(status, StatusCode::OK, "attempt {attempt}: {out}");
         assert_eq!(out["stage"], "run", "attempt {attempt}: {out}");
         assert_memory_stop(&out);
     }
+}
+
+/// The program can't dump core: a limit of 0 is ignored when the host pipes
+/// dumps to a helper such as apport, so the container gets 1 byte (hard).
+#[tokio::test]
+#[ignore]
+async fn core_dumps_are_off_even_for_piped_core_patterns() {
+    let _turn = DOCKER_SUITE.lock().await;
+    let code = r#"fn main() {
+    let limits = std::fs::read_to_string("/proc/self/limits").unwrap();
+    let line = limits.lines().find(|l| l.starts_with("Max core file size")).unwrap();
+    println!("{}", line.split_whitespace().collect::<Vec<_>>().join(" "));
+}"#;
+    let (status, out) = post_run(docker_state(), code).await;
+    assert_eq!(status, StatusCode::OK, "{out}");
+    assert_eq!(out["stdout"], "Max core file size 1 1 bytes\n", "{out}");
 }
 
 /// rustc itself running out of memory (or time) is the learner's problem,

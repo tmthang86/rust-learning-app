@@ -5,7 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../data/models.dart';
-import '../l10n/exercise_test_strings.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/app_localizations_en.dart';
 
 /// How far a run got.
 enum RunStage {
@@ -22,6 +23,77 @@ enum RunStage {
   unavailable,
 }
 
+/// Why the runner couldn't be used. The UI shows it in the learner's
+/// language with [message]; [RunResult.stderr] carries the English text too,
+/// for logs and anything that has no localizations at hand.
+enum RunIssueKind {
+  timeout,
+  unreachable,
+  unreadable,
+  forbidden,
+  tooLong,
+  rateLimited,
+  busy,
+  emptyCode,
+
+  /// Text the runner itself sent ([RunIssue.text]); shown as is.
+  serverText,
+  problem,
+  notConfigured,
+  unverifiedDebug,
+  unverifiedWeb,
+  unverifiedIos,
+  unverifiedAndroid,
+  unverifiedOther,
+
+  /// `/grade` answered 404: a runner from before exercise tests.
+  runnerNeedsUpdate,
+
+  /// `/grade` refused the tests (`tests_invalid`).
+  testsInvalid,
+}
+
+class RunIssue {
+  const RunIssue(this.kind, {this.seconds, this.status, this.text});
+
+  final RunIssueKind kind;
+
+  /// How long to wait ([RunIssueKind.rateLimited], [RunIssueKind.busy]);
+  /// null when the runner didn't say.
+  final int? seconds;
+
+  /// HTTP status ([RunIssueKind.problem]).
+  final int? status;
+
+  /// The runner's own message ([RunIssueKind.serverText]).
+  final String? text;
+
+  String message(AppLocalizations l10n) => switch (kind) {
+    RunIssueKind.timeout => l10n.runIssueTimeout,
+    RunIssueKind.unreachable => l10n.runIssueUnreachable,
+    RunIssueKind.unreadable => l10n.runIssueUnreadable,
+    RunIssueKind.forbidden => l10n.runIssueForbidden,
+    RunIssueKind.tooLong => l10n.runIssueTooLong,
+    RunIssueKind.rateLimited =>
+      seconds != null
+          ? l10n.runIssueRateLimitedWait(seconds!)
+          : l10n.runIssueRateLimited,
+    RunIssueKind.busy =>
+      seconds != null ? l10n.runIssueBusyWait(seconds!) : l10n.runIssueBusy,
+    RunIssueKind.emptyCode => l10n.runIssueEmptyCode,
+    RunIssueKind.serverText => text ?? '',
+    RunIssueKind.problem => l10n.runIssueProblem(status ?? 0),
+    RunIssueKind.notConfigured => l10n.runIssueNotConfigured,
+    RunIssueKind.unverifiedDebug => l10n.runIssueUnverifiedDebug,
+    RunIssueKind.unverifiedWeb => l10n.runIssueUnverifiedWeb,
+    RunIssueKind.unverifiedIos => l10n.runIssueUnverifiedIos,
+    RunIssueKind.unverifiedAndroid => l10n.runIssueUnverifiedAndroid,
+    RunIssueKind.unverifiedOther => l10n.runIssueUnverifiedOther,
+    RunIssueKind.runnerNeedsUpdate => l10n.runIssueRunnerNeedsUpdate,
+    RunIssueKind.testsInvalid => l10n.runIssueTestsInvalid,
+  };
+}
+
 /// Result of compiling and running a Rust program.
 class RunResult {
   const RunResult({
@@ -30,6 +102,7 @@ class RunResult {
     this.stdout = '',
     this.stderr = '',
     this.warnings = '',
+    this.issue,
   });
 
   final bool success;
@@ -42,6 +115,14 @@ class RunResult {
 
   /// Compiler warnings from a build that succeeded. The program still ran.
   final String warnings;
+
+  /// For [RunStage.unavailable]: what went wrong, to show in the learner's
+  /// language instead of [stderr].
+  final RunIssue? issue;
+
+  /// What to show for this result's [stderr]: the localized [issue] when
+  /// there is one.
+  String errorText(AppLocalizations l10n) => issue?.message(l10n) ?? stderr;
 
   /// Throws [FormatException] when [json] isn't a run result.
   factory RunResult.fromJson(Map<String, dynamic> json) {
@@ -63,8 +144,17 @@ class RunResult {
     );
   }
 
-  factory RunResult.unavailable(String message) =>
-      RunResult(success: false, stage: RunStage.unavailable, stderr: message);
+  factory RunResult.unavailable(String message, {RunIssue? issue}) => RunResult(
+    success: false,
+    stage: RunStage.unavailable,
+    stderr: message,
+    issue: issue,
+  );
+
+  /// The runner couldn't be used because of [issue]; [stderr] gets its
+  /// English text.
+  factory RunResult.unavailableFor(RunIssue issue) =>
+      RunResult.unavailable(issue.message(AppLocalizationsEn()), issue: issue);
 }
 
 /// How one test ended, as the runner reports it.
@@ -79,16 +169,16 @@ enum TestStatus {
   notRun;
 
   static TestStatus? fromWire(Object? name) => switch (name) {
-        'pass' => pass,
-        'fail' => fail,
-        'panic' => panic,
-        'nopanic' => nopanic,
-        'error' => error,
-        'timeout' => timeout,
-        'crashed' => crashed,
-        'not_run' => notRun,
-        _ => null,
-      };
+    'pass' => pass,
+    'fail' => fail,
+    'panic' => panic,
+    'nopanic' => nopanic,
+    'error' => error,
+    'timeout' => timeout,
+    'crashed' => crashed,
+    'not_run' => notRun,
+    _ => null,
+  };
 }
 
 /// The result of one test of a graded run.
@@ -161,6 +251,7 @@ class GradeResult extends RunResult {
     super.stdout,
     super.stderr,
     super.warnings,
+    super.issue,
     this.tests = const [],
     this.compileErrorsIn,
     this.reason,
@@ -199,18 +290,29 @@ class GradeResult extends RunResult {
     );
   }
 
-  factory GradeResult.unavailable(String message) => GradeResult(
+  factory GradeResult.unavailable(String message, {RunIssue? issue}) =>
+      GradeResult(
         success: false,
         stage: RunStage.unavailable,
         stderr: message,
+        issue: issue,
       );
+
+  /// The runner couldn't be used because of [issue]; [stderr] gets its
+  /// English text.
+  factory GradeResult.unavailableFor(RunIssue issue) => GradeResult.unavailable(
+    issue.message(AppLocalizationsEn()),
+    issue: issue,
+  );
 
   /// A plain run of an exercise that only has `expectedOutput` (it costs
   /// one run, and works with a runner that has no `/grade`), as the one
   /// output test it is: compared here the way the app always has, ignoring
   /// whitespace around the whole output.
   factory GradeResult.fromLegacyRun(RunResult r, String expected) {
-    if (r.stage == RunStage.unavailable) return GradeResult.unavailable(r.stderr);
+    if (r.stage == RunStage.unavailable) {
+      return GradeResult.unavailable(r.stderr, issue: r.issue);
+    }
     final TestResult test;
     switch (r.stage) {
       case RunStage.compile:
@@ -265,7 +367,7 @@ abstract class CodeRunner {
 
   /// Compiles [source] together with [tests] and reports each one. Unlike
   /// [run] the answer always has `tests`; a runner that can't be reached
-  /// answers with [GradeResult.unavailable].
+  /// answers with [GradeResult.unavailableFor].
   Future<GradeResult> grade(String source, List<ExerciseTest> tests);
 }
 
@@ -309,11 +411,11 @@ class HttpCodeRunner implements CodeRunner {
 
   @override
   Future<RunResult> run(String source) => _request(
-        'run',
-        {'code': source},
-        parse: RunResult.fromJson,
-        unavailable: RunResult.unavailable,
-      );
+    'run',
+    {'code': source},
+    parse: RunResult.fromJson,
+    unavailable: RunResult.unavailableFor,
+  );
 
   @override
   Future<GradeResult> grade(String source, List<ExerciseTest> tests) =>
@@ -324,14 +426,14 @@ class HttpCodeRunner implements CodeRunner {
           'tests': [for (final t in tests) t.toRequestJson()],
         },
         parse: GradeResult.fromJson,
-        unavailable: GradeResult.unavailable,
+        unavailable: GradeResult.unavailableFor,
       );
 
   Future<T> _request<T extends RunResult>(
     String path,
     Map<String, Object?> body, {
     required T Function(Map<String, dynamic>) parse,
-    required T Function(String) unavailable,
+    required T Function(RunIssue) unavailable,
   }) async {
     try {
       return await _requestWithRetry(
@@ -341,11 +443,9 @@ class HttpCodeRunner implements CodeRunner {
         unavailable,
       ).timeout(requestTimeout);
     } on TimeoutException {
-      return unavailable('The code runner took too long to answer.');
+      return unavailable(const RunIssue(RunIssueKind.timeout));
     } catch (_) {
-      return unavailable(
-        "Couldn't reach the code runner. Check your connection and try again.",
-      );
+      return unavailable(const RunIssue(RunIssueKind.unreachable));
     }
   }
 
@@ -353,7 +453,7 @@ class HttpCodeRunner implements CodeRunner {
     String path,
     Map<String, Object?> body,
     T Function(Map<String, dynamic>) parse,
-    T Function(String) unavailable,
+    T Function(RunIssue) unavailable,
   ) async {
     var response = await _post(path, body, await auth.appCheckToken());
 
@@ -368,17 +468,14 @@ class HttpCodeRunner implements CodeRunner {
     }
 
     if (response.statusCode != 200) {
-      return unavailable(errorMessage(response, grade: path == 'grade'));
+      return unavailable(errorIssue(response, grade: path == 'grade'));
     }
     try {
       final json = jsonDecode(response.body);
       if (json is! Map<String, dynamic>) throw const FormatException();
       return parse(json);
     } on FormatException {
-      return unavailable(
-        'The code runner sent an answer the app could not read. '
-        'Please try again.',
-      );
+      return unavailable(const RunIssue(RunIssueKind.unreadable));
     }
   }
 
@@ -397,17 +494,31 @@ class HttpCodeRunner implements CodeRunner {
     );
   }
 
-  /// Turns an error response into a message for the learner. The runner
-  /// answers errors with JSON `{"error": "...", "code": "..."}`, but
-  /// proxies and load balancers in front of it may answer with plain text
-  /// or HTML.
+  /// Turns an error response into a message for the learner, in English.
+  /// See [errorIssue] for the version the UI shows in the learner's
+  /// language.
+  static String errorMessage(
+    http.Response response, {
+    bool debug = kDebugMode,
+    bool web = kIsWeb,
+    TargetPlatform? platform,
+  }) => errorIssue(
+    response,
+    debug: debug,
+    web: web,
+    platform: platform,
+  ).message(AppLocalizationsEn());
+
+  /// Turns an error response into what went wrong. The runner answers
+  /// errors with JSON `{"error": "...", "code": "..."}`, but proxies and
+  /// load balancers in front of it may answer with plain text or HTML.
   ///
   /// The 401 text depends on where the app runs: a debug build, the web and
   /// each store need different advice. [debug], [web] and [platform] default
   /// to the real environment; tests pass them. With [grade] set, the answer
   /// came from `/grade`: a 404 means a runner that doesn't have it yet, and
   /// `tests_invalid` means an exercise this app version can't send.
-  static String errorMessage(
+  static RunIssue errorIssue(
     http.Response response, {
     bool debug = kDebugMode,
     bool web = kIsWeb,
@@ -416,69 +527,58 @@ class HttpCodeRunner implements CodeRunner {
   }) {
     final status = response.statusCode;
     final wait = _retryAfterSeconds(response);
-    if (grade && status == 404) return ExerciseTestStrings.runnerNeedsUpdate;
-    if (grade && status == 400 && _errorCode(response.body) == 'tests_invalid') {
-      return ExerciseTestStrings.testsInvalid;
+    if (grade && status == 404) {
+      return const RunIssue(RunIssueKind.runnerNeedsUpdate);
+    }
+    if (grade &&
+        status == 400 &&
+        _errorCode(response.body) == 'tests_invalid') {
+      return const RunIssue(RunIssueKind.testsInvalid);
     }
     switch (status) {
       case 401:
-        return _unverifiedMessage(
+        return _unverifiedIssue(
           debug: debug,
           web: web,
           platform: platform ?? defaultTargetPlatform,
         );
       case 403:
-        return "This version of the app can't run code. Please update the app.";
+        return const RunIssue(RunIssueKind.forbidden);
       case 413:
-        return 'Your code is too long to run. Try making it shorter.';
+        return const RunIssue(RunIssueKind.tooLong);
       case 429:
         if (_errorCode(response.body) == 'rate_limited') {
-          return wait != null
-              ? "You're running code very quickly. Try again in $wait seconds."
-              : "You're running code very quickly. Try again in a minute.";
+          return RunIssue(RunIssueKind.rateLimited, seconds: wait);
         }
-        return _busyMessage(wait);
+        return RunIssue(RunIssueKind.busy, seconds: wait);
       case 503:
-        return _busyMessage(wait);
+        return RunIssue(RunIssueKind.busy, seconds: wait);
     }
 
     final fromServer = _serverError(response.body);
     if (fromServer == 'code is empty') {
-      return 'There is no code to run yet. Write some code, then press Run.';
+      return const RunIssue(RunIssueKind.emptyCode);
     }
-    if (fromServer != null) return fromServer;
-    if (status == 408) return 'The code runner took too long to answer.';
-    return 'The code runner had a problem (error $status). Please try again.';
+    if (fromServer != null) {
+      return RunIssue(RunIssueKind.serverText, text: fromServer);
+    }
+    if (status == 408) return const RunIssue(RunIssueKind.timeout);
+    return RunIssue(RunIssueKind.problem, status: status);
   }
 
-  static String _unverifiedMessage({
+  static RunIssue _unverifiedIssue({
     required bool debug,
     required bool web,
     required TargetPlatform platform,
   }) {
-    const start = "This copy of the app couldn't be verified, so code can't "
-        'run right now. ';
-    if (debug) {
-      return '${start}This is a debug build: add its App Check debug token in '
-          'the Firebase console (App Check, Apps, Manage debug tokens) and '
-          'try again.';
-    }
-    if (web) return '${start}Reload the page and try again.';
-    switch (platform) {
-      case TargetPlatform.iOS:
-        return '${start}Make sure the app is up to date (from the App Store) '
-            'and try again.';
-      case TargetPlatform.android:
-        return '${start}Make sure the app is up to date (from Google Play) '
-            'and try again.';
-      default:
-        return '${start}Make sure the app is up to date and try again.';
-    }
+    if (debug) return const RunIssue(RunIssueKind.unverifiedDebug);
+    if (web) return const RunIssue(RunIssueKind.unverifiedWeb);
+    return RunIssue(switch (platform) {
+      TargetPlatform.iOS => RunIssueKind.unverifiedIos,
+      TargetPlatform.android => RunIssueKind.unverifiedAndroid,
+      _ => RunIssueKind.unverifiedOther,
+    });
   }
-
-  static String _busyMessage(int? wait) => wait != null
-      ? 'The code runner is busy. Try again in $wait seconds.'
-      : 'The code runner is busy. Try again shortly.';
 
   /// Seconds from a usable `Retry-After` header, else null.
   static int? _retryAfterSeconds(http.Response response) {
@@ -509,7 +609,9 @@ class HttpCodeRunner implements CodeRunner {
     } on FormatException {
       final text = body.trim();
       // Plain text is shown; an HTML error page is not.
-      if (text.isEmpty || text.startsWith('<') || text.length > 200) return null;
+      if (text.isEmpty || text.startsWith('<') || text.length > 200) {
+        return null;
+      }
       return text;
     }
   }
@@ -519,16 +621,13 @@ class HttpCodeRunner implements CodeRunner {
 class PlaceholderCodeRunner implements CodeRunner {
   const PlaceholderCodeRunner();
 
-  static const _notSetUp = 'Running code is not set up in this build. '
-      'Build with --dart-define=RUNNER_URL=<runner address>.';
-
   @override
   Future<RunResult> run(String source) async =>
-      RunResult.unavailable(_notSetUp);
+      RunResult.unavailableFor(const RunIssue(RunIssueKind.notConfigured));
 
   @override
   Future<GradeResult> grade(String source, List<ExerciseTest> tests) async =>
-      GradeResult.unavailable(_notSetUp);
+      GradeResult.unavailableFor(const RunIssue(RunIssueKind.notConfigured));
 }
 
 /// Picks the runner from the RUNNER_URL build setting. [auth] adds the App

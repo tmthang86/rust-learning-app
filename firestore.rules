@@ -13,7 +13,8 @@ service cloud.firestore {
     // `data` is the document as it would be after the write, so this also
     // covers merge writes that touch only some of the fields.
     function isValidProgress(data) {
-      return data.keys().hasOnly(['track', 'completedLessons', 'updatedAt'])
+      return data.keys().hasOnly(
+              ['track', 'completedLessons', 'dailyXp', 'updatedAt'])
           && (!('track' in data) || data.track in ['starter', 'fast'])
           && (!('completedLessons' in data)
               || (data.completedLessons is list
@@ -21,6 +22,11 @@ service cloud.firestore {
                   // Rules can't loop over a list, so element types are
                   // checked by the app when it reads the document.
                   && data.completedLessons.size() <= 1000))
+          // XP per day: a map from a `yyyy-MM-dd` day to a number. The size
+          // limit (about 11 years of days) stops abuse; rules can't loop
+          // over a map, so the app checks keys and values when it reads.
+          && (!('dailyXp' in data)
+              || (data.dailyXp is map && data.dailyXp.size() <= 4000))
           // Every write the app makes sets updatedAt to the server time.
           && data.updatedAt is timestamp
           && data.updatedAt == request.time;

@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 
 import '../../data/age.dart';
 import '../../data/app_state.dart';
+import '../../l10n/l10n.dart';
+import '../settings/language_picker.dart';
 
 /// First-launch age question: a plain birth-year field.
 ///
@@ -28,7 +30,7 @@ class _AgeScreenState extends State<AgeScreen> {
     if (year == null ||
         year < earliestBirthYear ||
         year > DateTime.now().year) {
-      setState(() => _error = 'Please enter a four-digit year.');
+      setState(() => _error = context.l10n.ageErrorInvalidYear);
       return;
     }
     AppScope.read(context).age.setBirthYear(year);
@@ -55,7 +57,7 @@ class _AgeScreenState extends State<AgeScreen> {
                 Icon(Icons.memory, size: 56, color: theme.colorScheme.primary),
                 const SizedBox(height: 16),
                 Text(
-                  'Welcome',
+                  context.l10n.ageWelcome,
                   style: theme.textTheme.headlineMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -74,13 +76,18 @@ class _AgeScreenState extends State<AgeScreen> {
                     if (_error != null) setState(() => _error = null);
                   },
                   decoration: InputDecoration(
-                    labelText: 'What year were you born?',
+                    labelText: context.l10n.ageQuestion,
                     border: const OutlineInputBorder(),
                     errorText: _error,
                   ),
                 ),
                 const SizedBox(height: 16),
-                FilledButton(onPressed: _submit, child: const Text('Continue')),
+                FilledButton(
+                  onPressed: _submit,
+                  child: Text(context.l10n.continueButton),
+                ),
+                const SizedBox(height: 32),
+                const LanguageSetting(),
               ],
             ),
           ),

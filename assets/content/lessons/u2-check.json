@@ -1,0 +1,78 @@
+{
+  "id": "u2-check",
+  "title": "Checkpoint: Grade calculator",
+  "sections": [
+    {
+      "type": "text",
+      "text": "This checkpoint practises Unit 2: scalar types, tuples and arrays, if as an expression, loops and functions that give back values. A teacher needs a small grade tool, so you will write three functions."
+    },
+    {
+      "type": "text",
+      "text": "It draws on all five lessons of the unit: Scalar types, Tuples and arrays, if is an expression, loop, while and for, and Functions and return values."
+    },
+    {
+      "type": "note",
+      "text": "todo!() is a placeholder. If the program reaches it, it stops with the message \"not yet implemented\". Replace each todo!() with your own code. Until you do, the compiler may warn that some names are unused. That is expected."
+    },
+    {
+      "type": "note",
+      "text": "[u32; 4] is the type of an array that holds exactly four u32 numbers. The number after the semicolon is the length."
+    },
+    {
+      "type": "note",
+      "text": "Hint for letter: write one if, else if, else chain as the whole body. Each block holds just a char such as 'A', with no semicolon, so the chain itself is the value the function gives back. Check the highest limit first."
+    },
+    {
+      "type": "note",
+      "text": "Hint for average_and_best: make let mut variables for the sum and for the best score, then use a for loop to go through the array. To divide, turn the sum into an f64 first with as f64. The result is a tuple, written (average, best)."
+    },
+    {
+      "type": "note",
+      "text": "Hint for rounds_to_pass: copy score into a let mut variable so you can change it. Then use loop. Inside it, break with the number of rounds as soon as the score is at least 60. Otherwise add bonus and count one more round."
+    },
+    {
+      "type": "note",
+      "text": "In main, average as u32 drops the fraction, so 59.5 becomes 59. That is why the second group of scores gets an F."
+    }
+  ],
+  "exercise": {
+    "prompt": "Replace each todo!() with working code. Do not change main.\n\nEvery score is from 0 to 100.\n\nfn letter(score: u32) -> char\nGives back 'A' for 90 or more, 'B' for 80 to 89, 'C' for 70 to 79, 'D' for 60 to 69 and 'F' for anything lower.\n\nfn average_and_best(scores: [u32; 4]) -> (f64, u32)\nGives back a tuple: the average of the four scores as an f64, and the highest score.\n\nfn rounds_to_pass(score: u32, bonus: u32) -> u32\nEach round adds bonus to score. Gives back how many rounds are needed until the score is at least 60. If it is already 60 or more, that is 0 rounds. The bonus is from 1 to 100.\n\nThe program should print:\n100 -> A\n90 -> A\n89 -> B\n60 -> D\n59 -> F\n0 -> F\naverage 77.5, best 92, grade C\naverage 59.5, best 60, grade F\naverage 0.25, best 1, grade F\nscore 75, bonus 5: 0 rounds\nscore 50, bonus 4: 3 rounds\nscore 10, bonus 25: 2 rounds",
+    "starter": "fn letter(score: u32) -> char {\n    todo!()\n}\n\nfn average_and_best(scores: [u32; 4]) -> (f64, u32) {\n    todo!()\n}\n\nfn rounds_to_pass(score: u32, bonus: u32) -> u32 {\n    todo!()\n}\n\nfn main() {\n    for score in [100, 90, 89, 60, 59, 0] {\n        println!(\"{score} -> {}\", letter(score));\n    }\n\n    let all_scores = [[70, 85, 92, 63], [59, 60, 60, 59], [0, 0, 0, 1]];\n    for scores in all_scores {\n        let (average, best) = average_and_best(scores);\n        println!(\"average {average}, best {best}, grade {}\", letter(average as u32));\n    }\n\n    println!(\"score 75, bonus 5: {} rounds\", rounds_to_pass(75, 5));\n    println!(\"score 50, bonus 4: {} rounds\", rounds_to_pass(50, 4));\n    println!(\"score 10, bonus 25: {} rounds\", rounds_to_pass(10, 25));\n}",
+    "expectedOutput": "100 -> A\n90 -> A\n89 -> B\n60 -> D\n59 -> F\n0 -> F\naverage 77.5, best 92, grade C\naverage 59.5, best 60, grade F\naverage 0.25, best 1, grade F\nscore 75, bonus 5: 0 rounds\nscore 50, bonus 4: 3 rounds\nscore 10, bonus 25: 2 rounds",
+    "solution": "fn letter(score: u32) -> char {\n    if score >= 90 {\n        'A'\n    } else if score >= 80 {\n        'B'\n    } else if score >= 70 {\n        'C'\n    } else if score >= 60 {\n        'D'\n    } else {\n        'F'\n    }\n}\n\nfn average_and_best(scores: [u32; 4]) -> (f64, u32) {\n    let mut sum = 0;\n    let mut best = 0;\n    for score in scores {\n        sum += score;\n        if score > best {\n            best = score;\n        }\n    }\n    (sum as f64 / 4.0, best)\n}\n\nfn rounds_to_pass(score: u32, bonus: u32) -> u32 {\n    let mut current = score;\n    let mut rounds = 0;\n    loop {\n        if current >= 60 {\n            break rounds;\n        }\n        current += bonus;\n        rounds += 1;\n    }\n}\n\nfn main() {\n    for score in [100, 90, 89, 60, 59, 0] {\n        println!(\"{score} -> {}\", letter(score));\n    }\n\n    let all_scores = [[70, 85, 92, 63], [59, 60, 60, 59], [0, 0, 0, 1]];\n    for scores in all_scores {\n        let (average, best) = average_and_best(scores);\n        println!(\"average {average}, best {best}, grade {}\", letter(average as u32));\n    }\n\n    println!(\"score 75, bonus 5: {} rounds\", rounds_to_pass(75, 5));\n    println!(\"score 50, bonus 4: {} rounds\", rounds_to_pass(50, 4));\n    println!(\"score 10, bonus 25: {} rounds\", rounds_to_pass(10, 25));\n}",
+    "hints": [
+      "letter is an if, else if, else chain. average_and_best needs a for loop and two variables that change. rounds_to_pass is the hardest one: it needs a loop that you stop with break, and it must change a copy of score.",
+      "In rounds_to_pass, copy score with let mut current = score; and count rounds in let mut rounds = 0;. Use loop. If current is 60 or more, break with rounds. Otherwise add bonus to current and add 1 to rounds.",
+      "Write loop { if current >= 60 { break rounds; } current += bonus; rounds += 1; } as the last expression of rounds_to_pass. In average_and_best, divide with sum as f64 / 4.0, and give back the tuple (average, best)."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "What does 59.5 as u32 give?",
+      "options": [
+        "60",
+        "59",
+        "It does not compile"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "In average_and_best, why is the sum turned into an f64 before it is divided by 4.0?",
+      "options": [
+        "Rust does not mix integers and floats on its own",
+        "f64 is faster than u32",
+        "A u32 cannot be divided"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "What does break rounds; do inside a loop block?",
+      "options": [
+        "Skips to the next round",
+        "Ends the whole program",
+        "Stops the loop and gives back rounds as its value"
+      ],
+      "answer": 2
+    }
+  ]
+}

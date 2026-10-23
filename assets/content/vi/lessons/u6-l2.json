@@ -1,0 +1,106 @@
+{
+  "id": "u6-l2",
+  "title": "Result",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Result là một enum dành cho các thao tác có thể thất bại. Ok giữ giá trị thành công, Err giữ lỗi. Trong Result<T, E>, T là kiểu của giá trị thành công và E là kiểu của lỗi, nên Result<f64, String> nghĩa là \"một f64 nếu thành công, hoặc một String mô tả lỗi\"."
+    },
+    {
+      "type": "code",
+      "code": "// enum Result<T, E> {\n//     Ok(T),\n//     Err(E),\n// }\nfn main() {\n    let good: Result<i32, _> = \"12\".parse();\n    let bad: Result<i32, _> = \"twelve\".parse();\n    println!(\"{:?}\", good);\n    println!(\"{}\", bad.is_err());\n}"
+    },
+    {
+      "type": "text",
+      "text": "parse biến văn bản thành số, và trả về một Result vì văn bản có thể không phải là số. Kiểu Result<i32, _> bảo parse tạo ra một i32; dấu _ để Rust tự điền kiểu lỗi. Bạn cũng sẽ thấy kiểu được viết ngay trên lệnh gọi: \"12\".parse::<i32>(). Phần ::<i32> có cùng ý nghĩa, \"parse thành một i32\"."
+    },
+    {
+      "type": "text",
+      "text": "Hãy xử lý cả hai trường hợp bằng match. Trình biên dịch sẽ không cho phép bạn dùng giá trị trước khi xử lý lỗi:"
+    },
+    {
+      "type": "code",
+      "code": "fn divide(a: f64, b: f64) -> Result<f64, String> {\n    if b == 0.0 {\n        Err(String::from(\"cannot divide by zero\"))\n    } else {\n        Ok(a / b)\n    }\n}\n\nfn main() {\n    for b in [4.0, 0.0] {\n        match divide(10.0, b) {\n            Ok(v) => println!(\"result: {v}\"),\n            Err(e) => println!(\"error: {e}\"),\n        }\n    }\n}"
+    },
+    {
+      "type": "text",
+      "text": "Giống Option, Result có các phương thức hỗ trợ như unwrap_or và is_ok:"
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let input = \"abc\";\n    let n: i32 = input.parse().unwrap_or(0);\n    println!(\"{n}\");\n}"
+    },
+    {
+      "type": "note",
+      "text": "Lỗi là các giá trị bình thường, không phải những cú nhảy ẩn. Đọc chữ ký của một hàm cho bạn biết nó có thể thất bại hay không.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Không có exception: Result<T, E> là cơ chế của Rust cho các lỗi có thể khôi phục (panic! lo các lỗi không thể khôi phục), và #[must_use] cảnh báo nếu bạn bỏ qua một Result. map_err, ok() và and_then chuyển đổi và nối chuỗi các result.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "Hãy hoàn thành check_age để nó trả về Err(String::from(\"too young\")) khi age nhỏ hơn 18, và Ok(age) trong các trường hợp còn lại.",
+    "starter": "fn check_age(age: u32) -> Result<u32, String> {\n    Ok(age)\n}\n\nfn main() {\n    match check_age(15) {\n        Ok(a) => println!(\"welcome, age {a}\"),\n        Err(e) => println!(\"error: {e}\"),\n    }\n}",
+    "tests": [
+      {
+        "id": "fifteen-too-young",
+        "label": "15 là quá nhỏ",
+        "code": "check_eq!(check_age(15), Err(String::from(\"too young\")));"
+      },
+      {
+        "id": "thirty-ok",
+        "label": "30 được chấp nhận",
+        "code": "check_eq!(check_age(30), Ok(30));"
+      },
+      {
+        "id": "boundary-18",
+        "hidden": true,
+        "label": "18 is the first allowed age",
+        "code": "check_eq!(check_age(18), Ok(18));"
+      },
+      {
+        "id": "boundary-17",
+        "hidden": true,
+        "code": "check_eq!(check_age(17), Err(String::from(\"too young\")));"
+      }
+    ],
+    "solution": "fn check_age(age: u32) -> Result<u32, String> {\n    if age < 18 {\n        Err(String::from(\"too young\"))\n    } else {\n        Ok(age)\n    }\n}\n\nfn main() {\n    match check_age(15) {\n        Ok(a) => println!(\"welcome, age {a}\"),\n        Err(e) => println!(\"error: {e}\"),\n    }\n}",
+    "hints": [
+      "Bạn cần kiểm tra tuổi rồi trả về một trong hai kết quả. Công cụ nào trong Unit 2 chọn giữa hai trường hợp?",
+      "Hãy dùng if age < 18. Trong trường hợp đó, hãy trả về Err(String::from(\"too young\")), và trả về Ok(age) trong khối else.",
+      "Hãy thay dòng Ok(age) bằng: if age < 18 { Err(String::from(\"too young\")) } else { Ok(age) } và không có dấu chấm phẩy sau nó."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Hai variant của Result là gì?",
+      "options": [
+        "Some và None",
+        "Ok và Err",
+        "Pass và Fail"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Khi nào một hàm nên trả về một Result?",
+      "options": [
+        "Khi nó có thể thất bại theo cách bình thường",
+        "Không bao giờ",
+        "Chỉ trong main"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "\"x\".parse::<i32>().unwrap_or(0) cho ra giá trị gì?",
+      "options": [
+        "0",
+        "Một panic",
+        "\"x\""
+      ],
+      "answer": 0
+    }
+  ]
+}

@@ -3,8 +3,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/app_state.dart';
 import '../../data/models.dart';
+import '../../l10n/l10n.dart';
 import '../../monetization/ad_banner.dart';
 import '../../monetization/ads_service.dart';
+import '../streak/streak_widgets.dart';
 
 /// The course map: units for the learner's track, each with its lessons.
 class HomeScreen extends StatelessWidget {
@@ -16,7 +18,7 @@ class HomeScreen extends StatelessWidget {
     final units = state.visibleUnits;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Learn Rust')),
+      appBar: AppBar(title: Text(context.l10n.appTitle)),
       body: state.course == null
           ? const Center(child: CircularProgressIndicator())
           : Center(
@@ -25,6 +27,9 @@ class HomeScreen extends StatelessWidget {
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
+                    const StreakCard(),
+                    const ReminderPromptCard(),
+                    const SizedBox(height: 12),
                     for (final (i, unit) in units.indexed) ...[
                       if (i > 0) const SizedBox(height: 12),
                       _UnitCard(unit: unit),
@@ -50,6 +55,7 @@ class _UnitCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final done = unit.lessons.where((l) => state.isCompleted(l.id)).length;
 
     return Card(
@@ -60,21 +66,30 @@ class _UnitCard extends StatelessWidget {
         title: Text(unit.title),
         subtitle: Text(
           unit.comingSoon
-              ? 'Coming soon'
-              : '${unit.summary}\n$done of ${unit.lessons.length} lessons done',
+              ? l10n.comingSoon
+              : '${unit.summary}\n'
+                    '${l10n.lessonsDoneProgress(done, unit.lessons.length)}',
         ),
         children: [
           for (final lesson in unit.lessons)
             ListTile(
               leading: Icon(
-                state.isCompleted(lesson.id)
-                    ? Icons.check_circle
-                    : Icons.circle_outlined,
+                lesson.checkpoint
+                    ? (state.isCompleted(lesson.id)
+                        ? Icons.emoji_events
+                        : Icons.emoji_events_outlined)
+                    : (state.isCompleted(lesson.id)
+                        ? Icons.check_circle
+                        : Icons.circle_outlined),
                 color: state.isCompleted(lesson.id)
                     ? theme.colorScheme.primary
                     : null,
+                semanticLabel: state.isCompleted(lesson.id)
+                    ? l10n.lessonCompleted
+                    : l10n.lessonNotStarted,
               ),
               title: Text(lesson.title),
+              subtitle: lesson.checkpoint ? Text(l10n.checkpointLabel) : null,
               onTap: () => context.push('/lesson/${lesson.id}'),
             ),
         ],

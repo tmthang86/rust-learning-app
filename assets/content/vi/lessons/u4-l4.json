@@ -1,0 +1,118 @@
+{
+  "id": "u4-l4",
+  "title": "Option",
+  "sections": [
+    {
+      "type": "text",
+      "text": "Nhiều ngôn ngữ dùng null để chỉ \"không có giá trị\", và việc quên kiểm tra nó gây ra sập chương trình. Rust không có null. Thay vào đó nó có enum Option:"
+    },
+    {
+      "type": "code",
+      "code": "// Defined in the standard library:\n// enum Option<T> {\n//     Some(T),\n//     None,\n// }\nfn main() {\n    let found: Option<i32> = Some(42);\n    let missing: Option<i32> = None;\n    println!(\"{:?} {:?}\", found, missing);\n}"
+    },
+    {
+      "type": "text",
+      "text": "Option<i32> nghĩa là \"một Option có thể chứa một i32\". Trong định nghĩa, T đại diện cho kiểu bất kỳ, nên bạn có thể có Option<String>, Option<bool> v.v. Cách viết với dấu ngoặc góc đó cũng xuất hiện trong Vec<i32> và HashMap<char, i32> ở phần sau. Unit 7 giải thích đầy đủ."
+    },
+    {
+      "type": "text",
+      "text": "Một hàm có thể không có câu trả lời thì trả về một Option. Bên gọi phải xử lý cả hai trường hợp trước khi dùng giá trị:"
+    },
+    {
+      "type": "code",
+      "code": "// items is a slice of string slices\nfn find_index(items: &[&str], target: &str) -> Option<usize> {\n    for i in 0..items.len() {\n        if items[i] == target {\n            return Some(i);\n        }\n    }\n    None\n}\n\nfn main() {\n    let colors = [\"red\", \"green\", \"blue\"];\n    println!(\"{:?}\", find_index(&colors, \"blue\"));\n    println!(\"{:?}\", find_index(&colors, \"pink\"));\n}"
+    },
+    {
+      "type": "text",
+      "text": "Một số hàm trợ giúp tiện lợi: unwrap_or trả về giá trị, hoặc một giá trị dự phòng nếu không có giá trị nào. is_some và is_none cho bạn biết bạn đang ở trường hợp nào. Để chỉ dùng giá trị khi nó có mặt, bạn sẽ dùng match hoặc if let, ở bài học tiếp theo."
+    },
+    {
+      "type": "code",
+      "code": "fn main() {\n    let nickname: Option<&str> = None;\n    println!(\"Hi, {}\", nickname.unwrap_or(\"friend\"));\n\n    let age: Option<u32> = Some(20);\n    println!(\"Do we know the age? {}\", age.is_some());\n    println!(\"Age: {}\", age.unwrap_or(0));\n}"
+    },
+    {
+      "type": "note",
+      "text": "unwrap() làm chương trình dừng nếu giá trị là None. Nó ổn trong các thử nghiệm nhanh, nhưng trong code thật hãy ưu tiên unwrap_or, match hoặc if let.",
+      "track": "starter"
+    },
+    {
+      "type": "note",
+      "text": "Option<T> là generic theo T. Nhiều phương thức của collection trả về nó, ví dụ get trên Vec (thật ra là một phương thức của slice), Iterator::next, str::find. Các combinator như map, and_then và ok_or cho phép bạn nối chuỗi các phép biến đổi mà không cần unwrap.",
+      "track": "fast"
+    }
+  ],
+  "exercise": {
+    "prompt": "first_even trả về một Option. Hãy hoàn thành even_or_zero để nó trả về số chẵn đầu tiên, hoặc 0 nếu không có số chẵn, bằng first_even và unwrap_or. Với [3, 7, 8, 10], main phải in ra: 8",
+    "starter": "fn first_even(numbers: &[i32]) -> Option<i32> {\n    for &n in numbers {   // each item is a &i32; &n gives the plain number n\n        if n % 2 == 0 {\n            return Some(n);\n        }\n    }\n    None\n}\n\nfn even_or_zero(numbers: &[i32]) -> i32 {\n    // first_even gives an Option<i32>. Turn it into a plain number,\n    // using 0 when it holds nothing.\n    let _ = first_even(numbers); // delete this line when you use it for real\n    todo!()\n}\n\nfn main() {\n    println!(\"{}\", even_or_zero(&[3, 7, 8, 10]));\n}",
+    "tests": [
+      {
+        "id": "finds-first-even",
+        "label": "Trả về 8 với [3, 7, 8, 10]",
+        "code": "check_eq!(even_or_zero(&[3, 7, 8, 10]), 8);"
+      },
+      {
+        "id": "main-prints-8",
+        "label": "Chương trình in ra 8",
+        "output": "8"
+      },
+      {
+        "id": "no-even",
+        "hidden": true,
+        "label": "No even number gives 0",
+        "code": "check_eq!(even_or_zero(&[1, 3, 5]), 0);"
+      },
+      {
+        "id": "empty",
+        "hidden": true,
+        "label": "An empty list gives 0",
+        "code": "check_eq!(even_or_zero(&[]), 0);"
+      },
+      {
+        "id": "first-not-last",
+        "hidden": true,
+        "label": "Takes the first even number, not the last",
+        "code": "check_eq!(even_or_zero(&[2, 4, 6]), 2);"
+      },
+      {
+        "id": "negative",
+        "hidden": true,
+        "code": "check_eq!(even_or_zero(&[-3, -4]), -4);"
+      }
+    ],
+    "solution": "fn first_even(numbers: &[i32]) -> Option<i32> {\n    for &n in numbers {   // each item is a &i32; &n gives the plain number n\n        if n % 2 == 0 {\n            return Some(n);\n        }\n    }\n    None\n}\n\nfn even_or_zero(numbers: &[i32]) -> i32 {\n    first_even(numbers).unwrap_or(0)\n}\n\nfn main() {\n    println!(\"{}\", even_or_zero(&[3, 7, 8, 10]));\n}",
+    "hints": [
+      "even_or_zero phải trả về một con số thuần, nhưng first_even trả về một Option, có thể chứa một con số hoặc không có gì.",
+      "Option có phương thức unwrap_or nhận một giá trị dự phòng. Hãy gọi first_even(numbers) rồi gọi .unwrap_or(0) trên kết quả của nó.",
+      "Hãy thay todo!() bằng first_even(numbers).unwrap_or(0) và không có dấu chấm phẩy, để nó là giá trị mà hàm trả về."
+    ]
+  },
+  "quiz": [
+    {
+      "question": "Hai variant của Option là gì?",
+      "options": [
+        "Ok và Err",
+        "Some và None",
+        "True và False"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "Rust dùng gì thay cho null?",
+      "options": [
+        "0",
+        "Option",
+        "Một chuỗi rỗng"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "None.unwrap_or(5) cho kết quả gì?",
+      "options": [
+        "None",
+        "5",
+        "Chương trình bị sập"
+      ],
+      "answer": 1
+    }
+  ]
+}

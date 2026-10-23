@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../l10n/l10n.dart';
 import 'theme.dart';
 
 /// Top-level navigation: a bottom bar on phones, a side rail on
@@ -10,10 +11,20 @@ class AppShell extends StatelessWidget {
 
   final StatefulNavigationShell navigationShell;
 
-  static const _destinations = [
-    (icon: Icons.school_outlined, selected: Icons.school, label: 'Learn'),
-    (icon: Icons.code_outlined, selected: Icons.code, label: 'Playground'),
-    (icon: Icons.insights_outlined, selected: Icons.insights, label: 'Progress'),
+  List<({IconData icon, IconData selected, String label})> _destinations(
+    AppLocalizations l10n,
+  ) => [
+    (icon: Icons.school_outlined, selected: Icons.school, label: l10n.navLearn),
+    (
+      icon: Icons.code_outlined,
+      selected: Icons.code,
+      label: l10n.navPlayground,
+    ),
+    (
+      icon: Icons.insights_outlined,
+      selected: Icons.insights,
+      label: l10n.navProgress,
+    ),
   ];
 
   void _onSelect(int index) => navigationShell.goBranch(
@@ -24,6 +35,7 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= wideBreakpoint;
+    final destinations = _destinations(context.l10n);
 
     if (wide) {
       return Scaffold(
@@ -34,7 +46,7 @@ class AppShell extends StatelessWidget {
               onDestinationSelected: _onSelect,
               labelType: NavigationRailLabelType.all,
               destinations: [
-                for (final d in _destinations)
+                for (final d in destinations)
                   NavigationRailDestination(
                     icon: Icon(d.icon),
                     selectedIcon: Icon(d.selected),
@@ -55,7 +67,7 @@ class AppShell extends StatelessWidget {
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: _onSelect,
         destinations: [
-          for (final d in _destinations)
+          for (final d in destinations)
             NavigationDestination(
               icon: Icon(d.icon),
               selectedIcon: Icon(d.selected),

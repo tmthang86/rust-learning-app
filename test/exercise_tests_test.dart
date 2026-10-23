@@ -8,7 +8,8 @@ import 'package:rust_learn/app/theme.dart';
 import 'package:rust_learn/data/app_state.dart';
 import 'package:rust_learn/data/models.dart';
 import 'package:rust_learn/features/editor/tests_panel.dart';
-import 'package:rust_learn/l10n/exercise_test_strings.dart';
+import 'package:rust_learn/l10n/app_localizations_en.dart';
+import 'package:rust_learn/l10n/app_localizations_vi.dart';
 import 'package:rust_learn/main.dart';
 import 'package:rust_learn/runner/code_runner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -71,6 +72,7 @@ TestResult _fail(
 );
 
 void main() {
+  final en = AppLocalizationsEn();
   group('Exercise and ExerciseTest', () {
     test('a lesson with tests parses them, hidden and all', () {
       final e = Exercise.fromJson(
@@ -278,6 +280,62 @@ void main() {
     });
   });
 
+  group('Vietnamese strings', () {
+    final vi = AppLocalizationsVi();
+
+    test('every reason code has its own Vietnamese sentence', () {
+      final seen = <String>{};
+      for (final code in [
+        'mem_limit',
+        'output_limit',
+        'stack_overflow',
+        'no_main',
+        'tests_dont_fit',
+        'harness',
+        'exit:3',
+      ]) {
+        expect(seen.add(testReasonText(vi, code)), isTrue, reason: code);
+      }
+      expect(testReasonText(vi, 'exit:3'), contains('3'));
+      expect(testReasonText(vi, 'new_code'), vi.testReasonUnknown);
+    });
+
+    test('the announcement follows the language', () {
+      final tests = [const ExerciseTest(id: 'a', label: 'Nhãn', code: 'x')];
+      final r = _graded({
+        'a': _fail('a', expected: 'Err(1)', actual: 'Ok(15)'),
+      });
+      final text = gradeAnnouncement(vi, r, tests, solved: false);
+      expect(text, startsWith('Đạt 0 trên 1 test.'));
+      expect(text, contains('Không đạt: Nhãn.'));
+      expect(text, contains('Ok(15)'));
+      expect(
+        gradeAnnouncement(vi, _graded({'a': _pass('a')}), tests, solved: true),
+        endsWith(vi.exerciseSolved),
+      );
+    });
+
+    test('plural forms work in both languages', () {
+      expect(en.announceTestsSummary(1, 1), '1 of 1 test passed.');
+      expect(en.announceTestsSummary(1, 2), '1 of 2 tests passed.');
+      expect(en.announceHiddenFailed(1), '1 hidden test failed.');
+      expect(en.announceHiddenFailed(3), '3 hidden tests failed.');
+      expect(vi.announceHiddenFailed(3), '3 test ẩn không đạt.');
+    });
+
+    test(
+      'a runner that needs an update is explained in the learner language',
+      () {
+        final r = GradeResult.unavailableFor(
+          const RunIssue(RunIssueKind.runnerNeedsUpdate),
+        );
+        expect(r.errorText(vi), vi.runIssueRunnerNeedsUpdate);
+        expect(r.errorText(en), en.runIssueRunnerNeedsUpdate);
+        expect(r.stderr, en.runIssueRunnerNeedsUpdate);
+      },
+    );
+  });
+
   group('reason codes', () {
     test('each code the runner sends has its own sentence', () {
       final seen = <String>{};
@@ -289,15 +347,12 @@ void main() {
         'tests_dont_fit',
         'harness',
       ]) {
-        final text = ExerciseTestStrings.reason(code);
-        expect(text, isNot(ExerciseTestStrings.reasonUnknown), reason: code);
+        final text = testReasonText(en, code);
+        expect(text, isNot(en.testReasonUnknown), reason: code);
         expect(seen.add(text), isTrue, reason: 'distinct text for $code');
       }
-      expect(ExerciseTestStrings.reason('exit:3'), contains('exit code 3'));
-      expect(
-        ExerciseTestStrings.reason('something_new'),
-        ExerciseTestStrings.reasonUnknown,
-      );
+      expect(testReasonText(en, 'exit:3'), contains('exit code 3'));
+      expect(testReasonText(en, 'something_new'), en.testReasonUnknown);
     });
   });
 
@@ -389,14 +444,14 @@ void main() {
     test('a runner without /grade says it needs an update', () async {
       final r = await answering(http.Response('Not Found', 404));
       expect(r.stage, RunStage.unavailable);
-      expect(r.stderr, ExerciseTestStrings.runnerNeedsUpdate);
+      expect(r.stderr, en.runIssueRunnerNeedsUpdate);
       expect(r.solves(tests), isFalse);
     });
 
     test('tests_invalid has its own message', () async {
       final r = await answering(http.Response(errorBody('tests_invalid'), 400));
       expect(r.stage, RunStage.unavailable);
-      expect(r.stderr, ExerciseTestStrings.testsInvalid);
+      expect(r.stderr, en.runIssueTestsInvalid);
     });
 
     test('429 says the runner is busy, using Retry-After', () async {
@@ -434,7 +489,7 @@ void main() {
     test('a 404 from /run keeps its old message', () {
       expect(
         HttpCodeRunner.errorMessage(http.Response('', 404)),
-        isNot(ExerciseTestStrings.runnerNeedsUpdate),
+        isNot(en.runIssueRunnerNeedsUpdate),
       );
     });
   });
@@ -454,7 +509,7 @@ void main() {
         'h1': _fail('h1'),
         'h2': _pass('h2'),
       });
-      final text = gradeAnnouncement(r, tests, solved: false);
+      final text = gradeAnnouncement(en, r, tests, solved: false);
       expect(text, startsWith('2 of 4 tests passed.'));
       expect(text, contains('Failed: 15 is too young.'));
       expect(text, contains('Expected Err(1), got Ok(15).'));
@@ -469,7 +524,7 @@ void main() {
         'h1': _fail('h1', actual: 'LEAK'),
         'h2': _fail('h2', actual: 'LEAK'),
       });
-      final text = gradeAnnouncement(r, tests, solved: false);
+      final text = gradeAnnouncement(en, r, tests, solved: false);
       expect(text, contains('2 hidden tests failed.'));
       expect(text, isNot(contains('LEAK')));
       expect(text, isNot(contains('Failed:')));
@@ -481,14 +536,14 @@ void main() {
         final long = 'x' * 500;
         final r = _graded({'a': _fail('a', expected: long, actual: long)});
         final one = [const ExerciseTest(id: 'a', label: 'A', code: 'x')];
-        final text = gradeAnnouncement(r, one, solved: false);
+        final text = gradeAnnouncement(en, r, one, solved: false);
         expect(text.length, lessThanOrEqualTo(201));
         expect(text, endsWith('…'));
 
         final all = _graded({'a': _pass('a')});
         expect(
-          gradeAnnouncement(all, one, solved: true),
-          '1 of 1 test passed. ${ExerciseTestStrings.allTestsPassed}',
+          gradeAnnouncement(en, all, one, solved: true),
+          '1 of 1 test passed. ${en.exerciseSolved}',
         );
       },
     );
@@ -502,8 +557,8 @@ void main() {
         reason: 'tests_dont_fit',
       );
       expect(
-        gradeAnnouncement(r, tests, solved: false),
-        ExerciseTestStrings.testsCantUseYourCode,
+        gradeAnnouncement(en, r, tests, solved: false),
+        en.testsCantUseYourCode,
       );
     });
   });
@@ -528,10 +583,11 @@ void main() {
     Future<void> open(
       WidgetTester tester,
       String lesson,
-      FakeRunner fake,
-    ) async {
+      FakeRunner fake, {
+      Map<String, Object> prefs = const {},
+    }) async {
       runner = fake;
-      mockPrefs({'track': 'fast'});
+      mockPrefs({'track': 'fast', ...prefs});
       tester.view.physicalSize = const Size(390, 2400);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -555,8 +611,8 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    Future<void> run(WidgetTester tester) async {
-      await tester.tap(find.text('Run'));
+    Future<void> run(WidgetTester tester, {String button = 'Run'}) async {
+      await tester.tap(find.text(button));
       await tester.pumpAndSettle();
     }
 
@@ -578,6 +634,36 @@ void main() {
         ]);
       },
     );
+
+    testWidgets('the panel and the verdict speak Vietnamese', (tester) async {
+      await open(
+        tester,
+        'graded',
+        FakeRunner(
+          dummy,
+          graded: _graded({
+            'fifteen-too-young': _fail('fifteen-too-young'),
+            'thirty-ok': _pass('thirty-ok'),
+            'boundary-18': _fail('boundary-18'),
+          }),
+        ),
+        prefs: {'language': 'vietnamese'},
+      );
+      final semantics = tester.ensureSemantics();
+
+      await run(tester, button: 'Chạy');
+
+      expect(find.text('Test: đạt 1 trên 3'), findsOneWidget);
+      expect(find.text('Test ẩn: đạt 0 trên 1'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Không đạt: 15 is too young'),
+        findsOneWidget,
+      );
+      expect(find.text('Mong đợi: ', findRichText: true), findsWidgets);
+      expect(find.text('Chưa đúng. Hãy tiếp tục thử nhé.'), findsOneWidget);
+      expect(find.textContaining('Expected'), findsNothing);
+      semantics.dispose();
+    });
 
     testWidgets('all tests passing solves the lesson once', (tester) async {
       await open(
@@ -628,10 +714,7 @@ void main() {
 
         expect(find.text('Tests: 2 of 3 passed'), findsOneWidget);
         expect(find.text('Hidden tests: 0 of 1 passed'), findsOneWidget);
-        expect(
-          find.text(ExerciseTestStrings.hiddenOnlyFailing),
-          findsOneWidget,
-        );
+        expect(find.text(en.hiddenOnlyFailing), findsOneWidget);
         expect(find.text('Not quite yet. Keep trying.'), findsOneWidget);
         expect(state.isCompleted('graded'), isFalse);
         // Nothing about the hidden test is in the widget tree...
@@ -722,7 +805,7 @@ void main() {
       final node = tester.getSemantics(
         find.bySemanticsLabel('Failed: 15 is too young'),
       );
-      expect(node.hint, ExerciseTestStrings.rowHintHide);
+      expect(node.hint, en.testRowHintHide);
       semantics.dispose();
     });
 
@@ -764,10 +847,7 @@ void main() {
 
       await run(tester);
 
-      expect(
-        find.text(ExerciseTestStrings.testsCantUseYourCode),
-        findsOneWidget,
-      );
+      expect(find.text(en.testsCantUseYourCode), findsOneWidget);
       expect(find.byType(TestsPanel), findsOneWidget);
       // The generated tests' compiler text is not shown as the learner's.
       expect(find.textContaining('E0425'), findsNothing);
@@ -806,7 +886,7 @@ void main() {
 
     for (final (name, message) in [
       ('unavailable', 'Offline'),
-      ('needs an update', ExerciseTestStrings.runnerNeedsUpdate),
+      ('needs an update', en.runIssueRunnerNeedsUpdate),
       ('busy', "You're running code very quickly. Try again in a minute."),
     ]) {
       testWidgets('a runner that is $name: message, no panel, not solved', (
@@ -845,10 +925,7 @@ void main() {
         expect(runner.gradeRequests, isEmpty);
         expect(find.text('Tests: 0 of 1 passed'), findsOneWidget);
         expect(
-          find.textContaining(
-            ExerciseTestStrings.legacyOutputLabel,
-            findRichText: true,
-          ),
+          find.textContaining(en.legacyOutputLabel, findRichText: true),
           findsOneWidget,
         );
         expect(state.isCompleted('legacy'), isFalse);

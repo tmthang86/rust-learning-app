@@ -14,6 +14,7 @@ import 'package:rust_learn/data/app_state.dart';
 import 'package:rust_learn/data/course_repository.dart';
 import 'package:rust_learn/features/editor/code_editor.dart';
 import 'package:rust_learn/features/progress/monetization_widgets.dart';
+import 'package:rust_learn/l10n/app_localizations_en.dart';
 import 'package:rust_learn/main.dart';
 import 'package:rust_learn/monetization/ad_banner.dart';
 import 'package:rust_learn/monetization/ad_config.dart';
@@ -716,14 +717,14 @@ void main() {
       await p.restore();
       expect(p.state, PurchaseFlowState.error);
       expect(p.errorWhileRestoring, isTrue);
-      expect(purchaseMessage(p), "Couldn't check for earlier purchases. "
+      expect(purchaseMessage(AppLocalizationsEn(), p), "Couldn't check for earlier purchases. "
           'Please try again.');
 
       store.restoreThrows = null;
       store.buyThrows = Exception('boom');
       await p.buy();
       expect(p.errorWhileRestoring, isFalse);
-      expect(purchaseMessage(p), "The purchase didn't go through. "
+      expect(purchaseMessage(AppLocalizationsEn(), p), "The purchase didn't go through. "
           'Please try again.');
     });
 

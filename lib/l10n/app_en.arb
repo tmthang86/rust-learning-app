@@ -1,0 +1,472 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "Learn Rust",
+  "@appTitle": {
+    "description": "The app's name. Keep the brand name 'Learn Rust' as is in every language."
+  },
+
+  "navLearn": "Learn",
+  "@navLearn": {
+    "description": "Bottom bar / side rail label for the course map tab."
+  },
+  "navPlayground": "Playground",
+  "@navPlayground": {
+    "description": "Navigation label and screen title for the free-form code editor."
+  },
+  "navProgress": "Progress",
+  "@navProgress": {
+    "description": "Navigation label and screen title for progress, account and settings."
+  },
+
+  "languageLabel": "Language",
+  "@languageLabel": {
+    "description": "Heading above the language picker and its accessibility label."
+  },
+  "languageSystem": "System",
+  "@languageSystem": {
+    "description": "Language picker option: follow the device language (Vietnamese if the device is set to Vietnamese, otherwise English). Keep it short, it sits in a three-segment button."
+  },
+  "languageEnglish": "English",
+  "@languageEnglish": {
+    "description": "Language picker option. Always written in the language it names, so it is the same in every translation."
+  },
+  "languageVietnamese": "Tiếng Việt",
+  "@languageVietnamese": {
+    "description": "Language picker option. Always written in the language it names, so it is the same in every translation."
+  },
+
+  "comingSoon": "Coming soon",
+  "@comingSoon": {
+    "description": "Subtitle of a course unit that has no lessons yet."
+  },
+  "lessonsDoneProgress": "{done} of {total} {total, plural, =1{lesson} other{lessons}} done",
+  "@lessonsDoneProgress": {
+    "description": "How many lessons the learner has finished, e.g. '3 of 5 lessons done'.",
+    "placeholders": {
+      "done": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+
+  "ageWelcome": "Welcome",
+  "@ageWelcome": {
+    "description": "Heading of the very first screen, above the birth-year question."
+  },
+  "ageQuestion": "What year were you born?",
+  "@ageQuestion": {
+    "description": "Label of the birth-year text field. Neutral age screen: do not add hints about which answers matter."
+  },
+  "ageErrorInvalidYear": "Please enter a four-digit year.",
+  "continueButton": "Continue",
+
+  "trackPickerPrompt": "Where would you like to start?",
+  "trackStarterTitle": "I'm new to programming",
+  "trackStarterSubtitle": "Start from the very basics. No experience needed.",
+  "trackFastTitle": "I already know another language",
+  "trackFastSubtitle": "Skip the basics and see how Rust compares to what you know.",
+
+  "learningTrack": "Learning track",
+  "trackNewToCoding": "New to coding",
+  "@trackNewToCoding": {
+    "description": "Segment of the learning-track switch (short)."
+  },
+  "trackExperienced": "Experienced",
+  "@trackExperienced": {
+    "description": "Segment of the learning-track switch (short)."
+  },
+
+  "accountSyncFailed": "Couldn't sync your progress right now.",
+  "accountSynced": "Progress is synced across your devices.",
+  "signOut": "Sign out",
+  "trySyncAgain": "Try syncing again",
+  "deleteAccount": "Delete account",
+  "saveProgressTitle": "Save your progress",
+  "saveProgressBody": "Sign in to keep your progress on all your devices.",
+  "signedInFallback": "Signed in",
+  "@signedInFallback": {
+    "description": "Shown instead of a name when the signed-in account has neither a display name nor an email."
+  },
+  "deviceOnlyTitle": "Your progress is saved on this device",
+  "childAccountOffer": "You were signed out of your account on this device. You can delete the account and the progress saved with it.",
+  "deleteYourAccount": "Delete your account",
+  "hideChildOffer": "Already deleted? Hide this",
+  "accountDeletedSnack": "Your account has been deleted.",
+
+  "continueWithApple": "Continue with Apple",
+  "continueWithGoogle": "Continue with Google",
+  "signOutAnywayTitle": "Sign out anyway?",
+  "signOutAnywayBody": "Progress on this device isn't saved to your account yet. Signing out removes it from this device, so it would be lost.\n\nStay signed in and try again when you are online to keep it.",
+  "staySignedIn": "Stay signed in",
+  "signOutAnyway": "Sign out anyway",
+  "deleteDialogTitle": "Delete your account?",
+  "deleteDialogBody": "This permanently deletes your account and the progress saved with it on all your devices. Progress on this device is cleared too. This can't be undone.\n\nYou'll be asked to sign in again to confirm.",
+  "@deleteDialogBody": {
+    "description": "Legal-relevant confirmation text. Must keep the exact meaning: permanent, all devices, cannot be undone, asked to sign in again."
+  },
+  "cancel": "Cancel",
+  "deleteMaybeFailed": "Your account may not have been deleted. {reason}",
+  "@deleteMaybeFailed": {
+    "placeholders": {"reason": {"type": "String"}}
+  },
+  "deleteFailed": "Your account wasn't deleted. {reason}",
+  "@deleteFailed": {
+    "placeholders": {"reason": {"type": "String"}}
+  },
+
+  "errCancelled": "Sign-in didn't finish. Please try again.",
+  "errPopupBlocked": "Your browser blocked the sign-in window. Allow pop-ups for this site, then try again.",
+  "errOtherProviderGoogle": "This email already has an account that uses Google. Please use \"Continue with Google\" instead.",
+  "@errOtherProviderGoogle": {
+    "description": "Shown after trying Apple sign-in. The quoted text must match the button label continueWithGoogle."
+  },
+  "errOtherProviderApple": "This email already has an account that uses Apple. Please use \"Continue with Apple\" instead.",
+  "@errOtherProviderApple": {
+    "description": "Shown after trying Google sign-in. The quoted text must match the button label continueWithApple."
+  },
+  "errOtherProviderUnknown": "This email already has an account with another sign-in method.",
+  "errWrongAccount": "That was a different account. Please confirm with the account you are signed in with.",
+  "errNetwork": "Couldn't reach the server. Check your connection and try again.",
+  "errUnconfirmed": "We couldn't confirm whether it went through. Your progress is kept on this device and nothing is sent to the cloud for now. When you're back online, open this again: the app checks with the server and either shows the account as deleted or lets you delete it again.",
+  "errNotSignedIn": "Please sign in first.",
+  "errAgeRestricted": "Accounts aren't available. Your progress is saved on this device.",
+  "errOther": "Something went wrong. Please try again.",
+
+  "deletePageHeading": "Learn Rust: account deletion",
+  "deletePageIntro": "You can delete your Learn Rust account at any time, here or in the app under Progress → Delete account.",
+  "@deletePageIntro": {
+    "description": "Public account-deletion page (required by Google Play). 'Progress → Delete account' names the Progress tab and the Delete account button, so keep those words consistent with navProgress and deleteAccount."
+  },
+  "deletePageWhatRemoved": "Deleting removes, right away and for good:\n• your account (the link to your Google or Apple sign-in)\n• your saved progress: your learning track and the lessons you finished\n\nNothing is kept after deletion. Progress on the device you delete from is cleared too; on other devices it stays only until you uninstall the app or clear its data.",
+  "@deletePageWhatRemoved": {
+    "description": "Legal-relevant description of what account deletion removes. Must keep the exact meaning and the two bullet points."
+  },
+  "deletePageChildNote": "For you, progress on this device stays, saved only here.",
+  "deletePageNoAccounts": "Accounts aren't switched on in this version of the app, so there is no account to delete. Progress stays only on your device; uninstalling the app or clearing its data removes it.",
+  "deletePageNothingToDelete": "There was no Learn Rust account for that sign-in, so there is nothing to delete. The sign-in was not kept.",
+  "deletePageSignInPrompt": "Sign in with the account you want to delete.",
+  "deletePageSignedInAs": "Signed in as {name}.",
+  "@deletePageSignedInAs": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "goToApp": "Go to the app",
+
+  "lessonLoadError": "This lesson couldn't be opened. Please update the app or try again later.",
+  "quizLoadError": "This quiz couldn't be opened. Please update the app or try again later.",
+  "lessonNotWritten": "This lesson is still being written.",
+  "quizMissing": "This lesson doesn't have a quiz.",
+  "backToLessons": "Back to lessons",
+  "tryIt": "Try it",
+  "@tryIt": {
+    "description": "Heading above a lesson's coding exercise."
+  },
+  "lessonComplete": "Lesson complete",
+  "takeQuiz": "Take the quiz",
+  "markAsDone": "Mark as done",
+
+  "quizTitle": "Quiz: {lesson}",
+  "@quizTitle": {
+    "placeholders": {"lesson": {"type": "String"}}
+  },
+  "quizQuestionOf": "Question {current} of {total}",
+  "@quizQuestionOf": {
+    "description": "Accessibility label of the quiz progress bar.",
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "quizCorrect": "Correct!",
+  "quizNotQuite": "Not quite. The answer is: {answer}",
+  "@quizNotQuite": {
+    "placeholders": {"answer": {"type": "String"}}
+  },
+  "quizCheck": "Check",
+  "quizNext": "Next",
+  "quizScore": "{correct} of {total} correct",
+  "@quizScore": {
+    "placeholders": {
+      "correct": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "quizLessonComplete": "Lesson complete!",
+  "quizTryAgain": "Review the lesson and try again.",
+  "optionCorrectYours": "Correct, your answer",
+  "@optionCorrectYours": {
+    "description": "Status read out for the quiz option the learner picked, when it is right."
+  },
+  "optionCorrect": "Correct answer",
+  "optionWrongYours": "Wrong, your answer",
+
+  "editorLabel": "Rust code",
+  "@editorLabel": {
+    "description": "Accessibility label of the code editor."
+  },
+  "editorHint": "Tab indents. Shift+Tab outdents selected lines, or leaves the editor when nothing is selected. Control+Enter runs the code.",
+  "runButton": "Run",
+  "resetButton": "Reset",
+  "exerciseSolved": "Correct! Nice work.",
+  "exerciseNotYet": "Not quite yet. Keep trying.",
+  "runHeadingCompile": "Your code didn't compile",
+  "runHeadingUnavailable": "Couldn't run your code",
+  "runHeadingTimeout": "Your program took too long",
+  "runHeadingOutput": "Output",
+  "runNoOutput": "(no output)",
+  "runWarningsTitle": "Compiler warnings (your program still ran)",
+  "announceCompile": "Your code didn't compile. {details}",
+  "@announceCompile": {
+    "description": "Read out by screen readers after a run. {details} is the start of the compiler's error text.",
+    "placeholders": {"details": {"type": "String"}}
+  },
+  "announceUnavailable": "Couldn't run your code. {details}",
+  "@announceUnavailable": {
+    "placeholders": {"details": {"type": "String"}}
+  },
+  "announceTimeout": "Your program took too long.",
+  "announceNoOutput": "Your program ran with no output.",
+  "announceOutput": "Output: {output}",
+  "@announceOutput": {
+    "placeholders": {"output": {"type": "String"}}
+  },
+  "announceWarnings": "There are compiler warnings.",
+  "announceRunCount": "Run {count}.",
+  "@announceRunCount": {
+    "description": "Prefix of the screen-reader label for the n-th run in an editor.",
+    "placeholders": {"count": {"type": "int"}}
+  },
+
+  "runIssueTimeout": "The code runner took too long to answer.",
+  "runIssueUnreachable": "Couldn't reach the code runner. Check your connection and try again.",
+  "runIssueUnreadable": "The code runner sent an answer the app could not read. Please try again.",
+  "runIssueForbidden": "This version of the app can't run code. Please update the app.",
+  "runIssueTooLong": "Your code is too long to run. Try making it shorter.",
+  "runIssueRateLimitedWait": "You're running code very quickly. Try again in {seconds, plural, =1{1 second} other{{seconds} seconds}}.",
+  "@runIssueRateLimitedWait": {
+    "placeholders": {"seconds": {"type": "int"}}
+  },
+  "runIssueRateLimited": "You're running code very quickly. Try again in a minute.",
+  "runIssueBusyWait": "The code runner is busy. Try again in {seconds, plural, =1{1 second} other{{seconds} seconds}}.",
+  "@runIssueBusyWait": {
+    "placeholders": {"seconds": {"type": "int"}}
+  },
+  "runIssueBusy": "The code runner is busy. Try again shortly.",
+  "runIssueEmptyCode": "There is no code to run yet. Write some code, then press Run.",
+  "runIssueProblem": "The code runner had a problem (error {status}). Please try again.",
+  "@runIssueProblem": {
+    "placeholders": {"status": {"type": "int"}}
+  },
+  "runIssueNotConfigured": "Running code is not set up in this build. Build with --dart-define=RUNNER_URL=<runner address>.",
+  "@runIssueNotConfigured": {
+    "description": "Developer-facing, shown only in builds without a runner. Keep the --dart-define text as is."
+  },
+  "runIssueUnverifiedDebug": "This copy of the app couldn't be verified, so code can't run right now. This is a debug build: add its App Check debug token in the Firebase console (App Check, Apps, Manage debug tokens) and try again.",
+  "@runIssueUnverifiedDebug": {
+    "description": "Developer-facing (debug builds only)."
+  },
+  "runIssueUnverifiedWeb": "This copy of the app couldn't be verified, so code can't run right now. Reload the page and try again.",
+  "runIssueUnverifiedIos": "This copy of the app couldn't be verified, so code can't run right now. Make sure the app is up to date (from the App Store) and try again.",
+  "runIssueUnverifiedAndroid": "This copy of the app couldn't be verified, so code can't run right now. Make sure the app is up to date (from Google Play) and try again.",
+  "runIssueUnverifiedOther": "This copy of the app couldn't be verified, so code can't run right now. Make sure the app is up to date and try again.",
+
+  "advertisement": "Advertisement",
+  "@advertisement": {
+    "description": "Label above every ad banner so it isn't mistaken for content."
+  },
+  "adReportViaUrl": "Please report the ad at {url}",
+  "@adReportViaUrl": {
+    "placeholders": {"url": {"type": "String"}}
+  },
+  "adReportViaEmail": "Please email {email} to report the ad.",
+  "@adReportViaEmail": {
+    "placeholders": {"email": {"type": "String"}}
+  },
+  "adReportSubject": "Report an ad",
+  "@adReportSubject": {
+    "description": "Subject line of the pre-filled email for reporting an ad."
+  },
+  "adReportIntro": "Please describe the ad (what it showed, why it seems inappropriate):",
+  "@adReportIntro": {
+    "description": "First line of the pre-filled email body. The technical details after it (time, screen, ad units) stay in English."
+  },
+  "reportAdTitle": "Report an ad",
+  "reportAdSubtitle": "Tell us about an ad that seemed inappropriate.",
+  "privacyOptionsTitle": "Privacy options",
+  "privacyOptionsSubtitle": "Change your choices about ads and data.",
+
+  "adsRemovedTitle": "Ads removed",
+  "adsRestoredThanks": "Your purchase was restored. Thank you!",
+  "adsThanks": "Thank you for supporting the app.",
+  "removeAdsTitle": "Remove ads",
+  "removeAdsBody": "A one-time purchase. Lessons and running code stay free either way.",
+  "@removeAdsBody": {
+    "description": "Purchase description. Must keep the exact meaning: one-time, lessons and running code stay free."
+  },
+  "removeAdsFor": "Remove ads for {price}",
+  "@removeAdsFor": {
+    "description": "Buy button. {price} is the store's formatted price, e.g. '$1.99'.",
+    "placeholders": {"price": {"type": "String"}}
+  },
+  "restorePurchases": "Restore purchases",
+  "purchaseStoreUnavailable": "The store isn't available right now.",
+  "purchaseItemMissing": "This purchase isn't available right now.",
+  "purchaseOpeningStore": "Opening the store…",
+  "purchaseRestoring": "Checking for earlier purchases…",
+  "purchasePending": "Your purchase is pending. Ads will be removed once the store confirms it.",
+  "purchaseNothingToRestore": "No earlier purchase was found for this store account.",
+  "purchaseCancelled": "Purchase cancelled.",
+  "storeAlreadyOwned": "You already own this. Tap \"Restore purchases\" to get it back.",
+  "@storeAlreadyOwned": {
+    "description": "The quoted text must match the button label restorePurchases."
+  },
+  "storeNetwork": "Couldn't reach the store. Check your connection and try again.",
+  "storeUnavailable": "Purchases aren't available on this device or account.",
+  "storeItemUnavailable": "This purchase isn't available right now. Please try again later.",
+  "storePendingTransaction": "An earlier purchase is still being processed. Please try again in a moment.",
+  "storeOther": "The purchase didn't go through. Please try again.",
+  "restoreNetwork": "Couldn't reach the store to check for earlier purchases. Check your connection and try again.",
+  "restoreOther": "Couldn't check for earlier purchases. Please try again.",
+
+  "showHintLeft": "Show a hint ({left} left)",
+  "@showHintLeft": {
+    "placeholders": {"left": {"type": "int"}}
+  },
+  "hintLabel": "Hint {number} of {total}: {hint}",
+  "@hintLabel": {
+    "placeholders": {"number": {"type": "int"}, "total": {"type": "int"}, "hint": {"type": "String"}}
+  },
+  "showSolution": "Show solution",
+  "solutionHeading": "Solution",
+  "solutionNote": "Seeing the solution does not finish the lesson. Run your code to complete it.",
+  "copyToEditor": "Copy to editor",
+  "copiedToEditor": "Solution copied to the editor",
+  "putMyCodeBack": "Put my code back",
+  "codeRestored": "Your code is back in the editor",
+  "solutionShown": "Solution shown below the Run button",
+  "errorCardHeading": "What this error means",
+  "errorTitle": "{key}: {title}",
+  "@errorTitle": {
+    "placeholders": {"key": {"type": "String"}, "title": {"type": "String"}}
+  },
+  "fixesHeading": "How to fix it",
+  "reviewLesson": "Review lesson: {title}",
+  "@reviewLesson": {
+    "placeholders": {"title": {"type": "String"}}
+  },
+  "officialPage": "More about this error (official Rust page):",
+  "streakLabel": "Streak",
+  "@streakLabel": {"description": "Label of the streak counter on Home: days in a row with a finished lesson. Vietnamese: chuỗi ngày học."},
+  "streakDays": "{days, plural, =1{1 day} other{{days} days}}",
+  "@streakDays": {"placeholders": {"days": {"type": "int"}}},
+  "xpTodayLabel": "XP today",
+  "@xpTodayLabel": {"description": "XP is the experience-point score for finished lessons; keep 'XP'."},
+  "xpProgress": "{today} / {goal} XP",
+  "@xpProgress": {"placeholders": {"today": {"type": "int"}, "goal": {"type": "int"}}},
+  "goalReachedToday": "Daily goal reached",
+  "@goalReachedToday": {"description": "Daily goal = a number of XP to earn each day."},
+  "keepItGoing": "Finish a lesson today to add to your streak.",
+  "streakSemanticsNone": "No streak yet",
+  "streakSemantics": "Streak: {days}",
+  "@streakSemantics": {"placeholders": {"days": {"type": "String"}}},
+  "goalReachedSemantics": "Daily goal reached, {xp} XP today",
+  "@goalReachedSemantics": {"placeholders": {"xp": {"type": "int"}}},
+  "goalProgressSemantics": "Today: {xp} of {goal} XP",
+  "@goalProgressSemantics": {"placeholders": {"xp": {"type": "int"}, "goal": {"type": "int"}}},
+  "homeSemanticsJoin": "{streak}. {goal}.",
+  "@homeSemanticsJoin": {"description": "Screen-reader summary of Home: the streak part and the daily goal part.", "placeholders": {"streak": {"type": "String"}, "goal": {"type": "String"}}},
+  "xpEarned": "+{xp} XP",
+  "@xpEarned": {"placeholders": {"xp": {"type": "int"}}},
+  "dailyGoalReachedMessage": "Daily goal reached. Nice work, that's enough for today!",
+  "xpEarnedWithGoalJoin": "{earned}. {message}",
+  "@xpEarnedWithGoalJoin": {"description": "{earned} is xpEarned, {message} is dailyGoalReachedMessage.", "placeholders": {"earned": {"type": "String"}, "message": {"type": "String"}}},
+  "promptTitle": "Want a daily reminder?",
+  "promptBody": "We can send one gentle reminder a day. You can turn it off any time in Progress.",
+  "promptTurnOn": "Turn on",
+  "promptNotNow": "Not now",
+  "statsTitle": "Streak and XP",
+  "totalXp": "Total XP",
+  "currentStreak": "Current streak",
+  "longestStreak": "Longest streak",
+  "freezesHeld": "Streak freezes",
+  "@freezesHeld": {"description": "A streak freeze covers one missed day."},
+  "freezesHelp": "A freeze covers a day you miss, so your streak keeps going. You earn one for every 7 days in a row and can hold 2.",
+  "statsSemantics": "Total XP {totalXp}. Current streak {current}. Longest streak {longest}. Streak freezes held {freezes}.",
+  "@statsSemantics": {"placeholders": {"totalXp": {"type": "int"}, "current": {"type": "String"}, "longest": {"type": "String"}, "freezes": {"type": "int"}}},
+  "dailyGoalTitle": "Daily goal",
+  "goalCasual": "Casual",
+  "goalRegular": "Regular",
+  "goalSerious": "Serious",
+  "goalOption": "{name}, {xp} XP",
+  "@goalOption": {"placeholders": {"name": {"type": "String"}, "xp": {"type": "int"}}},
+  "remindersTitle": "Daily reminder",
+  "remindersSubtitle": "One notification a day at the time you pick.",
+  "reminderTimeTitle": "Reminder time",
+  "remindersDenied": "Notifications are turned off for this app. To get reminders, turn them on in your device settings, then try again.",
+  "remindersSwitchedOffBySystem": "Reminders were turned off because notifications are blocked in your device settings.",
+  "reminderTitle": "Time for a little Rust?",
+  "@reminderTitle": {"description": "Title of the daily reminder notification. Neutral on purpose: no guilt wording."},
+  "reminderBody": "Your next lesson is ready.",
+  "reminderChannelName": "Study reminders",
+  "@reminderChannelName": {"description": "Android notification channel name."},
+  "reminderChannelDescription": "A daily reminder to practise, if you turn it on.",
+  "checkpointLabel": "Checkpoint",
+  "@checkpointLabel": {"description": "Shown under the title of a unit's end-of-unit challenge in the course map."},
+  "lessonCompleted": "Completed",
+  "lessonNotStarted": "Not started",
+
+  "testsSummary": "Tests: {passed} of {total} passed",
+  "@testsSummary": {"description": "Heading of the tests panel after a run.", "placeholders": {"passed": {"type": "int"}, "total": {"type": "int"}}},
+  "hiddenSummary": "Hidden tests: {passed} of {total} passed",
+  "@hiddenSummary": {"placeholders": {"passed": {"type": "int"}, "total": {"type": "int"}}},
+  "testStatusPassed": "Passed",
+  "@testStatusPassed": {"description": "Status word of a test row. Never colour alone."},
+  "testStatusFailed": "Failed",
+  "testStatusTookTooLong": "Took too long",
+  "testStatusDidNotRun": "Didn't run",
+  "testStatusCrashed": "Stopped",
+  "testStatusCouldNotRun": "Couldn't run",
+  "testRowLabel": "{status}: {label}",
+  "@testRowLabel": {"description": "Screen-reader label of a test row: the status word, then the test's label.", "placeholders": {"status": {"type": "String"}, "label": {"type": "String"}}},
+  "testRowHintShow": "Double tap to show details",
+  "testRowHintHide": "Double tap to hide details",
+  "testChecked": "Checked",
+  "testExpected": "Expected",
+  "testGot": "Got",
+  "testPrinted": "Printed during this test",
+  "testShowCode": "See the test code",
+  "testPanicked": "The code panicked: {message}",
+  "@testPanicked": {"placeholders": {"message": {"type": "String"}}},
+  "testPanickedAt": "The code panicked at line {line}: {message}",
+  "@testPanickedAt": {"placeholders": {"line": {"type": "int"}, "message": {"type": "String"}}},
+  "testDidNotPanic": "This test expects the code to panic, but it did not.",
+  "testTimedOut": "The code took too long to finish.",
+  "testNotRun": "This test didn't run.",
+  "testFirstDifference": "First difference: line {line}",
+  "@testFirstDifference": {"placeholders": {"line": {"type": "int"}}},
+  "testMissingLine": "(nothing)",
+  "@testMissingLine": {"description": "Shown in place of a line the output does not have."},
+  "testsCantUseYourCode": "Your code compiles, but the tests can't use it. Keep the names and types from the starter.",
+  "hiddenTestCantUseYourCode": "A hidden test couldn't use your code: {message}",
+  "@hiddenTestCantUseYourCode": {"placeholders": {"message": {"type": "String"}}},
+  "hiddenOnlyFailing": "Your code passes the examples but not every hidden test. Try other inputs, like edge cases.",
+  "legacyOutputLabel": "The program prints the expected output",
+  "@legacyOutputLabel": {"description": "Label of the one test of an exercise that only has an expected output."},
+  "announceTestsSummary": "{passed} of {total} {total, plural, =1{test} other{tests}} passed.",
+  "@announceTestsSummary": {"description": "Start of the screen-reader announcement after a graded run.", "placeholders": {"passed": {"type": "int"}, "total": {"type": "int"}}},
+  "announceTestFailed": "Failed: {label}.",
+  "@announceTestFailed": {"placeholders": {"label": {"type": "String"}}},
+  "announceHiddenFailed": "{count, plural, =1{1 hidden test failed.} other{{count} hidden tests failed.}}",
+  "@announceHiddenFailed": {"placeholders": {"count": {"type": "int"}}},
+  "testReasonMemLimit": "The program used too much memory.",
+  "@testReasonMemLimit": {"description": "Why a test stopped; one per reason code the runner sends."},
+  "testReasonOutputLimit": "The program printed too much output.",
+  "testReasonStackOverflow": "The program overflowed its stack (a function calling itself too deeply).",
+  "testReasonExit": "The program stopped with exit code {code}.",
+  "@testReasonExit": {"placeholders": {"code": {"type": "String"}}},
+  "testReasonNoMain": "The tests could not find your main function.",
+  "testReasonTestsDontFit": "This test couldn't use your code. Keep the names and types from the starter.",
+  "testReasonHarness": "The tests could not be built with your code. Please try again, or start from the starter.",
+  "testReasonUnknown": "The program stopped unexpectedly.",
+  "runIssueRunnerNeedsUpdate": "The code runner needs an update. Try again later.",
+  "runIssueTestsInvalid": "This exercise couldn't be checked. Please update the app."
+}

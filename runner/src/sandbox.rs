@@ -543,7 +543,13 @@ impl DockerSandbox {
             .args(["--memory-swap", &format!("{}m", limits.memory_mb)])
             .args(["--cpus", &limits.cpus.to_string()])
             .args(["--pids-limit", &limits.max_pids.to_string()])
-            .args(["--ulimit", "core=0"])
+            // No core dumps. A limit of 0 is ignored when the host's
+            // core_pattern pipes dumps to a program (Ubuntu's apport,
+            // systemd-coredump); the kernel treats a limit of 1 as "never
+            // dump", for files and pipes alike (fs/coredump.c). Without this
+            // a program that aborts hands its memory to a host helper and
+            // keeps the job busy until the time limit.
+            .args(["--ulimit", "core=1:1"])
             .args([
                 "--read-only",
                 "--tmpfs",

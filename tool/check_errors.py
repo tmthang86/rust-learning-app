@@ -15,7 +15,13 @@
 - NEGATIVE programs (similar-looking errors that must not trigger a codeless
   rule, e.g. Rust's "no ternary operator") are not matched by any rule,
 - en.json text has no backticks (the app shows plain text),
-- any other <lang>.json in the folder only uses keys that exist in index.json.
+- any other <lang>.json in the folder (en is the source) only uses keys that
+  exist in index.json, may leave entries out (the app then shows the English
+  one), and for each entry it has: only the fields title, explanation and fixes
+  (the prose; everything else about an error comes from index.json), the same
+  number of fixes as English, and every piece of code in the English prose
+  (&name, .clone(), E0382, i32, ...) copied as is (same rule as for lessons,
+  see docs/i18n/README.md).
 
 Usage: python3 tool/check_errors.py   (needs rustc on PATH)
 """
@@ -26,6 +32,8 @@ import os
 import subprocess
 import sys
 import tempfile
+
+from check_lessons import lesson_vocabulary, missing_code
 
 # Same flags the code runner uses (runner/src/sandbox.rs).
 RUSTC_FLAGS = ["--edition", "2024", "-C", "opt-level=1", "-C", "overflow-checks=on"]
@@ -88,6 +96,31 @@ def check_text(key, e, where, problems):
     extra = set(e) - {"title", "explanation", "fixes"}
     if extra:
         problems.append(f"{key}: {where} has unknown fields {sorted(extra)}")
+
+
+def check_translation(key, english, tr, name, problems):
+    """A translated entry has as many fixes as the English one and keeps the
+    code in the English prose (names, calls, types, error codes) as it is."""
+    en_fixes = english.get("fixes") if isinstance(english.get("fixes"), list) else []
+    tr_fixes = tr.get("fixes") if isinstance(tr.get("fixes"), list) else []
+    if len(tr_fixes) != len(en_fixes):
+        problems.append(
+            f"{key}: {name} has {len(tr_fixes)} fixes, English has {len(en_fixes)}"
+        )
+    pairs = [("title", english.get("title"), tr.get("title")),
+             ("explanation", english.get("explanation"), tr.get("explanation"))]
+    pairs += [(f"fixes[{i}]", a, b) for i, (a, b) in enumerate(zip(en_fixes, tr_fixes))]
+    vocab = lesson_vocabulary({})
+    for field, en_text, tr_text in pairs:
+        if not (isinstance(en_text, str) and isinstance(tr_text, str)):
+            continue
+        missing = missing_code(en_text, tr_text, vocab)
+        if missing:
+            problems.append(
+                f"{key}: {name} {field} changes code from the English text: "
+                + ", ".join(repr(t) for t in missing)
+                + " missing (code in prose must be copied as is)"
+            )
 
 
 def main():
@@ -198,11 +231,17 @@ def main():
         if name in ("index.json", "en.json"):
             continue
         data = json.load(open(path))
+        if not isinstance(data, dict):
+            problems.append(f"{name}: should be an object of error entries")
+            continue
         for key, e in data.items():
             if key not in keys:
                 problems.append(f"{name}: unknown key {key!r}")
+            elif not isinstance(e, dict):
+                problems.append(f"{key}: {name} entry should be an object")
             else:
                 check_text(key, e, name, problems)
+                check_translation(key, en[key], e, name, problems)
 
     for p in problems:
         print("FAIL", p)
