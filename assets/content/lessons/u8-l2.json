@@ -62,14 +62,48 @@
     }
   ],
   "exercise": {
-    "prompt": "The starter prints 15. Below the first println!, add a call counter: a variable that starts at 0, and a closure that adds 1 to it. Call the closure three times, then print the counter. It should print two lines: 15 and 3. Hint: let mut calls = 0; let mut count_call = || calls += 1;",
-    "starter": "fn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n}",
-    "expectedOutput": "15\n3",
-    "solution": "fn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n\n    let mut calls = 0;\n    let mut count_call = || calls += 1;\n    count_call();\n    count_call();\n    count_call();\n    println!(\"{calls}\");\n}",
+    "prompt": "The starter prints 15. Finish count_calls: make a counter that starts at 0 and a closure that adds 1 to it, call the closure as many times as times says, then return the counter. main prints count_calls(3) after the 15. It should print two lines: 15 and 3. Hint: let mut calls = 0; let mut count_call = || calls += 1;",
+    "starter": "fn count_calls(times: u32) -> u32 {\n    // make a counter that starts at 0 and a closure that adds 1 to it,\n    // call the closure `times` times, then return the counter\n    let _ = times; // delete this line when you use times for real\n    0\n}\n\nfn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n    println!(\"{}\", count_calls(3));\n}",
+    "tests": [
+      {
+        "id": "three-calls",
+        "label": "count_calls(3) is 3",
+        "code": "check_eq!(count_calls(3), 3);"
+      },
+      {
+        "id": "five-calls",
+        "label": "count_calls(5) is 5",
+        "code": "check_eq!(count_calls(5), 5);"
+      },
+      {
+        "id": "main-prints-15-and-3",
+        "label": "The program prints 15, then 3",
+        "output": "15\n3"
+      },
+      {
+        "id": "no-calls",
+        "hidden": true,
+        "label": "the closure is never called",
+        "code": "check_eq!(count_calls(0), 0);"
+      },
+      {
+        "id": "one-call",
+        "hidden": true,
+        "label": "one call",
+        "code": "check_eq!(count_calls(1), 1);"
+      },
+      {
+        "id": "many-calls",
+        "hidden": true,
+        "label": "a large count a hard-coded 3 would not match",
+        "code": "check_eq!(count_calls(1000), 1000);"
+      }
+    ],
+    "solution": "fn count_calls(times: u32) -> u32 {\n    let mut calls = 0;\n    let mut count_call = || calls += 1;\n    for _ in 0..times {\n        count_call();\n    }\n    calls\n}\n\nfn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n    println!(\"{}\", count_calls(3));\n}",
     "hints": [
       "You need a counter that a closure changes each time it is called. A closure that changes a captured variable needs special care about mut.",
       "Declare both with mut: let mut calls = 0; and let mut count_call = || calls += 1;. The closure must be mut because calling it changes the counter.",
-      "Call count_call() three times, one call per line. Print calls only after the last call, because the closure still borrows it until then."
+      "Call count_call() inside a loop that runs times times, such as for _ in 0..times. Return calls only after the loop, because the closure still borrows it until then."
     ]
   },
   "quiz": [

@@ -50,14 +50,60 @@
     }
   ],
   "exercise": {
-    "prompt": "last_item only works on slices of i32. Make it work for slices of any type, so it also works on a list of words. Then, at the end of main, make an array of three words (red, green and blue) and print its last item. It should print two lines: 15 and blue. Hint: fn last_item<T>(items: &[T]) -> &T, and let words = [\"red\", \"green\", \"blue\"];",
-    "starter": "fn last_item(items: &[i32]) -> &i32 {\n    &items[items.len() - 1]\n}\n\nfn main() {\n    let numbers = [4, 8, 15];\n    println!(\"{}\", last_item(&numbers));\n}",
-    "expectedOutput": "15\nblue",
+    "prompt": "last_item only works on slices of i32, so the call with the list of words in main doesn't compile. Make it work for slices of any type. It should print two lines: 15 and blue. Hint: fn last_item<T>(items: &[T]) -> &T",
+    "starter": "fn last_item(items: &[i32]) -> &i32 {\n    &items[items.len() - 1]\n}\n\nfn main() {\n    let numbers = [4, 8, 15];\n    println!(\"{}\", last_item(&numbers));\n    let words = [\"red\", \"green\", \"blue\"];\n    println!(\"{}\", last_item(&words));\n}",
+    "tests": [
+      {
+        "id": "numbers",
+        "label": "The last of [4, 8, 15] is 15",
+        "code": "check_eq!(last_item(&[4, 8, 15]), &15);"
+      },
+      {
+        "id": "words",
+        "label": "The last of red, green, blue is blue",
+        "code": "check_eq!(last_item(&[\"red\", \"green\", \"blue\"]), &\"blue\");"
+      },
+      {
+        "id": "main-prints-15-and-blue",
+        "label": "The program prints 15, then blue",
+        "output": "15\nblue"
+      },
+      {
+        "id": "one-item",
+        "hidden": true,
+        "label": "a slice with one item",
+        "code": "check_eq!(last_item(&[7]), &7);"
+      },
+      {
+        "id": "chars",
+        "hidden": true,
+        "label": "chars",
+        "code": "check_eq!(last_item(&['x', 'y', 'z']), &'z');"
+      },
+      {
+        "id": "floats",
+        "hidden": true,
+        "label": "floats",
+        "code": "check_eq!(last_item(&[1.5, 2.5]), &2.5);"
+      },
+      {
+        "id": "strings",
+        "hidden": true,
+        "label": "a Vec of String, as a slice",
+        "code": "let v = vec![String::from(\"a\"), String::from(\"b\")];\ncheck_eq!(last_item(&v), &String::from(\"b\"));"
+      },
+      {
+        "id": "no-traits-needed",
+        "hidden": true,
+        "label": "T has no bounds: any type works",
+        "code": "struct Marker(u8);\nlet items = [Marker(1), Marker(2)];\ncheck_eq!(last_item(&items).0, 2);"
+      }
+    ],
     "solution": "fn last_item<T>(items: &[T]) -> &T {\n    &items[items.len() - 1]\n}\n\nfn main() {\n    let numbers = [4, 8, 15];\n    println!(\"{}\", last_item(&numbers));\n    let words = [\"red\", \"green\", \"blue\"];\n    println!(\"{}\", last_item(&words));\n}",
     "hints": [
       "The function only accepts i32 because of its parameter and its return type. Which types there could become a placeholder, like T in swap_pair?",
       "Put a type parameter in angle brackets after the function name, then use T in place of i32 in the parameter and in the return type.",
-      "Write fn last_item<T>(items: &[T]) -> &T. Then, at the end of main, make an array of the three words and print last_item(&words), just like the call for numbers."
+      "Write fn last_item<T>(items: &[T]) -> &T. Both calls in main then work: the one with numbers and the one with words."
     ]
   },
   "quiz": [

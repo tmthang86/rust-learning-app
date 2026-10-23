@@ -56,7 +56,47 @@
   "exercise": {
     "prompt": "Counter phải đưa ra các số từ 1 đến max. Hãy điền next sao cho nó trả về None khi current lớn hơn max. Cho đến lúc đó nó trả về Some của giá trị hiện tại, và tăng current lên 1 cho lần gọi tiếp theo. Chương trình phải in ra 1, 2, 3 và 4 trên bốn dòng. Code khởi đầu hiện cảnh báo rằng current và max không bao giờ được đọc; chúng sẽ biến mất khi bạn viết next. Gợi ý: lưu self.current vào một biến, cộng 1 vào self.current, rồi trả về Some(biến đó).",
     "starter": "struct Counter {\n    current: u32,\n    max: u32,\n}\n\nimpl Iterator for Counter {\n    type Item = u32;\n\n    fn next(&mut self) -> Option<u32> {\n        // write the logic here; for now it always says \"no more items\"\n        None\n    }\n}\n\nfn main() {\n    let counter = Counter { current: 1, max: 4 };\n    for n in counter {\n        println!(\"{n}\");\n    }\n}",
-    "expectedOutput": "1\n2\n3\n4",
+    "tests": [
+      {
+        "id": "one-to-four",
+        "label": "Đếm từ 1 đến 4",
+        "code": "check_eq!(Counter { current: 1, max: 4 }.collect::<Vec<u32>>(), vec![1, 2, 3, 4]);"
+      },
+      {
+        "id": "single-item",
+        "label": "Đếm từ 1 đến 1: chỉ có một phần tử",
+        "code": "check_eq!(Counter { current: 1, max: 1 }.collect::<Vec<u32>>(), vec![1]);"
+      },
+      {
+        "id": "main-prints-four-lines",
+        "label": "Chương trình in ra 1, 2, 3 và 4",
+        "output": "1\n2\n3\n4"
+      },
+      {
+        "id": "already-past-max",
+        "hidden": true,
+        "label": "nothing to give out when current > max",
+        "code": "check_eq!(Counter { current: 5, max: 3 }.next(), None);"
+      },
+      {
+        "id": "other-range",
+        "hidden": true,
+        "label": "a range that does not start at 1",
+        "code": "check_eq!(Counter { current: 5, max: 7 }.collect::<Vec<u32>>(), vec![5, 6, 7]);"
+      },
+      {
+        "id": "next-by-hand",
+        "hidden": true,
+        "label": "calling next one at a time, and after the end",
+        "code": "let mut c = Counter { current: 1, max: 2 };\ncheck_eq!(c.next(), Some(1));\ncheck_eq!(c.next(), Some(2));\ncheck_eq!(c.next(), None);\ncheck_eq!(c.next(), None);"
+      },
+      {
+        "id": "works-with-adapters",
+        "hidden": true,
+        "label": "the Iterator adapters work on it",
+        "code": "check_eq!(Counter { current: 1, max: 100 }.sum::<u32>(), 5050);"
+      }
+    ],
     "solution": "struct Counter {\n    current: u32,\n    max: u32,\n}\n\nimpl Iterator for Counter {\n    type Item = u32;\n\n    fn next(&mut self) -> Option<u32> {\n        if self.current > self.max {\n            None\n        } else {\n            let value = self.current;\n            self.current += 1;\n            Some(value)\n        }\n    }\n}\n\nfn main() {\n    let counter = Counter { current: 1, max: 4 };\n    for n in counter {\n        println!(\"{n}\");\n    }\n}",
     "hints": [
       "Mỗi lần gọi next phải đưa ra số hiện tại rồi tiến lên. Khi current đã vượt quá max, không còn gì để đưa ra nữa.",

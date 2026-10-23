@@ -70,14 +70,48 @@
     }
   ],
   "exercise": {
-    "prompt": "show takes only an i32. Make it work for any type that can be printed with {}, and add a call with a string at the end of main. It should print two lines: <5> and <hi>. Hint: add use std::fmt::Display; at the top, and write fn show<T: Display>(item: T).",
-    "starter": "fn show(item: i32) {\n    println!(\"<{item}>\");\n}\n\nfn main() {\n    show(5);\n}",
-    "expectedOutput": "<5>\n<hi>",
+    "prompt": "show takes only an i32, so show(\"hi\") in main doesn't compile. Make it work for any type that can be printed with {}. It should print two lines: <5> and <hi>. Hint: add use std::fmt::Display; at the top, and write fn show<T: Display>(item: T).",
+    "starter": "fn show(item: i32) {\n    println!(\"<{item}>\");\n}\n\nfn main() {\n    show(5);\n    show(\"hi\");\n}",
+    "tests": [
+      {
+        "id": "number",
+        "label": "show(5) prints <5>",
+        "code": "check_eq!(output_of(|| show(5)), \"<5>\\n\");"
+      },
+      {
+        "id": "text",
+        "label": "show(\"hi\") prints <hi>",
+        "code": "check_eq!(output_of(|| show(\"hi\")), \"<hi>\\n\");"
+      },
+      {
+        "id": "main-prints-both",
+        "label": "The program prints <5>, then <hi>",
+        "output": "<5>\n<hi>"
+      },
+      {
+        "id": "float",
+        "hidden": true,
+        "label": "a float",
+        "code": "check_eq!(output_of(|| show(2.5)), \"<2.5>\\n\");"
+      },
+      {
+        "id": "owned-string",
+        "hidden": true,
+        "label": "a String",
+        "code": "check_eq!(output_of(|| show(String::from(\"owned\"))), \"<owned>\\n\");"
+      },
+      {
+        "id": "char-and-bool",
+        "hidden": true,
+        "label": "other Display types",
+        "code": "check_eq!(output_of(|| show('x')), \"<x>\\n\");\ncheck_eq!(output_of(|| show(true)), \"<true>\\n\");"
+      }
+    ],
     "solution": "use std::fmt::Display;\n\nfn show<T: Display>(item: T) {\n    println!(\"<{item}>\");\n}\n\nfn main() {\n    show(5);\n    show(\"hi\");\n}",
     "hints": [
       "show takes only an i32 now. It must accept any type that can be printed with {}. Which trait is the one for {}?",
       "Add a type parameter with a trait bound after the function name: <T: Display>. Use T as the type of item. Display needs a use line at the top of the file.",
-      "Add use std::fmt::Display; at the top and change the signature to fn show<T: Display>(item: T). Then call show(\"hi\") at the end of main."
+      "Add use std::fmt::Display; at the top and change the signature to fn show<T: Display>(item: T). main already calls show(\"hi\")."
     ]
   },
   "quiz": [

@@ -62,14 +62,48 @@
     }
   ],
   "exercise": {
-    "prompt": "Code khởi đầu in ra 15. Bên dưới println! đầu tiên, hãy thêm một bộ đếm số lần gọi: một biến bắt đầu từ 0, và một closure cộng 1 vào nó. Hãy gọi closure ba lần, rồi in bộ đếm. Chương trình phải in ra hai dòng: 15 và 3. Gợi ý: let mut calls = 0; let mut count_call = || calls += 1;",
-    "starter": "fn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n}",
-    "expectedOutput": "15\n3",
-    "solution": "fn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n\n    let mut calls = 0;\n    let mut count_call = || calls += 1;\n    count_call();\n    count_call();\n    count_call();\n    println!(\"{calls}\");\n}",
+    "prompt": "Bản khởi đầu in ra 15. Hãy hoàn thành count_calls: tạo một biến đếm bắt đầu từ 0 và một closure cộng 1 vào nó, gọi closure đó số lần bằng giá trị của times, rồi trả về biến đếm. main in count_calls(3) sau số 15. Nó phải in ra hai dòng: 15 và 3. Gợi ý: let mut calls = 0; let mut count_call = || calls += 1;",
+    "starter": "fn count_calls(times: u32) -> u32 {\n    // make a counter that starts at 0 and a closure that adds 1 to it,\n    // call the closure `times` times, then return the counter\n    let _ = times; // delete this line when you use times for real\n    0\n}\n\nfn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n    println!(\"{}\", count_calls(3));\n}",
+    "tests": [
+      {
+        "id": "three-calls",
+        "label": "count_calls(3) là 3",
+        "code": "check_eq!(count_calls(3), 3);"
+      },
+      {
+        "id": "five-calls",
+        "label": "count_calls(5) là 5",
+        "code": "check_eq!(count_calls(5), 5);"
+      },
+      {
+        "id": "main-prints-15-and-3",
+        "label": "Chương trình in ra 15, rồi 3",
+        "output": "15\n3"
+      },
+      {
+        "id": "no-calls",
+        "hidden": true,
+        "label": "the closure is never called",
+        "code": "check_eq!(count_calls(0), 0);"
+      },
+      {
+        "id": "one-call",
+        "hidden": true,
+        "label": "one call",
+        "code": "check_eq!(count_calls(1), 1);"
+      },
+      {
+        "id": "many-calls",
+        "hidden": true,
+        "label": "a large count a hard-coded 3 would not match",
+        "code": "check_eq!(count_calls(1000), 1000);"
+      }
+    ],
+    "solution": "fn count_calls(times: u32) -> u32 {\n    let mut calls = 0;\n    let mut count_call = || calls += 1;\n    for _ in 0..times {\n        count_call();\n    }\n    calls\n}\n\nfn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n    println!(\"{}\", count_calls(3));\n}",
     "hints": [
-      "Bạn cần một bộ đếm mà closure thay đổi mỗi lần nó được gọi. Một closure thay đổi một biến đã capture cần được chú ý đặc biệt về mut.",
-      "Hãy khai báo cả hai với mut: let mut calls = 0; và let mut count_call = || calls += 1;. Closure phải là mut vì việc gọi nó làm thay đổi bộ đếm.",
-      "Hãy gọi count_call() ba lần, mỗi lần một dòng. Chỉ in calls sau lần gọi cuối cùng, vì cho đến lúc đó closure vẫn đang mượn nó."
+      "Bạn cần một biến đếm mà closure thay đổi mỗi lần nó được gọi. Một closure thay đổi biến mà nó capture cần đặc biệt chú ý đến mut.",
+      "Hãy khai báo cả hai với mut: let mut calls = 0; và let mut count_call = || calls += 1;. Closure phải là mut vì gọi nó làm thay đổi biến đếm.",
+      "Hãy gọi count_call() bên trong một vòng lặp chạy times lần, chẳng hạn for _ in 0..times. Chỉ trả về calls sau vòng lặp, vì closure vẫn mượn nó cho đến lúc đó."
     ]
   },
   "quiz": [

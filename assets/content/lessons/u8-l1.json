@@ -54,14 +54,54 @@
     }
   ],
   "exercise": {
-    "prompt": "apply calls a closure on a number. The starter passes it a doubling closure. Below that, make a closure that subtracts 5 from its argument, pass it to apply together with 50, and print the result. It should print two lines: 42 and 45. Hint: let minus_five = |x| x - 5;",
-    "starter": "fn apply(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(value)\n}\n\nfn main() {\n    let doubled = apply(|x| x * 2, 21);\n    println!(\"{doubled}\");\n}",
-    "expectedOutput": "42\n45",
-    "solution": "fn apply(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(value)\n}\n\nfn main() {\n    let doubled = apply(|x| x * 2, 21);\n    println!(\"{doubled}\");\n    let minus_five = |x| x - 5;\n    println!(\"{}\", apply(minus_five, 50));\n}",
+    "prompt": "apply calls a closure on a number. The starter passes it a doubling closure. Finish minus_five_of: make a closure that subtracts 5 from its argument and pass it to apply together with value. main prints both results. It should print two lines: 42 and 45. Hint: let minus_five = |x| x - 5;",
+    "starter": "fn apply(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(value)\n}\n\nfn minus_five_of(value: i32) -> i32 {\n    // make a closure that subtracts 5 and pass it to apply together with value\n    value\n}\n\nfn main() {\n    let doubled = apply(|x| x * 2, 21);\n    println!(\"{doubled}\");\n    println!(\"{}\", minus_five_of(50));\n}",
+    "tests": [
+      {
+        "id": "fifty",
+        "label": "minus_five_of(50) is 45",
+        "code": "check_eq!(minus_five_of(50), 45);"
+      },
+      {
+        "id": "ten",
+        "label": "minus_five_of(10) is 5",
+        "code": "check_eq!(minus_five_of(10), 5);"
+      },
+      {
+        "id": "main-prints-42-and-45",
+        "label": "The program prints 42, then 45",
+        "output": "42\n45"
+      },
+      {
+        "id": "zero-goes-negative",
+        "hidden": true,
+        "label": "the result can be negative",
+        "code": "check_eq!(minus_five_of(0), -5);"
+      },
+      {
+        "id": "five-gives-zero",
+        "hidden": true,
+        "label": "boundary",
+        "code": "check_eq!(minus_five_of(5), 0);"
+      },
+      {
+        "id": "negative-input",
+        "hidden": true,
+        "label": "a negative argument",
+        "code": "check_eq!(minus_five_of(-10), -15);"
+      },
+      {
+        "id": "apply-unchanged",
+        "hidden": true,
+        "label": "apply still calls the closure it gets",
+        "code": "check_eq!(apply(|x| x + 1, 1), 2);"
+      }
+    ],
+    "solution": "fn apply(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(value)\n}\n\nfn minus_five_of(value: i32) -> i32 {\n    let minus_five = |x| x - 5;\n    apply(minus_five, value)\n}\n\nfn main() {\n    let doubled = apply(|x| x * 2, 21);\n    println!(\"{doubled}\");\n    println!(\"{}\", minus_five_of(50));\n}",
     "hints": [
       "A closure can be stored in a variable and passed to apply, just like the doubling closure in the starter. Make one that subtracts instead.",
       "Write the parameter between two bars, then the body: |x| x - 5. Put it in a variable with let, and pass that variable to apply.",
-      "Below the first println!, write let minus_five = |x| x - 5; and then println!(\"{}\", apply(minus_five, 50))."
+      "Replace the last line of minus_five_of with: let minus_five = |x| x - 5; and then apply(minus_five, value) with no semicolon, so it is the value the function returns."
     ]
   },
   "quiz": [

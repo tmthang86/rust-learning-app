@@ -70,14 +70,48 @@
     }
   ],
   "exercise": {
-    "prompt": "show chỉ nhận một i32. Hãy làm cho nó hoạt động với bất kỳ kiểu nào có thể được in bằng {}, và thêm một lệnh gọi với một chuỗi ở cuối main. Chương trình phải in ra hai dòng: <5> và <hi>. Gợi ý: thêm use std::fmt::Display; ở đầu, và viết fn show<T: Display>(item: T).",
-    "starter": "fn show(item: i32) {\n    println!(\"<{item}>\");\n}\n\nfn main() {\n    show(5);\n}",
-    "expectedOutput": "<5>\n<hi>",
+    "prompt": "show chỉ nhận một i32, nên show(\"hi\") trong main không biên dịch được. Hãy làm cho nó hoạt động với bất kỳ kiểu nào có thể in bằng {}. Nó phải in ra hai dòng: <5> và <hi>. Gợi ý: thêm use std::fmt::Display; ở đầu file, và viết fn show<T: Display>(item: T).",
+    "starter": "fn show(item: i32) {\n    println!(\"<{item}>\");\n}\n\nfn main() {\n    show(5);\n    show(\"hi\");\n}",
+    "tests": [
+      {
+        "id": "number",
+        "label": "show(5) in ra <5>",
+        "code": "check_eq!(output_of(|| show(5)), \"<5>\\n\");"
+      },
+      {
+        "id": "text",
+        "label": "show(\"hi\") in ra <hi>",
+        "code": "check_eq!(output_of(|| show(\"hi\")), \"<hi>\\n\");"
+      },
+      {
+        "id": "main-prints-both",
+        "label": "Chương trình in ra <5>, rồi <hi>",
+        "output": "<5>\n<hi>"
+      },
+      {
+        "id": "float",
+        "hidden": true,
+        "label": "a float",
+        "code": "check_eq!(output_of(|| show(2.5)), \"<2.5>\\n\");"
+      },
+      {
+        "id": "owned-string",
+        "hidden": true,
+        "label": "a String",
+        "code": "check_eq!(output_of(|| show(String::from(\"owned\"))), \"<owned>\\n\");"
+      },
+      {
+        "id": "char-and-bool",
+        "hidden": true,
+        "label": "other Display types",
+        "code": "check_eq!(output_of(|| show('x')), \"<x>\\n\");\ncheck_eq!(output_of(|| show(true)), \"<true>\\n\");"
+      }
+    ],
     "solution": "use std::fmt::Display;\n\nfn show<T: Display>(item: T) {\n    println!(\"<{item}>\");\n}\n\nfn main() {\n    show(5);\n    show(\"hi\");\n}",
     "hints": [
-      "Hiện giờ show chỉ nhận một i32. Nó phải chấp nhận bất kỳ kiểu nào có thể được in bằng {}. Trait nào là trait cho {}?",
-      "Hãy thêm một tham số kiểu với một ràng buộc trait sau tên hàm: <T: Display>. Hãy dùng T làm kiểu của item. Display cần một dòng use ở đầu tệp.",
-      "Hãy thêm use std::fmt::Display; ở đầu và đổi chữ ký thành fn show<T: Display>(item: T). Sau đó hãy gọi show(\"hi\") ở cuối main."
+      "Hiện giờ show chỉ nhận một i32. Nó phải nhận bất kỳ kiểu nào có thể in bằng {}. Trait nào dành cho {}?",
+      "Hãy thêm một tham số kiểu với trait bound sau tên hàm: <T: Display>. Dùng T làm kiểu của item. Display cần một dòng use ở đầu file.",
+      "Hãy thêm use std::fmt::Display; ở đầu file và đổi chữ ký thành fn show<T: Display>(item: T). main đã gọi show(\"hi\") rồi."
     ]
   },
   "quiz": [
