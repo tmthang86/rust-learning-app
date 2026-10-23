@@ -42,7 +42,7 @@
     }
   ],
   "exercise": {
-    "prompt": "Bản khởi đầu có trait Speak với phương thức bắt buộc speak và phương thức mặc định shout. Dog đã triển khai nó rồi, và main đã in robot.shout(). Hãy làm cho Robot cũng nói được: speak của nó phải trả về beep, theo sau là một dấu cách và id của nó. Nó phải in ra hai dòng: WOOF, I AM REX và BEEP 7. Gợi ý: impl Speak for Robot { fn speak(&self) -> String { format!(\"beep {}\", self.id) } }",
+    "prompt": "Bản khởi đầu có trait Speak với phương thức bắt buộc speak và phương thức mặc định shout. Dog đã triển khai nó rồi, và main đã in robot.shout(). Hãy làm cho Robot cũng nói được: speak của nó phải trả về beep, theo sau là một dấu cách và id của nó. Nó phải in ra hai dòng: WOOF, I AM REX và BEEP 7.",
     "starter": "trait Speak {\n    fn speak(&self) -> String;\n\n    fn shout(&self) -> String {\n        self.speak().to_uppercase()\n    }\n}\n\nstruct Dog {\n    name: String,\n}\n\nstruct Robot {\n    id: u32,\n}\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        format!(\"woof, I am {}\", self.name)\n    }\n}\n\nfn main() {\n    let dog = Dog { name: String::from(\"Rex\") };\n    println!(\"{}\", dog.shout());\n    let robot = Robot { id: 7 };\n    println!(\"{}\", robot.shout());\n}",
     "tests": [
       {
@@ -83,7 +83,7 @@
     "hints": [
       "Dog có được trait Speak từ khối impl riêng của nó. Robot cũng cần một khối như vậy. Trait yêu cầu phương thức nào, và phương thức nào bạn được dùng miễn phí?",
       "Hãy viết impl Speak for Robot { ... } và chỉ đặt phương thức bắt buộc speak vào bên trong. Nó trả về một String. Hãy dùng format! để ghép beep, một dấu cách và self.id.",
-      "main đã tạo một Robot với id 7 và in robot.shout(), giống như cách nó làm với con chó. Khi Robot đã triển khai Speak, dòng đó sẽ hoạt động."
+      "main đã tạo một Robot với id 7 và in robot.shout(), giống như cách nó làm với con chó. Khi Robot đã triển khai Speak, dòng đó sẽ hoạt động. Toàn bộ impl là: impl Speak for Robot { fn speak(&self) -> String { format!(\"beep {}\", self.id) } }"
     ]
   },
   "quiz": [

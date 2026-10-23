@@ -83,7 +83,7 @@
     "hints": [
       "Passing a String to a function moves it. Change the function so it only borrows both of them.",
       "Use & in two places: before String in each parameter type, and before each variable in the call.",
-      "Write x: &String and y: &String in the function. In main call total_length(&a, &b)."
+      "Write x: &String and y: &String in the function. In main call total_length(&a, &b). The tests call total_length(&a, &b) the same way, so pass references, not clones."
     ]
   },
   "quiz": [

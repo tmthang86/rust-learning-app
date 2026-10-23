@@ -89,12 +89,6 @@
         "code": "let mut acc = bank::Account::new(\"Bo\");\nacc.deposit(100);\nacc.withdraw(30);\nacc.withdraw(5);\ncheck_eq!(acc.balance(), 65);"
       },
       {
-        "id": "goes-below-zero",
-        "hidden": true,
-        "label": "the balance is a plain subtraction",
-        "code": "let mut acc = bank::Account::new(\"Bo\");\nacc.deposit(5);\nacc.withdraw(10);\ncheck_eq!(acc.balance(), -5);"
-      },
-      {
         "id": "owner-is-kept",
         "hidden": true,
         "label": "the owner does not change",

@@ -76,7 +76,7 @@
       },
       {
         "id": "forest-tree",
-        "label": "Thứ tự của các đối số không quan trọng",
+        "label": "Hoạt động khi từ ngắn hơn đứng thứ hai",
         "code": "check_eq!(shorter(\"forest\", \"tree\"), \"tree\");"
       },
       {

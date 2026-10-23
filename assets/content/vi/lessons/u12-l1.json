@@ -42,7 +42,7 @@
     }
   ],
   "exercise": {
-    "prompt": "count() chưa biết flag --chars, nên nó báo là flag không xác định. Hãy dạy nó đếm số ký tự trong văn bản cho --chars, theo cách giống như các flag khác đếm dòng và từ. Chương trình phải in ra ba dòng: --lines: 2, --words: 5, --chars: 24. Gợi ý: thêm nhánh match \"--chars\" => Some(text.chars().count()).",
+    "prompt": "count() chưa biết flag --chars, nên nó báo là flag không xác định. Hãy dạy nó đếm số ký tự trong văn bản cho --chars, theo cách giống như các flag khác đếm dòng và từ. Chương trình phải in ra ba dòng: --lines: 2, --words: 5, --chars: 24.",
     "starter": "fn count(text: &str, flag: &str) -> Option<usize> {\n    match flag {\n        \"--lines\" => Some(text.lines().count()),\n        \"--words\" => Some(text.split_whitespace().count()),\n        _ => None,\n    }\n}\n\nfn main() {\n    let text = \"one two\\nthree four five\\n\";\n    for flag in [\"--lines\", \"--words\", \"--chars\"] {\n        match count(text, flag) {\n            Some(n) => println!(\"{flag}: {n}\"),\n            None => println!(\"{flag}: unknown flag\"),\n        }\n    }\n}",
     "tests": [
       {

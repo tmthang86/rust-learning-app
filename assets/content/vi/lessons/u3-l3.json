@@ -83,7 +83,7 @@
     "hints": [
       "Truyền một String vào một hàm sẽ di chuyển nó. Hãy đổi hàm để nó chỉ mượn cả hai.",
       "Hãy dùng & ở hai chỗ: trước String trong mỗi kiểu tham số, và trước mỗi biến ở chỗ gọi.",
-      "Hãy viết x: &String và y: &String trong hàm. Trong main hãy gọi total_length(&a, &b)."
+      "Hãy viết x: &String và y: &String trong hàm. Trong main hãy gọi total_length(&a, &b). Các bài kiểm tra cũng gọi total_length(&a, &b) theo cách đó, nên hãy truyền tham chiếu, không phải bản sao."
     ]
   },
   "quiz": [

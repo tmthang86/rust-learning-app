@@ -12,13 +12,13 @@
     { "type": "note", "text": "Những hàm được đặt tên tốt giúp chương trình dễ đọc hơn. area(4, 5) cho bạn biết chuyện gì đang diễn ra mà không cần đọc phép tính bên trong." }
   ],
   "exercise": {
-    "prompt": "Hãy viết một hàm tên là add nhận hai tham số i32, a và b, và trả về a + b dưới dạng i32. main đã gọi nó rồi, nên chương trình phải in ra: 7. Cho đến khi bạn viết add, trình biên dịch sẽ báo là không tìm thấy nó.",
-    "starter": "// write fn add here\n\nfn main() {\n    println!(\"{}\", add(3, 4));\n}",
+    "prompt": "Hãy viết một hàm tên là add_numbers nhận hai tham số i32, a và b, và trả về a + b dưới dạng i32. main đã gọi nó rồi, nên chương trình phải in ra: 7. Cho đến khi bạn viết add_numbers, trình biên dịch sẽ báo là không tìm thấy nó.",
+    "starter": "// write fn add_numbers here\n\nfn main() {\n    println!(\"{}\", add_numbers(3, 4));\n}",
     "tests": [
       {
         "id": "three-plus-four",
-        "label": "add(3, 4) cho kết quả 7",
-        "code": "check_eq!(add(3, 4), 7);"
+        "label": "add_numbers(3, 4) cho kết quả 7",
+        "code": "check_eq!(add_numbers(3, 4), 7);"
       },
       {
         "id": "main-prints-7",
@@ -29,23 +29,23 @@
         "id": "negative-and-positive",
         "hidden": true,
         "label": "a negative plus a positive",
-        "code": "check_eq!(add(-5, 5), 0);"
+        "code": "check_eq!(add_numbers(-5, 5), 0);"
       },
       {
         "id": "zero",
         "hidden": true,
         "label": "both zero",
-        "code": "check_eq!(add(0, 0), 0);"
+        "code": "check_eq!(add_numbers(0, 0), 0);"
       },
       {
         "id": "other-numbers",
         "hidden": true,
         "label": "numbers a hard-coded 7 would not match",
-        "code": "check_eq!(add(100, 23), 123);"
+        "code": "check_eq!(add_numbers(100, 23), 123);"
       }
     ],
-    "solution": "fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\nfn main() {\n    println!(\"{}\", add(3, 4));\n}",
-    "hints": ["Hãy xem hàm area trong bài học. Hàm của bạn có cùng hình dạng, với hai đầu vào và một kết quả.", "Hãy bắt đầu với fn add(a: i32, b: i32) -> i32. Dòng cuối cùng, không có dấu chấm phẩy, là giá trị được trả về.", "Giữa cặp dấu ngoặc nhọn, chỉ cần viết a + b mà không có dấu chấm phẩy. main đã gọi add(3, 4), nên khi add có rồi, chương trình sẽ in ra 7."]
+    "solution": "fn add_numbers(a: i32, b: i32) -> i32 {\n    a + b\n}\n\nfn main() {\n    println!(\"{}\", add_numbers(3, 4));\n}",
+    "hints": ["Hãy xem hàm area trong bài học. Hàm của bạn có cùng hình dạng, với hai đầu vào và một kết quả.", "Hãy bắt đầu với fn add_numbers(a: i32, b: i32) -> i32. Dòng cuối cùng, không có dấu chấm phẩy, là giá trị được trả về.", "Giữa cặp dấu ngoặc nhọn, chỉ cần viết a + b mà không có dấu chấm phẩy. main đã gọi add_numbers(3, 4), nên khi add_numbers có rồi, chương trình sẽ in ra 7."]
   },
   "quiz": [
     {

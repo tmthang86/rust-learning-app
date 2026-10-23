@@ -62,7 +62,7 @@
     }
   ],
   "exercise": {
-    "prompt": "other and counter share one number. The program already adds 5 through other. Finish add_ten so it adds 10 to the number inside the Rc it is given. It should print: counter = 15. Hint: borrow_mut() gives a guard, and the * reaches the number inside it, so write *counter.borrow_mut() += 10;",
+    "prompt": "other and counter share one number. The program already adds 5 through other. Finish add_ten so it adds 10 to the number inside the Rc it is given. It should print: counter = 15.",
     "starter": "use std::cell::RefCell;\nuse std::rc::Rc;\n\nfn add_ten(counter: &Rc<RefCell<i32>>) {\n    // add 10 to the number inside counter\n    let _ = counter; // delete this line when you use counter for real\n}\n\nfn main() {\n    let counter = Rc::new(RefCell::new(0));\n    let other = Rc::clone(&counter);\n    *other.borrow_mut() += 5;\n    add_ten(&counter);\n    println!(\"counter = {}\", counter.borrow());\n}",
     "tests": [
       {
@@ -103,7 +103,7 @@
     "hints": [
       "counter and other point to the same number. The line for other already changes it. Write a similar line inside add_ten that goes through counter.",
       "borrow_mut() gives a writer guard, and * reaches the number inside it. Then += 10 changes the number.",
-      "Copy the line for other from main into add_ten, use counter instead of other, and add 10 instead of 5. Then delete the let _ line."
+      "Copy the line for other from main into add_ten, use counter instead of other, and add 10 instead of 5. Then delete the let _ line. The line is: *counter.borrow_mut() += 10;"
     ]
   },
   "quiz": [

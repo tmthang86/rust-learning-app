@@ -42,7 +42,7 @@
     }
   ],
   "exercise": {
-    "prompt": "The starter has a Speak trait with a required speak method and a default shout method. Dog already implements it, and main already prints robot.shout(). Make Robot speak too: its speak should return beep followed by a space and its id. It should print two lines: WOOF, I AM REX and BEEP 7. Hint: impl Speak for Robot { fn speak(&self) -> String { format!(\"beep {}\", self.id) } }",
+    "prompt": "The starter has a Speak trait with a required speak method and a default shout method. Dog already implements it, and main already prints robot.shout(). Make Robot speak too: its speak should return beep followed by a space and its id. It should print two lines: WOOF, I AM REX and BEEP 7.",
     "starter": "trait Speak {\n    fn speak(&self) -> String;\n\n    fn shout(&self) -> String {\n        self.speak().to_uppercase()\n    }\n}\n\nstruct Dog {\n    name: String,\n}\n\nstruct Robot {\n    id: u32,\n}\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        format!(\"woof, I am {}\", self.name)\n    }\n}\n\nfn main() {\n    let dog = Dog { name: String::from(\"Rex\") };\n    println!(\"{}\", dog.shout());\n    let robot = Robot { id: 7 };\n    println!(\"{}\", robot.shout());\n}",
     "tests": [
       {
@@ -83,7 +83,7 @@
     "hints": [
       "Dog gets the Speak trait from its own impl block. Robot needs one too. Which method does the trait require, and which one do you get for free?",
       "Write impl Speak for Robot { ... } and put only the required method speak inside it. It returns a String. Use format! to join beep, a space and self.id.",
-      "main already creates a Robot with id 7 and prints robot.shout(), the same way it does for the dog. Once Robot implements Speak, that line works."
+      "main already creates a Robot with id 7 and prints robot.shout(), the same way it does for the dog. Once Robot implements Speak, that line works. The whole impl is: impl Speak for Robot { fn speak(&self) -> String { format!(\"beep {}\", self.id) } }"
     ]
   },
   "quiz": [

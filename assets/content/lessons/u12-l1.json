@@ -42,7 +42,7 @@
     }
   ],
   "exercise": {
-    "prompt": "count() does not know the --chars flag yet, so it reports an unknown flag. Teach it to count the characters in the text for --chars, the same way the other flags count lines and words. The program should print three lines: --lines: 2, --words: 5, --chars: 24. Hint: add the match arm \"--chars\" => Some(text.chars().count()).",
+    "prompt": "count() does not know the --chars flag yet, so it reports an unknown flag. Teach it to count the characters in the text for --chars, the same way the other flags count lines and words. The program should print three lines: --lines: 2, --words: 5, --chars: 24.",
     "starter": "fn count(text: &str, flag: &str) -> Option<usize> {\n    match flag {\n        \"--lines\" => Some(text.lines().count()),\n        \"--words\" => Some(text.split_whitespace().count()),\n        _ => None,\n    }\n}\n\nfn main() {\n    let text = \"one two\\nthree four five\\n\";\n    for flag in [\"--lines\", \"--words\", \"--chars\"] {\n        match count(text, flag) {\n            Some(n) => println!(\"{flag}: {n}\"),\n            None => println!(\"{flag}: unknown flag\"),\n        }\n    }\n}",
     "tests": [
       {

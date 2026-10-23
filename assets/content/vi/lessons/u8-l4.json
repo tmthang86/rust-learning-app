@@ -54,7 +54,7 @@
     }
   ],
   "exercise": {
-    "prompt": "loud_long_words phải chỉ giữ lại những từ dài hơn 3 chữ cái và biến mỗi từ thành chữ hoa. Hãy xây dựng nó thành một iterator pipeline kết thúc bằng collect. main in ra từng từ mà nó trả về. Nó phải in ra ba dòng: APPLE, BANANA và KIWI. Gợi ý: words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase())",
+    "prompt": "loud_long_words phải chỉ giữ lại những từ dài hơn 3 chữ cái và biến mỗi từ thành chữ hoa. Hãy xây dựng nó thành một iterator pipeline kết thúc bằng collect. main in ra từng từ mà nó trả về. Nó phải in ra ba dòng: APPLE, BANANA và KIWI.",
     "starter": "fn loud_long_words(words: &[&str]) -> Vec<String> {\n    // keep only the words longer than 3 letters, uppercase each one\n    let _ = words; // delete this line when you use words for real\n    Vec::new()\n}\n\nfn main() {\n    let words = [\"apple\", \"fig\", \"banana\", \"kiwi\"];\n    for w in loud_long_words(&words) {\n        println!(\"{w}\");\n    }\n}",
     "tests": [
       {

@@ -50,7 +50,7 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy hoàn thành share để nó trả về một chủ sở hữu thứ hai của cùng chuỗi đó (chia sẻ nó, đừng sao chép). Sau đó main in ra có bao nhiêu chủ sở hữu, và in a và b cách nhau một dấu cách. Nó phải in ra hai dòng: count = 2 và hello hello. Gợi ý: Rc::clone(a)",
+    "prompt": "Hãy hoàn thành share để nó trả về một chủ sở hữu thứ hai của cùng chuỗi đó (chia sẻ nó, đừng sao chép). Sau đó main in ra có bao nhiêu chủ sở hữu, và in a và b cách nhau một dấu cách. Nó phải in ra hai dòng: count = 2 và hello hello.",
     "starter": "use std::rc::Rc;\n\nfn share(a: &Rc<String>) -> Rc<String> {\n    // return a second owner of the same string\n    let _ = a; // delete this line when you use a for real\n    todo!()\n}\n\nfn main() {\n    let a = Rc::new(String::from(\"hello\"));\n    let b = share(&a);\n    println!(\"count = {}\", Rc::strong_count(&a));\n    println!(\"{a} {b}\");\n}",
     "tests": [
       {

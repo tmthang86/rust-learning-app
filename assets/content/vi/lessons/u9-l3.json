@@ -94,10 +94,10 @@
         "code": "let n: u32 = shop::fruits::count();\ncheck_eq!(n + 1, 6);"
       },
       {
-        "id": "same-every-time",
+        "id": "reachable-with-use",
         "hidden": true,
-        "label": "calling twice gives the same",
-        "code": "check_eq!(shop::fruits::count(), shop::fruits::count());"
+        "label": "fruits can be reached through a use line",
+        "code": "use shop::fruits;\ncheck_eq!(fruits::count(), 5);"
       },
       {
         "id": "open-unchanged",

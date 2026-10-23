@@ -62,7 +62,7 @@
     }
   ],
   "exercise": {
-    "prompt": "other và counter dùng chung một con số. Chương trình đã cộng 5 qua other. Hãy hoàn thành add_ten để nó cộng 10 vào con số bên trong Rc mà nó nhận được. Nó phải in ra: counter = 15. Gợi ý: borrow_mut() trả về một guard, và dấu * với tới con số bên trong nó, nên hãy viết *counter.borrow_mut() += 10;",
+    "prompt": "other và counter dùng chung một con số. Chương trình đã cộng 5 qua other. Hãy hoàn thành add_ten để nó cộng 10 vào con số bên trong Rc mà nó nhận được. Nó phải in ra: counter = 15.",
     "starter": "use std::cell::RefCell;\nuse std::rc::Rc;\n\nfn add_ten(counter: &Rc<RefCell<i32>>) {\n    // add 10 to the number inside counter\n    let _ = counter; // delete this line when you use counter for real\n}\n\nfn main() {\n    let counter = Rc::new(RefCell::new(0));\n    let other = Rc::clone(&counter);\n    *other.borrow_mut() += 5;\n    add_ten(&counter);\n    println!(\"counter = {}\", counter.borrow());\n}",
     "tests": [
       {
@@ -103,7 +103,7 @@
     "hints": [
       "counter và other trỏ tới cùng một con số. Dòng dành cho other đã thay đổi nó rồi. Hãy viết một dòng tương tự bên trong add_ten đi qua counter.",
       "borrow_mut() trả về một guard để ghi, và * với tới con số bên trong nó. Sau đó += 10 thay đổi con số.",
-      "Hãy sao chép dòng dành cho other từ main vào add_ten, dùng counter thay cho other, và cộng 10 thay vì 5. Sau đó xóa dòng let _."
+      "Hãy sao chép dòng dành cho other từ main vào add_ten, dùng counter thay cho other, và cộng 10 thay vì 5. Sau đó xóa dòng let _. Dòng đó là: *counter.borrow_mut() += 10;"
     ]
   },
   "quiz": [

@@ -76,7 +76,7 @@
       },
       {
         "id": "forest-tree",
-        "label": "The order of the arguments does not matter",
+        "label": "Works when the shorter word comes second",
         "code": "check_eq!(shorter(\"forest\", \"tree\"), \"tree\");"
       },
       {

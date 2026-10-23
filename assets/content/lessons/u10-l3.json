@@ -50,7 +50,7 @@
     }
   ],
   "exercise": {
-    "prompt": "Finish share so it returns a second owner of the same string (share it, don't copy it). main then prints how many owners there are, and prints a and b separated by a space. It should print two lines: count = 2 and hello hello. Hint: Rc::clone(a)",
+    "prompt": "Finish share so it returns a second owner of the same string (share it, don't copy it). main then prints how many owners there are, and prints a and b separated by a space. It should print two lines: count = 2 and hello hello.",
     "starter": "use std::rc::Rc;\n\nfn share(a: &Rc<String>) -> Rc<String> {\n    // return a second owner of the same string\n    let _ = a; // delete this line when you use a for real\n    todo!()\n}\n\nfn main() {\n    let a = Rc::new(String::from(\"hello\"));\n    let b = share(&a);\n    println!(\"count = {}\", Rc::strong_count(&a));\n    println!(\"{a} {b}\");\n}",
     "tests": [
       {

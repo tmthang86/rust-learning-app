@@ -92,7 +92,7 @@
     "hints": [
       "Passing name to greet moves it, so main can't use it afterwards. Let greet borrow it instead.",
       "A reference lets a function borrow a value. In the parameter list, put & before the type. In the call, put & before the variable.",
-      "Change the parameter to name: &String. Then call greet(&name) in main."
+      "Change the parameter to name: &String. Then call greet(&name) in main. The tests call greet(&name) too, so the parameter has to take a reference; .clone() would not fit them."
     ]
   },
   "quiz": [
