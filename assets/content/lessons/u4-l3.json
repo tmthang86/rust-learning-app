@@ -38,13 +38,41 @@
     }
   ],
   "exercise": {
-    "prompt": "Add a fourth variant, Mythic, to Rarity, and add Rarity::Mythic to the end of the list so it gets printed too. It should print: Common\nRare\nEpic\nMythic",
-    "starter": "#[derive(Debug)]\nenum Rarity {\n    Common,\n    Rare,\n    Epic,\n}\n\nfn main() {\n    let all = [Rarity::Common, Rarity::Rare, Rarity::Epic];\n    for r in all {\n        println!(\"{:?}\", r);\n    }\n}",
-    "expectedOutput": "Common\nRare\nEpic\nMythic",
-    "solution": "#[derive(Debug)]\nenum Rarity {\n    Common,\n    Rare,\n    Epic,\n    Mythic,\n}\n\nfn main() {\n    let all = [Rarity::Common, Rarity::Rare, Rarity::Epic, Rarity::Mythic];\n    for r in all {\n        println!(\"{:?}\", r);\n    }\n}",
+    "prompt": "Add a fourth variant, Mythic, to Rarity, and add Rarity::Mythic to the end of the list that all_rarities returns, so main prints it too. It should print: Common\nRare\nEpic\nMythic",
+    "starter": "#[derive(Debug)]\nenum Rarity {\n    Common,\n    Rare,\n    Epic,\n}\n\nfn all_rarities() -> Vec<Rarity> {\n    vec![Rarity::Common, Rarity::Rare, Rarity::Epic]\n}\n\nfn main() {\n    for r in all_rarities() {\n        println!(\"{:?}\", r);\n    }\n}",
+    "tests": [
+      {
+        "id": "four-rarities",
+        "label": "all_rarities has four entries",
+        "code": "check_eq!(all_rarities().len(), 4);"
+      },
+      {
+        "id": "mythic-is-last",
+        "label": "Mythic comes last",
+        "code": "check_eq!(format!(\"{:?}\", all_rarities().last().unwrap()), \"Mythic\");"
+      },
+      {
+        "id": "main-prints-four-lines",
+        "label": "The program prints the four rarities",
+        "output": "Common\nRare\nEpic\nMythic"
+      },
+      {
+        "id": "whole-list",
+        "hidden": true,
+        "label": "the full list in order",
+        "code": "check_eq!(format!(\"{:?}\", all_rarities()), \"[Common, Rare, Epic, Mythic]\");"
+      },
+      {
+        "id": "common-is-first",
+        "hidden": true,
+        "label": "the old entries keep their place",
+        "code": "check_eq!(format!(\"{:?}\", all_rarities().first().unwrap()), \"Common\");"
+      }
+    ],
+    "solution": "#[derive(Debug)]\nenum Rarity {\n    Common,\n    Rare,\n    Epic,\n    Mythic,\n}\n\nfn all_rarities() -> Vec<Rarity> {\n    vec![Rarity::Common, Rarity::Rare, Rarity::Epic, Rarity::Mythic]\n}\n\nfn main() {\n    for r in all_rarities() {\n        println!(\"{:?}\", r);\n    }\n}",
     "hints": [
-      "Two places list the rarities: the enum itself and the array in main. Both need the new one.",
-      "Add a line Mythic, to the enum. Then add Rarity::Mythic at the end of the array inside the square brackets."
+      "Two places list the rarities: the enum itself and the vec! in all_rarities. Both need the new one.",
+      "Add a line Mythic, to the enum. Then add Rarity::Mythic at the end of the vec! inside the square brackets."
     ]
   },
   "quiz": [

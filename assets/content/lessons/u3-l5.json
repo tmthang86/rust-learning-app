@@ -47,7 +47,41 @@
   "exercise": {
     "prompt": "Make last_three return a slice of the last three bytes (use &s[s.len() - 3..]). For plain English text like \"rust\", that's the last three letters. It should print: ust",
     "starter": "fn last_three(s: &str) -> &str {\n    s\n}\n\nfn main() {\n    println!(\"{}\", last_three(\"rust\"));\n}",
-    "expectedOutput": "ust",
+    "tests": [
+      {
+        "id": "rust",
+        "label": "last_three(\"rust\") is \"ust\"",
+        "code": "check_eq!(last_three(\"rust\"), \"ust\");"
+      },
+      {
+        "id": "abcdef",
+        "label": "last_three(\"abcdef\") is \"def\"",
+        "code": "check_eq!(last_three(\"abcdef\"), \"def\");"
+      },
+      {
+        "id": "main-prints-ust",
+        "label": "The program prints ust",
+        "output": "ust"
+      },
+      {
+        "id": "exactly-three",
+        "hidden": true,
+        "label": "a text of exactly three bytes",
+        "code": "check_eq!(last_three(\"cat\"), \"cat\");"
+      },
+      {
+        "id": "longer-text",
+        "hidden": true,
+        "label": "text with a space",
+        "code": "check_eq!(last_three(\"hello world\"), \"rld\");"
+      },
+      {
+        "id": "works-on-a-string",
+        "hidden": true,
+        "label": "called with a &String",
+        "code": "let s = String::from(\"slices\");\ncheck_eq!(last_three(&s), \"ces\");"
+      }
+    ],
     "solution": "fn last_three(s: &str) -> &str {\n    &s[s.len() - 3..]\n}\n\nfn main() {\n    println!(\"{}\", last_three(\"rust\"));\n}",
     "hints": [
       "Right now the function hands back all of s. You want a slice that starts 3 bytes before the end and runs to the end.",

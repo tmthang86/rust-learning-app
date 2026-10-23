@@ -39,7 +39,35 @@
   "exercise": {
     "prompt": "Chương trình này không biên dịch được. Hãy sửa để nó in ra: 212",
     "starter": "fn celsius_to_fahrenheit(c: f64) -> f64 {\n    c * 9.0 / 5.0 + 32.0;\n}\n\nfn main() {\n    println!(\"{}\", celsius_to_fahrenheit(100.0));\n}",
-    "expectedOutput": "212",
+    "tests": [
+      {
+        "id": "boiling-point",
+        "label": "100 độ Celsius cho kết quả 212",
+        "code": "check_near!(celsius_to_fahrenheit(100.0), 212.0, 0.001);"
+      },
+      {
+        "id": "freezing-point",
+        "label": "0 độ Celsius cho kết quả 32",
+        "code": "check_near!(celsius_to_fahrenheit(0.0), 32.0, 0.001);"
+      },
+      {
+        "id": "main-prints-212",
+        "label": "Chương trình in ra 212",
+        "output": "212"
+      },
+      {
+        "id": "minus-forty",
+        "hidden": true,
+        "label": "the two scales meet at -40",
+        "code": "check_near!(celsius_to_fahrenheit(-40.0), -40.0, 0.001);"
+      },
+      {
+        "id": "body-temperature",
+        "hidden": true,
+        "label": "a fractional result",
+        "code": "check_near!(celsius_to_fahrenheit(37.0), 98.6, 0.001);"
+      }
+    ],
     "solution": "fn celsius_to_fahrenheit(c: f64) -> f64 {\n    c * 9.0 / 5.0 + 32.0\n}\n\nfn main() {\n    println!(\"{}\", celsius_to_fahrenheit(100.0));\n}",
     "hints": [
       "Hàm này lẽ ra phải trả về một con số, nhưng một ký tự rất nhỏ ở cuối dòng cuối cùng của nó đã ngăn điều đó.",

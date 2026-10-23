@@ -38,10 +38,39 @@
     }
   ],
   "exercise": {
-    "prompt": "first được di chuyển vào second, nên không thể in nó. Hãy dùng .clone() để cả hai đều in được. Chương trình phải in ra: apple apple",
-    "starter": "fn main() {\n    let first = String::from(\"apple\");\n    let second = first;\n    println!(\"{first} {second}\");\n}",
-    "expectedOutput": "apple apple",
-    "solution": "fn main() {\n    let first = String::from(\"apple\");\n    let second = first.clone();\n    println!(\"{first} {second}\");\n}",
+    "prompt": "Trong copy_text, first bị di chuyển (move) vào second nên không thể trả về cả hai. Hãy dùng .clone() để trả về được cả hai. Với \"apple\", main phải in ra: apple apple",
+    "starter": "fn copy_text(first: String) -> (String, String) {\n    let second = first;\n    (first, second)\n}\n\nfn main() {\n    let (a, b) = copy_text(String::from(\"apple\"));\n    println!(\"{a} {b}\");\n}",
+    "tests": [
+      {
+        "id": "apple-twice",
+        "label": "copy_text(\"apple\") trả về apple hai lần",
+        "code": "check_eq!(copy_text(String::from(\"apple\")), (String::from(\"apple\"), String::from(\"apple\")));"
+      },
+      {
+        "id": "main-prints-apple-apple",
+        "label": "Chương trình in ra apple apple",
+        "output": "apple apple"
+      },
+      {
+        "id": "another-word",
+        "hidden": true,
+        "label": "a word a hard-coded apple would not match",
+        "code": "check_eq!(copy_text(String::from(\"rust\")), (String::from(\"rust\"), String::from(\"rust\")));"
+      },
+      {
+        "id": "empty-text",
+        "hidden": true,
+        "label": "an empty String",
+        "code": "check_eq!(copy_text(String::new()), (String::new(), String::new()));"
+      },
+      {
+        "id": "text-with-space",
+        "hidden": true,
+        "label": "text with a space",
+        "code": "check_eq!(copy_text(String::from(\"hello world\")), (String::from(\"hello world\"), String::from(\"hello world\")));"
+      }
+    ],
+    "solution": "fn copy_text(first: String) -> (String, String) {\n    let second = first.clone();\n    (first, second)\n}\n\nfn main() {\n    let (a, b) = copy_text(String::from(\"apple\"));\n    println!(\"{a} {b}\");\n}",
     "hints": [
       "Viết let second = first sẽ di chuyển String. Thay vào đó, bạn muốn second có bản sao riêng của nó.",
       "Một String có thể được sao chép bằng phương thức .clone(). Hãy gọi nó trên first, ở dòng tạo second.",

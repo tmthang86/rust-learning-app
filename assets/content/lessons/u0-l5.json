@@ -12,11 +12,40 @@
     { "type": "note", "text": "Well-named functions make programs easier to read. area(4, 5) tells you what's happening without reading the maths inside." }
   ],
   "exercise": {
-    "prompt": "Write a function called add that takes two i32 parameters, a and b, and gives back a + b as an i32. Then delete the // at the start of the line in main so it calls your function. The program should print: 7",
-    "starter": "// write fn add here\n\nfn main() {\n    // println!(\"{}\", add(3, 4));\n}",
-    "expectedOutput": "7",
+    "prompt": "Write a function called add that takes two i32 parameters, a and b, and gives back a + b as an i32. main already calls it, so the program should print: 7. Until you write add, the compiler will say it can't find it.",
+    "starter": "// write fn add here\n\nfn main() {\n    println!(\"{}\", add(3, 4));\n}",
+    "tests": [
+      {
+        "id": "three-plus-four",
+        "label": "add(3, 4) is 7",
+        "code": "check_eq!(add(3, 4), 7);"
+      },
+      {
+        "id": "main-prints-7",
+        "label": "The program prints 7",
+        "output": "7"
+      },
+      {
+        "id": "negative-and-positive",
+        "hidden": true,
+        "label": "a negative plus a positive",
+        "code": "check_eq!(add(-5, 5), 0);"
+      },
+      {
+        "id": "zero",
+        "hidden": true,
+        "label": "both zero",
+        "code": "check_eq!(add(0, 0), 0);"
+      },
+      {
+        "id": "other-numbers",
+        "hidden": true,
+        "label": "numbers a hard-coded 7 would not match",
+        "code": "check_eq!(add(100, 23), 123);"
+      }
+    ],
     "solution": "fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\nfn main() {\n    println!(\"{}\", add(3, 4));\n}",
-    "hints": ["Look at the area function in the lesson. Yours has the same shape, with two inputs and one result.", "Start with fn add(a: i32, b: i32) -> i32. The last line, with no semicolon, is the value that is given back.", "Between the curly braces write just a + b without a semicolon. Then remove the // in front of the println! line in main."]
+    "hints": ["Look at the area function in the lesson. Yours has the same shape, with two inputs and one result.", "Start with fn add(a: i32, b: i32) -> i32. The last line, with no semicolon, is the value that is given back.", "Between the curly braces write just a + b without a semicolon. main already calls add(3, 4), so once add exists the program prints 7."]
   },
   "quiz": [
     {

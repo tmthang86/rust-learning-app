@@ -36,7 +36,41 @@
   "exercise": {
     "prompt": "Hãy hoàn thành double để nó nhân đôi số thông qua tham chiếu có thể thay đổi (dùng *n). Chương trình phải in ra: 42",
     "starter": "fn double(n: &mut i32) {\n    // change n here\n}\n\nfn main() {\n    let mut value = 21;\n    double(&mut value);\n    println!(\"{value}\");\n}",
-    "expectedOutput": "42",
+    "tests": [
+      {
+        "id": "double-21",
+        "label": "double biến 21 thành 42",
+        "code": "let mut v = 21;\ndouble(&mut v);\ncheck_eq!(v, 42);"
+      },
+      {
+        "id": "double-twice",
+        "label": "Gọi double hai lần biến 3 thành 12",
+        "code": "let mut v = 3;\ndouble(&mut v);\ndouble(&mut v);\ncheck_eq!(v, 12);"
+      },
+      {
+        "id": "main-prints-42",
+        "label": "Chương trình in ra 42",
+        "output": "42"
+      },
+      {
+        "id": "zero",
+        "hidden": true,
+        "label": "zero stays zero",
+        "code": "let mut v = 0;\ndouble(&mut v);\ncheck_eq!(v, 0);"
+      },
+      {
+        "id": "negative",
+        "hidden": true,
+        "label": "a negative number",
+        "code": "let mut v = -4;\ndouble(&mut v);\ncheck_eq!(v, -8);"
+      },
+      {
+        "id": "only-the-given-variable",
+        "hidden": true,
+        "label": "other variables are not touched",
+        "code": "let mut a = 10;\nlet b = 10;\ndouble(&mut a);\ncheck_eq!((a, b), (20, 10));"
+      }
+    ],
     "solution": "fn double(n: &mut i32) {\n    *n *= 2;\n}\n\nfn main() {\n    let mut value = 21;\n    double(&mut value);\n    println!(\"{value}\");\n}",
     "hints": [
       "Tham số n là một tham chiếu, không phải một con số. Để thay đổi giá trị mà nó trỏ tới, trước tiên hãy đi theo tham chiếu.",

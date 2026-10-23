@@ -38,13 +38,41 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy thêm variant thứ tư, Mythic, vào Rarity, và thêm Rarity::Mythic vào cuối danh sách để nó cũng được in ra. Chương trình phải in ra: Common\nRare\nEpic\nMythic",
-    "starter": "#[derive(Debug)]\nenum Rarity {\n    Common,\n    Rare,\n    Epic,\n}\n\nfn main() {\n    let all = [Rarity::Common, Rarity::Rare, Rarity::Epic];\n    for r in all {\n        println!(\"{:?}\", r);\n    }\n}",
-    "expectedOutput": "Common\nRare\nEpic\nMythic",
-    "solution": "#[derive(Debug)]\nenum Rarity {\n    Common,\n    Rare,\n    Epic,\n    Mythic,\n}\n\nfn main() {\n    let all = [Rarity::Common, Rarity::Rare, Rarity::Epic, Rarity::Mythic];\n    for r in all {\n        println!(\"{:?}\", r);\n    }\n}",
+    "prompt": "Hãy thêm variant thứ tư, Mythic, vào Rarity, và thêm Rarity::Mythic vào cuối danh sách mà all_rarities trả về, để main cũng in nó ra. Nó phải in ra: Common\nRare\nEpic\nMythic",
+    "starter": "#[derive(Debug)]\nenum Rarity {\n    Common,\n    Rare,\n    Epic,\n}\n\nfn all_rarities() -> Vec<Rarity> {\n    vec![Rarity::Common, Rarity::Rare, Rarity::Epic]\n}\n\nfn main() {\n    for r in all_rarities() {\n        println!(\"{:?}\", r);\n    }\n}",
+    "tests": [
+      {
+        "id": "four-rarities",
+        "label": "all_rarities có bốn phần tử",
+        "code": "check_eq!(all_rarities().len(), 4);"
+      },
+      {
+        "id": "mythic-is-last",
+        "label": "Mythic đứng cuối cùng",
+        "code": "check_eq!(format!(\"{:?}\", all_rarities().last().unwrap()), \"Mythic\");"
+      },
+      {
+        "id": "main-prints-four-lines",
+        "label": "Chương trình in ra bốn độ hiếm",
+        "output": "Common\nRare\nEpic\nMythic"
+      },
+      {
+        "id": "whole-list",
+        "hidden": true,
+        "label": "the full list in order",
+        "code": "check_eq!(format!(\"{:?}\", all_rarities()), \"[Common, Rare, Epic, Mythic]\");"
+      },
+      {
+        "id": "common-is-first",
+        "hidden": true,
+        "label": "the old entries keep their place",
+        "code": "check_eq!(format!(\"{:?}\", all_rarities().first().unwrap()), \"Common\");"
+      }
+    ],
+    "solution": "#[derive(Debug)]\nenum Rarity {\n    Common,\n    Rare,\n    Epic,\n    Mythic,\n}\n\nfn all_rarities() -> Vec<Rarity> {\n    vec![Rarity::Common, Rarity::Rare, Rarity::Epic, Rarity::Mythic]\n}\n\nfn main() {\n    for r in all_rarities() {\n        println!(\"{:?}\", r);\n    }\n}",
     "hints": [
-      "Có hai chỗ liệt kê các độ hiếm: chính enum và mảng trong main. Cả hai đều cần cái mới.",
-      "Hãy thêm một dòng Mythic, vào enum. Sau đó thêm Rarity::Mythic vào cuối mảng, bên trong dấu ngoặc vuông."
+      "Có hai chỗ liệt kê các độ hiếm: chính enum và vec! trong all_rarities. Cả hai đều cần cái mới.",
+      "Hãy thêm một dòng Mythic, vào enum. Sau đó thêm Rarity::Mythic vào cuối vec! bên trong cặp dấu ngoặc vuông."
     ]
   },
   "quiz": [

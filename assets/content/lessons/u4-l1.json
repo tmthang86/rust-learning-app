@@ -38,14 +38,43 @@
     }
   ],
   "exercise": {
-    "prompt": "Create a Book with title \"Dune\" and pages 412, then print it as shown. It should print: Dune has 412 pages",
-    "starter": "struct Book {\n    title: String,\n    pages: u32,\n}\n\nfn main() {\n    // create the book here\n    println!(\"? has ? pages\");\n}",
-    "expectedOutput": "Dune has 412 pages",
-    "solution": "struct Book {\n    title: String,\n    pages: u32,\n}\n\nfn main() {\n    let book = Book {\n        title: String::from(\"Dune\"),\n        pages: 412,\n    };\n    println!(\"{} has {} pages\", book.title, book.pages);\n}",
+    "prompt": "Finish make_book so it creates a Book with the given title and pages. For make_book(\"Dune\", 412), main should print: Dune has 412 pages",
+    "starter": "struct Book {\n    title: String,\n    pages: u32,\n}\n\nfn make_book(title: &str, pages: u32) -> Book {\n    // create a Book with this title and these pages\n    let _ = (title, pages); // delete this line when you use them for real\n    todo!()\n}\n\nfn main() {\n    let book = make_book(\"Dune\", 412);\n    println!(\"{} has {} pages\", book.title, book.pages);\n}",
+    "tests": [
+      {
+        "id": "dune",
+        "label": "make_book(\"Dune\", 412) keeps the title and the pages",
+        "code": "let book = make_book(\"Dune\", 412);\ncheck_eq!(book.title, \"Dune\");\ncheck_eq!(book.pages, 412);"
+      },
+      {
+        "id": "main-prints-dune",
+        "label": "The program prints Dune has 412 pages",
+        "output": "Dune has 412 pages"
+      },
+      {
+        "id": "another-book",
+        "hidden": true,
+        "label": "values a hard-coded Dune would not match",
+        "code": "let book = make_book(\"Rust\", 560);\ncheck_eq!(book.title, \"Rust\");\ncheck_eq!(book.pages, 560);"
+      },
+      {
+        "id": "empty-title-zero-pages",
+        "hidden": true,
+        "label": "empty title, zero pages",
+        "code": "let book = make_book(\"\", 0);\ncheck_eq!(book.title, \"\");\ncheck_eq!(book.pages, 0);"
+      },
+      {
+        "id": "title-and-pages-not-swapped",
+        "hidden": true,
+        "label": "a number-like title",
+        "code": "let book = make_book(\"1984\", 328);\ncheck_eq!((book.title.as_str(), book.pages), (\"1984\", 328));"
+      }
+    ],
+    "solution": "struct Book {\n    title: String,\n    pages: u32,\n}\n\nfn make_book(title: &str, pages: u32) -> Book {\n    Book {\n        title: String::from(title),\n        pages: pages,\n    }\n}\n\nfn main() {\n    let book = make_book(\"Dune\", 412);\n    println!(\"{} has {} pages\", book.title, book.pages);\n}",
     "hints": [
-      "Look at how the struct is defined, then create a value with a field for each piece of data. Do that before the println!.",
-      "Create it like this: let book = Book { title: ..., pages: ... }. A String needs String::from(\"...\"). Read fields with book.title.",
-      "Write let book = Book { title: String::from(\"Dune\"), pages: 412 }; Then print with println!(\"{} has {} pages\", book.title, book.pages);"
+      "Look at how the struct is defined, then create a value with a field for each piece of data. That Book is the value the function returns.",
+      "Create it like this: Book { title: ..., pages: ... }. The title field is a String, but the parameter is a &str, so write String::from(title). Read fields with book.title.",
+      "Replace the let _ line and todo!() with Book { title: String::from(title), pages: pages } and no semicolon, so it is the value the function returns."
     ]
   },
   "quiz": [

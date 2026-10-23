@@ -53,7 +53,41 @@
   "exercise": {
     "prompt": "The program uses name after it was moved into greet. Change greet so it doesn't need to own the String: make the parameter a reference (&String) and call it with &name. A reference lets greet borrow the String instead of owning it; you'll learn how references work in the Borrowing lesson of this unit. It should print: Hello, Ferris\nBye, Ferris",
     "starter": "fn greet(name: String) {\n    println!(\"Hello, {name}\");\n}\n\nfn main() {\n    let name = String::from(\"Ferris\");\n    greet(name);\n    println!(\"Bye, {name}\");\n}",
-    "expectedOutput": "Hello, Ferris\nBye, Ferris",
+    "tests": [
+      {
+        "id": "greet-prints-hello",
+        "label": "greet prints Hello, Ferris",
+        "code": "let name = String::from(\"Ferris\");\ncheck_eq!(output_of(|| greet(&name)), \"Hello, Ferris\\n\");"
+      },
+      {
+        "id": "name-still-usable",
+        "label": "The String is still usable after greet",
+        "code": "let name = String::from(\"Ferris\");\ngreet(&name);\ngreet(&name);\ncheck_eq!(name, \"Ferris\");"
+      },
+      {
+        "id": "main-prints-both",
+        "label": "The program prints Hello, then Bye",
+        "output": "Hello, Ferris\nBye, Ferris"
+      },
+      {
+        "id": "another-name",
+        "hidden": true,
+        "label": "a name a hard-coded Ferris would not match",
+        "code": "let name = String::from(\"Ann\");\ncheck_eq!(output_of(|| greet(&name)), \"Hello, Ann\\n\");"
+      },
+      {
+        "id": "name-with-spaces",
+        "hidden": true,
+        "label": "spaces in the name",
+        "code": "let name = String::from(\"Ferris the crab\");\ncheck_eq!(output_of(|| greet(&name)), \"Hello, Ferris the crab\\n\");"
+      },
+      {
+        "id": "empty-name",
+        "hidden": true,
+        "label": "an empty name, still borrowed",
+        "code": "let name = String::new();\ncheck_eq!(output_of(|| greet(&name)), \"Hello, \\n\");\ncheck_eq!(name.len(), 0);"
+      }
+    ],
     "solution": "fn greet(name: &String) {\n    println!(\"Hello, {name}\");\n}\n\nfn main() {\n    let name = String::from(\"Ferris\");\n    greet(&name);\n    println!(\"Bye, {name}\");\n}",
     "hints": [
       "Passing name to greet moves it, so main can't use it afterwards. Let greet borrow it instead.",

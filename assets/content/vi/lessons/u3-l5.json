@@ -47,7 +47,41 @@
   "exercise": {
     "prompt": "Hãy làm cho last_three trả về một slice gồm ba byte cuối (dùng &s[s.len() - 3..]). Với văn bản tiếng Anh thông thường như \"rust\", đó là ba chữ cái cuối. Chương trình phải in ra: ust",
     "starter": "fn last_three(s: &str) -> &str {\n    s\n}\n\nfn main() {\n    println!(\"{}\", last_three(\"rust\"));\n}",
-    "expectedOutput": "ust",
+    "tests": [
+      {
+        "id": "rust",
+        "label": "last_three(\"rust\") là \"ust\"",
+        "code": "check_eq!(last_three(\"rust\"), \"ust\");"
+      },
+      {
+        "id": "abcdef",
+        "label": "last_three(\"abcdef\") là \"def\"",
+        "code": "check_eq!(last_three(\"abcdef\"), \"def\");"
+      },
+      {
+        "id": "main-prints-ust",
+        "label": "Chương trình in ra ust",
+        "output": "ust"
+      },
+      {
+        "id": "exactly-three",
+        "hidden": true,
+        "label": "a text of exactly three bytes",
+        "code": "check_eq!(last_three(\"cat\"), \"cat\");"
+      },
+      {
+        "id": "longer-text",
+        "hidden": true,
+        "label": "text with a space",
+        "code": "check_eq!(last_three(\"hello world\"), \"rld\");"
+      },
+      {
+        "id": "works-on-a-string",
+        "hidden": true,
+        "label": "called with a &String",
+        "code": "let s = String::from(\"slices\");\ncheck_eq!(last_three(&s), \"ces\");"
+      }
+    ],
     "solution": "fn last_three(s: &str) -> &str {\n    &s[s.len() - 3..]\n}\n\nfn main() {\n    println!(\"{}\", last_three(\"rust\"));\n}",
     "hints": [
       "Hiện giờ hàm trả về toàn bộ s. Bạn muốn một slice bắt đầu cách cuối 3 byte và chạy đến hết.",

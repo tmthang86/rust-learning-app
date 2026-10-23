@@ -44,7 +44,41 @@
   "exercise": {
     "prompt": "Change total_length to borrow both Strings instead of taking ownership, so main can still print a. It should print: 9\ngood",
     "starter": "fn total_length(x: String, y: String) -> usize {\n    x.len() + y.len()\n}\n\nfn main() {\n    let a = String::from(\"good\");\n    let b = String::from(\"night\");\n    println!(\"{}\", total_length(a, b));\n    println!(\"{a}\");\n}",
-    "expectedOutput": "9\ngood",
+    "tests": [
+      {
+        "id": "good-night",
+        "label": "total_length of \"good\" and \"night\" is 9",
+        "code": "let a = String::from(\"good\");\nlet b = String::from(\"night\");\ncheck_eq!(total_length(&a, &b), 9);"
+      },
+      {
+        "id": "strings-still-usable",
+        "label": "Both Strings are still usable afterwards",
+        "code": "let a = String::from(\"good\");\nlet b = String::from(\"night\");\ntotal_length(&a, &b);\ncheck_eq!(a, \"good\");\ncheck_eq!(b, \"night\");"
+      },
+      {
+        "id": "main-prints-9-good",
+        "label": "The program prints 9, then good",
+        "output": "9\ngood"
+      },
+      {
+        "id": "empty-strings",
+        "hidden": true,
+        "label": "two empty Strings",
+        "code": "let a = String::new();\nlet b = String::new();\ncheck_eq!(total_length(&a, &b), 0);"
+      },
+      {
+        "id": "same-string-twice",
+        "hidden": true,
+        "label": "one String borrowed twice",
+        "code": "let a = String::from(\"abc\");\ncheck_eq!(total_length(&a, &a), 6);"
+      },
+      {
+        "id": "other-words",
+        "hidden": true,
+        "label": "words a hard-coded 9 would not match",
+        "code": "let a = String::from(\"rust\");\nlet b = String::from(\"is fun\");\ncheck_eq!(total_length(&a, &b), 10);"
+      }
+    ],
     "solution": "fn total_length(x: &String, y: &String) -> usize {\n    x.len() + y.len()\n}\n\nfn main() {\n    let a = String::from(\"good\");\n    let b = String::from(\"night\");\n    println!(\"{}\", total_length(&a, &b));\n    println!(\"{a}\");\n}",
     "hints": [
       "Passing a String to a function moves it. Change the function so it only borrows both of them.",
