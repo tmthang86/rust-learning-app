@@ -36,7 +36,47 @@
   "exercise": {
     "prompt": "Trong parser nhỏ này, parse chỉ biết look. Hãy dạy nó từ inventory, và cả dạng ngắn i, để cả hai cùng cho ra Command::Inventory. Chương trình phải in ra ba dòng: You see a dusty hall., You carry: key, lamp, I don't understand 'dance'. Gợi ý: trong một match, a | b khớp với a hoặc b, nên nhánh có thể là \"inventory\" | \"i\" => Command::Inventory.",
     "starter": "enum Command {\n    Look,\n    Inventory,\n    Unknown(String),\n}\n\nfn parse(input: &str) -> Command {\n    match input {\n        \"look\" => Command::Look,\n        // Until you add the arm for inventory, Command::Inventory is never created,\n        // so the compiler warns about it. The warning goes away when you are done.\n        _ => Command::Unknown(input.to_string()),\n    }\n}\n\nfn main() {\n    let inventory = [\"key\", \"lamp\"];\n    for input in [\"look\", \"i\", \"dance\"] {\n        match parse(input) {\n            Command::Look => println!(\"You see a dusty hall.\"),\n            Command::Inventory => println!(\"You carry: {}\", inventory.join(\", \")),\n            Command::Unknown(text) => println!(\"I don't understand '{text}'.\"),\n        }\n    }\n}",
-    "expectedOutput": "You see a dusty hall.\nYou carry: key, lamp\nI don't understand 'dance'.",
+    "tests": [
+      {
+        "id": "short-form",
+        "label": "Dạng ngắn i là lệnh inventory",
+        "code": "check!(matches!(parse(\"i\"), Command::Inventory));"
+      },
+      {
+        "id": "long-form",
+        "label": "Từ inventory là lệnh inventory",
+        "code": "check!(matches!(parse(\"inventory\"), Command::Inventory));"
+      },
+      {
+        "id": "main-prints-three-lines",
+        "label": "Chương trình in ra căn phòng, túi đồ và từ không hiểu",
+        "output": "You see a dusty hall.\nYou carry: key, lamp\nI don't understand 'dance'."
+      },
+      {
+        "id": "look-unchanged",
+        "hidden": true,
+        "label": "look still works",
+        "code": "check!(matches!(parse(\"look\"), Command::Look));"
+      },
+      {
+        "id": "unknown-word-is-kept",
+        "hidden": true,
+        "label": "the unknown word is carried along",
+        "code": "check!(matches!(parse(\"dance\"), Command::Unknown(ref text) if text == \"dance\"));"
+      },
+      {
+        "id": "similar-words-are-unknown",
+        "hidden": true,
+        "label": "only the two exact words match",
+        "code": "check!(matches!(parse(\"inv\"), Command::Unknown(_)));\ncheck!(matches!(parse(\"ii\"), Command::Unknown(_)));"
+      },
+      {
+        "id": "empty-input",
+        "hidden": true,
+        "label": "empty input is unknown",
+        "code": "check!(matches!(parse(\"\"), Command::Unknown(ref text) if text.is_empty()));"
+      }
+    ],
     "solution": "enum Command {\n    Look,\n    Inventory,\n    Unknown(String),\n}\n\nfn parse(input: &str) -> Command {\n    match input {\n        \"look\" => Command::Look,\n        \"inventory\" | \"i\" => Command::Inventory,\n        _ => Command::Unknown(input.to_string()),\n    }\n}\n\nfn main() {\n    let inventory = [\"key\", \"lamp\"];\n    for input in [\"look\", \"i\", \"dance\"] {\n        match parse(input) {\n            Command::Look => println!(\"You see a dusty hall.\"),\n            Command::Inventory => println!(\"You carry: {}\", inventory.join(\", \")),\n            Command::Unknown(text) => println!(\"I don't understand '{text}'.\"),\n        }\n    }\n}",
     "hints": [
       "parse so khớp đầu vào với các từ chính xác. Cần có hai từ khác nhau cùng dẫn tới Inventory. Một nhánh match có thể có hai mẫu (pattern) không?",

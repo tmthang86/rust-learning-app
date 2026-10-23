@@ -34,13 +34,48 @@
     }
   ],
   "exercise": {
-    "prompt": "Máy chủ echo này gửi thẳng dòng của client trở lại. Hãy sửa để máy chủ hét lên: nó phải trả lời cùng dòng đó bằng chữ hoa. Chương trình phải in ra: HELLO. Gợi ý: tạo câu trả lời bằng line.trim().to_uppercase().",
-    "starter": "use std::io::{BufRead, BufReader, Write};\nuse std::net::{TcpListener, TcpStream};\nuse std::thread;\n\nfn main() {\n    let listener = TcpListener::bind(\"127.0.0.1:0\").unwrap();\n    let addr = listener.local_addr().unwrap();\n\n    let server = thread::spawn(move || {\n        // accept gives back the stream and the client's address; we ignore the address\n        let (mut stream, _) = listener.accept().unwrap();\n        let mut line = String::new();\n        BufReader::new(&stream).read_line(&mut line).unwrap();\n        let reply = line.trim().to_string();\n        writeln!(stream, \"{reply}\").unwrap();\n    });\n\n    let mut client = TcpStream::connect(addr).unwrap();\n    writeln!(client, \"hello\").unwrap();\n    let mut reply = String::new();\n    BufReader::new(&client).read_line(&mut reply).unwrap();\n    println!(\"{}\", reply.trim());\n    server.join().unwrap();\n}",
-    "expectedOutput": "HELLO",
-    "solution": "use std::io::{BufRead, BufReader, Write};\nuse std::net::{TcpListener, TcpStream};\nuse std::thread;\n\nfn main() {\n    let listener = TcpListener::bind(\"127.0.0.1:0\").unwrap();\n    let addr = listener.local_addr().unwrap();\n\n    let server = thread::spawn(move || {\n        let (mut stream, _) = listener.accept().unwrap();\n        let mut line = String::new();\n        BufReader::new(&stream).read_line(&mut line).unwrap();\n        let reply = line.trim().to_uppercase();\n        writeln!(stream, \"{reply}\").unwrap();\n    });\n\n    let mut client = TcpStream::connect(addr).unwrap();\n    writeln!(client, \"hello\").unwrap();\n    let mut reply = String::new();\n    BufReader::new(&client).read_line(&mut reply).unwrap();\n    println!(\"{}\", reply.trim());\n    server.join().unwrap();\n}",
+    "prompt": "Máy chủ echo này gửi thẳng dòng của client trở lại, vì respond chỉ cắt bỏ khoảng trắng của nó. Hãy sửa respond để máy chủ hét lên: nó phải trả về cùng dòng đó ở dạng chữ hoa. Chương trình phải in ra: HELLO. Gợi ý: tạo câu trả lời bằng line.trim().to_uppercase().",
+    "starter": "use std::io::{BufRead, BufReader, Write};\nuse std::net::{TcpListener, TcpStream};\nuse std::thread;\n\nfn respond(line: &str) -> String {\n    line.trim().to_string()\n}\n\nfn main() {\n    let listener = TcpListener::bind(\"127.0.0.1:0\").unwrap();\n    let addr = listener.local_addr().unwrap();\n\n    let server = thread::spawn(move || {\n        // accept gives back the stream and the client's address; we ignore the address\n        let (mut stream, _) = listener.accept().unwrap();\n        let mut line = String::new();\n        BufReader::new(&stream).read_line(&mut line).unwrap();\n        let reply = respond(&line);\n        writeln!(stream, \"{reply}\").unwrap();\n    });\n\n    let mut client = TcpStream::connect(addr).unwrap();\n    writeln!(client, \"hello\").unwrap();\n    let mut reply = String::new();\n    BufReader::new(&client).read_line(&mut reply).unwrap();\n    println!(\"{}\", reply.trim());\n    server.join().unwrap();\n}",
+    "tests": [
+      {
+        "id": "shouts-hello",
+        "label": "respond biến hello thành HELLO",
+        "code": "check_eq!(respond(\"hello\\n\"), \"HELLO\");"
+      },
+      {
+        "id": "main-prints-hello-in-capitals",
+        "label": "Chương trình in ra HELLO",
+        "output": "HELLO"
+      },
+      {
+        "id": "several-words",
+        "hidden": true,
+        "label": "text a hard-coded HELLO would not match",
+        "code": "check_eq!(respond(\"good morning\\n\"), \"GOOD MORNING\");"
+      },
+      {
+        "id": "trims-the-line",
+        "hidden": true,
+        "label": "spaces and the line ending are removed",
+        "code": "check_eq!(respond(\"  hi there \\r\\n\"), \"HI THERE\");"
+      },
+      {
+        "id": "mixed-case-and-digits",
+        "hidden": true,
+        "label": "mixed case, digits, punctuation",
+        "code": "check_eq!(respond(\"Rust 2024!\\n\"), \"RUST 2024!\");"
+      },
+      {
+        "id": "empty-line",
+        "hidden": true,
+        "label": "an empty line",
+        "code": "check_eq!(respond(\"\\n\"), \"\");"
+      }
+    ],
+    "solution": "use std::io::{BufRead, BufReader, Write};\nuse std::net::{TcpListener, TcpStream};\nuse std::thread;\n\nfn respond(line: &str) -> String {\n    line.trim().to_uppercase()\n}\n\nfn main() {\n    let listener = TcpListener::bind(\"127.0.0.1:0\").unwrap();\n    let addr = listener.local_addr().unwrap();\n\n    let server = thread::spawn(move || {\n        // accept gives back the stream and the client's address; we ignore the address\n        let (mut stream, _) = listener.accept().unwrap();\n        let mut line = String::new();\n        BufReader::new(&stream).read_line(&mut line).unwrap();\n        let reply = respond(&line);\n        writeln!(stream, \"{reply}\").unwrap();\n    });\n\n    let mut client = TcpStream::connect(addr).unwrap();\n    writeln!(client, \"hello\").unwrap();\n    let mut reply = String::new();\n    BufReader::new(&client).read_line(&mut reply).unwrap();\n    println!(\"{}\", reply.trim());\n    server.join().unwrap();\n}",
     "hints": [
-      "Chỉ có một dòng trong phần máy chủ cần thay đổi: dòng tạo reply. Hiện giờ nó chỉ sao chép dòng đã được trim.",
-      "Hãy dùng to_uppercase() thay cho to_string(). Nó trả về một String mới viết hoa. Hãy giữ trim() phía trước nó, để ký tự xuống dòng ở cuối được bỏ đi trước."
+      "Chỉ cần sửa một hàm: respond tạo câu trả lời. Hiện giờ nó chỉ sao chép dòng đã được cắt khoảng trắng.",
+      "Hãy dùng to_uppercase() thay cho to_string(). Nó trả về một String chữ hoa mới. Giữ trim() ở trước nó, để ký tự xuống dòng ở cuối được bỏ đi trước."
     ]
   },
   "quiz": [

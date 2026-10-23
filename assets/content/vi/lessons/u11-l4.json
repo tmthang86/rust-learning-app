@@ -46,14 +46,48 @@
     }
   ],
   "exercise": {
-    "prompt": "run() gọi add_one một lần. Hãy làm cho nó gọi add_one lần thứ hai trên kết quả, với .await, rồi trả về giá trị đó. Chương trình phải in ra: 3",
-    "starter": "use std::future::Future;\nuse std::pin::pin;\nuse std::sync::Arc;\nuse std::task::{Context, Poll, Wake, Waker};\nuse std::thread::{self, Thread};\n\n// ---- You don't need to understand this helper. ----\n// Rust's standard library has no runtime, so this tiny one runs a future\n// to the end by polling it. Real programs use a crate such as tokio.\nstruct ThreadWaker(Thread);\n\nimpl Wake for ThreadWaker {\n    fn wake(self: Arc<Self>) {\n        self.0.unpark();\n    }\n}\n\nfn block_on<F: Future>(future: F) -> F::Output {\n    let mut future = pin!(future);\n    let waker = Waker::from(Arc::new(ThreadWaker(thread::current())));\n    let mut cx = Context::from_waker(&waker);\n    loop {\n        match future.as_mut().poll(&mut cx) {\n            Poll::Ready(value) => return value,\n            Poll::Pending => thread::park(),\n        }\n    }\n}\n// ---- End of helper. ----\n\nasync fn add_one(x: i32) -> i32 {\n    x + 1\n}\n\nasync fn run() -> i32 {\n    let first = add_one(1).await;\n    first\n}\n\nfn main() {\n    println!(\"{}\", block_on(run()));\n}",
-    "expectedOutput": "3",
-    "solution": "use std::future::Future;\nuse std::pin::pin;\nuse std::sync::Arc;\nuse std::task::{Context, Poll, Wake, Waker};\nuse std::thread::{self, Thread};\n\n// ---- You don't need to understand this helper. ----\n// Rust's standard library has no runtime, so this tiny one runs a future\n// to the end by polling it. Real programs use a crate such as tokio.\nstruct ThreadWaker(Thread);\n\nimpl Wake for ThreadWaker {\n    fn wake(self: Arc<Self>) {\n        self.0.unpark();\n    }\n}\n\nfn block_on<F: Future>(future: F) -> F::Output {\n    let mut future = pin!(future);\n    let waker = Waker::from(Arc::new(ThreadWaker(thread::current())));\n    let mut cx = Context::from_waker(&waker);\n    loop {\n        match future.as_mut().poll(&mut cx) {\n            Poll::Ready(value) => return value,\n            Poll::Pending => thread::park(),\n        }\n    }\n}\n// ---- End of helper. ----\n\nasync fn add_one(x: i32) -> i32 {\n    x + 1\n}\n\nasync fn run() -> i32 {\n    let first = add_one(1).await;\n    let second = add_one(first).await;\n    second\n}\n\nfn main() {\n    println!(\"{}\", block_on(run()));\n}",
+    "prompt": "run(start) gọi add_one một lần. Hãy làm cho nó gọi add_one lần thứ hai trên kết quả, bằng .await, và trả về kết quả đó. Với run(1), main phải in ra: 3",
+    "starter": "use std::future::Future;\nuse std::pin::pin;\nuse std::sync::Arc;\nuse std::task::{Context, Poll, Wake, Waker};\nuse std::thread::{self, Thread};\n\n// ---- You don't need to understand this helper. ----\n// Rust's standard library has no runtime, so this tiny one runs a future\n// to the end by polling it. Real programs use a crate such as tokio.\nstruct ThreadWaker(Thread);\n\nimpl Wake for ThreadWaker {\n    fn wake(self: Arc<Self>) {\n        self.0.unpark();\n    }\n}\n\nfn block_on<F: Future>(future: F) -> F::Output {\n    let mut future = pin!(future);\n    let waker = Waker::from(Arc::new(ThreadWaker(thread::current())));\n    let mut cx = Context::from_waker(&waker);\n    loop {\n        match future.as_mut().poll(&mut cx) {\n            Poll::Ready(value) => return value,\n            Poll::Pending => thread::park(),\n        }\n    }\n}\n// ---- End of helper. ----\n\nasync fn add_one(x: i32) -> i32 {\n    x + 1\n}\n\nasync fn run(start: i32) -> i32 {\n    let first = add_one(start).await;\n    first\n}\n\nfn main() {\n    println!(\"{}\", block_on(run(1)));\n}",
+    "tests": [
+      {
+        "id": "start-one",
+        "label": "run(1) là 3",
+        "code": "check_eq!(block_on(run(1)), 3);"
+      },
+      {
+        "id": "start-zero",
+        "label": "run(0) là 2",
+        "code": "check_eq!(block_on(run(0)), 2);"
+      },
+      {
+        "id": "main-prints-3",
+        "label": "Chương trình in ra 3",
+        "output": "3"
+      },
+      {
+        "id": "start-ten",
+        "hidden": true,
+        "label": "a start a hard-coded 3 would not match",
+        "code": "check_eq!(block_on(run(10)), 12);"
+      },
+      {
+        "id": "negative-start",
+        "hidden": true,
+        "label": "a negative start",
+        "code": "check_eq!(block_on(run(-5)), -3);"
+      },
+      {
+        "id": "add-one-unchanged",
+        "hidden": true,
+        "label": "add_one is left alone",
+        "code": "check_eq!(block_on(add_one(1)), 2);"
+      }
+    ],
+    "solution": "use std::future::Future;\nuse std::pin::pin;\nuse std::sync::Arc;\nuse std::task::{Context, Poll, Wake, Waker};\nuse std::thread::{self, Thread};\n\n// ---- You don't need to understand this helper. ----\n// Rust's standard library has no runtime, so this tiny one runs a future\n// to the end by polling it. Real programs use a crate such as tokio.\nstruct ThreadWaker(Thread);\n\nimpl Wake for ThreadWaker {\n    fn wake(self: Arc<Self>) {\n        self.0.unpark();\n    }\n}\n\nfn block_on<F: Future>(future: F) -> F::Output {\n    let mut future = pin!(future);\n    let waker = Waker::from(Arc::new(ThreadWaker(thread::current())));\n    let mut cx = Context::from_waker(&waker);\n    loop {\n        match future.as_mut().poll(&mut cx) {\n            Poll::Ready(value) => return value,\n            Poll::Pending => thread::park(),\n        }\n    }\n}\n// ---- End of helper. ----\n\nasync fn add_one(x: i32) -> i32 {\n    x + 1\n}\n\nasync fn run(start: i32) -> i32 {\n    let first = add_one(start).await;\n    let second = add_one(first).await;\n    second\n}\n\nfn main() {\n    println!(\"{}\", block_on(run(1)));\n}",
     "hints": [
-      "run lấy một con số từ add_one. Hãy gọi add_one lần thứ hai và đưa con số đó cho nó. Một async fn cần .await để tạo ra giá trị của nó.",
-      "Sau dòng đầu tiên, hãy viết dòng thứ hai: let second = add_one(first).await; để lần gọi thứ hai bắt đầu từ kết quả của lần gọi đầu.",
-      "Kết thúc bằng cách trả về second thay vì first ở dòng cuối của run."
+      "run nhận một con số từ add_one. Hãy gọi add_one lần thứ hai và đưa con số đó cho nó. Một async fn cần .await để tạo ra giá trị của nó.",
+      "Sau dòng đầu tiên, hãy viết dòng thứ hai: let second = add_one(first).await; để lần gọi thứ hai bắt đầu từ kết quả của lần gọi thứ nhất.",
+      "Hãy kết thúc bằng việc trả về second thay vì first ở dòng cuối của run."
     ]
   },
   "quiz": [

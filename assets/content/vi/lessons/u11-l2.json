@@ -54,10 +54,39 @@
     }
   ],
   "exercise": {
-    "prompt": "Mỗi thread gửi i. Hãy sửa lại để mỗi thread gửi i * 10. Chương trình phải in ra: total: 60",
-    "starter": "use std::sync::mpsc;\nuse std::thread;\n\nfn main() {\n    let (tx, rx) = mpsc::channel();\n    for i in 1..=3 {\n        let tx = tx.clone();\n        thread::spawn(move || {\n            tx.send(i).unwrap();\n        });\n    }\n    drop(tx);\n    let mut total = 0;\n    for value in rx {\n        total += value;\n    }\n    println!(\"total: {total}\");\n}",
-    "expectedOutput": "total: 60",
-    "solution": "use std::sync::mpsc;\nuse std::thread;\n\nfn main() {\n    let (tx, rx) = mpsc::channel();\n    for i in 1..=3 {\n        let tx = tx.clone();\n        thread::spawn(move || {\n            tx.send(i * 10).unwrap();\n        });\n    }\n    drop(tx);\n    let mut total = 0;\n    for value in rx {\n        total += value;\n    }\n    println!(\"total: {total}\");\n}",
+    "prompt": "Mỗi thread gửi i. Hãy sửa để mỗi thread gửi i * 10. Với 3 thread, main phải in ra: total: 60",
+    "starter": "use std::sync::mpsc;\nuse std::thread;\n\nfn total_sent(threads: i32) -> i32 {\n    let (tx, rx) = mpsc::channel();\n    for i in 1..=threads {\n        let tx = tx.clone();\n        thread::spawn(move || {\n            tx.send(i).unwrap();\n        });\n    }\n    drop(tx);\n    let mut total = 0;\n    for value in rx {\n        total += value;\n    }\n    total\n}\n\nfn main() {\n    println!(\"total: {}\", total_sent(3));\n}",
+    "tests": [
+      {
+        "id": "three-threads",
+        "label": "Ba thread gửi 10, 20 và 30: tổng là 60",
+        "code": "check_eq!(total_sent(3), 60);"
+      },
+      {
+        "id": "main-prints-total-60",
+        "label": "Chương trình in ra total: 60",
+        "output": "total: 60"
+      },
+      {
+        "id": "one-thread",
+        "hidden": true,
+        "label": "one thread",
+        "code": "check_eq!(total_sent(1), 10);"
+      },
+      {
+        "id": "no-threads",
+        "hidden": true,
+        "label": "no threads: the channel closes at once",
+        "code": "check_eq!(total_sent(0), 0);"
+      },
+      {
+        "id": "four-threads",
+        "hidden": true,
+        "label": "a count a hard-coded 60 would not match",
+        "code": "check_eq!(total_sent(4), 100);"
+      }
+    ],
+    "solution": "use std::sync::mpsc;\nuse std::thread;\n\nfn total_sent(threads: i32) -> i32 {\n    let (tx, rx) = mpsc::channel();\n    for i in 1..=threads {\n        let tx = tx.clone();\n        thread::spawn(move || {\n            tx.send(i * 10).unwrap();\n        });\n    }\n    drop(tx);\n    let mut total = 0;\n    for value in rx {\n        total += value;\n    }\n    total\n}\n\nfn main() {\n    println!(\"total: {}\", total_sent(3));\n}",
     "hints": [
       "Mỗi thread gửi giá trị bên trong send(...). Hãy tìm lời gọi đó: hiện giờ nó gửi i.",
       "Hãy đổi thứ được gửi thành i * 10. Ba thread khi đó gửi 10, 20 và 30, và vòng lặp cộng chúng lại thành 60. Hãy giữ move: mỗi thread cần sender riêng của nó."
