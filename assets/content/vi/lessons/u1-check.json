@@ -41,9 +41,71 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy thay mỗi todo!() bằng code chạy được. Đừng thay đổi các hằng số hay main. Đầu vào không bao giờ âm.\n\nfn parse_kilos(text: &str) -> f64\nBiến văn bản như \"3.5\" thành một f64. Văn bản luôn là một số hợp lệ. Hãy shadow text bằng một let mới có kiểu f64, và dùng parse().unwrap().\n\nfn fruit_cost(kilos: f64) -> f64\nNhân kilos với PRICE_PER_KILO, rồi cộng BAG_FEE. Hãy tạo total bằng let mut và thay đổi nó bằng +=.\n\nfn after_coupon(cost: f64) -> f64\nTrừ COUPON khỏi cost, rồi chia đôi kết quả. Không dùng mut. Thay vào đó hãy shadow cost bằng các dòng let mới.\n\nChương trình phải in ra:\n3.5 kg costs 9.25\n0 kg costs 0.5\nCost 10.5, after coupon 4.25\nCost 3, after coupon 0.5\nCosts: [4.25, 5.5]",
+    "prompt": "Hãy thay mỗi todo!() bằng code chạy được. Đừng thay đổi các hằng số hay main. Đầu vào không bao giờ âm.\n\nfn parse_kilos(text: &str) -> f64\nBiến văn bản như \"3.5\" thành một f64. Văn bản luôn là một số hợp lệ. Hãy shadow text bằng một let mới có kiểu f64, và dùng parse().unwrap().\n\nfn fruit_cost(kilos: f64) -> f64\nNhân kilos với PRICE_PER_KILO, rồi cộng BAG_FEE. Hãy tạo total bằng let mut và thay đổi nó bằng +=.\n\nfn after_coupon(cost: f64) -> f64\nTrừ COUPON khỏi cost, rồi chia đôi kết quả. Không dùng mut. Thay vào đó hãy shadow cost bằng các dòng let mới.\n\nKhi các hàm chạy đúng, main in ra:\n3.5 kg costs 9.25\n0 kg costs 0.5\nCost 10.5, after coupon 4.25\nCost 3, after coupon 0.5\nCosts: [4.25, 5.5]",
     "starter": "const PRICE_PER_KILO: f64 = 2.5;\nconst BAG_FEE: f64 = 0.5;\nconst COUPON: f64 = 2.0;\n\nfn parse_kilos(text: &str) -> f64 {\n    todo!()\n}\n\nfn fruit_cost(kilos: f64) -> f64 {\n    todo!()\n}\n\nfn after_coupon(cost: f64) -> f64 {\n    todo!()\n}\n\nfn main() {\n    let weight = parse_kilos(\"3.5\");\n    println!(\"{weight} kg costs {}\", fruit_cost(weight));\n    println!(\"0 kg costs {}\", fruit_cost(0.0));\n\n    let cost = fruit_cost(4.0);\n    println!(\"Cost {cost}, after coupon {}\", after_coupon(cost));\n    println!(\"Cost 3, after coupon {}\", after_coupon(3.0));\n\n    let costs = [fruit_cost(1.5), fruit_cost(2.0)];\n    print!(\"Costs: \");\n    println!(\"{:?}\", costs);\n}",
-    "expectedOutput": "3.5 kg costs 9.25\n0 kg costs 0.5\nCost 10.5, after coupon 4.25\nCost 3, after coupon 0.5\nCosts: [4.25, 5.5]",
+    "tests": [
+      {
+        "id": "parse-kilos-decimal",
+        "label": "parse_kilos đọc \"3.5\" thành 3.5",
+        "code": "check_near!(parse_kilos(\"3.5\"), 3.5, 0.001);"
+      },
+      {
+        "id": "cost-three-and-half",
+        "label": "3.5 kg có giá 9.25",
+        "code": "check_near!(fruit_cost(3.5), 9.25, 0.001);"
+      },
+      {
+        "id": "cost-zero-kilos",
+        "label": "0 kg chỉ tốn phí túi, 0.5",
+        "code": "check_near!(fruit_cost(0.0), 0.5, 0.001);"
+      },
+      {
+        "id": "coupon-ten-and-half",
+        "label": "Giá 10.5 còn 4.25 sau khi dùng phiếu giảm giá",
+        "code": "check_near!(after_coupon(10.5), 4.25, 0.001);"
+      },
+      {
+        "id": "coupon-small-cost",
+        "label": "Giá 3 còn 0.5 sau khi dùng phiếu giảm giá",
+        "code": "check_near!(after_coupon(3.0), 0.5, 0.001);"
+      },
+      {
+        "id": "parse-whole-and-small",
+        "hidden": true,
+        "label": "Other texts, whole numbers and fractions",
+        "code": "check_near!(parse_kilos(\"12\"), 12.0, 0.001);\ncheck_near!(parse_kilos(\"0\"), 0.0, 0.001);\ncheck_near!(parse_kilos(\"0.25\"), 0.25, 0.001);"
+      },
+      {
+        "id": "cost-other-kilos",
+        "hidden": true,
+        "label": "Other weights use the price and then the fee",
+        "code": "check_near!(fruit_cost(1.5), 4.25, 0.001);\ncheck_near!(fruit_cost(2.0), 5.5, 0.001);\ncheck_near!(fruit_cost(10.0), 25.5, 0.001);"
+      },
+      {
+        "id": "cost-fraction-of-kilo",
+        "hidden": true,
+        "label": "A small weight",
+        "code": "check_near!(fruit_cost(0.2), 1.0, 0.001);\ncheck_near!(fruit_cost(0.4), 1.5, 0.001);"
+      },
+      {
+        "id": "coupon-equals-cost",
+        "hidden": true,
+        "label": "A cost equal to the coupon leaves nothing",
+        "code": "check_near!(after_coupon(2.0), 0.0, 0.001);"
+      },
+      {
+        "id": "coupon-then-halve",
+        "hidden": true,
+        "label": "The coupon comes off before the halving",
+        "code": "check_near!(after_coupon(10.0), 4.0, 0.001);\ncheck_near!(after_coupon(4.0), 1.0, 0.001);\ncheck_near!(after_coupon(25.5), 11.75, 0.001);"
+      },
+      {
+        "id": "parse-then-cost",
+        "hidden": true,
+        "label": "Parsed text works with the cost function",
+        "code": "check_near!(fruit_cost(parse_kilos(\"4\")), 10.5, 0.001);\ncheck_near!(after_coupon(fruit_cost(parse_kilos(\"4\"))), 4.25, 0.001);"
+      }
+    ],
     "solution": "const PRICE_PER_KILO: f64 = 2.5;\nconst BAG_FEE: f64 = 0.5;\nconst COUPON: f64 = 2.0;\n\nfn parse_kilos(text: &str) -> f64 {\n    let text: f64 = text.parse().unwrap();\n    text\n}\n\nfn fruit_cost(kilos: f64) -> f64 {\n    let mut total = kilos * PRICE_PER_KILO;\n    total += BAG_FEE;\n    total\n}\n\nfn after_coupon(cost: f64) -> f64 {\n    let cost = cost - COUPON;\n    let cost = cost / 2.0;\n    cost\n}\n\nfn main() {\n    let weight = parse_kilos(\"3.5\");\n    println!(\"{weight} kg costs {}\", fruit_cost(weight));\n    println!(\"0 kg costs {}\", fruit_cost(0.0));\n\n    let cost = fruit_cost(4.0);\n    println!(\"Cost {cost}, after coupon {}\", after_coupon(cost));\n    println!(\"Cost 3, after coupon {}\", after_coupon(3.0));\n\n    let costs = [fruit_cost(1.5), fruit_cost(2.0)];\n    print!(\"Costs: \");\n    println!(\"{:?}\", costs);\n}",
     "hints": [
       "Hãy dùng các hằng số theo tên bên trong các hàm. Hai hàm cần shadowing: parse_kilos cho text một kiểu mới, và after_coupon tạo các biến cost mới thay vì thay đổi một biến. fruit_cost thay đổi total từng bước.",

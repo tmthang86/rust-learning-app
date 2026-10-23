@@ -31,9 +31,95 @@
     }
   ],
   "exercise": {
-    "prompt": "Finish the inventory program. The trait Describe, the structs Crate and Barrel, and Inventory<T> are written, but three pieces are marked todo!().\n\n(1) Write impl Describe for Barrel. name returns the text barrel, a space, and the label (for example barrel wine). size returns the liters. Also override summary so a Barrel gives its name, then the text holding, then the liters, then the text liters (for example barrel wine holding 50 liters). Crate keeps the default summary.\n\n(2) In impl<T: Describe> Inventory<T>, write fn total_size(&self) -> u32. It returns the sum of the sizes of all items, and 0 when there are none.\n\n(3) Write fn bigger<'a, T: Describe>(a: &'a T, b: &'a T) -> &'a T. It returns the item with the larger size. If the sizes are equal, it returns a, the first one. You may assume that sizes and totals fit in a u32.\n\nDo not change main. It should print:\n\nbarrel wine holding 50 liters\nbarrel wine\nbarrel water\ntotal: 0\ntotal: 35\ncrate of size 27",
+    "prompt": "Finish the inventory program. The trait Describe, the structs Crate and Barrel, and Inventory<T> are written, but three pieces are marked todo!().\n\n(1) Write impl Describe for Barrel. name returns the text barrel, a space, and the label (for example barrel wine). size returns the liters. Also override summary so a Barrel gives its name, then the text holding, then the liters, then the text liters (for example barrel wine holding 50 liters). Crate keeps the default summary.\n\n(2) In impl<T: Describe> Inventory<T>, write fn total_size(&self) -> u32. It returns the sum of the sizes of all items, and 0 when there are none.\n\n(3) Write fn bigger<'a, T: Describe>(a: &'a T, b: &'a T) -> &'a T. It returns the item with the larger size. If the sizes are equal, it returns a, the first one. You may assume that sizes and totals fit in a u32.\n\nDo not change main. With a correct solution it prints:\n\nbarrel wine holding 50 liters\nbarrel wine\nbarrel water\ntotal: 0\ntotal: 35\ncrate of size 27",
     "starter": "trait Describe {\n    fn name(&self) -> String;\n    fn size(&self) -> u32;\n\n    fn summary(&self) -> String {\n        format!(\"{} of size {}\", self.name(), self.size())\n    }\n}\n\nstruct Crate {\n    side: u32,\n}\n\nstruct Barrel {\n    label: &'static str,\n    liters: u32,\n}\n\nimpl Describe for Crate {\n    fn name(&self) -> String {\n        String::from(\"crate\")\n    }\n\n    fn size(&self) -> u32 {\n        self.side * self.side * self.side\n    }\n}\n\nimpl Describe for Barrel {\n    // TODO: name is \"barrel \" followed by the label, size is the liters.\n    // Also override summary (see the exercise text).\n    fn name(&self) -> String {\n        todo!()\n    }\n\n    fn size(&self) -> u32 {\n        todo!()\n    }\n}\n\nstruct Inventory<T> {\n    items: Vec<T>,\n}\n\nimpl<T: Describe> Inventory<T> {\n    fn new() -> Inventory<T> {\n        Inventory { items: Vec::new() }\n    }\n\n    fn add(&mut self, item: T) {\n        self.items.push(item);\n    }\n\n    fn total_size(&self) -> u32 {\n        todo!()\n    }\n}\n\nfn bigger<'a, T: Describe>(a: &'a T, b: &'a T) -> &'a T {\n    todo!()\n}\n\nfn main() {\n    let wine = Barrel { label: \"wine\", liters: 50 };\n    let oil = Barrel { label: \"oil\", liters: 50 };\n    let water = Barrel { label: \"water\", liters: 80 };\n    println!(\"{}\", wine.summary());\n    println!(\"{}\", bigger(&wine, &oil).name());\n    println!(\"{}\", bigger(&oil, &water).name());\n\n    let mut crates: Inventory<Crate> = Inventory::new();\n    println!(\"total: {}\", crates.total_size());\n    crates.add(Crate { side: 2 });\n    crates.add(Crate { side: 3 });\n    println!(\"total: {}\", crates.total_size());\n    println!(\"{}\", bigger(&crates.items[0], &crates.items[1]).summary());\n}",
-    "expectedOutput": "barrel wine holding 50 liters\nbarrel wine\nbarrel water\ntotal: 0\ntotal: 35\ncrate of size 27",
+    "tests": [
+      {
+        "id": "barrel-name",
+        "label": "A barrel's name is barrel plus its label",
+        "code": "check_eq!(Barrel { label: \"wine\", liters: 50 }.name(), \"barrel wine\");"
+      },
+      {
+        "id": "barrel-summary",
+        "label": "A barrel's summary also gives the liters",
+        "code": "check_eq!(Barrel { label: \"wine\", liters: 50 }.summary(), \"barrel wine holding 50 liters\");"
+      },
+      {
+        "id": "crate-default-summary",
+        "label": "A crate keeps the default summary",
+        "code": "check_eq!(Crate { side: 3 }.summary(), \"crate of size 27\");"
+      },
+      {
+        "id": "total-two-crates",
+        "label": "total_size adds up the sizes of all items",
+        "code": "let mut inv: Inventory<Crate> = Inventory::new();\ninv.add(Crate { side: 2 });\ninv.add(Crate { side: 3 });\ncheck_eq!(inv.total_size(), 35);"
+      },
+      {
+        "id": "bigger-larger",
+        "label": "bigger gives back the item with the larger size",
+        "code": "let wine = Barrel { label: \"wine\", liters: 50 };\nlet water = Barrel { label: \"water\", liters: 80 };\ncheck_eq!(bigger(&wine, &water).name(), \"barrel water\");"
+      },
+      {
+        "id": "barrel-size",
+        "hidden": true,
+        "label": "Barrel size is the liters",
+        "code": "check_eq!(Barrel { label: \"oil\", liters: 7 }.size(), 7);\ncheck_eq!(Barrel { label: \"oil\", liters: 0 }.size(), 0);"
+      },
+      {
+        "id": "barrel-name-other",
+        "hidden": true,
+        "label": "Name uses another label",
+        "code": "check_eq!(Barrel { label: \"water\", liters: 1 }.name(), \"barrel water\");\ncheck_eq!(Barrel { label: \"\", liters: 1 }.name(), \"barrel \");"
+      },
+      {
+        "id": "barrel-summary-other",
+        "hidden": true,
+        "label": "Summary with other values",
+        "code": "check_eq!(Barrel { label: \"oil\", liters: 7 }.summary(), \"barrel oil holding 7 liters\");\ncheck_eq!(Barrel { label: \"ale\", liters: 0 }.summary(), \"barrel ale holding 0 liters\");"
+      },
+      {
+        "id": "crate-summary-other",
+        "hidden": true,
+        "label": "Default summary on another crate",
+        "code": "check_eq!(Crate { side: 1 }.summary(), \"crate of size 1\");\ncheck_eq!(Crate { side: 2 }.summary(), \"crate of size 8\");"
+      },
+      {
+        "id": "total-empty",
+        "hidden": true,
+        "label": "No items give a total of 0",
+        "code": "let inv: Inventory<Crate> = Inventory::new();\ncheck_eq!(inv.total_size(), 0);\nlet barrels: Inventory<Barrel> = Inventory::new();\ncheck_eq!(barrels.total_size(), 0);"
+      },
+      {
+        "id": "total-barrels",
+        "hidden": true,
+        "label": "Total over barrels, including a zero size",
+        "code": "let mut inv: Inventory<Barrel> = Inventory::new();\ninv.add(Barrel { label: \"a\", liters: 50 });\ninv.add(Barrel { label: \"b\", liters: 80 });\ninv.add(Barrel { label: \"c\", liters: 0 });\ninv.add(Barrel { label: \"d\", liters: 1 });\ncheck_eq!(inv.total_size(), 131);"
+      },
+      {
+        "id": "total-one-item",
+        "hidden": true,
+        "label": "A single item",
+        "code": "let mut inv: Inventory<Crate> = Inventory::new();\ninv.add(Crate { side: 4 });\ncheck_eq!(inv.total_size(), 64);"
+      },
+      {
+        "id": "bigger-first-larger",
+        "hidden": true,
+        "label": "The first item is larger",
+        "code": "let big = Barrel { label: \"big\", liters: 90 };\nlet small = Barrel { label: \"small\", liters: 10 };\ncheck_eq!(bigger(&big, &small).name(), \"barrel big\");"
+      },
+      {
+        "id": "bigger-second-larger",
+        "hidden": true,
+        "label": "The second item is larger, for crates",
+        "code": "let a = Crate { side: 2 };\nlet b = Crate { side: 3 };\ncheck_eq!(bigger(&a, &b).size(), 27);\ncheck_eq!(bigger(&b, &a).size(), 27);"
+      },
+      {
+        "id": "bigger-tie-first",
+        "hidden": true,
+        "label": "On a tie the first argument is returned",
+        "code": "let a = Barrel { label: \"a\", liters: 50 };\nlet b = Barrel { label: \"b\", liters: 50 };\ncheck_eq!(bigger(&a, &b).name(), \"barrel a\");\ncheck_eq!(bigger(&b, &a).name(), \"barrel b\");\ncheck!(::std::ptr::eq(bigger(&a, &b), &a));"
+      }
+    ],
     "solution": "trait Describe {\n    fn name(&self) -> String;\n    fn size(&self) -> u32;\n\n    fn summary(&self) -> String {\n        format!(\"{} of size {}\", self.name(), self.size())\n    }\n}\n\nstruct Crate {\n    side: u32,\n}\n\nstruct Barrel {\n    label: &'static str,\n    liters: u32,\n}\n\nimpl Describe for Crate {\n    fn name(&self) -> String {\n        String::from(\"crate\")\n    }\n\n    fn size(&self) -> u32 {\n        self.side * self.side * self.side\n    }\n}\n\nimpl Describe for Barrel {\n    fn name(&self) -> String {\n        format!(\"barrel {}\", self.label)\n    }\n\n    fn size(&self) -> u32 {\n        self.liters\n    }\n\n    fn summary(&self) -> String {\n        format!(\"{} holding {} liters\", self.name(), self.liters)\n    }\n}\n\nstruct Inventory<T> {\n    items: Vec<T>,\n}\n\nimpl<T: Describe> Inventory<T> {\n    fn new() -> Inventory<T> {\n        Inventory { items: Vec::new() }\n    }\n\n    fn add(&mut self, item: T) {\n        self.items.push(item);\n    }\n\n    fn total_size(&self) -> u32 {\n        let mut total = 0;\n        for item in &self.items {\n            total += item.size();\n        }\n        total\n    }\n}\n\nfn bigger<'a, T: Describe>(a: &'a T, b: &'a T) -> &'a T {\n    if b.size() > a.size() { b } else { a }\n}\n\nfn main() {\n    let wine = Barrel { label: \"wine\", liters: 50 };\n    let oil = Barrel { label: \"oil\", liters: 50 };\n    let water = Barrel { label: \"water\", liters: 80 };\n    println!(\"{}\", wine.summary());\n    println!(\"{}\", bigger(&wine, &oil).name());\n    println!(\"{}\", bigger(&oil, &water).name());\n\n    let mut crates: Inventory<Crate> = Inventory::new();\n    println!(\"total: {}\", crates.total_size());\n    crates.add(Crate { side: 2 });\n    crates.add(Crate { side: 3 });\n    println!(\"total: {}\", crates.total_size());\n    println!(\"{}\", bigger(&crates.items[0], &crates.items[1]).summary());\n}",
     "hints": [
       "Start with Barrel: copy the shape of the Crate impl, and write summary again to show the liters. total_size loops over the items. bigger picks one of two items by size, and on a tie it picks the first.",

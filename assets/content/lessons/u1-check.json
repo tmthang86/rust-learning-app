@@ -41,9 +41,71 @@
     }
   ],
   "exercise": {
-    "prompt": "Replace each todo!() with working code. Do not change the constants or main. Inputs are never negative.\n\nfn parse_kilos(text: &str) -> f64\nTurns text such as \"3.5\" into an f64. The text is always a valid number. Shadow text with a new let that has the type f64, and use parse().unwrap().\n\nfn fruit_cost(kilos: f64) -> f64\nMultiplies kilos by PRICE_PER_KILO, then adds BAG_FEE. Make the total with let mut and change it with +=.\n\nfn after_coupon(cost: f64) -> f64\nTakes COUPON off cost, then halves the result. Do not use mut. Shadow cost with new let lines instead.\n\nThe program should print:\n3.5 kg costs 9.25\n0 kg costs 0.5\nCost 10.5, after coupon 4.25\nCost 3, after coupon 0.5\nCosts: [4.25, 5.5]",
+    "prompt": "Replace each todo!() with working code. Do not change the constants or main. Inputs are never negative.\n\nfn parse_kilos(text: &str) -> f64\nTurns text such as \"3.5\" into an f64. The text is always a valid number. Shadow text with a new let that has the type f64, and use parse().unwrap().\n\nfn fruit_cost(kilos: f64) -> f64\nMultiplies kilos by PRICE_PER_KILO, then adds BAG_FEE. Make the total with let mut and change it with +=.\n\nfn after_coupon(cost: f64) -> f64\nTakes COUPON off cost, then halves the result. Do not use mut. Shadow cost with new let lines instead.\n\nWhen the functions work, main prints:\n3.5 kg costs 9.25\n0 kg costs 0.5\nCost 10.5, after coupon 4.25\nCost 3, after coupon 0.5\nCosts: [4.25, 5.5]",
     "starter": "const PRICE_PER_KILO: f64 = 2.5;\nconst BAG_FEE: f64 = 0.5;\nconst COUPON: f64 = 2.0;\n\nfn parse_kilos(text: &str) -> f64 {\n    todo!()\n}\n\nfn fruit_cost(kilos: f64) -> f64 {\n    todo!()\n}\n\nfn after_coupon(cost: f64) -> f64 {\n    todo!()\n}\n\nfn main() {\n    let weight = parse_kilos(\"3.5\");\n    println!(\"{weight} kg costs {}\", fruit_cost(weight));\n    println!(\"0 kg costs {}\", fruit_cost(0.0));\n\n    let cost = fruit_cost(4.0);\n    println!(\"Cost {cost}, after coupon {}\", after_coupon(cost));\n    println!(\"Cost 3, after coupon {}\", after_coupon(3.0));\n\n    let costs = [fruit_cost(1.5), fruit_cost(2.0)];\n    print!(\"Costs: \");\n    println!(\"{:?}\", costs);\n}",
-    "expectedOutput": "3.5 kg costs 9.25\n0 kg costs 0.5\nCost 10.5, after coupon 4.25\nCost 3, after coupon 0.5\nCosts: [4.25, 5.5]",
+    "tests": [
+      {
+        "id": "parse-kilos-decimal",
+        "label": "parse_kilos reads \"3.5\" as 3.5",
+        "code": "check_near!(parse_kilos(\"3.5\"), 3.5, 0.001);"
+      },
+      {
+        "id": "cost-three-and-half",
+        "label": "3.5 kg costs 9.25",
+        "code": "check_near!(fruit_cost(3.5), 9.25, 0.001);"
+      },
+      {
+        "id": "cost-zero-kilos",
+        "label": "0 kg costs just the bag fee, 0.5",
+        "code": "check_near!(fruit_cost(0.0), 0.5, 0.001);"
+      },
+      {
+        "id": "coupon-ten-and-half",
+        "label": "A cost of 10.5 becomes 4.25 after the coupon",
+        "code": "check_near!(after_coupon(10.5), 4.25, 0.001);"
+      },
+      {
+        "id": "coupon-small-cost",
+        "label": "A cost of 3 becomes 0.5 after the coupon",
+        "code": "check_near!(after_coupon(3.0), 0.5, 0.001);"
+      },
+      {
+        "id": "parse-whole-and-small",
+        "hidden": true,
+        "label": "Other texts, whole numbers and fractions",
+        "code": "check_near!(parse_kilos(\"12\"), 12.0, 0.001);\ncheck_near!(parse_kilos(\"0\"), 0.0, 0.001);\ncheck_near!(parse_kilos(\"0.25\"), 0.25, 0.001);"
+      },
+      {
+        "id": "cost-other-kilos",
+        "hidden": true,
+        "label": "Other weights use the price and then the fee",
+        "code": "check_near!(fruit_cost(1.5), 4.25, 0.001);\ncheck_near!(fruit_cost(2.0), 5.5, 0.001);\ncheck_near!(fruit_cost(10.0), 25.5, 0.001);"
+      },
+      {
+        "id": "cost-fraction-of-kilo",
+        "hidden": true,
+        "label": "A small weight",
+        "code": "check_near!(fruit_cost(0.2), 1.0, 0.001);\ncheck_near!(fruit_cost(0.4), 1.5, 0.001);"
+      },
+      {
+        "id": "coupon-equals-cost",
+        "hidden": true,
+        "label": "A cost equal to the coupon leaves nothing",
+        "code": "check_near!(after_coupon(2.0), 0.0, 0.001);"
+      },
+      {
+        "id": "coupon-then-halve",
+        "hidden": true,
+        "label": "The coupon comes off before the halving",
+        "code": "check_near!(after_coupon(10.0), 4.0, 0.001);\ncheck_near!(after_coupon(4.0), 1.0, 0.001);\ncheck_near!(after_coupon(25.5), 11.75, 0.001);"
+      },
+      {
+        "id": "parse-then-cost",
+        "hidden": true,
+        "label": "Parsed text works with the cost function",
+        "code": "check_near!(fruit_cost(parse_kilos(\"4\")), 10.5, 0.001);\ncheck_near!(after_coupon(fruit_cost(parse_kilos(\"4\"))), 4.25, 0.001);"
+      }
+    ],
     "solution": "const PRICE_PER_KILO: f64 = 2.5;\nconst BAG_FEE: f64 = 0.5;\nconst COUPON: f64 = 2.0;\n\nfn parse_kilos(text: &str) -> f64 {\n    let text: f64 = text.parse().unwrap();\n    text\n}\n\nfn fruit_cost(kilos: f64) -> f64 {\n    let mut total = kilos * PRICE_PER_KILO;\n    total += BAG_FEE;\n    total\n}\n\nfn after_coupon(cost: f64) -> f64 {\n    let cost = cost - COUPON;\n    let cost = cost / 2.0;\n    cost\n}\n\nfn main() {\n    let weight = parse_kilos(\"3.5\");\n    println!(\"{weight} kg costs {}\", fruit_cost(weight));\n    println!(\"0 kg costs {}\", fruit_cost(0.0));\n\n    let cost = fruit_cost(4.0);\n    println!(\"Cost {cost}, after coupon {}\", after_coupon(cost));\n    println!(\"Cost 3, after coupon {}\", after_coupon(3.0));\n\n    let costs = [fruit_cost(1.5), fruit_cost(2.0)];\n    print!(\"Costs: \");\n    println!(\"{:?}\", costs);\n}",
     "hints": [
       "Use the constants by name inside the functions. Two functions need shadowing: parse_kilos gives text a new type, and after_coupon makes new cost variables instead of changing one. fruit_cost changes a total step by step.",

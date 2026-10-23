@@ -28,9 +28,117 @@
     }
   ],
   "exercise": {
-    "prompt": "Các kiểu Vehicle và Ticket đã được viết sẵn cho bạn. Hãy thay mỗi todo!() bằng code chạy được. Đừng thay đổi main.\n\nfn hourly_rate(vehicle: &Vehicle) -> u32\nMột Bike tốn 1 mỗi giờ và một Car tốn 3. Một Truck tốn 5 cho mỗi trục, nhưng một Truck có từ 4 trục trở lên tốn 20 mỗi giờ.\n\nfn cost(&self) -> u32   (một phương thức của Ticket)\nTrả về mức phí theo giờ của phương tiện trên ticket nhân với số giờ.\n\nfn most_expensive(tickets: &[Ticket]) -> Option<u32>\nTrả về Some chứa chi phí cao nhất trong các ticket, hoặc None nếu không có ticket nào.\n\nSố trục và số giờ tối đa là 1000.\n\nChương trình phải in ra:\nBike: 1 per hour, 4 in total\nCar: 3 per hour, 6 in total\nTruck(2): 10 per hour, 30 in total\nTruck(5): 20 per hour, 20 in total\nSome(30)\nSome(4)\nNone",
+    "prompt": "Các kiểu Vehicle và Ticket đã được viết sẵn cho bạn. Hãy thay mỗi todo!() bằng code chạy được. Đừng thay đổi main.\n\nfn hourly_rate(vehicle: &Vehicle) -> u32\nMột Bike tốn 1 mỗi giờ và một Car tốn 3. Một Truck tốn 5 cho mỗi trục, nhưng một Truck có từ 4 trục trở lên tốn 20 mỗi giờ.\n\nfn cost(&self) -> u32   (một phương thức của Ticket)\nTrả về mức phí theo giờ của phương tiện trên ticket nhân với số giờ.\n\nfn most_expensive(tickets: &[Ticket]) -> Option<u32>\nTrả về Some chứa chi phí cao nhất trong các ticket, hoặc None nếu không có ticket nào.\n\nSố trục và số giờ tối đa là 1000.\n\nKhi các hàm chạy đúng, main in ra:\nBike: 1 per hour, 4 in total\nCar: 3 per hour, 6 in total\nTruck(2): 10 per hour, 30 in total\nTruck(5): 20 per hour, 20 in total\nSome(30)\nSome(4)\nNone",
     "starter": "#[derive(Debug)]\nenum Vehicle {\n    Bike,\n    Car,\n    Truck(u32), // the number of axles\n}\n\nstruct Ticket {\n    vehicle: Vehicle,\n    hours: u32,\n}\n\nfn hourly_rate(vehicle: &Vehicle) -> u32 {\n    todo!()\n}\n\nimpl Ticket {\n    fn cost(&self) -> u32 {\n        todo!()\n    }\n}\n\nfn most_expensive(tickets: &[Ticket]) -> Option<u32> {\n    todo!()\n}\n\nfn main() {\n    let tickets = [\n        Ticket { vehicle: Vehicle::Bike, hours: 4 },\n        Ticket { vehicle: Vehicle::Car, hours: 2 },\n        Ticket { vehicle: Vehicle::Truck(2), hours: 3 },\n        Ticket { vehicle: Vehicle::Truck(5), hours: 1 },\n    ];\n    for t in &tickets {\n        println!(\"{:?}: {} per hour, {} in total\", t.vehicle, hourly_rate(&t.vehicle), t.cost());\n    }\n    println!(\"{:?}\", most_expensive(&tickets));\n    println!(\"{:?}\", most_expensive(&tickets[..1]));\n    println!(\"{:?}\", most_expensive(&tickets[..0]));\n}",
-    "expectedOutput": "Bike: 1 per hour, 4 in total\nCar: 3 per hour, 6 in total\nTruck(2): 10 per hour, 30 in total\nTruck(5): 20 per hour, 20 in total\nSome(30)\nSome(4)\nNone",
+    "tests": [
+      {
+        "id": "bike-rate",
+        "label": "Xe đạp tính 1 mỗi giờ",
+        "code": "check_eq!(hourly_rate(&Vehicle::Bike), 1);"
+      },
+      {
+        "id": "car-rate",
+        "label": "Ô tô tính 3 mỗi giờ",
+        "code": "check_eq!(hourly_rate(&Vehicle::Car), 3);"
+      },
+      {
+        "id": "truck-per-axle",
+        "label": "Xe tải 2 trục tính 10 mỗi giờ",
+        "code": "check_eq!(hourly_rate(&Vehicle::Truck(2)), 10);"
+      },
+      {
+        "id": "truck-many-axles",
+        "label": "Xe tải 5 trục tính 20 mỗi giờ",
+        "code": "check_eq!(hourly_rate(&Vehicle::Truck(5)), 20);"
+      },
+      {
+        "id": "ticket-cost",
+        "label": "Giá của một vé là mức giá mỗi giờ nhân với số giờ",
+        "code": "let ticket = Ticket { vehicle: Vehicle::Truck(2), hours: 3 };\ncheck_eq!(ticket.cost(), 30);"
+      },
+      {
+        "id": "most-expensive-several",
+        "label": "most_expensive tìm giá cao nhất trong nhiều vé",
+        "code": "let tickets = [\n    Ticket { vehicle: Vehicle::Bike, hours: 4 },\n    Ticket { vehicle: Vehicle::Car, hours: 2 },\n    Ticket { vehicle: Vehicle::Truck(2), hours: 3 },\n    Ticket { vehicle: Vehicle::Truck(5), hours: 1 },\n];\ncheck_eq!(most_expensive(&tickets), Some(30));"
+      },
+      {
+        "id": "most-expensive-none",
+        "label": "most_expensive trả về None khi không có vé nào",
+        "code": "let tickets: [Ticket; 0] = [];\ncheck_eq!(most_expensive(&tickets), None);"
+      },
+      {
+        "id": "truck-small-axles",
+        "hidden": true,
+        "label": "Trucks with 1 or 3 axles pay 5 per axle",
+        "code": "check_eq!(hourly_rate(&Vehicle::Truck(1)), 5);\ncheck_eq!(hourly_rate(&Vehicle::Truck(3)), 15);"
+      },
+      {
+        "id": "truck-four-axles",
+        "hidden": true,
+        "label": "Exactly 4 axles is the flat 20",
+        "code": "check_eq!(hourly_rate(&Vehicle::Truck(4)), 20);"
+      },
+      {
+        "id": "truck-max-axles",
+        "hidden": true,
+        "label": "The largest allowed axle count is the flat 20",
+        "code": "check_eq!(hourly_rate(&Vehicle::Truck(1000)), 20);\ncheck_eq!(hourly_rate(&Vehicle::Truck(6)), 20);"
+      },
+      {
+        "id": "cost-zero-hours",
+        "hidden": true,
+        "label": "Zero hours cost nothing",
+        "code": "let ticket = Ticket { vehicle: Vehicle::Car, hours: 0 };\ncheck_eq!(ticket.cost(), 0);"
+      },
+      {
+        "id": "cost-other-vehicles",
+        "hidden": true,
+        "label": "Cost for a bike, a car and a big truck",
+        "code": "let bike = Ticket { vehicle: Vehicle::Bike, hours: 4 };\ncheck_eq!(bike.cost(), 4);\nlet car = Ticket { vehicle: Vehicle::Car, hours: 2 };\ncheck_eq!(car.cost(), 6);\nlet truck = Ticket { vehicle: Vehicle::Truck(4), hours: 2 };\ncheck_eq!(truck.cost(), 40);"
+      },
+      {
+        "id": "cost-max-hours",
+        "hidden": true,
+        "label": "The largest allowed hours",
+        "code": "let ticket = Ticket { vehicle: Vehicle::Bike, hours: 1000 };\ncheck_eq!(ticket.cost(), 1000);\nlet ticket = Ticket { vehicle: Vehicle::Truck(1000), hours: 1000 };\ncheck_eq!(ticket.cost(), 20000);"
+      },
+      {
+        "id": "most-expensive-empty-slice",
+        "hidden": true,
+        "label": "An empty slice of a longer array gives None",
+        "code": "let tickets = [Ticket { vehicle: Vehicle::Bike, hours: 4 }];\ncheck_eq!(most_expensive(&tickets[..0]), None);"
+      },
+      {
+        "id": "most-expensive-one",
+        "hidden": true,
+        "label": "A single ticket is the most expensive",
+        "code": "let tickets = [Ticket { vehicle: Vehicle::Bike, hours: 4 }];\ncheck_eq!(most_expensive(&tickets), Some(4));"
+      },
+      {
+        "id": "most-expensive-first",
+        "hidden": true,
+        "label": "The highest cost can be the first ticket",
+        "code": "let tickets = [\n    Ticket { vehicle: Vehicle::Truck(2), hours: 3 },\n    Ticket { vehicle: Vehicle::Car, hours: 2 },\n    Ticket { vehicle: Vehicle::Bike, hours: 1 },\n];\ncheck_eq!(most_expensive(&tickets), Some(30));"
+      },
+      {
+        "id": "most-expensive-last",
+        "hidden": true,
+        "label": "The highest cost can be the last ticket",
+        "code": "let tickets = [\n    Ticket { vehicle: Vehicle::Bike, hours: 1 },\n    Ticket { vehicle: Vehicle::Car, hours: 2 },\n    Ticket { vehicle: Vehicle::Truck(2), hours: 3 },\n];\ncheck_eq!(most_expensive(&tickets), Some(30));"
+      },
+      {
+        "id": "most-expensive-tie",
+        "hidden": true,
+        "label": "Equal costs give that cost",
+        "code": "let tickets = [\n    Ticket { vehicle: Vehicle::Car, hours: 2 },\n    Ticket { vehicle: Vehicle::Bike, hours: 6 },\n];\ncheck_eq!(most_expensive(&tickets), Some(6));"
+      },
+      {
+        "id": "most-expensive-all-zero",
+        "hidden": true,
+        "label": "Zero-cost tickets give Some(0), not None",
+        "code": "let tickets = [\n    Ticket { vehicle: Vehicle::Car, hours: 0 },\n    Ticket { vehicle: Vehicle::Bike, hours: 0 },\n];\ncheck_eq!(most_expensive(&tickets), Some(0));"
+      }
+    ],
     "solution": "#[derive(Debug)]\nenum Vehicle {\n    Bike,\n    Car,\n    Truck(u32), // the number of axles\n}\n\nstruct Ticket {\n    vehicle: Vehicle,\n    hours: u32,\n}\n\nfn hourly_rate(vehicle: &Vehicle) -> u32 {\n    match vehicle {\n        Vehicle::Bike => 1,\n        Vehicle::Car => 3,\n        Vehicle::Truck(axles) if *axles >= 4 => 20,\n        Vehicle::Truck(axles) => 5 * axles,\n    }\n}\n\nimpl Ticket {\n    fn cost(&self) -> u32 {\n        hourly_rate(&self.vehicle) * self.hours\n    }\n}\n\nfn most_expensive(tickets: &[Ticket]) -> Option<u32> {\n    let mut best = None;\n    for ticket in tickets {\n        let cost = ticket.cost();\n        match best {\n            Some(b) if b >= cost => {}\n            _ => best = Some(cost),\n        }\n    }\n    best\n}\n\nfn main() {\n    let tickets = [\n        Ticket { vehicle: Vehicle::Bike, hours: 4 },\n        Ticket { vehicle: Vehicle::Car, hours: 2 },\n        Ticket { vehicle: Vehicle::Truck(2), hours: 3 },\n        Ticket { vehicle: Vehicle::Truck(5), hours: 1 },\n    ];\n    for t in &tickets {\n        println!(\"{:?}: {} per hour, {} in total\", t.vehicle, hourly_rate(&t.vehicle), t.cost());\n    }\n    println!(\"{:?}\", most_expensive(&tickets));\n    println!(\"{:?}\", most_expensive(&tickets[..1]));\n    println!(\"{:?}\", most_expensive(&tickets[..0]));\n}",
     "hints": [
       "hourly_rate là một match trên vehicle. Một Truck chứa số trục của nó, và 4 trục trở lên là một trường hợp đặc biệt. cost là một phương thức, nên nó nằm trong khối impl. most_expensive giữ một giá trị best bắt đầu là None.",

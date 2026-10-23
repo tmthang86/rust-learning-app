@@ -28,9 +28,88 @@
     }
   ],
   "exercise": {
-    "prompt": "Replace each todo!() with working code. Do not change main.\n\nfn total_saved(days: i32) -> i32\nGives back 1 + 2 + ... + days. For 0 days it gives back 0.\n\nfn stars(total: i32) -> i32\nGives back 3 if total is 50 or more. Otherwise it gives back 2 if total is 10 or more. Otherwise it gives back 1.\n\nfn days_to_reach(goal: i32) -> i32\nYou save 1 coin on day 1, 2 coins on day 2, and so on. This gives back the first day on which the total saved is at least goal. If goal is 0, no days are needed, so it gives back 0.\n\nThe numbers given to these functions are never negative, and days and goal are at most 1000.\n\nThe program should print:\nAfter 0 days: 0 coins, stars: 1\nAfter 4 days: 10 coins, stars: 2\nAfter 10 days: 55 coins, stars: 3\nGoal 0 takes 0 days\nGoal 15 takes 5 days\nGoal 20 takes 6 days",
+    "prompt": "Replace each todo!() with working code. Do not change main.\n\nfn total_saved(days: i32) -> i32\nGives back 1 + 2 + ... + days. For 0 days it gives back 0.\n\nfn stars(total: i32) -> i32\nGives back 3 if total is 50 or more. Otherwise it gives back 2 if total is 10 or more. Otherwise it gives back 1.\n\nfn days_to_reach(goal: i32) -> i32\nYou save 1 coin on day 1, 2 coins on day 2, and so on. This gives back the first day on which the total saved is at least goal. If goal is 0, no days are needed, so it gives back 0.\n\nThe numbers given to these functions are never negative, and days and goal are at most 1000.\n\nWhen the functions work, main prints:\nAfter 0 days: 0 coins, stars: 1\nAfter 4 days: 10 coins, stars: 2\nAfter 10 days: 55 coins, stars: 3\nGoal 0 takes 0 days\nGoal 15 takes 5 days\nGoal 20 takes 6 days",
     "starter": "// Day 1 you save 1 coin, day 2 you save 2 coins, and so on.\nfn total_saved(days: i32) -> i32 {\n    todo!()\n}\n\nfn stars(total: i32) -> i32 {\n    todo!()\n}\n\nfn days_to_reach(goal: i32) -> i32 {\n    todo!()\n}\n\nfn main() {\n    let mut coins = total_saved(0);\n    println!(\"After 0 days: {coins} coins, stars: {}\", stars(coins));\n    coins = total_saved(4);\n    println!(\"After 4 days: {coins} coins, stars: {}\", stars(coins));\n    coins = total_saved(10);\n    println!(\"After 10 days: {coins} coins, stars: {}\", stars(coins));\n\n    println!(\"Goal 0 takes {} days\", days_to_reach(0));\n    println!(\"Goal 15 takes {} days\", days_to_reach(15));\n    println!(\"Goal 20 takes {} days\", days_to_reach(20));\n}",
-    "expectedOutput": "After 0 days: 0 coins, stars: 1\nAfter 4 days: 10 coins, stars: 2\nAfter 10 days: 55 coins, stars: 3\nGoal 0 takes 0 days\nGoal 15 takes 5 days\nGoal 20 takes 6 days",
+    "tests": [
+      {
+        "id": "total-zero-days",
+        "label": "Saving for 0 days gives 0 coins",
+        "code": "check_eq!(total_saved(0), 0);"
+      },
+      {
+        "id": "total-four-days",
+        "label": "Saving for 4 days gives 10 coins",
+        "code": "check_eq!(total_saved(4), 10);"
+      },
+      {
+        "id": "stars-ten-coins",
+        "label": "10 coins earn 2 stars",
+        "code": "check_eq!(stars(10), 2);"
+      },
+      {
+        "id": "stars-many-coins",
+        "label": "55 coins earn 3 stars",
+        "code": "check_eq!(stars(55), 3);"
+      },
+      {
+        "id": "days-goal-fifteen",
+        "label": "A goal of 15 takes 5 days",
+        "code": "check_eq!(days_to_reach(15), 5);"
+      },
+      {
+        "id": "days-goal-zero",
+        "label": "A goal of 0 takes 0 days",
+        "code": "check_eq!(days_to_reach(0), 0);"
+      },
+      {
+        "id": "total-one-and-ten-days",
+        "hidden": true,
+        "label": "Other day counts add up correctly",
+        "code": "check_eq!(total_saved(1), 1);\ncheck_eq!(total_saved(10), 55);\ncheck_eq!(total_saved(7), 28);"
+      },
+      {
+        "id": "total-max-days",
+        "hidden": true,
+        "label": "The largest allowed days value",
+        "code": "check_eq!(total_saved(1000), 500500);"
+      },
+      {
+        "id": "stars-few-coins",
+        "hidden": true,
+        "label": "Fewer than 10 coins earn 1 star",
+        "code": "check_eq!(stars(0), 1);\ncheck_eq!(stars(1), 1);\ncheck_eq!(stars(9), 1);"
+      },
+      {
+        "id": "stars-two-range",
+        "hidden": true,
+        "label": "From 10 to 49 coins earn 2 stars",
+        "code": "check_eq!(stars(10), 2);\ncheck_eq!(stars(11), 2);\ncheck_eq!(stars(49), 2);"
+      },
+      {
+        "id": "stars-three-range",
+        "hidden": true,
+        "label": "50 or more coins earn 3 stars",
+        "code": "check_eq!(stars(50), 3);\ncheck_eq!(stars(51), 3);\ncheck_eq!(stars(500500), 3);"
+      },
+      {
+        "id": "days-exact-totals",
+        "hidden": true,
+        "label": "A goal equal to a running total stops on that day",
+        "code": "check_eq!(days_to_reach(1), 1);\ncheck_eq!(days_to_reach(10), 4);\ncheck_eq!(days_to_reach(55), 10);"
+      },
+      {
+        "id": "days-just-over",
+        "hidden": true,
+        "label": "A goal one above a running total needs one more day",
+        "code": "check_eq!(days_to_reach(2), 2);\ncheck_eq!(days_to_reach(11), 5);\ncheck_eq!(days_to_reach(16), 6);"
+      },
+      {
+        "id": "days-max-goal",
+        "hidden": true,
+        "label": "The largest allowed goal",
+        "code": "check_eq!(days_to_reach(990), 44);\ncheck_eq!(days_to_reach(991), 45);\ncheck_eq!(days_to_reach(1000), 45);"
+      }
+    ],
     "solution": "fn total_saved(days: i32) -> i32 {\n    let mut total = 0;\n    for day in 1..=days {\n        total = total + day;\n    }\n    total\n}\n\nfn stars(total: i32) -> i32 {\n    let mut result = 1;\n    if total >= 50 {\n        result = 3;\n    } else if total >= 10 {\n        result = 2;\n    }\n    result\n}\n\nfn days_to_reach(goal: i32) -> i32 {\n    let mut days = 0;\n    let mut total = 0;\n    while total < goal {\n        days = days + 1;\n        total = total + days;\n    }\n    days\n}\n\nfn main() {\n    let mut coins = total_saved(0);\n    println!(\"After 0 days: {coins} coins, stars: {}\", stars(coins));\n    coins = total_saved(4);\n    println!(\"After 4 days: {coins} coins, stars: {}\", stars(coins));\n    coins = total_saved(10);\n    println!(\"After 10 days: {coins} coins, stars: {}\", stars(coins));\n\n    println!(\"Goal 0 takes {} days\", days_to_reach(0));\n    println!(\"Goal 15 takes {} days\", days_to_reach(15));\n    println!(\"Goal 20 takes {} days\", days_to_reach(20));\n}",
     "hints": [
       "Each function needs variables that change, so make them mutable. total_saved adds up numbers with a for loop. stars changes a value with if and else if. days_to_reach is the hardest one, and it needs a while loop.",
