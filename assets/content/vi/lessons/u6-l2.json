@@ -47,7 +47,7 @@
     "tests": [
       {
         "id": "fifteen-too-young",
-        "label": "15 là quá nhỏ",
+        "label": "15 tuổi là chưa đủ tuổi",
         "code": "check_eq!(check_age(15), Err(String::from(\"too young\")));"
       },
       {

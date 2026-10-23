@@ -338,6 +338,22 @@ class Lesson {
   /// translation must be this close to the English lesson to be used, so
   /// completing it, checking the exercise and scoring the quiz work the
   /// same in every language.
+  /// Tests match when everything but the translated `label` is equal.
+  static bool _sameTests(List<ExerciseTest> a, List<ExerciseTest> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      final x = a[i], y = b[i];
+      if (x.id != y.id ||
+          x.hidden != y.hidden ||
+          x.code != y.code ||
+          x.panics != y.panics ||
+          x.output != y.output) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   bool hasSameStructureAs(Lesson other) {
     if (id != other.id || sections.length != other.sections.length) {
       return false;
@@ -354,7 +370,8 @@ class Lesson {
         (e.hints.length != f.hints.length ||
             e.starter != f.starter ||
             e.expectedOutput != f.expectedOutput ||
-            e.solution != f.solution)) {
+            e.solution != f.solution ||
+            !_sameTests(e.declaredTests, f.declaredTests))) {
       return false;
     }
     if (quiz.length != other.quiz.length) return false;

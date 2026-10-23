@@ -632,6 +632,29 @@ void main() {
       expect(a.hasSameStructureAs(lesson('s', 'sol2', 'code')), isFalse);
       expect(a.hasSameStructureAs(lesson('s', 'sol', 'code2')), isFalse);
     });
+
+    test('a translation must keep the same tests, except labels', () {
+      Lesson withTests(List<Map<String, dynamic>> tests) => Lesson.fromJson({
+        'id': 't',
+        'title': 'T',
+        'sections': <Map<String, dynamic>>[],
+        'exercise': {
+          'prompt': 'p',
+          'starter': 's',
+          'solution': 'sol',
+          'tests': tests,
+        },
+      });
+      Map<String, dynamic> one({String label = 'One', String code = 'check!(true);'}) =>
+          {'id': 'one', 'label': label, 'code': code};
+      Map<String, dynamic> two({bool hidden = true}) =>
+          {'id': 'two', 'hidden': hidden, 'code': 'check!(true);'};
+      final a = withTests([one(), two()]);
+      expect(a.hasSameStructureAs(withTests([one(label: 'Một'), two()])), isTrue);
+      expect(a.hasSameStructureAs(withTests([one(code: 'check!(false);'), two()])), isFalse);
+      expect(a.hasSameStructureAs(withTests([one(), two(hidden: false)])), isFalse);
+      expect(a.hasSameStructureAs(withTests([one()])), isFalse);
+    });
   });
 
   group('the bundled Vietnamese content', () {
