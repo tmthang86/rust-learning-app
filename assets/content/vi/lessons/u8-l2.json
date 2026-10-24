@@ -62,14 +62,48 @@
     }
   ],
   "exercise": {
-    "prompt": "Code khởi đầu in ra 15. Bên dưới println! đầu tiên, hãy thêm một bộ đếm số lần gọi: một biến bắt đầu từ 0, và một closure cộng 1 vào nó. Hãy gọi closure ba lần, rồi in bộ đếm. Chương trình phải in ra hai dòng: 15 và 3. Gợi ý: let mut calls = 0; let mut count_call = || calls += 1;",
-    "starter": "fn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n}",
-    "expectedOutput": "15\n3",
-    "solution": "fn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n\n    let mut calls = 0;\n    let mut count_call = || calls += 1;\n    count_call();\n    count_call();\n    count_call();\n    println!(\"{calls}\");\n}",
+    "prompt": "Bản khởi đầu in ra 15. Hãy hoàn thành make_counter: nó trả về một closure tự đếm số lần được gọi, trả về 1 ở lần gọi đầu, 2 ở lần gọi thứ hai, và cứ thế. Closure phải sở hữu biến đếm của nó. main gọi bộ đếm ba lần và in kết quả cuối cùng. Nó phải in ra hai dòng: 15 và 3.",
+    "starter": "fn make_counter() -> impl FnMut() -> u32 {\n    // return a closure that adds 1 to a counter of its own each time it is called,\n    // and gives the counter back: 1, then 2, then 3, ...\n    || 0\n}\n\nfn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n\n    let mut counter = make_counter();\n    counter();\n    counter();\n    println!(\"{}\", counter());\n}",
+    "tests": [
+      {
+        "id": "three-calls",
+        "label": "Ba lần gọi cho 1, 2 và 3",
+        "code": "let mut c = make_counter();\ncheck_eq!(c(), 1);\ncheck_eq!(c(), 2);\ncheck_eq!(c(), 3);"
+      },
+      {
+        "id": "independent-counters",
+        "label": "Hai bộ đếm đếm riêng biệt",
+        "code": "let mut a = make_counter();\nlet mut b = make_counter();\na();\na();\ncheck_eq!(b(), 1);\ncheck_eq!(a(), 3);"
+      },
+      {
+        "id": "main-prints-15-and-3",
+        "label": "Chương trình in ra 15, rồi 3",
+        "output": "15\n3"
+      },
+      {
+        "id": "new-counter-starts-at-one",
+        "hidden": true,
+        "label": "a new counter starts again from 1",
+        "code": "let mut first = make_counter();\nfirst();\nfirst();\nlet mut second = make_counter();\ncheck_eq!(second(), 1);"
+      },
+      {
+        "id": "many-calls",
+        "hidden": true,
+        "label": "a count a hard-coded 3 would not match",
+        "code": "let mut c = make_counter();\nlet mut last = 0;\nfor _ in 0..1000 {\n    last = c();\n}\ncheck_eq!(last, 1000);"
+      },
+      {
+        "id": "interleaved-calls",
+        "hidden": true,
+        "label": "calls on two counters in turn",
+        "code": "let mut a = make_counter();\nlet mut b = make_counter();\ncheck_eq!((a(), b(), a(), b(), a()), (1, 1, 2, 2, 3));"
+      }
+    ],
+    "solution": "fn make_counter() -> impl FnMut() -> u32 {\n    let mut count = 0;\n    move || {\n        count += 1;\n        count\n    }\n}\n\nfn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n\n    let mut counter = make_counter();\n    counter();\n    counter();\n    println!(\"{}\", counter());\n}",
     "hints": [
-      "Bạn cần một bộ đếm mà closure thay đổi mỗi lần nó được gọi. Một closure thay đổi một biến đã capture cần được chú ý đặc biệt về mut.",
-      "Hãy khai báo cả hai với mut: let mut calls = 0; và let mut count_call = || calls += 1;. Closure phải là mut vì việc gọi nó làm thay đổi bộ đếm.",
-      "Hãy gọi count_call() ba lần, mỗi lần một dòng. Chỉ in calls sau lần gọi cuối cùng, vì cho đến lúc đó closure vẫn đang mượn nó."
+      "make_counter trả về một closure, và closure đó cần một con số riêng mà nó thay đổi ở mỗi lần gọi. Con số đó nên được tạo ở đâu?",
+      "Hãy tạo biến đếm là một biến mut bên trong make_counter, trước closure. Closure cộng 1 vào nó rồi trả nó về. Một closure được trả về phải sở hữu những gì nó dùng, nên hãy viết move trước cặp dấu gạch đứng.",
+      "Hãy thay closure giữ chỗ bằng: let mut count = 0; rồi đến move || { count += 1; count } và không có dấu chấm phẩy, để closure là giá trị mà hàm trả về."
     ]
   },
   "quiz": [

@@ -468,6 +468,17 @@ class CodeInProse(unittest.TestCase):
         self.assertIn("hi", vocab["literals"])  # an "// Output:" line is output
         self.assertFalse(c.code_tokens('It says "not ready yet" to you', vocab))
 
+    def test_output_tests_count_as_program_output(self):
+        # Output tests are what expectedOutput was: prose that quotes the
+        # printed line has to keep it.
+        lesson = {
+            "sections": [],
+            "exercise": {"tests": [{"id": "o", "label": "L", "output": "Grade A\nPassed"}]},
+        }
+        vocab = c.lesson_vocabulary(lesson)
+        self.assertIn("Grade A", vocab["printed"])
+        self.assertIn("Passed", vocab["printed"])
+
     def test_commented_out_code_still_counts_as_code(self):
         lesson = {
             "sections": [
@@ -517,6 +528,17 @@ class CodeInProse(unittest.TestCase):
         )
         for token in ("greet();", "Vec<i32>", "std::fmt", "==", "&mut", '"Grade A"'):
             self.assertIn(token, found)
+
+
+class StrictMode(unittest.TestCase):
+    def test_only_unconverted_checkpoints_are_exempt(self):
+        old = {"expectedOutput": "x"}
+        new = {"tests": []}
+        self.assertTrue(c.is_legacy_checkpoint("u3-check", old))
+        self.assertTrue(c.is_legacy_checkpoint("u12-check", old))
+        self.assertFalse(c.is_legacy_checkpoint("u3-check", new))  # converted: held to the minimums
+        self.assertFalse(c.is_legacy_checkpoint("u3-l1", old))  # a regular lesson must be migrated
+        self.assertFalse(c.is_legacy_checkpoint("u3-checkup", old))
 
 
 class ErrorTranslations(unittest.TestCase):

@@ -41,7 +41,13 @@
   "exercise": {
     "prompt": "Hãy dùng các biến để in ra chính xác: Ferris has 3 friends",
     "starter": "fn main() {\n    let name = \"Ferris\";\n    let friends = 3;\n    println!(\"\");\n}",
-    "expectedOutput": "Ferris has 3 friends",
+    "tests": [
+      {
+        "id": "friends-sentence",
+        "label": "In ra Ferris has 3 friends",
+        "output": "Ferris has 3 friends"
+      }
+    ],
     "solution": "fn main() {\n    let name = \"Ferris\";\n    let friends = 3;\n    println!(\"{name} has {friends} friends\");\n}",
     "hints": [
       "Hiện giờ đoạn văn bản giữa cặp dấu nháy của println! đang trống, nên chỉ có một dòng trống được in ra.",

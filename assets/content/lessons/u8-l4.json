@@ -54,14 +54,49 @@
     }
   ],
   "exercise": {
-    "prompt": "The starter prints every word. Change the loop so it goes through an iterator pipeline instead: keep only the words longer than 3 letters, and turn each one into uppercase before it is printed. It should print three lines: APPLE, BANANA and KIWI. Hint: words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase())",
-    "starter": "fn main() {\n    let words = [\"apple\", \"fig\", \"banana\", \"kiwi\"];\n    for w in words.iter() {\n        println!(\"{w}\");\n    }\n}",
-    "expectedOutput": "APPLE\nBANANA\nKIWI",
-    "solution": "fn main() {\n    let words = [\"apple\", \"fig\", \"banana\", \"kiwi\"];\n    for w in words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase()) {\n        println!(\"{w}\");\n    }\n}",
+    "prompt": "loud_long_words should keep only the words longer than 3 letters and turn each one into uppercase. Build it as an iterator pipeline that ends with collect. main prints each word it returns. It should print three lines: APPLE, BANANA and KIWI.",
+    "starter": "fn loud_long_words(words: &[&str]) -> Vec<String> {\n    // keep only the words longer than 3 letters, uppercase each one\n    let _ = words; // delete this line when you use words for real\n    Vec::new()\n}\n\nfn main() {\n    let words = [\"apple\", \"fig\", \"banana\", \"kiwi\"];\n    for w in loud_long_words(&words) {\n        println!(\"{w}\");\n    }\n}",
+    "tests": [
+      {
+        "id": "fruit-words",
+        "label": "Keeps apple, banana and kiwi in capitals",
+        "code": "check_eq!(loud_long_words(&[\"apple\", \"fig\", \"banana\", \"kiwi\"]), vec![\"APPLE\", \"BANANA\", \"KIWI\"]);"
+      },
+      {
+        "id": "main-prints-three-lines",
+        "label": "The program prints APPLE, BANANA and KIWI",
+        "output": "APPLE\nBANANA\nKIWI"
+      },
+      {
+        "id": "exactly-three-letters",
+        "hidden": true,
+        "label": "words of exactly 3 letters are dropped",
+        "code": "check_eq!(loud_long_words(&[\"cat\", \"dog\"]), Vec::<String>::new());"
+      },
+      {
+        "id": "empty-list",
+        "hidden": true,
+        "label": "an empty list",
+        "code": "check_eq!(loud_long_words(&[]), Vec::<String>::new());"
+      },
+      {
+        "id": "order-is-kept",
+        "hidden": true,
+        "label": "the order of the input is kept",
+        "code": "check_eq!(loud_long_words(&[\"zebra\", \"ox\", \"lion\"]), vec![\"ZEBRA\", \"LION\"]);"
+      },
+      {
+        "id": "already-upper-and-mixed",
+        "hidden": true,
+        "label": "mixed case input",
+        "code": "check_eq!(loud_long_words(&[\"Rust\", \"GO\", \"mixedCase\"]), vec![\"RUST\", \"MIXEDCASE\"]);"
+      }
+    ],
+    "solution": "fn loud_long_words(words: &[&str]) -> Vec<String> {\n    words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase()).collect()\n}\n\nfn main() {\n    let words = [\"apple\", \"fig\", \"banana\", \"kiwi\"];\n    for w in loud_long_words(&words) {\n        println!(\"{w}\");\n    }\n}",
     "hints": [
       "Two steps happen to each word: some words are dropped, and the others are changed. Which two adapters do those jobs?",
       "Start from words.iter(). Chain filter with a closure that returns true for the words to keep, then map with a closure that builds the new word. to_uppercase() makes upper case.",
-      "The for loop can take the whole chain after in: words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase()). The println! inside stays as it is."
+      "The whole function body can be the chain: words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase()).collect(). The return type Vec<String> tells collect what to build."
     ]
   },
   "quiz": [

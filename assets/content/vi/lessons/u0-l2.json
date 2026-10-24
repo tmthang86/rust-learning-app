@@ -16,7 +16,13 @@
   "exercise": {
     "prompt": "Một hộp đựng 6 quả trứng. Bên dưới dòng println! đầu tiên, hãy tính xem 4 hộp có bao nhiêu quả trứng và in ra, để chương trình in ra:\n6 eggs per box, 4 boxes\n24 eggs",
     "starter": "fn main() {\n    let eggs_per_box = 6;\n    let boxes = 4;\n    println!(\"{eggs_per_box} eggs per box, {boxes} boxes\");\n    // work out the total here and print it\n}",
-    "expectedOutput": "6 eggs per box, 4 boxes\n24 eggs",
+    "tests": [
+      {
+        "id": "eggs-total",
+        "label": "In ra số trứng mỗi hộp và tổng số trứng",
+        "output": "6 eggs per box, 4 boxes\n24 eggs"
+      }
+    ],
     "solution": "fn main() {\n    let eggs_per_box = 6;\n    let boxes = 4;\n    println!(\"{eggs_per_box} eggs per box, {boxes} boxes\");\n    let total = eggs_per_box * boxes;\n    println!(\"{total} eggs\");\n}",
     "hints": ["Bạn cần một biến mới chứa số trứng trong tất cả các hộp. Nó nên kết hợp hai biến nào?", "Hãy tạo một biến mới bằng let, ví dụ total. Nhân hai biến đó với *, rồi in kết quả ra.", "Hãy viết let total = eggs_per_box * boxes; rồi dùng println! với {total} theo sau là từ eggs."]
   },

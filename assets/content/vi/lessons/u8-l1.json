@@ -54,14 +54,54 @@
     }
   ],
   "exercise": {
-    "prompt": "apply gọi một closure trên một con số. Code khởi đầu truyền cho nó một closure nhân đôi. Bên dưới đó, hãy tạo một closure trừ 5 khỏi đối số của nó, truyền nó cho apply cùng với 50, và in kết quả. Chương trình phải in ra hai dòng: 42 và 45. Gợi ý: let minus_five = |x| x - 5;",
-    "starter": "fn apply(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(value)\n}\n\nfn main() {\n    let doubled = apply(|x| x * 2, 21);\n    println!(\"{doubled}\");\n}",
-    "expectedOutput": "42\n45",
-    "solution": "fn apply(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(value)\n}\n\nfn main() {\n    let doubled = apply(|x| x * 2, 21);\n    println!(\"{doubled}\");\n    let minus_five = |x| x - 5;\n    println!(\"{}\", apply(minus_five, 50));\n}",
+    "prompt": "apply gọi một closure trên một con số. Bản khởi đầu truyền cho nó một closure nhân đôi. Hãy hoàn thành minus_five_of: tạo một closure trừ 5 khỏi đối số của nó và truyền closure đó cho apply cùng với value. main in ra cả hai kết quả. Nó phải in ra hai dòng: 42 và 45. Gợi ý: let minus_five = |x| x - 5;",
+    "starter": "fn apply(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(value)\n}\n\nfn minus_five_of(value: i32) -> i32 {\n    // make a closure that subtracts 5 and pass it to apply together with value\n    value\n}\n\nfn main() {\n    let doubled = apply(|x| x * 2, 21);\n    println!(\"{doubled}\");\n    println!(\"{}\", minus_five_of(50));\n}",
+    "tests": [
+      {
+        "id": "fifty",
+        "label": "minus_five_of(50) là 45",
+        "code": "check_eq!(minus_five_of(50), 45);"
+      },
+      {
+        "id": "ten",
+        "label": "minus_five_of(10) là 5",
+        "code": "check_eq!(minus_five_of(10), 5);"
+      },
+      {
+        "id": "main-prints-42-and-45",
+        "label": "Chương trình in ra 42, rồi 45",
+        "output": "42\n45"
+      },
+      {
+        "id": "zero-goes-negative",
+        "hidden": true,
+        "label": "the result can be negative",
+        "code": "check_eq!(minus_five_of(0), -5);"
+      },
+      {
+        "id": "five-gives-zero",
+        "hidden": true,
+        "label": "boundary",
+        "code": "check_eq!(minus_five_of(5), 0);"
+      },
+      {
+        "id": "negative-input",
+        "hidden": true,
+        "label": "a negative argument",
+        "code": "check_eq!(minus_five_of(-10), -15);"
+      },
+      {
+        "id": "apply-unchanged",
+        "hidden": true,
+        "label": "apply still calls the closure it gets",
+        "code": "check_eq!(apply(|x| x + 1, 1), 2);"
+      }
+    ],
+    "solution": "fn apply(f: impl Fn(i32) -> i32, value: i32) -> i32 {\n    f(value)\n}\n\nfn minus_five_of(value: i32) -> i32 {\n    let minus_five = |x| x - 5;\n    apply(minus_five, value)\n}\n\nfn main() {\n    let doubled = apply(|x| x * 2, 21);\n    println!(\"{doubled}\");\n    println!(\"{}\", minus_five_of(50));\n}",
     "hints": [
-      "Một closure có thể được lưu trong một biến và truyền cho apply, giống như closure nhân đôi trong code khởi đầu. Hãy tạo một closure làm phép trừ thay vì nhân đôi.",
-      "Hãy viết tham số giữa hai dấu gạch đứng, rồi đến phần thân: |x| x - 5. Đặt nó vào một biến bằng let, và truyền biến đó cho apply.",
-      "Bên dưới println! đầu tiên, hãy viết let minus_five = |x| x - 5; rồi println!(\"{}\", apply(minus_five, 50))."
+      "Một closure có thể được lưu trong một biến và truyền cho apply, giống closure nhân đôi trong bản khởi đầu. Hãy tạo một closure trừ thay vào đó.",
+      "Hãy viết tham số giữa hai dấu gạch đứng, rồi đến phần thân: |x| x - 5. Đặt nó vào một biến bằng let, rồi truyền biến đó cho apply.",
+      "Hãy thay dòng cuối của minus_five_of bằng: let minus_five = |x| x - 5; rồi apply(minus_five, value) và không có dấu chấm phẩy, để nó là giá trị mà hàm trả về."
     ]
   },
   "quiz": [

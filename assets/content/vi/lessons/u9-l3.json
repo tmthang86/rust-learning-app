@@ -74,14 +74,43 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy giả sử module lồng là file src/shop/fruits.rs. Bên trong mod shop, hãy thêm pub mod fruits với một hàm pub fn count() -> u32 trả về 5. Sau đó thay số 0 trong main bằng shop::fruits::count(). Chương trình phải in ra: shop is open, 5 kinds of fruit",
-    "starter": "mod shop {\n    pub fn open() -> String {\n        String::from(\"shop is open\")\n    }\n\n    // add pub mod fruits here\n}\n\nfn main() {\n    let count = 0;   // replace 0 with shop::fruits::count()\n    println!(\"{}, {} kinds of fruit\", shop::open(), count);\n}",
-    "expectedOutput": "shop is open, 5 kinds of fruit",
+    "prompt": "Hãy tưởng tượng module lồng nhau là file src/shop/fruits.rs. main đã gọi shop::fruits::count(). Bên trong mod shop, hãy thêm pub mod fruits với một hàm pub fn count() -> u32 trả về 5. Nó phải in ra: shop is open, 5 kinds of fruit",
+    "starter": "mod shop {\n    pub fn open() -> String {\n        String::from(\"shop is open\")\n    }\n\n    // add pub mod fruits here\n}\n\nfn main() {\n    let count = shop::fruits::count();\n    println!(\"{}, {} kinds of fruit\", shop::open(), count);\n}",
+    "tests": [
+      {
+        "id": "count-is-five",
+        "label": "shop::fruits::count() là 5",
+        "code": "check_eq!(shop::fruits::count(), 5);"
+      },
+      {
+        "id": "main-prints-the-sentence",
+        "label": "Chương trình in ra shop is open, 5 kinds of fruit",
+        "output": "shop is open, 5 kinds of fruit"
+      },
+      {
+        "id": "count-is-a-u32",
+        "hidden": true,
+        "label": "the count is a u32",
+        "code": "let n: u32 = shop::fruits::count();\ncheck_eq!(n + 1, 6);"
+      },
+      {
+        "id": "reachable-with-use",
+        "hidden": true,
+        "label": "fruits can be reached through a use line",
+        "code": "use shop::fruits;\ncheck_eq!(fruits::count(), 5);"
+      },
+      {
+        "id": "open-unchanged",
+        "hidden": true,
+        "label": "open is left alone",
+        "code": "check_eq!(shop::open(), \"shop is open\");"
+      }
+    ],
     "solution": "mod shop {\n    pub fn open() -> String {\n        String::from(\"shop is open\")\n    }\n\n    pub mod fruits {\n        pub fn count() -> u32 {\n            5\n        }\n    }\n}\n\nfn main() {\n    let count = shop::fruits::count();\n    println!(\"{}, {} kinds of fruit\", shop::open(), count);\n}",
     "hints": [
-      "Module shop cần một module lồng bên trong nó, như một thư mục trong một thư mục. Hãy xem formal nằm bên trong greetings như thế nào.",
+      "Module shop cần một module lồng bên trong, giống một thư mục bên trong một thư mục. Hãy xem formal nằm trong greetings như thế nào.",
       "Bên trong mod shop, hãy viết pub mod fruits { ... } và đặt một hàm vào đó: pub fn count() -> u32 trả về 5. Cả hai đều cần pub, vì main nằm bên ngoài.",
-      "Trong main, hãy thay số 0 bằng đường dẫn đầy đủ tới hàm: shop::fruits::count()."
+      "main đã gọi hàm bằng đường dẫn đầy đủ của nó: shop::fruits::count(). Khi module và hàm đã có, dòng đó sẽ hoạt động."
     ]
   },
   "quiz": [

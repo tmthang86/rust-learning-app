@@ -40,7 +40,13 @@
   "exercise": {
     "prompt": "Hãy in ra điểm thứ ba trong mảng bằng cách dùng chỉ số. Chương trình phải in ra: 88",
     "starter": "fn main() {\n    let scores = [72, 95, 88, 61];\n    println!(\"{}\", scores[0]);\n}",
-    "expectedOutput": "88",
+    "tests": [
+      {
+        "id": "third-score",
+        "label": "In ra điểm thứ ba, 88",
+        "output": "88"
+      }
+    ],
     "solution": "fn main() {\n    let scores = [72, 95, 88, 61];\n    println!(\"{}\", scores[2]);\n}",
     "hints": [
       "Hãy xem println! đang dùng chỉ số nào. Hãy nhớ rằng việc đếm bắt đầu từ 0, không phải 1.",

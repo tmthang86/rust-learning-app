@@ -62,14 +62,48 @@
     }
   ],
   "exercise": {
-    "prompt": "The starter prints 15. Below the first println!, add a call counter: a variable that starts at 0, and a closure that adds 1 to it. Call the closure three times, then print the counter. It should print two lines: 15 and 3. Hint: let mut calls = 0; let mut count_call = || calls += 1;",
-    "starter": "fn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n}",
-    "expectedOutput": "15\n3",
-    "solution": "fn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n\n    let mut calls = 0;\n    let mut count_call = || calls += 1;\n    count_call();\n    count_call();\n    count_call();\n    println!(\"{calls}\");\n}",
+    "prompt": "The starter prints 15. Finish make_counter: it returns a closure that counts its own calls, giving back 1 on the first call, 2 on the second, and so on. The closure has to own its counter. main calls the counter three times and prints the last result. It should print two lines: 15 and 3.",
+    "starter": "fn make_counter() -> impl FnMut() -> u32 {\n    // return a closure that adds 1 to a counter of its own each time it is called,\n    // and gives the counter back: 1, then 2, then 3, ...\n    || 0\n}\n\nfn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n\n    let mut counter = make_counter();\n    counter();\n    counter();\n    println!(\"{}\", counter());\n}",
+    "tests": [
+      {
+        "id": "three-calls",
+        "label": "Three calls give 1, 2 and 3",
+        "code": "let mut c = make_counter();\ncheck_eq!(c(), 1);\ncheck_eq!(c(), 2);\ncheck_eq!(c(), 3);"
+      },
+      {
+        "id": "independent-counters",
+        "label": "Two counters count on their own",
+        "code": "let mut a = make_counter();\nlet mut b = make_counter();\na();\na();\ncheck_eq!(b(), 1);\ncheck_eq!(a(), 3);"
+      },
+      {
+        "id": "main-prints-15-and-3",
+        "label": "The program prints 15, then 3",
+        "output": "15\n3"
+      },
+      {
+        "id": "new-counter-starts-at-one",
+        "hidden": true,
+        "label": "a new counter starts again from 1",
+        "code": "let mut first = make_counter();\nfirst();\nfirst();\nlet mut second = make_counter();\ncheck_eq!(second(), 1);"
+      },
+      {
+        "id": "many-calls",
+        "hidden": true,
+        "label": "a count a hard-coded 3 would not match",
+        "code": "let mut c = make_counter();\nlet mut last = 0;\nfor _ in 0..1000 {\n    last = c();\n}\ncheck_eq!(last, 1000);"
+      },
+      {
+        "id": "interleaved-calls",
+        "hidden": true,
+        "label": "calls on two counters in turn",
+        "code": "let mut a = make_counter();\nlet mut b = make_counter();\ncheck_eq!((a(), b(), a(), b(), a()), (1, 1, 2, 2, 3));"
+      }
+    ],
+    "solution": "fn make_counter() -> impl FnMut() -> u32 {\n    let mut count = 0;\n    move || {\n        count += 1;\n        count\n    }\n}\n\nfn main() {\n    let bonus = 5;\n    let add_bonus = |score: i32| score + bonus;\n    println!(\"{}\", add_bonus(10));\n\n    let mut counter = make_counter();\n    counter();\n    counter();\n    println!(\"{}\", counter());\n}",
     "hints": [
-      "You need a counter that a closure changes each time it is called. A closure that changes a captured variable needs special care about mut.",
-      "Declare both with mut: let mut calls = 0; and let mut count_call = || calls += 1;. The closure must be mut because calling it changes the counter.",
-      "Call count_call() three times, one call per line. Print calls only after the last call, because the closure still borrows it until then."
+      "make_counter returns a closure, and that closure needs a number of its own that it changes on every call. Where should that number be created?",
+      "Create the counter as a mut variable inside make_counter, before the closure. The closure adds 1 to it and gives it back. A closure that is returned has to own what it uses, so write move before the bars.",
+      "Replace the placeholder closure with: let mut count = 0; and then move || { count += 1; count } with no semicolon, so the closure is the value the function returns."
     ]
   },
   "quiz": [

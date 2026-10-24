@@ -50,14 +50,48 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy tạo một chủ sở hữu thứ hai b của cùng chuỗi đó (chia sẻ nó, đừng sao chép). Sau đó in ra có bao nhiêu chủ sở hữu, và đổi println! cuối cùng để nó in a và b cách nhau bởi một dấu cách. Chương trình phải in ra hai dòng: count = 2 và hello hello. Gợi ý: let b = Rc::clone(&a); và println!(\"count = {}\", Rc::strong_count(&a));",
-    "starter": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(String::from(\"hello\"));\n    // add b and the count line here\n    println!(\"{a}\");\n}",
-    "expectedOutput": "count = 2\nhello hello",
-    "solution": "use std::rc::Rc;\n\nfn main() {\n    let a = Rc::new(String::from(\"hello\"));\n    let b = Rc::clone(&a);\n    println!(\"count = {}\", Rc::strong_count(&a));\n    println!(\"{a} {b}\");\n}",
+    "prompt": "Hãy hoàn thành share để nó trả về một chủ sở hữu thứ hai của cùng chuỗi đó (chia sẻ nó, đừng sao chép). Sau đó main in ra có bao nhiêu chủ sở hữu, và in a và b cách nhau một dấu cách. Nó phải in ra hai dòng: count = 2 và hello hello.",
+    "starter": "use std::rc::Rc;\n\nfn share(a: &Rc<String>) -> Rc<String> {\n    // return a second owner of the same string\n    let _ = a; // delete this line when you use a for real\n    todo!()\n}\n\nfn main() {\n    let a = Rc::new(String::from(\"hello\"));\n    let b = share(&a);\n    println!(\"count = {}\", Rc::strong_count(&a));\n    println!(\"{a} {b}\");\n}",
+    "tests": [
+      {
+        "id": "count-is-two",
+        "label": "Sau khi chia sẻ, có 2 chủ sở hữu",
+        "code": "let a = Rc::new(String::from(\"hello\"));\nlet b = share(&a);\ncheck_eq!(Rc::strong_count(&a), 2);\ncheck_eq!(*b, \"hello\");"
+      },
+      {
+        "id": "same-string-not-a-copy",
+        "label": "Chủ sở hữu mới trỏ tới cùng một chuỗi, không phải bản sao",
+        "code": "let a = Rc::new(String::from(\"hello\"));\nlet b = share(&a);\ncheck!(Rc::ptr_eq(&a, &b));"
+      },
+      {
+        "id": "main-prints-count-and-text",
+        "label": "Chương trình in ra count = 2, rồi hello hello",
+        "output": "count = 2\nhello hello"
+      },
+      {
+        "id": "shared-twice",
+        "hidden": true,
+        "label": "two more owners",
+        "code": "let a = Rc::new(String::from(\"x\"));\nlet b = share(&a);\nlet c = share(&a);\ncheck_eq!(Rc::strong_count(&a), 3);\ncheck!(Rc::ptr_eq(&b, &c));"
+      },
+      {
+        "id": "other-text",
+        "hidden": true,
+        "label": "text a hard-coded hello would not match",
+        "code": "let a = Rc::new(String::from(\"rust\"));\nlet b = share(&a);\ncheck_eq!(*b, \"rust\");\ncheck_eq!(Rc::strong_count(&b), 2);"
+      },
+      {
+        "id": "count-drops-with-the-owner",
+        "hidden": true,
+        "label": "dropping the new owner lowers the count",
+        "code": "let a = Rc::new(String::from(\"hello\"));\nlet b = share(&a);\ndrop(b);\ncheck_eq!(Rc::strong_count(&a), 1);"
+      }
+    ],
+    "solution": "use std::rc::Rc;\n\nfn share(a: &Rc<String>) -> Rc<String> {\n    Rc::clone(a)\n}\n\nfn main() {\n    let a = Rc::new(String::from(\"hello\"));\n    let b = share(&a);\n    println!(\"count = {}\", Rc::strong_count(&a));\n    println!(\"{a} {b}\");\n}",
     "hints": [
-      "b phải là một chủ sở hữu khác của cùng String đó, không phải một bản sao. Hàm Rc nào thêm một chủ sở hữu, và hàm nào cho bạn biết có bao nhiêu chủ sở hữu?",
-      "Rc::clone(&a) tạo một chủ sở hữu mới và cộng 1 vào bộ đếm. Rc::strong_count(&a) cho giá trị đếm hiện tại.",
-      "Hãy viết let b = Rc::clone(&a); rồi println!(\"count = {}\", Rc::strong_count(&a));. Cuối cùng, hãy đổi println! ở cuối để in a và b với một dấu cách ở giữa: \"{a} {b}\"."
+      "Hàm phải trả về một chủ sở hữu khác của cùng String đó, không phải một bản sao. Hàm Rc nào thêm một chủ sở hữu?",
+      "Rc::clone(&x) tạo một chủ sở hữu mới của giá trị phía sau x và cộng 1 vào bộ đếm. Ở đây tham số a đã là một tham chiếu tới một Rc, nên hãy viết Rc::clone(a). main đọc bộ đếm bằng Rc::strong_count(&a).",
+      "Hãy thay dòng let _ và todo!() bằng Rc::clone(a) và không có dấu chấm phẩy, để nó là giá trị mà hàm trả về. main đã in bộ đếm và cả hai chuỗi rồi."
     ]
   },
   "quiz": [

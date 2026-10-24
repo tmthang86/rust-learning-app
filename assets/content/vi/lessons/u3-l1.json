@@ -53,12 +53,46 @@
   "exercise": {
     "prompt": "Chương trình dùng name sau khi nó đã được di chuyển vào greet. Hãy sửa greet để nó không cần sở hữu String: đổi tham số thành một tham chiếu (&String) và gọi nó với &name. Một tham chiếu cho phép greet mượn String thay vì sở hữu nó; bạn sẽ học cách tham chiếu hoạt động trong bài học Mượn (borrowing) của unit này. Chương trình phải in ra: Hello, Ferris\nBye, Ferris",
     "starter": "fn greet(name: String) {\n    println!(\"Hello, {name}\");\n}\n\nfn main() {\n    let name = String::from(\"Ferris\");\n    greet(name);\n    println!(\"Bye, {name}\");\n}",
-    "expectedOutput": "Hello, Ferris\nBye, Ferris",
+    "tests": [
+      {
+        "id": "greet-prints-hello",
+        "label": "greet in ra Hello, Ferris",
+        "code": "let name = String::from(\"Ferris\");\ncheck_eq!(output_of(|| greet(&name)), \"Hello, Ferris\\n\");"
+      },
+      {
+        "id": "name-still-usable",
+        "label": "Có thể dùng lại String sau khi gọi greet",
+        "code": "let name = String::from(\"Ferris\");\ngreet(&name);\ngreet(&name);\ncheck_eq!(name, \"Ferris\");"
+      },
+      {
+        "id": "main-prints-both",
+        "label": "Chương trình in ra Hello, rồi Bye",
+        "output": "Hello, Ferris\nBye, Ferris"
+      },
+      {
+        "id": "another-name",
+        "hidden": true,
+        "label": "a name a hard-coded Ferris would not match",
+        "code": "let name = String::from(\"Ann\");\ncheck_eq!(output_of(|| greet(&name)), \"Hello, Ann\\n\");"
+      },
+      {
+        "id": "name-with-spaces",
+        "hidden": true,
+        "label": "spaces in the name",
+        "code": "let name = String::from(\"Ferris the crab\");\ncheck_eq!(output_of(|| greet(&name)), \"Hello, Ferris the crab\\n\");"
+      },
+      {
+        "id": "empty-name",
+        "hidden": true,
+        "label": "an empty name, still borrowed",
+        "code": "let name = String::new();\ncheck_eq!(output_of(|| greet(&name)), \"Hello, \\n\");\ncheck_eq!(name.len(), 0);"
+      }
+    ],
     "solution": "fn greet(name: &String) {\n    println!(\"Hello, {name}\");\n}\n\nfn main() {\n    let name = String::from(\"Ferris\");\n    greet(&name);\n    println!(\"Bye, {name}\");\n}",
     "hints": [
       "Truyền name vào greet làm nó bị di chuyển, nên main không thể dùng nó sau đó. Thay vào đó, hãy để greet mượn nó.",
       "Một tham chiếu cho phép một hàm mượn một giá trị. Trong danh sách tham số, hãy đặt & trước kiểu. Ở chỗ gọi, hãy đặt & trước biến.",
-      "Hãy đổi tham số thành name: &String. Sau đó gọi greet(&name) trong main."
+      "Hãy đổi tham số thành name: &String. Sau đó gọi greet(&name) trong main. Các bài kiểm tra cũng gọi greet(&name), nên tham số phải nhận một tham chiếu; .clone() sẽ không khớp với chúng."
     ]
   },
   "quiz": [

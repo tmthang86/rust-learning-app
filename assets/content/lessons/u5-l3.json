@@ -46,10 +46,50 @@
     }
   ],
   "exercise": {
-    "prompt": "Use the entry API to count how many times each letter appears, then print the count for 'a'. It should print: 3",
-    "starter": "use std::collections::HashMap;\n\nfn main() {\n    let word = \"banana\";\n    let mut counts: HashMap<char, i32> = HashMap::new();   // keep mut: you'll add counts\n    for c in word.chars() {\n        // count c here\n    }\n    println!(\"{}\", counts.get(&'a').unwrap_or(&0));\n}",
-    "expectedOutput": "3",
-    "solution": "use std::collections::HashMap;\n\nfn main() {\n    let word = \"banana\";\n    let mut counts: HashMap<char, i32> = HashMap::new();\n    for c in word.chars() {\n        *counts.entry(c).or_insert(0) += 1;\n    }\n    println!(\"{}\", counts.get(&'a').unwrap_or(&0));\n}",
+    "prompt": "Finish count_letters: use the entry API to count how many times each letter appears in word. For \"banana\", main prints the count for 'a'. It should print: 3",
+    "starter": "use std::collections::HashMap;\n\nfn count_letters(word: &str) -> HashMap<char, i32> {\n    let mut counts: HashMap<char, i32> = HashMap::new();   // keep mut: you'll add counts\n    for c in word.chars() {\n        // count c here\n    }\n    counts\n}\n\nfn main() {\n    let counts = count_letters(\"banana\");\n    println!(\"{}\", counts.get(&'a').unwrap_or(&0));\n}",
+    "tests": [
+      {
+        "id": "banana-a",
+        "label": "In \"banana\", a appears 3 times",
+        "code": "check_eq!(count_letters(\"banana\").get(&'a'), Some(&3));"
+      },
+      {
+        "id": "banana-n",
+        "label": "In \"banana\", n appears 2 times",
+        "code": "check_eq!(count_letters(\"banana\").get(&'n'), Some(&2));"
+      },
+      {
+        "id": "main-prints-3",
+        "label": "The program prints 3",
+        "output": "3"
+      },
+      {
+        "id": "single-letter",
+        "hidden": true,
+        "label": "a letter that appears once",
+        "code": "check_eq!(count_letters(\"banana\").get(&'b'), Some(&1));"
+      },
+      {
+        "id": "missing-letter",
+        "hidden": true,
+        "label": "a letter that is not there has no entry",
+        "code": "check_eq!(count_letters(\"banana\").get(&'z'), None);"
+      },
+      {
+        "id": "empty-word",
+        "hidden": true,
+        "label": "an empty word",
+        "code": "check_eq!(count_letters(\"\").len(), 0);"
+      },
+      {
+        "id": "other-word",
+        "hidden": true,
+        "label": "a word a hard-coded answer would not match",
+        "code": "let counts = count_letters(\"hello\");\ncheck_eq!(counts.get(&'l'), Some(&2));\ncheck_eq!(counts.get(&'o'), Some(&1));\ncheck_eq!(counts.len(), 4);"
+      }
+    ],
+    "solution": "use std::collections::HashMap;\n\nfn count_letters(word: &str) -> HashMap<char, i32> {\n    let mut counts: HashMap<char, i32> = HashMap::new();\n    for c in word.chars() {\n        *counts.entry(c).or_insert(0) += 1;\n    }\n    counts\n}\n\nfn main() {\n    let counts = count_letters(\"banana\");\n    println!(\"{}\", counts.get(&'a').unwrap_or(&0));\n}",
     "hints": [
       "For each letter you need to either start a count or add 1 to the existing one. The entry API does this.",
       "counts.entry(c).or_insert(0) gives back a mutable reference to the count. Put * in front of it to follow the reference, then add 1 with += 1.",

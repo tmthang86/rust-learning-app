@@ -62,14 +62,54 @@
     }
   ],
   "exercise": {
-    "prompt": "Pair only holds i32 values. Make it generic so it can hold any type, and keep swapped working. Then, at the end of main, build a Pair of two words (a and b), swap it, and print its left and right fields separated by a space. It should print two lines: 2 1 and b a. Hint: struct Pair<T>, impl<T> Pair<T>, and fn swapped(self) -> Pair<T>.",
-    "starter": "struct Pair {\n    left: i32,\n    right: i32,\n}\n\nimpl Pair {\n    fn swapped(self) -> Pair {\n        Pair { left: self.right, right: self.left }\n    }\n}\n\nfn main() {\n    let numbers = Pair { left: 1, right: 2 }.swapped();\n    println!(\"{} {}\", numbers.left, numbers.right);\n}",
-    "expectedOutput": "2 1\nb a",
+    "prompt": "Pair only holds i32 values, so the Pair of words in main doesn't compile. Make it generic so it can hold any type, and keep swapped working. It should print two lines: 2 1 and b a. Hint: struct Pair<T>, impl<T> Pair<T>, and fn swapped(self) -> Pair<T>.",
+    "starter": "struct Pair {\n    left: i32,\n    right: i32,\n}\n\nimpl Pair {\n    fn swapped(self) -> Pair {\n        Pair { left: self.right, right: self.left }\n    }\n}\n\nfn main() {\n    let numbers = Pair { left: 1, right: 2 }.swapped();\n    println!(\"{} {}\", numbers.left, numbers.right);\n    let words = Pair { left: \"a\", right: \"b\" }.swapped();\n    println!(\"{} {}\", words.left, words.right);\n}",
+    "tests": [
+      {
+        "id": "numbers",
+        "label": "Swapping 1 and 2 gives 2 and 1",
+        "code": "let p = Pair { left: 1, right: 2 }.swapped();\ncheck_eq!((p.left, p.right), (2, 1));"
+      },
+      {
+        "id": "words",
+        "label": "Swapping a and b gives b and a",
+        "code": "let p = Pair { left: \"a\", right: \"b\" }.swapped();\ncheck_eq!((p.left, p.right), (\"b\", \"a\"));"
+      },
+      {
+        "id": "main-prints-both-pairs",
+        "label": "The program prints 2 1, then b a",
+        "output": "2 1\nb a"
+      },
+      {
+        "id": "strings",
+        "hidden": true,
+        "label": "owned Strings",
+        "code": "let p = Pair { left: String::from(\"x\"), right: String::from(\"y\") }.swapped();\ncheck_eq!((p.left, p.right), (String::from(\"y\"), String::from(\"x\")));"
+      },
+      {
+        "id": "floats",
+        "hidden": true,
+        "label": "floats",
+        "code": "let p = Pair { left: 1.5, right: 2.5 }.swapped();\ncheck_eq!((p.left, p.right), (2.5, 1.5));"
+      },
+      {
+        "id": "swap-twice",
+        "hidden": true,
+        "label": "swapping twice gives the original, with chars",
+        "code": "let p = Pair { left: 'a', right: 'b' }.swapped().swapped();\ncheck_eq!((p.left, p.right), ('a', 'b'));"
+      },
+      {
+        "id": "no-traits-needed",
+        "hidden": true,
+        "label": "T has no bounds: any type works",
+        "code": "struct Marker(u8);\nlet p = Pair { left: Marker(1), right: Marker(2) }.swapped();\ncheck_eq!((p.left.0, p.right.0), (2, 1));"
+      }
+    ],
     "solution": "struct Pair<T> {\n    left: T,\n    right: T,\n}\n\nimpl<T> Pair<T> {\n    fn swapped(self) -> Pair<T> {\n        Pair { left: self.right, right: self.left }\n    }\n}\n\nfn main() {\n    let numbers = Pair { left: 1, right: 2 }.swapped();\n    println!(\"{} {}\", numbers.left, numbers.right);\n    let words = Pair { left: \"a\", right: \"b\" }.swapped();\n    println!(\"{} {}\", words.left, words.right);\n}",
     "hints": [
       "Pair only works with i32 right now. Making it generic touches three places: the struct, the impl line, and the type swapped returns. Look back at how the lesson made Point generic.",
       "Declare T after the struct name, Pair<T>, and use it for both fields. The impl needs T twice: impl<T> Pair<T>. Then swapped returns Pair<T>.",
-      "At the end of main, build a Pair with left \"a\" and right \"b\", call swapped() on it, and print its left and right fields with a space between them."
+      "Once Pair<T> is generic, the Pair of words in main works with no other change: swapped hands back a Pair with left and right swapped."
     ]
   },
   "quiz": [

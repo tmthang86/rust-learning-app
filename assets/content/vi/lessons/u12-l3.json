@@ -42,9 +42,49 @@
     }
   ],
   "exercise": {
-    "prompt": "Máy chủ nhỏ trong route() mới chỉ biết trang chủ. Hãy thêm một trang About: một request cho đường dẫn /about phải trả lời với trạng thái 200 và body About us, trong khi các đường dẫn lạ khác vẫn cho 404. Chương trình phải in ra ba dòng: 200 Home page, 200 About us, 404 Not found. Gợi ý: thêm nhánh match \"/about\" => (200, \"About us\") trước nhánh _.",
+    "prompt": "Máy chủ nhỏ trong route() mới chỉ biết trang chủ. Hãy thêm một trang About: một request cho đường dẫn /about phải trả lời với trạng thái 200 và body About us, trong khi các đường dẫn lạ khác vẫn cho 404. Chương trình phải in ra ba dòng: 200 Home page, 200 About us, 404 Not found.",
     "starter": "fn route(path: &str) -> (u16, &'static str) {\n    match path {\n        \"/\" => (200, \"Home page\"),\n        _ => (404, \"Not found\"),\n    }\n}\n\nfn main() {\n    for path in [\"/\", \"/about\", \"/nope\"] {\n        let (status, body) = route(path);\n        println!(\"{status} {body}\");\n    }\n}",
-    "expectedOutput": "200 Home page\n200 About us\n404 Not found",
+    "tests": [
+      {
+        "id": "about-page",
+        "label": "/about trả lời 200 About us",
+        "code": "check_eq!(route(\"/about\"), (200, \"About us\"));"
+      },
+      {
+        "id": "home-page",
+        "label": "/ vẫn trả lời 200 Home page",
+        "code": "check_eq!(route(\"/\"), (200, \"Home page\"));"
+      },
+      {
+        "id": "main-prints-three-lines",
+        "label": "Chương trình in ra ba câu trả lời",
+        "output": "200 Home page\n200 About us\n404 Not found"
+      },
+      {
+        "id": "unknown-path",
+        "hidden": true,
+        "label": "other paths are still 404",
+        "code": "check_eq!(route(\"/nope\"), (404, \"Not found\"));"
+      },
+      {
+        "id": "trailing-slash",
+        "hidden": true,
+        "label": "only the exact path matches",
+        "code": "check_eq!(route(\"/about/\"), (404, \"Not found\"));"
+      },
+      {
+        "id": "case-matters",
+        "hidden": true,
+        "label": "paths are case sensitive",
+        "code": "check_eq!(route(\"/About\"), (404, \"Not found\"));"
+      },
+      {
+        "id": "empty-path",
+        "hidden": true,
+        "label": "an empty path",
+        "code": "check_eq!(route(\"\"), (404, \"Not found\"));"
+      }
+    ],
     "solution": "fn route(path: &str) -> (u16, &'static str) {\n    match path {\n        \"/\" => (200, \"Home page\"),\n        \"/about\" => (200, \"About us\"),\n        _ => (404, \"Not found\"),\n    }\n}\n\nfn main() {\n    for path in [\"/\", \"/about\", \"/nope\"] {\n        let (status, body) = route(path);\n        println!(\"{status} {body}\");\n    }\n}",
     "hints": [
       "Hiện giờ /about rơi vào nhánh _ và cho 404. Hãy nhìn nhánh cho \"/\" và thêm một nhánh giống vậy cho /about.",

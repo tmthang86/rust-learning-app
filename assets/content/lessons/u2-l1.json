@@ -74,7 +74,13 @@
   "exercise": {
     "prompt": "This program doesn't compile because total is a float and count is an integer, and Rust won't divide one by the other. Convert count to f64 with as so it prints: 2.5",
     "starter": "fn main() {\n    let total = 10.0;\n    let count = 4;\n    let average = total / count;\n    println!(\"{average}\");\n}",
-    "expectedOutput": "2.5",
+    "tests": [
+      {
+        "id": "average-2-5",
+        "label": "Prints the average, 2.5",
+        "output": "2.5"
+      }
+    ],
     "solution": "fn main() {\n    let total = 10.0;\n    let count = 4;\n    let average = total / count as f64;\n    println!(\"{average}\");\n}",
     "hints": [
       "Rust needs both sides of / to be the same type. Find where count is used in the division.",

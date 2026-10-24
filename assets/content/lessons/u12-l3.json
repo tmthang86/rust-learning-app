@@ -42,9 +42,49 @@
     }
   ],
   "exercise": {
-    "prompt": "The tiny server in route() only knows the home page. Add an About page: a request for the path /about should answer with status 200 and the body About us, while other unknown paths still give 404. The program should print three lines: 200 Home page, 200 About us, 404 Not found. Hint: add the match arm \"/about\" => (200, \"About us\") before the _ arm.",
+    "prompt": "The tiny server in route() only knows the home page. Add an About page: a request for the path /about should answer with status 200 and the body About us, while other unknown paths still give 404. The program should print three lines: 200 Home page, 200 About us, 404 Not found.",
     "starter": "fn route(path: &str) -> (u16, &'static str) {\n    match path {\n        \"/\" => (200, \"Home page\"),\n        _ => (404, \"Not found\"),\n    }\n}\n\nfn main() {\n    for path in [\"/\", \"/about\", \"/nope\"] {\n        let (status, body) = route(path);\n        println!(\"{status} {body}\");\n    }\n}",
-    "expectedOutput": "200 Home page\n200 About us\n404 Not found",
+    "tests": [
+      {
+        "id": "about-page",
+        "label": "/about answers 200 About us",
+        "code": "check_eq!(route(\"/about\"), (200, \"About us\"));"
+      },
+      {
+        "id": "home-page",
+        "label": "/ still answers 200 Home page",
+        "code": "check_eq!(route(\"/\"), (200, \"Home page\"));"
+      },
+      {
+        "id": "main-prints-three-lines",
+        "label": "The program prints the three answers",
+        "output": "200 Home page\n200 About us\n404 Not found"
+      },
+      {
+        "id": "unknown-path",
+        "hidden": true,
+        "label": "other paths are still 404",
+        "code": "check_eq!(route(\"/nope\"), (404, \"Not found\"));"
+      },
+      {
+        "id": "trailing-slash",
+        "hidden": true,
+        "label": "only the exact path matches",
+        "code": "check_eq!(route(\"/about/\"), (404, \"Not found\"));"
+      },
+      {
+        "id": "case-matters",
+        "hidden": true,
+        "label": "paths are case sensitive",
+        "code": "check_eq!(route(\"/About\"), (404, \"Not found\"));"
+      },
+      {
+        "id": "empty-path",
+        "hidden": true,
+        "label": "an empty path",
+        "code": "check_eq!(route(\"\"), (404, \"Not found\"));"
+      }
+    ],
     "solution": "fn route(path: &str) -> (u16, &'static str) {\n    match path {\n        \"/\" => (200, \"Home page\"),\n        \"/about\" => (200, \"About us\"),\n        _ => (404, \"Not found\"),\n    }\n}\n\nfn main() {\n    for path in [\"/\", \"/about\", \"/nope\"] {\n        let (status, body) = route(path);\n        println!(\"{status} {body}\");\n    }\n}",
     "hints": [
       "Right now /about falls into the _ arm and gives 404. Look at the arm for \"/\" and add one like it for /about.",

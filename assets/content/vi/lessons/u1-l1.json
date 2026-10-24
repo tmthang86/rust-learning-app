@@ -28,7 +28,13 @@
   "exercise": {
     "prompt": "Hãy sửa chương trình để nó in ra: Hello, Rust!",
     "starter": "fn main() {\n    println!(\"Hello, world!\");\n}",
-    "expectedOutput": "Hello, Rust!",
+    "tests": [
+      {
+        "id": "hello-rust",
+        "label": "In ra Hello, Rust!",
+        "output": "Hello, Rust!"
+      }
+    ],
     "solution": "fn main() {\n    println!(\"Hello, Rust!\");\n}",
     "hints": [
       "Hãy nhìn đoạn văn bản bên trong dấu nháy của println!. Đoạn văn bản đó là thứ được in ra.",

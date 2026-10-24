@@ -40,7 +40,13 @@
   "exercise": {
     "prompt": "Print the third score in the array using an index. It should print: 88",
     "starter": "fn main() {\n    let scores = [72, 95, 88, 61];\n    println!(\"{}\", scores[0]);\n}",
-    "expectedOutput": "88",
+    "tests": [
+      {
+        "id": "third-score",
+        "label": "Prints the third score, 88",
+        "output": "88"
+      }
+    ],
     "solution": "fn main() {\n    let scores = [72, 95, 88, 61];\n    println!(\"{}\", scores[2]);\n}",
     "hints": [
       "Look at which index the println! uses. Remember that counting starts at 0, not 1.",

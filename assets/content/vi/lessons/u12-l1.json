@@ -42,9 +42,49 @@
     }
   ],
   "exercise": {
-    "prompt": "count() chưa biết flag --chars, nên nó báo là flag không xác định. Hãy dạy nó đếm số ký tự trong văn bản cho --chars, theo cách giống như các flag khác đếm dòng và từ. Chương trình phải in ra ba dòng: --lines: 2, --words: 5, --chars: 24. Gợi ý: thêm nhánh match \"--chars\" => Some(text.chars().count()).",
+    "prompt": "count() chưa biết flag --chars, nên nó báo là flag không xác định. Hãy dạy nó đếm số ký tự trong văn bản cho --chars, theo cách giống như các flag khác đếm dòng và từ. Chương trình phải in ra ba dòng: --lines: 2, --words: 5, --chars: 24.",
     "starter": "fn count(text: &str, flag: &str) -> Option<usize> {\n    match flag {\n        \"--lines\" => Some(text.lines().count()),\n        \"--words\" => Some(text.split_whitespace().count()),\n        _ => None,\n    }\n}\n\nfn main() {\n    let text = \"one two\\nthree four five\\n\";\n    for flag in [\"--lines\", \"--words\", \"--chars\"] {\n        match count(text, flag) {\n            Some(n) => println!(\"{flag}: {n}\"),\n            None => println!(\"{flag}: unknown flag\"),\n        }\n    }\n}",
-    "expectedOutput": "--lines: 2\n--words: 5\n--chars: 24",
+    "tests": [
+      {
+        "id": "chars-in-the-sample",
+        "label": "count đếm được 24 ký tự trong văn bản mẫu",
+        "code": "check_eq!(count(\"one two\\nthree four five\\n\", \"--chars\"), Some(24));"
+      },
+      {
+        "id": "chars-in-a-short-text",
+        "label": "count đếm được 3 ký tự trong \"abc\"",
+        "code": "check_eq!(count(\"abc\", \"--chars\"), Some(3));"
+      },
+      {
+        "id": "main-prints-three-lines",
+        "label": "Chương trình in ra số dòng, từ và ký tự",
+        "output": "--lines: 2\n--words: 5\n--chars: 24"
+      },
+      {
+        "id": "chars-not-bytes",
+        "hidden": true,
+        "label": "a two-byte character counts once",
+        "code": "check_eq!(count(\"h\\u{e9}llo\", \"--chars\"), Some(5));"
+      },
+      {
+        "id": "chars-of-empty-text",
+        "hidden": true,
+        "label": "empty text",
+        "code": "check_eq!(count(\"\", \"--chars\"), Some(0));"
+      },
+      {
+        "id": "unknown-flag",
+        "hidden": true,
+        "label": "other flags are still unknown",
+        "code": "check_eq!(count(\"abc\", \"--bytes\"), None);"
+      },
+      {
+        "id": "lines-and-words-unchanged",
+        "hidden": true,
+        "label": "the other flags still work",
+        "code": "check_eq!(count(\"one two\\nthree four five\\n\", \"--lines\"), Some(2));\ncheck_eq!(count(\"one two\\nthree four five\\n\", \"--words\"), Some(5));"
+      }
+    ],
     "solution": "fn count(text: &str, flag: &str) -> Option<usize> {\n    match flag {\n        \"--lines\" => Some(text.lines().count()),\n        \"--words\" => Some(text.split_whitespace().count()),\n        \"--chars\" => Some(text.chars().count()),\n        _ => None,\n    }\n}\n\nfn main() {\n    let text = \"one two\\nthree four five\\n\";\n    for flag in [\"--lines\", \"--words\", \"--chars\"] {\n        match count(text, flag) {\n            Some(n) => println!(\"{flag}: {n}\"),\n            None => println!(\"{flag}: unknown flag\"),\n        }\n    }\n}",
     "hints": [
       "Hãy nhìn cách count xử lý --lines và --words. --chars cần thêm một nhánh cùng dạng. Phương thức nào đếm ký tự?",

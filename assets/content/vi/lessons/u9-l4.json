@@ -52,7 +52,47 @@
   "exercise": {
     "prompt": "Hàm is_even có một lỗi, nên assert_eq! đầu tiên gây ra panic. Hãy sửa is_even để nó trả về true khi n % 2 == 0. Sau đó thêm một phép kiểm tra nữa trước println!: assert!(!is_even(7)); Chương trình phải in ra: all tests passed",
     "starter": "fn is_even(n: i32) -> bool {\n    n % 2 == 1\n}\n\nfn main() {\n    assert_eq!(is_even(4), true);\n    assert_eq!(is_even(10), true);\n    // add assert!(!is_even(7)); here\n    println!(\"all tests passed\");\n}",
-    "expectedOutput": "all tests passed",
+    "tests": [
+      {
+        "id": "four-is-even",
+        "label": "is_even(4) là true",
+        "code": "check_eq!(is_even(4), true);"
+      },
+      {
+        "id": "seven-is-odd",
+        "label": "is_even(7) là false",
+        "code": "check_eq!(is_even(7), false);"
+      },
+      {
+        "id": "main-prints-all-tests-passed",
+        "label": "Chương trình in ra all tests passed",
+        "output": "all tests passed"
+      },
+      {
+        "id": "zero-is-even",
+        "hidden": true,
+        "label": "zero is even",
+        "code": "check!(is_even(0));"
+      },
+      {
+        "id": "negative-even",
+        "hidden": true,
+        "label": "negative even numbers",
+        "code": "check!(is_even(-2));\ncheck!(is_even(-10));"
+      },
+      {
+        "id": "negative-odd",
+        "hidden": true,
+        "label": "negative odd numbers (-3 % 2 is -1, not 1)",
+        "code": "check!(!is_even(-3));\ncheck!(!is_even(-1));"
+      },
+      {
+        "id": "large-numbers",
+        "hidden": true,
+        "label": "the ends of i32",
+        "code": "check!(!is_even(i32::MAX));\ncheck!(is_even(i32::MIN));"
+      }
+    ],
     "solution": "fn is_even(n: i32) -> bool {\n    n % 2 == 0\n}\n\nfn main() {\n    assert_eq!(is_even(4), true);\n    assert_eq!(is_even(10), true);\n    assert!(!is_even(7));\n    println!(\"all tests passed\");\n}",
     "hints": [
       "assert_eq! đầu tiên gây ra panic vì is_even đưa ra câu trả lời sai cho 4. Số dư là bao nhiêu khi một số chẵn được chia cho 2?",

@@ -62,14 +62,60 @@
     }
   ],
   "exercise": {
-    "prompt": "Code khởi đầu cộng độ dài các từ bằng một vòng lặp for và in ra 9. Hãy thay vòng lặp bằng một pipeline iterator dùng map để biến mỗi từ thành độ dài của nó rồi cộng chúng lại, giữ nguyên tổng được in. Sau đó, trên một dòng mới, in ra có bao nhiêu từ dài hơn 2 byte, đếm bằng filter và count. Chương trình phải in ra hai dòng: 9 và 2. Gợi ý: tổng cần một kiểu, nên hãy viết let total: usize = ... và kết thúc pipeline bằng .sum().",
-    "starter": "fn main() {\n    let words = [\"rust\", \"is\", \"fun\"];\n    let mut total = 0;\n    for w in words {\n        total += w.len();\n    }\n    println!(\"{total}\");\n}",
-    "expectedOutput": "9\n2",
-    "solution": "fn main() {\n    let words = [\"rust\", \"is\", \"fun\"];\n    let total: usize = words.iter().map(|w| w.len()).sum();\n    println!(\"{total}\");\n    let long = words.iter().filter(|w| w.len() > 2).count();\n    println!(\"{long}\");\n}",
+    "prompt": "total_length cộng độ dài các từ bằng vòng lặp for. Hãy thay vòng lặp bằng một iterator pipeline biến mỗi từ thành độ dài của nó rồi cộng chúng lại. Sau đó hoàn thành count_long, hàm đếm xem có bao nhiêu từ dài hơn 2 byte, bằng filter và count. main in ra cả hai kết quả. Nó phải in ra hai dòng: 9 và 2. Gợi ý: sum cần biết kiểu của nó; kiểu trả về usize cho nó biết, hoặc bạn có thể viết .sum::<usize>()",
+    "starter": "fn total_length(words: &[&str]) -> usize {\n    let mut total = 0;\n    for w in words {\n        total += w.len();\n    }\n    total\n}\n\nfn count_long(words: &[&str]) -> usize {\n    // count the words longer than 2 bytes, with filter and count\n    let _ = words; // delete this line when you use words for real\n    0\n}\n\nfn main() {\n    let words = [\"rust\", \"is\", \"fun\"];\n    println!(\"{}\", total_length(&words));\n    println!(\"{}\", count_long(&words));\n}",
+    "tests": [
+      {
+        "id": "count-long-rust-is-fun",
+        "label": "Hai trong số rust, is, fun dài hơn 2 byte",
+        "code": "check_eq!(count_long(&[\"rust\", \"is\", \"fun\"]), 2);"
+      },
+      {
+        "id": "total-rust-is-fun",
+        "label": "Độ dài của rust, is, fun cộng lại là 9",
+        "code": "check_eq!(total_length(&[\"rust\", \"is\", \"fun\"]), 9);"
+      },
+      {
+        "id": "main-prints-9-and-2",
+        "label": "Chương trình in ra 9, rồi 2",
+        "output": "9\n2"
+      },
+      {
+        "id": "count-long-mixed",
+        "hidden": true,
+        "label": "words of 1 to 4 bytes",
+        "code": "check_eq!(count_long(&[\"a\", \"bb\", \"ccc\", \"dddd\"]), 2);"
+      },
+      {
+        "id": "count-long-none",
+        "hidden": true,
+        "label": "a word of exactly 2 bytes is not counted",
+        "code": "check_eq!(count_long(&[\"is\", \"to\", \"a\"]), 0);"
+      },
+      {
+        "id": "count-long-empty",
+        "hidden": true,
+        "label": "an empty list",
+        "code": "check_eq!(count_long(&[]), 0);"
+      },
+      {
+        "id": "total-other-words",
+        "hidden": true,
+        "label": "words a hard-coded 9 would not match",
+        "code": "check_eq!(total_length(&[\"hello\", \"world\", \"!\"]), 11);"
+      },
+      {
+        "id": "total-empty",
+        "hidden": true,
+        "label": "an empty list",
+        "code": "check_eq!(total_length(&[]), 0);"
+      }
+    ],
+    "solution": "fn total_length(words: &[&str]) -> usize {\n    words.iter().map(|w| w.len()).sum()\n}\n\nfn count_long(words: &[&str]) -> usize {\n    words.iter().filter(|w| w.len() > 2).count()\n}\n\nfn main() {\n    let words = [\"rust\", \"is\", \"fun\"];\n    println!(\"{}\", total_length(&words));\n    println!(\"{}\", count_long(&words));\n}",
     "hints": [
-      "Cả hai dòng đều kết thúc một pipeline bằng một phương thức tiêu thụ. Dòng thứ nhất biến mỗi từ thành một con số rồi cộng các số lại. Dòng thứ hai giữ lại một số từ và đếm chúng.",
-      "Với tổng: words.iter().map(|w| w.len()).sum(). Phép sum cần biết kiểu của nó, nên hãy viết let total: usize = ở phía trước.",
-      "Với dòng thứ hai, hãy dùng filter với w.len() > 2 và kết thúc bằng count(). Đặt kết quả vào một biến và in nó trên một dòng mới sau tổng."
+      "Cả hai hàm đều kết thúc một pipeline bằng một phương thức tiêu thụ. Hàm thứ nhất biến mỗi từ thành một con số rồi cộng các số lại. Hàm thứ hai giữ lại một số từ rồi đếm chúng.",
+      "Với total_length: words.iter().map(|w| w.len()).sum(). Kiểu trả về của hàm, usize, cho sum biết cần cộng kiểu gì.",
+      "Với count_long, hãy dùng filter với w.len() > 2 và kết thúc bằng count(). Nó trả về số lượng từ dưới dạng usize, nên nó là giá trị mà hàm trả về."
     ]
   },
   "quiz": [

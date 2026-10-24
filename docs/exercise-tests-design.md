@@ -535,10 +535,11 @@ Groups: verified by diffing starter vs solution outside `main`.
 | **R: the learner's change is only in `main`** (22) | u4-l4, u8-l1, u10-l2 (the function is already complete in the starter), plus u3-l2, u4-l1, u4-l3, u5-l1..l3, u6-l1, u8-l2, u8-l4, u8-l5, u9-l1..l3, u10-l3, u10-l4, u11-l1..l3, u12-l4 | Restructure: the starter gets a function with a fixed signature for the step the learner writes (u4-l4: `fn even_or_zero(numbers: &[i32]) -> i32` using `first_even` and `unwrap_or`; u8-l1: `fn minus_five() -> impl Fn(i32) -> i32`; u5-l1: `fn add_four_and_five(v: &mut Vec<i32>)`; u9-l1: `shop::…`, where making it `pub` is the task). Prompt rewritten. Or `PRINT_ONLY_OK` with a reason (candidate: u10-l2 drop order: keep an output test). | ≥ 1 vis + ≥ 2 hidden |
 
 At risk:
-- **u3-l1** (`greet` prints) and **u7-l4** (`show` prints) can only be
-  tested on their prints, so they need `output_of`, which is Unverified
-  under gVisor (D3). If D3 fails, both go to `PRINT_ONLY_OK` with output
-  tests, or their functions are changed to return a `String`.
+- **u3-l1** (`greet` prints), **u7-l4** (`show` prints) and **u10-l2**
+  (`work` prints the drop order) can only be tested on their prints, so they
+  need `output_of`, which is Unverified under gVisor (D3). If D3 fails, all
+  three go to `PRINT_ONLY_OK` with output tests, or their functions are
+  changed to return a `String`.
 - u9-l4 keeps its output test ("all tests passed") and adds hidden
   `check!(is_even(…))` tests.
 - u11 tests: at most ~8 threads per test (`--pids-limit 64`) and within the
@@ -552,6 +553,13 @@ At risk:
    bodies use `todo!()`, so tests fail with "not yet implemented". The
    starter must leave at least one test failing, so the learner's work
    must be inside what the tests call, not only in `main`.
+   - Exception: when the lesson's point is adding a new item (a function,
+     method, trait impl, module item, generic parameter), the starter may
+     call it from `main` and not define it. The starter then doesn't
+     compile, the compiler error shows what is missing, and the checker
+     can't test the names against it (it prints a note; the reviewer checks
+     by hand). Name the item so rustc has no suggestion for it (u0-l5 uses
+     `add_numbers`: a call to `add(3, 4)` makes rustc suggest `3.add(4)`).
 3. **Visible tests = the prompt's examples** (2–3, simplest first).
    **Hidden tests = the edge cases** (empty, zero, negative, max, ties,
    unicode, the error path), plus at least one input a hard-coded answer

@@ -62,14 +62,48 @@
     }
   ],
   "exercise": {
-    "prompt": "other và counter chia sẻ một con số. Chương trình đã cộng 5 qua other. Hãy thêm một dòng cộng 10 qua counter, để chương trình in ra: counter = 15. Gợi ý: borrow_mut() cho một guard, và * chạm tới con số bên trong nó, nên hãy viết *counter.borrow_mut() += 10;",
-    "starter": "use std::cell::RefCell;\nuse std::rc::Rc;\n\nfn main() {\n    let counter = Rc::new(RefCell::new(0));\n    let other = Rc::clone(&counter);\n    *other.borrow_mut() += 5;\n    // add the line for counter here\n    println!(\"counter = {}\", counter.borrow());\n}",
-    "expectedOutput": "counter = 15",
-    "solution": "use std::cell::RefCell;\nuse std::rc::Rc;\n\nfn main() {\n    let counter = Rc::new(RefCell::new(0));\n    let other = Rc::clone(&counter);\n    *other.borrow_mut() += 5;\n    *counter.borrow_mut() += 10;\n    println!(\"counter = {}\", counter.borrow());\n}",
+    "prompt": "other và counter dùng chung một con số. Chương trình đã cộng 5 qua other. Hãy hoàn thành add_ten để nó cộng 10 vào con số bên trong Rc mà nó nhận được. Nó phải in ra: counter = 15.",
+    "starter": "use std::cell::RefCell;\nuse std::rc::Rc;\n\nfn add_ten(counter: &Rc<RefCell<i32>>) {\n    // add 10 to the number inside counter\n    let _ = counter; // delete this line when you use counter for real\n}\n\nfn main() {\n    let counter = Rc::new(RefCell::new(0));\n    let other = Rc::clone(&counter);\n    *other.borrow_mut() += 5;\n    add_ten(&counter);\n    println!(\"counter = {}\", counter.borrow());\n}",
+    "tests": [
+      {
+        "id": "adds-ten",
+        "label": "add_ten biến 0 thành 10",
+        "code": "let c = Rc::new(RefCell::new(0));\nadd_ten(&c);\ncheck_eq!(*c.borrow(), 10);"
+      },
+      {
+        "id": "other-owner-sees-it",
+        "label": "Chủ sở hữu khác của cùng con số thấy được thay đổi",
+        "code": "let c = Rc::new(RefCell::new(5));\nlet other = Rc::clone(&c);\nadd_ten(&c);\ncheck_eq!(*other.borrow(), 15);"
+      },
+      {
+        "id": "main-prints-counter-15",
+        "label": "Chương trình in ra counter = 15",
+        "output": "counter = 15"
+      },
+      {
+        "id": "start-from-another-number",
+        "hidden": true,
+        "label": "a start a hard-coded 15 would not match",
+        "code": "let c = Rc::new(RefCell::new(-3));\nadd_ten(&c);\ncheck_eq!(*c.borrow(), 7);"
+      },
+      {
+        "id": "called-twice",
+        "hidden": true,
+        "label": "adds, does not set",
+        "code": "let c = Rc::new(RefCell::new(0));\nadd_ten(&c);\nadd_ten(&c);\ncheck_eq!(*c.borrow(), 20);"
+      },
+      {
+        "id": "no-borrow-left-over",
+        "hidden": true,
+        "label": "the guard is released after the call",
+        "code": "let c = Rc::new(RefCell::new(1));\nadd_ten(&c);\ncheck!(c.try_borrow_mut().is_ok());"
+      }
+    ],
+    "solution": "use std::cell::RefCell;\nuse std::rc::Rc;\n\nfn add_ten(counter: &Rc<RefCell<i32>>) {\n    *counter.borrow_mut() += 10;\n}\n\nfn main() {\n    let counter = Rc::new(RefCell::new(0));\n    let other = Rc::clone(&counter);\n    *other.borrow_mut() += 5;\n    add_ten(&counter);\n    println!(\"counter = {}\", counter.borrow());\n}",
     "hints": [
-      "counter và other trỏ tới cùng một con số. Dòng cho other đã thay đổi nó. Hãy viết một dòng tương tự đi qua counter.",
-      "borrow_mut() cho một guard ghi, và * chạm tới con số bên trong nó. Sau đó += 10 thay đổi con số.",
-      "Hãy sao chép dòng của other vào chỗ trống, dùng counter thay cho other, và cộng 10 thay vì 5."
+      "counter và other trỏ tới cùng một con số. Dòng dành cho other đã thay đổi nó rồi. Hãy viết một dòng tương tự bên trong add_ten đi qua counter.",
+      "borrow_mut() trả về một guard để ghi, và * với tới con số bên trong nó. Sau đó += 10 thay đổi con số.",
+      "Hãy sao chép dòng dành cho other từ main vào add_ten, dùng counter thay cho other, và cộng 10 thay vì 5. Sau đó xóa dòng let _. Dòng đó là: *counter.borrow_mut() += 10;"
     ]
   },
   "quiz": [

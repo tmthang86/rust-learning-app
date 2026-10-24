@@ -38,10 +38,39 @@
     }
   ],
   "exercise": {
-    "prompt": "first is moved into second, so it can't be printed. Use .clone() so both can be printed. It should print: apple apple",
-    "starter": "fn main() {\n    let first = String::from(\"apple\");\n    let second = first;\n    println!(\"{first} {second}\");\n}",
-    "expectedOutput": "apple apple",
-    "solution": "fn main() {\n    let first = String::from(\"apple\");\n    let second = first.clone();\n    println!(\"{first} {second}\");\n}",
+    "prompt": "In copy_text, first is moved into second, so it can't be returned as well. Use .clone() so both can be returned. For \"apple\", main should print: apple apple",
+    "starter": "fn copy_text(first: String) -> (String, String) {\n    let second = first;\n    (first, second)\n}\n\nfn main() {\n    let (a, b) = copy_text(String::from(\"apple\"));\n    println!(\"{a} {b}\");\n}",
+    "tests": [
+      {
+        "id": "apple-twice",
+        "label": "copy_text(\"apple\") returns apple twice",
+        "code": "check_eq!(copy_text(String::from(\"apple\")), (String::from(\"apple\"), String::from(\"apple\")));"
+      },
+      {
+        "id": "main-prints-apple-apple",
+        "label": "The program prints apple apple",
+        "output": "apple apple"
+      },
+      {
+        "id": "another-word",
+        "hidden": true,
+        "label": "a word a hard-coded apple would not match",
+        "code": "check_eq!(copy_text(String::from(\"rust\")), (String::from(\"rust\"), String::from(\"rust\")));"
+      },
+      {
+        "id": "empty-text",
+        "hidden": true,
+        "label": "an empty String",
+        "code": "check_eq!(copy_text(String::new()), (String::new(), String::new()));"
+      },
+      {
+        "id": "text-with-space",
+        "hidden": true,
+        "label": "text with a space",
+        "code": "check_eq!(copy_text(String::from(\"hello world\")), (String::from(\"hello world\"), String::from(\"hello world\")));"
+      }
+    ],
+    "solution": "fn copy_text(first: String) -> (String, String) {\n    let second = first.clone();\n    (first, second)\n}\n\nfn main() {\n    let (a, b) = copy_text(String::from(\"apple\"));\n    println!(\"{a} {b}\");\n}",
     "hints": [
       "Writing let second = first moves the String. You want second to get its own copy instead.",
       "A String can be copied with the .clone() method. Call it on first, on the line where second is created.",

@@ -54,14 +54,49 @@
     }
   ],
   "exercise": {
-    "prompt": "Code khởi đầu in ra mọi từ. Hãy thay đổi vòng lặp để nó đi qua một pipeline iterator: chỉ giữ các từ dài hơn 3 chữ cái, và đổi mỗi từ thành chữ hoa trước khi in. Chương trình phải in ra ba dòng: APPLE, BANANA và KIWI. Gợi ý: words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase())",
-    "starter": "fn main() {\n    let words = [\"apple\", \"fig\", \"banana\", \"kiwi\"];\n    for w in words.iter() {\n        println!(\"{w}\");\n    }\n}",
-    "expectedOutput": "APPLE\nBANANA\nKIWI",
-    "solution": "fn main() {\n    let words = [\"apple\", \"fig\", \"banana\", \"kiwi\"];\n    for w in words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase()) {\n        println!(\"{w}\");\n    }\n}",
+    "prompt": "loud_long_words phải chỉ giữ lại những từ dài hơn 3 chữ cái và biến mỗi từ thành chữ hoa. Hãy xây dựng nó thành một iterator pipeline kết thúc bằng collect. main in ra từng từ mà nó trả về. Nó phải in ra ba dòng: APPLE, BANANA và KIWI.",
+    "starter": "fn loud_long_words(words: &[&str]) -> Vec<String> {\n    // keep only the words longer than 3 letters, uppercase each one\n    let _ = words; // delete this line when you use words for real\n    Vec::new()\n}\n\nfn main() {\n    let words = [\"apple\", \"fig\", \"banana\", \"kiwi\"];\n    for w in loud_long_words(&words) {\n        println!(\"{w}\");\n    }\n}",
+    "tests": [
+      {
+        "id": "fruit-words",
+        "label": "Giữ apple, banana và kiwi, viết hoa",
+        "code": "check_eq!(loud_long_words(&[\"apple\", \"fig\", \"banana\", \"kiwi\"]), vec![\"APPLE\", \"BANANA\", \"KIWI\"]);"
+      },
+      {
+        "id": "main-prints-three-lines",
+        "label": "Chương trình in ra APPLE, BANANA và KIWI",
+        "output": "APPLE\nBANANA\nKIWI"
+      },
+      {
+        "id": "exactly-three-letters",
+        "hidden": true,
+        "label": "words of exactly 3 letters are dropped",
+        "code": "check_eq!(loud_long_words(&[\"cat\", \"dog\"]), Vec::<String>::new());"
+      },
+      {
+        "id": "empty-list",
+        "hidden": true,
+        "label": "an empty list",
+        "code": "check_eq!(loud_long_words(&[]), Vec::<String>::new());"
+      },
+      {
+        "id": "order-is-kept",
+        "hidden": true,
+        "label": "the order of the input is kept",
+        "code": "check_eq!(loud_long_words(&[\"zebra\", \"ox\", \"lion\"]), vec![\"ZEBRA\", \"LION\"]);"
+      },
+      {
+        "id": "already-upper-and-mixed",
+        "hidden": true,
+        "label": "mixed case input",
+        "code": "check_eq!(loud_long_words(&[\"Rust\", \"GO\", \"mixedCase\"]), vec![\"RUST\", \"MIXEDCASE\"]);"
+      }
+    ],
+    "solution": "fn loud_long_words(words: &[&str]) -> Vec<String> {\n    words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase()).collect()\n}\n\nfn main() {\n    let words = [\"apple\", \"fig\", \"banana\", \"kiwi\"];\n    for w in loud_long_words(&words) {\n        println!(\"{w}\");\n    }\n}",
     "hints": [
-      "Hai bước xảy ra với mỗi từ: một số từ bị loại bỏ, và những từ còn lại bị thay đổi. Hai adapter nào làm hai việc đó?",
-      "Hãy bắt đầu từ words.iter(). Hãy nối filter với một closure trả về true cho các từ cần giữ, rồi map với một closure tạo từ mới. to_uppercase() tạo chữ hoa.",
-      "Vòng lặp for có thể nhận cả chuỗi sau in: words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase()). println! bên trong giữ nguyên."
+      "Hai bước xảy ra với mỗi từ: một số từ bị loại bỏ, và các từ còn lại bị thay đổi. Hai adapter nào làm hai việc đó?",
+      "Hãy bắt đầu từ words.iter(). Nối filter với một closure trả về true cho các từ cần giữ, rồi nối map với một closure tạo ra từ mới. to_uppercase() tạo chữ hoa.",
+      "Toàn bộ phần thân hàm có thể là chuỗi này: words.iter().filter(|w| w.len() > 3).map(|w| w.to_uppercase()).collect(). Kiểu trả về Vec<String> cho collect biết cần tạo ra gì."
     ]
   },
   "quiz": [

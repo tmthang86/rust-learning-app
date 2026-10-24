@@ -41,7 +41,13 @@
   "exercise": {
     "prompt": "Use the variables to print exactly: Ferris has 3 friends",
     "starter": "fn main() {\n    let name = \"Ferris\";\n    let friends = 3;\n    println!(\"\");\n}",
-    "expectedOutput": "Ferris has 3 friends",
+    "tests": [
+      {
+        "id": "friends-sentence",
+        "label": "Prints Ferris has 3 friends",
+        "output": "Ferris has 3 friends"
+      }
+    ],
     "solution": "fn main() {\n    let name = \"Ferris\";\n    let friends = 3;\n    println!(\"{name} has {friends} friends\");\n}",
     "hints": [
       "Right now the text between the quotes of println! is empty, so only an empty line prints.",

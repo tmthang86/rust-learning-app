@@ -42,14 +42,50 @@
     }
   ],
   "exercise": {
-    "prompt": "parse trả về một Result. Hãy dùng expect với một thông báo để lấy con số ra, nhờ đó có thể nhân đôi nó. Chương trình phải in ra: 84",
-    "starter": "fn main() {\n    let n: i32 = \"42\".parse();\n    println!(\"{}\", n * 2);\n}",
-    "expectedOutput": "84",
-    "solution": "fn main() {\n    let n: i32 = \"42\".parse().expect(\"not a number\");\n    println!(\"{}\", n * 2);\n}",
+    "prompt": "parse trả về một Result. Trong parse_and_double, hãy dùng expect với một thông báo để lấy con số ra rồi nhân đôi. Với \"42\", main phải in ra: 84",
+    "starter": "fn parse_and_double(text: &str) -> i32 {\n    let n: i32 = text.parse();\n    n * 2\n}\n\nfn main() {\n    println!(\"{}\", parse_and_double(\"42\"));\n}",
+    "tests": [
+      {
+        "id": "forty-two",
+        "label": "parse_and_double(\"42\") là 84",
+        "code": "check_eq!(parse_and_double(\"42\"), 84);"
+      },
+      {
+        "id": "main-prints-84",
+        "label": "Chương trình in ra 84",
+        "output": "84"
+      },
+      {
+        "id": "another-number",
+        "hidden": true,
+        "label": "a number a hard-coded 84 would not match",
+        "code": "check_eq!(parse_and_double(\"5\"), 10);"
+      },
+      {
+        "id": "negative-number",
+        "hidden": true,
+        "label": "a negative number",
+        "code": "check_eq!(parse_and_double(\"-3\"), -6);"
+      },
+      {
+        "id": "zero",
+        "hidden": true,
+        "label": "zero",
+        "code": "check_eq!(parse_and_double(\"0\"), 0);"
+      },
+      {
+        "id": "not-a-number-panics",
+        "hidden": true,
+        "label": "expect stops the program on bad text",
+        "code": "let _ = parse_and_double(\"abc\");",
+        "panics": ""
+      }
+    ],
+    "solution": "fn parse_and_double(text: &str) -> i32 {\n    let n: i32 = text.parse().expect(\"not a number\");\n    n * 2\n}\n\nfn main() {\n    println!(\"{}\", parse_and_double(\"42\"));\n}",
     "hints": [
-      "Lệnh gọi parse trả về một Result, không phải một con số. Bạn cần lấy con số ra khỏi nó.",
-      "Result có phương thức expect. Nó trả cho bạn giá trị, hoặc dừng chương trình với thông báo của bạn nếu việc parse thất bại. Hãy thêm nó sau parse().",
-      "Hãy viết \"42\".parse().expect(\"not a number\"). Hãy đặt một thông báo ngắn trong cặp dấu nháy."
+      "Lời gọi parse trả về một Result, không phải một con số. Bạn cần lấy con số ra khỏi nó.",
+      "Result có phương thức expect. Nó đưa cho bạn giá trị, hoặc dừng chương trình với thông báo của bạn nếu parse thất bại. Hãy thêm nó sau parse().",
+      "Hãy viết text.parse().expect(\"not a number\"). Đặt một thông báo ngắn trong cặp dấu nháy."
     ]
   },
   "quiz": [

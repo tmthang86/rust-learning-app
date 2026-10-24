@@ -42,14 +42,49 @@
     }
   ],
   "exercise": {
-    "prompt": "Add a function double(n: i32) -> i32 to the math module that returns n * 2. Remember the pub. Then add a second println! in main that prints math::double(21). The program should print two lines: 36 and then 42",
-    "starter": "mod math {\n    pub fn square(n: i32) -> i32 {\n        n * n\n    }\n\n    // add pub fn double here\n}\n\nfn main() {\n    println!(\"{}\", math::square(6));\n}",
-    "expectedOutput": "36\n42",
+    "prompt": "main already calls math::double(21), but the math module has no such function. Add a function double(n: i32) -> i32 to the math module that returns n * 2. Remember the pub. The program should print two lines: 36 and then 42",
+    "starter": "mod math {\n    pub fn square(n: i32) -> i32 {\n        n * n\n    }\n\n    // add pub fn double here\n}\n\nfn main() {\n    println!(\"{}\", math::square(6));\n    println!(\"{}\", math::double(21));\n}",
+    "tests": [
+      {
+        "id": "double-21",
+        "label": "math::double(21) is 42",
+        "code": "check_eq!(math::double(21), 42);"
+      },
+      {
+        "id": "main-prints-36-and-42",
+        "label": "The program prints 36, then 42",
+        "output": "36\n42"
+      },
+      {
+        "id": "double-zero",
+        "hidden": true,
+        "label": "zero",
+        "code": "check_eq!(math::double(0), 0);"
+      },
+      {
+        "id": "double-negative",
+        "hidden": true,
+        "label": "a negative number",
+        "code": "check_eq!(math::double(-4), -8);"
+      },
+      {
+        "id": "double-other",
+        "hidden": true,
+        "label": "a number a hard-coded 42 would not match",
+        "code": "check_eq!(math::double(500), 1000);"
+      },
+      {
+        "id": "square-unchanged",
+        "hidden": true,
+        "label": "square is left alone",
+        "code": "check_eq!(math::square(6), 36);"
+      }
+    ],
     "solution": "mod math {\n    pub fn square(n: i32) -> i32 {\n        n * n\n    }\n\n    pub fn double(n: i32) -> i32 {\n        n * 2\n    }\n}\n\nfn main() {\n    println!(\"{}\", math::square(6));\n    println!(\"{}\", math::double(21));\n}",
     "hints": [
       "double belongs inside the math module, next to square. Look at how square is written, and what main needs to be able to call it.",
       "main is outside the module, so the function needs pub: pub fn double(n: i32) -> i32. The body is n * 2.",
-      "Add the function where the comment is. Then, in main, add a second println! that calls it by its path: math::double(21)."
+      "Add the function where the comment is. main already calls it by its path: math::double(21)."
     ]
   },
   "quiz": [

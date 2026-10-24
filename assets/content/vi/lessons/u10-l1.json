@@ -54,14 +54,54 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy thêm một hàm length(list: &List) -> u32 đếm số phần tử: một Cons tính là 1 cộng với độ dài của phần còn lại, và Nil là 0. Hãy làm theo dạng của sum. Sau đó đổi println! trong main để nó in cả hai: sum = 6, length = 3",
-    "starter": "enum List {\n    Cons(i32, Box<List>),\n    Nil,\n}\nuse List::{Cons, Nil};\n\nfn sum(list: &List) -> i32 {\n    match list {\n        Cons(value, rest) => *value + sum(rest),\n        Nil => 0,\n    }\n}\n\n// add fn length here\n\nfn main() {\n    let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));\n    println!(\"sum = {}\", sum(&list));\n}",
-    "expectedOutput": "sum = 6, length = 3",
+    "prompt": "main đã in length(&list), nhưng length chưa tồn tại. Hãy thêm hàm length(list: &List) -> u32 đếm số phần tử: một Cons được tính là 1 cộng với độ dài của phần còn lại, và Nil là 0. Hãy theo hình dạng của sum. Nó phải in ra: sum = 6, length = 3",
+    "starter": "enum List {\n    Cons(i32, Box<List>),\n    Nil,\n}\nuse List::{Cons, Nil};\n\nfn sum(list: &List) -> i32 {\n    match list {\n        Cons(value, rest) => *value + sum(rest),\n        Nil => 0,\n    }\n}\n\n// add fn length here\n\nfn main() {\n    let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));\n    println!(\"sum = {}, length = {}\", sum(&list), length(&list));\n}",
+    "tests": [
+      {
+        "id": "three-items",
+        "label": "Danh sách 1, 2, 3 có độ dài 3",
+        "code": "let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));\ncheck_eq!(length(&list), 3);"
+      },
+      {
+        "id": "one-item",
+        "label": "Danh sách có một phần tử có độ dài 1",
+        "code": "let list = Cons(9, Box::new(Nil));\ncheck_eq!(length(&list), 1);"
+      },
+      {
+        "id": "main-prints-sum-and-length",
+        "label": "Chương trình in ra tổng và độ dài",
+        "output": "sum = 6, length = 3"
+      },
+      {
+        "id": "empty-list",
+        "hidden": true,
+        "label": "Nil has length 0",
+        "code": "check_eq!(length(&Nil), 0);"
+      },
+      {
+        "id": "longer-list",
+        "hidden": true,
+        "label": "a list built in a loop, longer than the example",
+        "code": "let mut list = Nil;\nfor i in 0..5 {\n    list = Cons(i, Box::new(list));\n}\ncheck_eq!(length(&list), 5);"
+      },
+      {
+        "id": "values-do-not-matter",
+        "hidden": true,
+        "label": "length counts items, not their values",
+        "code": "let list = Cons(-7, Box::new(Cons(0, Box::new(Nil))));\ncheck_eq!(length(&list), 2);"
+      },
+      {
+        "id": "sum-unchanged",
+        "hidden": true,
+        "label": "sum is left alone",
+        "code": "let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));\ncheck_eq!(sum(&list), 6);"
+      }
+    ],
     "solution": "enum List {\n    Cons(i32, Box<List>),\n    Nil,\n}\nuse List::{Cons, Nil};\n\nfn sum(list: &List) -> i32 {\n    match list {\n        Cons(value, rest) => *value + sum(rest),\n        Nil => 0,\n    }\n}\n\nfn length(list: &List) -> u32 {\n    match list {\n        Cons(_, rest) => 1 + length(rest),\n        Nil => 0,\n    }\n}\n\nfn main() {\n    let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));\n    println!(\"sum = {}, length = {}\", sum(&list), length(&list));\n}",
     "hints": [
-      "length theo dạng của sum: một match trên danh sách với một nhánh cho Cons và một nhánh cho Nil. Mỗi nhánh nên cho ra gì?",
-      "Hãy viết fn length(list: &List) -> u32 và match list. Nil cho ra 0. Trong nhánh Cons bạn không cần con số, nên hãy viết _ ở đó (nó có nghĩa là \"bất kỳ giá trị nào, bị bỏ qua\") và đặt tên cho phần còn lại.",
-      "Nhánh Cons là 1 + length(rest). Sau đó hãy đổi println! trong main để in cả hai: sum = {}, length = {}, với sum(&list) và length(&list)."
+      "length theo hình dạng của sum: một match trên danh sách với một nhánh cho Cons và một nhánh cho Nil. Mỗi nhánh nên trả về gì?",
+      "Hãy viết fn length(list: &List) -> u32 và match list. Nil cho 0. Ở nhánh Cons bạn không cần con số, nên hãy viết _ ở đó (nó có nghĩa là \"bất kỳ giá trị nào, bỏ qua\") và đặt tên cho phần còn lại.",
+      "Nhánh Cons là 1 + length(rest). main đã in cả hai rồi: sum(&list) và length(&list)."
     ]
   },
   "quiz": [

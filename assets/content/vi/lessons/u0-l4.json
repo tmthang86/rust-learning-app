@@ -15,7 +15,13 @@
   "exercise": {
     "prompt": "Dùng vòng lặp for để in bảng cửu chương 3 từ 3 x 1 đến 3 x 5. Chỉ in kết quả, mỗi kết quả trên một dòng riêng: 3, 6, 9, 12, 15",
     "starter": "fn main() {\n    // your loop here\n}",
-    "expectedOutput": "3\n6\n9\n12\n15",
+    "tests": [
+      {
+        "id": "three-times-table",
+        "label": "In ra bảng cửu chương 3, mỗi kết quả trên một dòng",
+        "output": "3\n6\n9\n12\n15"
+      }
+    ],
     "solution": "fn main() {\n    for n in 1..=5 {\n        println!(\"{}\", 3 * n);\n    }\n}",
     "hints": ["Bạn muốn lặp lại một lệnh in năm lần, mỗi lần với một số khác nhau. Loại vòng lặp nào đi qua một dãy số (range)?", "Hãy dùng for n in 1..=5. Dãy 1..=5 bao gồm cả 5. Bên trong vòng lặp, n giữ số hiện tại.", "Bên trong vòng lặp, hãy in 3 * n bằng println!. Ví dụ: println!(\"{}\", 3 * n); Cặp {} trống hiển thị giá trị đó."]
   },

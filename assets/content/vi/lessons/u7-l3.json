@@ -42,14 +42,48 @@
     }
   ],
   "exercise": {
-    "prompt": "Code khởi đầu có một trait Speak với một phương thức bắt buộc speak và một phương thức mặc định shout. Dog đã implement nó. Hãy làm cho Robot cũng speak được: speak của nó phải trả về beep, theo sau là một dấu cách và id của nó. Sau đó, ở cuối main, tạo một Robot với id 7 và in shout của nó. Chương trình phải in ra hai dòng: WOOF, I AM REX và BEEP 7. Cho đến khi bạn làm xong, trình biên dịch sẽ cảnh báo rằng Robot không bao giờ được tạo; điều đó là bình thường. Gợi ý: impl Speak for Robot { fn speak(&self) -> String { format!(\"beep {}\", self.id) } }",
-    "starter": "trait Speak {\n    fn speak(&self) -> String;\n\n    fn shout(&self) -> String {\n        self.speak().to_uppercase()\n    }\n}\n\nstruct Dog {\n    name: String,\n}\n\nstruct Robot {\n    id: u32,\n}\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        format!(\"woof, I am {}\", self.name)\n    }\n}\n\nfn main() {\n    let dog = Dog { name: String::from(\"Rex\") };\n    println!(\"{}\", dog.shout());\n}",
-    "expectedOutput": "WOOF, I AM REX\nBEEP 7",
+    "prompt": "Bản khởi đầu có trait Speak với phương thức bắt buộc speak và phương thức mặc định shout. Dog đã triển khai nó rồi, và main đã in robot.shout(). Hãy làm cho Robot cũng nói được: speak của nó phải trả về beep, theo sau là một dấu cách và id của nó. Nó phải in ra hai dòng: WOOF, I AM REX và BEEP 7.",
+    "starter": "trait Speak {\n    fn speak(&self) -> String;\n\n    fn shout(&self) -> String {\n        self.speak().to_uppercase()\n    }\n}\n\nstruct Dog {\n    name: String,\n}\n\nstruct Robot {\n    id: u32,\n}\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        format!(\"woof, I am {}\", self.name)\n    }\n}\n\nfn main() {\n    let dog = Dog { name: String::from(\"Rex\") };\n    println!(\"{}\", dog.shout());\n    let robot = Robot { id: 7 };\n    println!(\"{}\", robot.shout());\n}",
+    "tests": [
+      {
+        "id": "robot-speaks",
+        "label": "Robot có id 7 nói beep 7",
+        "code": "check_eq!(Robot { id: 7 }.speak(), \"beep 7\");"
+      },
+      {
+        "id": "robot-shouts",
+        "label": "Robot có id 7 hét BEEP 7",
+        "code": "check_eq!(Robot { id: 7 }.shout(), \"BEEP 7\");"
+      },
+      {
+        "id": "main-prints-both-shouts",
+        "label": "Chương trình in ra tiếng hét của con chó và robot",
+        "output": "WOOF, I AM REX\nBEEP 7"
+      },
+      {
+        "id": "other-id",
+        "hidden": true,
+        "label": "an id a hard-coded 7 would not match",
+        "code": "check_eq!(Robot { id: 123 }.speak(), \"beep 123\");"
+      },
+      {
+        "id": "id-zero",
+        "hidden": true,
+        "label": "id zero",
+        "code": "check_eq!(Robot { id: 0 }.shout(), \"BEEP 0\");"
+      },
+      {
+        "id": "dog-unchanged",
+        "hidden": true,
+        "label": "Dog keeps working",
+        "code": "check_eq!(Dog { name: String::from(\"Rex\") }.shout(), \"WOOF, I AM REX\");"
+      }
+    ],
     "solution": "trait Speak {\n    fn speak(&self) -> String;\n\n    fn shout(&self) -> String {\n        self.speak().to_uppercase()\n    }\n}\n\nstruct Dog {\n    name: String,\n}\n\nstruct Robot {\n    id: u32,\n}\n\nimpl Speak for Dog {\n    fn speak(&self) -> String {\n        format!(\"woof, I am {}\", self.name)\n    }\n}\n\nimpl Speak for Robot {\n    fn speak(&self) -> String {\n        format!(\"beep {}\", self.id)\n    }\n}\n\nfn main() {\n    let dog = Dog { name: String::from(\"Rex\") };\n    println!(\"{}\", dog.shout());\n    let robot = Robot { id: 7 };\n    println!(\"{}\", robot.shout());\n}",
     "hints": [
-      "Dog nhận trait Speak từ khối impl riêng của nó. Robot cũng cần một khối như vậy. Trait yêu cầu phương thức nào, và phương thức nào bạn nhận miễn phí?",
+      "Dog có được trait Speak từ khối impl riêng của nó. Robot cũng cần một khối như vậy. Trait yêu cầu phương thức nào, và phương thức nào bạn được dùng miễn phí?",
       "Hãy viết impl Speak for Robot { ... } và chỉ đặt phương thức bắt buộc speak vào bên trong. Nó trả về một String. Hãy dùng format! để ghép beep, một dấu cách và self.id.",
-      "Sau đó, ở cuối main, hãy tạo một Robot với id 7 và in robot.shout(), giống như cách main đã làm cho con chó."
+      "main đã tạo một Robot với id 7 và in robot.shout(), giống như cách nó làm với con chó. Khi Robot đã triển khai Speak, dòng đó sẽ hoạt động. Toàn bộ impl là: impl Speak for Robot { fn speak(&self) -> String { format!(\"beep {}\", self.id) } }"
     ]
   },
   "quiz": [

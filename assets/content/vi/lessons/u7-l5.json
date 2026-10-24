@@ -66,14 +66,54 @@
     }
   ],
   "exercise": {
-    "prompt": "longest đã được viết sẵn. Hãy thêm một hàm shorter trả về giá trị ngắn hơn trong hai giá trị &str (giá trị đầu tiên nếu chúng cùng độ dài). Sau đó, ở cuối main, in ra kết quả mà shorter trả về cho tree và forest. Chương trình phải in ra hai dòng: forest và tree. Gợi ý: shorter cần cùng các lifetime annotation như longest.",
-    "starter": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\n// add shorter here\n\nfn main() {\n    println!(\"{}\", longest(\"tree\", \"forest\"));\n}",
-    "expectedOutput": "forest\ntree",
+    "prompt": "longest đã được viết sẵn, và main đã gọi shorter. Hãy thêm hàm shorter trả về giá trị ngắn hơn trong hai giá trị &str (trả về giá trị đầu tiên nếu chúng dài bằng nhau). Nó phải in ra hai dòng: forest và tree. Gợi ý: shorter cần cùng các chú thích lifetime như longest.",
+    "starter": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\n// add shorter here\n\nfn main() {\n    println!(\"{}\", longest(\"tree\", \"forest\"));\n    println!(\"{}\", shorter(\"tree\", \"forest\"));\n}",
+    "tests": [
+      {
+        "id": "tree-forest",
+        "label": "shorter(\"tree\", \"forest\") là \"tree\"",
+        "code": "check_eq!(shorter(\"tree\", \"forest\"), \"tree\");"
+      },
+      {
+        "id": "forest-tree",
+        "label": "Hoạt động khi từ ngắn hơn đứng thứ hai",
+        "code": "check_eq!(shorter(\"forest\", \"tree\"), \"tree\");"
+      },
+      {
+        "id": "main-prints-forest-and-tree",
+        "label": "Chương trình in ra forest, rồi tree",
+        "output": "forest\ntree"
+      },
+      {
+        "id": "tie-gives-the-first",
+        "hidden": true,
+        "label": "on a tie the first argument comes back",
+        "code": "let a = String::from(\"ab\");\nlet b = String::from(\"cd\");\nlet r = shorter(&a, &b);\ncheck!(r.as_ptr() == a.as_ptr());\ncheck_eq!(r, \"ab\");"
+      },
+      {
+        "id": "empty-is-shortest",
+        "hidden": true,
+        "label": "an empty string",
+        "code": "check_eq!(shorter(\"\", \"a\"), \"\");\ncheck_eq!(shorter(\"a\", \"\"), \"\");"
+      },
+      {
+        "id": "other-words",
+        "hidden": true,
+        "label": "words a hard-coded tree would not match",
+        "code": "check_eq!(shorter(\"lifetime\", \"borrow\"), \"borrow\");"
+      },
+      {
+        "id": "longest-unchanged",
+        "hidden": true,
+        "label": "longest is left alone",
+        "code": "check_eq!(longest(\"tree\", \"forest\"), \"forest\");"
+      }
+    ],
     "solution": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\nfn shorter<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() <= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\nfn main() {\n    println!(\"{}\", longest(\"tree\", \"forest\"));\n    println!(\"{}\", shorter(\"tree\", \"forest\"));\n}",
     "hints": [
-      "shorter có cùng vấn đề như longest: kết quả mượn từ x hoặc y, và Rust cần được cho biết nó còn hợp lệ trong bao lâu. Hãy làm theo khuôn của longest.",
-      "Hãy cho shorter cùng các lifetime annotation như longest: fn shorter<'a>(x: &'a str, y: &'a str) -> &'a str. Trong thân hàm, đổi >= thành <=, để khi bằng nhau vẫn trả về x.",
-      "Hãy trả về x khi x.len() <= y.len(), nếu không thì trả về y. Dấu <= làm cho khi bằng nhau sẽ cho giá trị đầu tiên. Sau đó hãy in shorter(\"tree\", \"forest\") ở cuối main."
+      "shorter có cùng vấn đề với longest: kết quả mượn từ x hoặc y, và Rust cần được cho biết nó còn hợp lệ trong bao lâu. Hãy sao chép hình dạng của longest.",
+      "Hãy cho shorter cùng các chú thích lifetime như longest: fn shorter<'a>(x: &'a str, y: &'a str) -> &'a str. Trong phần thân, đổi >= thành <=, để khi bằng nhau vẫn trả về x.",
+      "Hãy trả về x khi x.len() <= y.len(), nếu không thì trả về y. Dấu <= làm cho khi bằng nhau sẽ trả về giá trị đầu tiên. main đã in shorter(\"tree\", \"forest\") rồi."
     ]
   },
   "quiz": [

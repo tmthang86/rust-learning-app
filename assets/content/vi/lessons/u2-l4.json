@@ -35,7 +35,13 @@
   "exercise": {
     "prompt": "Hãy dùng vòng lặp for để cộng các số từ 1 đến 10 và in ra tổng. Chương trình phải in ra: 55",
     "starter": "fn main() {\n    // keep mut: your loop will change total\n    let mut total = 0;\n    // loop here\n    println!(\"{total}\");\n}",
-    "expectedOutput": "55",
+    "tests": [
+      {
+        "id": "sum-1-to-10",
+        "label": "In ra tổng của 1 đến 10, 55",
+        "output": "55"
+      }
+    ],
     "solution": "fn main() {\n    let mut total = 0;\n    for n in 1..=10 {\n        total += n;\n    }\n    println!(\"{total}\");\n}",
     "hints": [
       "Bạn muốn lặp lại cùng một bước cho mỗi số từ 1 đến 10. Loại vòng lặp nào đi qua một dãy số (range)?",

@@ -52,7 +52,41 @@
   "exercise": {
     "prompt": "Replace the _ arm with one arm for Weather::Rain that gives \"Take an umbrella\" and one for Weather::Snow that gives \"Wear a warm coat\". It should print: Wear sunscreen\nTake an umbrella\nWear a warm coat",
     "starter": "enum Weather {\n    Sun,\n    Rain,\n    Snow,\n}\n\nfn advice(w: Weather) -> &'static str {\n    match w {\n        Weather::Sun => \"Wear sunscreen\",\n        _ => \"Stay inside\",\n    }\n}\n\nfn main() {\n    for w in [Weather::Sun, Weather::Rain, Weather::Snow] {\n        println!(\"{}\", advice(w));\n    }\n}",
-    "expectedOutput": "Wear sunscreen\nTake an umbrella\nWear a warm coat",
+    "tests": [
+      {
+        "id": "rain",
+        "label": "Rain gives Take an umbrella",
+        "code": "check_eq!(advice(Weather::Rain), \"Take an umbrella\");"
+      },
+      {
+        "id": "snow",
+        "label": "Snow gives Wear a warm coat",
+        "code": "check_eq!(advice(Weather::Snow), \"Wear a warm coat\");"
+      },
+      {
+        "id": "main-prints-three-lines",
+        "label": "The program prints the advice for all three",
+        "output": "Wear sunscreen\nTake an umbrella\nWear a warm coat"
+      },
+      {
+        "id": "sun",
+        "hidden": true,
+        "label": "Sun keeps its arm",
+        "code": "check_eq!(advice(Weather::Sun), \"Wear sunscreen\");"
+      },
+      {
+        "id": "rain-and-snow-differ",
+        "hidden": true,
+        "label": "each variant has its own advice",
+        "code": "check!(advice(Weather::Rain) != advice(Weather::Snow));"
+      },
+      {
+        "id": "not-the-fallback",
+        "hidden": true,
+        "label": "the _ fallback is no longer used",
+        "code": "check!(advice(Weather::Rain) != \"Stay inside\" && advice(Weather::Snow) != \"Stay inside\");"
+      }
+    ],
     "solution": "enum Weather {\n    Sun,\n    Rain,\n    Snow,\n}\n\nfn advice(w: Weather) -> &'static str {\n    match w {\n        Weather::Sun => \"Wear sunscreen\",\n        Weather::Rain => \"Take an umbrella\",\n        Weather::Snow => \"Wear a warm coat\",\n    }\n}\n\nfn main() {\n    for w in [Weather::Sun, Weather::Rain, Weather::Snow] {\n        println!(\"{}\", advice(w));\n    }\n}",
     "hints": [
       "The _ arm catches every other case. Replace it with one arm for each case you want to handle.",

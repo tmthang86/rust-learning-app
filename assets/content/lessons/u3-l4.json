@@ -36,7 +36,41 @@
   "exercise": {
     "prompt": "Finish double so it doubles the number through the mutable reference (use *n). It should print: 42",
     "starter": "fn double(n: &mut i32) {\n    // change n here\n}\n\nfn main() {\n    let mut value = 21;\n    double(&mut value);\n    println!(\"{value}\");\n}",
-    "expectedOutput": "42",
+    "tests": [
+      {
+        "id": "double-21",
+        "label": "double turns 21 into 42",
+        "code": "let mut v = 21;\ndouble(&mut v);\ncheck_eq!(v, 42);"
+      },
+      {
+        "id": "double-twice",
+        "label": "Calling double twice turns 3 into 12",
+        "code": "let mut v = 3;\ndouble(&mut v);\ndouble(&mut v);\ncheck_eq!(v, 12);"
+      },
+      {
+        "id": "main-prints-42",
+        "label": "The program prints 42",
+        "output": "42"
+      },
+      {
+        "id": "zero",
+        "hidden": true,
+        "label": "zero stays zero",
+        "code": "let mut v = 0;\ndouble(&mut v);\ncheck_eq!(v, 0);"
+      },
+      {
+        "id": "negative",
+        "hidden": true,
+        "label": "a negative number",
+        "code": "let mut v = -4;\ndouble(&mut v);\ncheck_eq!(v, -8);"
+      },
+      {
+        "id": "only-the-given-variable",
+        "hidden": true,
+        "label": "other variables are not touched",
+        "code": "let mut a = 10;\nlet b = 10;\ndouble(&mut a);\ncheck_eq!((a, b), (20, 10));"
+      }
+    ],
     "solution": "fn double(n: &mut i32) {\n    *n *= 2;\n}\n\nfn main() {\n    let mut value = 21;\n    double(&mut value);\n    println!(\"{value}\");\n}",
     "hints": [
       "The parameter n is a reference, not a number. To change the value it points to, follow the reference first.",

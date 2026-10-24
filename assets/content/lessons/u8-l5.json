@@ -62,14 +62,60 @@
     }
   ],
   "exercise": {
-    "prompt": "The starter adds up word lengths with a for loop and prints 9. Replace the loop with an iterator pipeline that maps each word to its length and sums them, keeping the printed total. Then, on a new line, print how many of the words are longer than 2 bytes, counted with filter and count. It should print two lines: 9 and 2. Hint: the total needs a type, so write let total: usize = ... and end the pipeline with .sum().",
-    "starter": "fn main() {\n    let words = [\"rust\", \"is\", \"fun\"];\n    let mut total = 0;\n    for w in words {\n        total += w.len();\n    }\n    println!(\"{total}\");\n}",
-    "expectedOutput": "9\n2",
-    "solution": "fn main() {\n    let words = [\"rust\", \"is\", \"fun\"];\n    let total: usize = words.iter().map(|w| w.len()).sum();\n    println!(\"{total}\");\n    let long = words.iter().filter(|w| w.len() > 2).count();\n    println!(\"{long}\");\n}",
+    "prompt": "total_length adds up word lengths with a for loop. Replace the loop with an iterator pipeline that maps each word to its length and sums them. Then finish count_long, which counts how many of the words are longer than 2 bytes, with filter and count. main prints both results. It should print two lines: 9 and 2. Hint: sum needs to know its type; the return type usize tells it, or you can write .sum::<usize>()",
+    "starter": "fn total_length(words: &[&str]) -> usize {\n    let mut total = 0;\n    for w in words {\n        total += w.len();\n    }\n    total\n}\n\nfn count_long(words: &[&str]) -> usize {\n    // count the words longer than 2 bytes, with filter and count\n    let _ = words; // delete this line when you use words for real\n    0\n}\n\nfn main() {\n    let words = [\"rust\", \"is\", \"fun\"];\n    println!(\"{}\", total_length(&words));\n    println!(\"{}\", count_long(&words));\n}",
+    "tests": [
+      {
+        "id": "count-long-rust-is-fun",
+        "label": "Two of rust, is, fun are longer than 2 bytes",
+        "code": "check_eq!(count_long(&[\"rust\", \"is\", \"fun\"]), 2);"
+      },
+      {
+        "id": "total-rust-is-fun",
+        "label": "The lengths of rust, is, fun add up to 9",
+        "code": "check_eq!(total_length(&[\"rust\", \"is\", \"fun\"]), 9);"
+      },
+      {
+        "id": "main-prints-9-and-2",
+        "label": "The program prints 9, then 2",
+        "output": "9\n2"
+      },
+      {
+        "id": "count-long-mixed",
+        "hidden": true,
+        "label": "words of 1 to 4 bytes",
+        "code": "check_eq!(count_long(&[\"a\", \"bb\", \"ccc\", \"dddd\"]), 2);"
+      },
+      {
+        "id": "count-long-none",
+        "hidden": true,
+        "label": "a word of exactly 2 bytes is not counted",
+        "code": "check_eq!(count_long(&[\"is\", \"to\", \"a\"]), 0);"
+      },
+      {
+        "id": "count-long-empty",
+        "hidden": true,
+        "label": "an empty list",
+        "code": "check_eq!(count_long(&[]), 0);"
+      },
+      {
+        "id": "total-other-words",
+        "hidden": true,
+        "label": "words a hard-coded 9 would not match",
+        "code": "check_eq!(total_length(&[\"hello\", \"world\", \"!\"]), 11);"
+      },
+      {
+        "id": "total-empty",
+        "hidden": true,
+        "label": "an empty list",
+        "code": "check_eq!(total_length(&[]), 0);"
+      }
+    ],
+    "solution": "fn total_length(words: &[&str]) -> usize {\n    words.iter().map(|w| w.len()).sum()\n}\n\nfn count_long(words: &[&str]) -> usize {\n    words.iter().filter(|w| w.len() > 2).count()\n}\n\nfn main() {\n    let words = [\"rust\", \"is\", \"fun\"];\n    println!(\"{}\", total_length(&words));\n    println!(\"{}\", count_long(&words));\n}",
     "hints": [
-      "Both lines end a pipeline with a consuming method. The first one turns each word into a number and adds the numbers. The second one keeps some words and counts them.",
-      "For the total: words.iter().map(|w| w.len()).sum(). The sum needs to know its type, so write let total: usize = before it.",
-      "For the second line, use filter with w.len() > 2 and end with count(). Put the result in a variable and print it on a new line after the total."
+      "Both functions end a pipeline with a consuming method. The first one turns each word into a number and adds the numbers. The second one keeps some words and counts them.",
+      "For total_length: words.iter().map(|w| w.len()).sum(). The function's return type, usize, tells sum what to add up.",
+      "For count_long, use filter with w.len() > 2 and end with count(). It gives back the number of words as a usize, so it is the value the function returns."
     ]
   },
   "quiz": [

@@ -62,14 +62,54 @@
     }
   ],
   "exercise": {
-    "prompt": "Pair chỉ chứa các giá trị i32. Hãy làm nó generic để nó chứa được bất kỳ kiểu nào, và giữ cho swapped vẫn hoạt động. Sau đó, ở cuối main, tạo một Pair gồm hai từ (a và b), hoán đổi nó, và in các trường left và right của nó cách nhau bởi một dấu cách. Chương trình phải in ra hai dòng: 2 1 và b a. Gợi ý: struct Pair<T>, impl<T> Pair<T>, và fn swapped(self) -> Pair<T>.",
-    "starter": "struct Pair {\n    left: i32,\n    right: i32,\n}\n\nimpl Pair {\n    fn swapped(self) -> Pair {\n        Pair { left: self.right, right: self.left }\n    }\n}\n\nfn main() {\n    let numbers = Pair { left: 1, right: 2 }.swapped();\n    println!(\"{} {}\", numbers.left, numbers.right);\n}",
-    "expectedOutput": "2 1\nb a",
+    "prompt": "Pair chỉ chứa các giá trị i32, nên Pair của các từ trong main không biên dịch được. Hãy làm cho nó generic để chứa được bất kỳ kiểu nào, và giữ cho swapped vẫn hoạt động. Nó phải in ra hai dòng: 2 1 và b a. Gợi ý: struct Pair<T>, impl<T> Pair<T>, và fn swapped(self) -> Pair<T>.",
+    "starter": "struct Pair {\n    left: i32,\n    right: i32,\n}\n\nimpl Pair {\n    fn swapped(self) -> Pair {\n        Pair { left: self.right, right: self.left }\n    }\n}\n\nfn main() {\n    let numbers = Pair { left: 1, right: 2 }.swapped();\n    println!(\"{} {}\", numbers.left, numbers.right);\n    let words = Pair { left: \"a\", right: \"b\" }.swapped();\n    println!(\"{} {}\", words.left, words.right);\n}",
+    "tests": [
+      {
+        "id": "numbers",
+        "label": "Hoán đổi 1 và 2 cho 2 và 1",
+        "code": "let p = Pair { left: 1, right: 2 }.swapped();\ncheck_eq!((p.left, p.right), (2, 1));"
+      },
+      {
+        "id": "words",
+        "label": "Hoán đổi a và b cho b và a",
+        "code": "let p = Pair { left: \"a\", right: \"b\" }.swapped();\ncheck_eq!((p.left, p.right), (\"b\", \"a\"));"
+      },
+      {
+        "id": "main-prints-both-pairs",
+        "label": "Chương trình in ra 2 1, rồi b a",
+        "output": "2 1\nb a"
+      },
+      {
+        "id": "strings",
+        "hidden": true,
+        "label": "owned Strings",
+        "code": "let p = Pair { left: String::from(\"x\"), right: String::from(\"y\") }.swapped();\ncheck_eq!((p.left, p.right), (String::from(\"y\"), String::from(\"x\")));"
+      },
+      {
+        "id": "floats",
+        "hidden": true,
+        "label": "floats",
+        "code": "let p = Pair { left: 1.5, right: 2.5 }.swapped();\ncheck_eq!((p.left, p.right), (2.5, 1.5));"
+      },
+      {
+        "id": "swap-twice",
+        "hidden": true,
+        "label": "swapping twice gives the original, with chars",
+        "code": "let p = Pair { left: 'a', right: 'b' }.swapped().swapped();\ncheck_eq!((p.left, p.right), ('a', 'b'));"
+      },
+      {
+        "id": "no-traits-needed",
+        "hidden": true,
+        "label": "T has no bounds: any type works",
+        "code": "struct Marker(u8);\nlet p = Pair { left: Marker(1), right: Marker(2) }.swapped();\ncheck_eq!((p.left.0, p.right.0), (2, 1));"
+      }
+    ],
     "solution": "struct Pair<T> {\n    left: T,\n    right: T,\n}\n\nimpl<T> Pair<T> {\n    fn swapped(self) -> Pair<T> {\n        Pair { left: self.right, right: self.left }\n    }\n}\n\nfn main() {\n    let numbers = Pair { left: 1, right: 2 }.swapped();\n    println!(\"{} {}\", numbers.left, numbers.right);\n    let words = Pair { left: \"a\", right: \"b\" }.swapped();\n    println!(\"{} {}\", words.left, words.right);\n}",
     "hints": [
-      "Hiện giờ Pair chỉ hoạt động với i32. Việc làm nó generic ảnh hưởng đến ba chỗ: struct, dòng impl, và kiểu mà swapped trả về. Hãy xem lại cách bài học làm Point trở nên generic.",
+      "Hiện giờ Pair chỉ hoạt động với i32. Để làm nó generic cần sửa ba chỗ: struct, dòng impl, và kiểu mà swapped trả về. Hãy xem lại cách bài học làm cho Point trở nên generic.",
       "Hãy khai báo T sau tên struct, Pair<T>, và dùng nó cho cả hai trường. impl cần T hai lần: impl<T> Pair<T>. Sau đó swapped trả về Pair<T>.",
-      "Ở cuối main, hãy tạo một Pair với left là \"a\" và right là \"b\", gọi swapped() trên nó, rồi in các trường left và right của nó với một dấu cách ở giữa."
+      "Khi Pair<T> đã generic, Pair của các từ trong main hoạt động mà không cần sửa gì thêm: swapped trả về một Pair với left và right đã được hoán đổi."
     ]
   },
   "quiz": [

@@ -34,14 +34,48 @@
     }
   ],
   "exercise": {
-    "prompt": "Add a method perimeter(&self) -> u32 to Rectangle that returns 2 * (width + height). Then change the println! so it prints both, using r.area() and r.perimeter(). It should print: area 12, perimeter 14",
-    "starter": "struct Rectangle {\n    width: u32,\n    height: u32,\n}\n\nimpl Rectangle {\n    fn area(&self) -> u32 {\n        self.width * self.height\n    }\n\n    // add perimeter here\n}\n\nfn main() {\n    let r = Rectangle { width: 3, height: 4 };\n    println!(\"area {}\", r.area());\n}",
-    "expectedOutput": "area 12, perimeter 14",
+    "prompt": "main already calls r.perimeter(), but Rectangle has no such method yet. Add a method perimeter(&self) -> u32 to Rectangle that returns 2 * (width + height). It should print: area 12, perimeter 14",
+    "starter": "struct Rectangle {\n    width: u32,\n    height: u32,\n}\n\nimpl Rectangle {\n    fn area(&self) -> u32 {\n        self.width * self.height\n    }\n\n    // add perimeter here\n}\n\nfn main() {\n    let r = Rectangle { width: 3, height: 4 };\n    println!(\"area {}, perimeter {}\", r.area(), r.perimeter());\n}",
+    "tests": [
+      {
+        "id": "three-by-four",
+        "label": "A 3 by 4 rectangle has perimeter 14",
+        "code": "check_eq!(Rectangle { width: 3, height: 4 }.perimeter(), 14);"
+      },
+      {
+        "id": "square",
+        "label": "A 5 by 5 rectangle has perimeter 20",
+        "code": "check_eq!(Rectangle { width: 5, height: 5 }.perimeter(), 20);"
+      },
+      {
+        "id": "main-prints-area-and-perimeter",
+        "label": "The program prints the area and the perimeter",
+        "output": "area 12, perimeter 14"
+      },
+      {
+        "id": "zero-sides",
+        "hidden": true,
+        "label": "an empty rectangle",
+        "code": "check_eq!(Rectangle { width: 0, height: 0 }.perimeter(), 0);"
+      },
+      {
+        "id": "thin-rectangle",
+        "hidden": true,
+        "label": "not the area (which would be 10)",
+        "code": "check_eq!(Rectangle { width: 10, height: 1 }.perimeter(), 22);"
+      },
+      {
+        "id": "area-still-works",
+        "hidden": true,
+        "label": "area is left alone",
+        "code": "check_eq!(Rectangle { width: 3, height: 4 }.area(), 12);"
+      }
+    ],
     "solution": "struct Rectangle {\n    width: u32,\n    height: u32,\n}\n\nimpl Rectangle {\n    fn area(&self) -> u32 {\n        self.width * self.height\n    }\n\n    fn perimeter(&self) -> u32 {\n        2 * (self.width + self.height)\n    }\n}\n\nfn main() {\n    let r = Rectangle { width: 3, height: 4 };\n    println!(\"area {}, perimeter {}\", r.area(), r.perimeter());\n}",
     "hints": [
       "Look at how area is written inside impl. Your new method follows the same pattern, so copy its shape.",
       "Add fn perimeter(&self) -> u32 inside the impl block. Use self.width and self.height in the calculation.",
-      "The body is 2 * (self.width + self.height). Then print with println!(\"area {}, perimeter {}\", r.area(), r.perimeter());"
+      "The body is 2 * (self.width + self.height), with no semicolon after it, so it is the value the method gives back."
     ]
   },
   "quiz": [

@@ -34,14 +34,48 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy thêm một phương thức perimeter(&self) -> u32 vào Rectangle, trả về 2 * (width + height). Sau đó đổi println! để nó in cả hai, dùng r.area() và r.perimeter(). Chương trình phải in ra: area 12, perimeter 14",
-    "starter": "struct Rectangle {\n    width: u32,\n    height: u32,\n}\n\nimpl Rectangle {\n    fn area(&self) -> u32 {\n        self.width * self.height\n    }\n\n    // add perimeter here\n}\n\nfn main() {\n    let r = Rectangle { width: 3, height: 4 };\n    println!(\"area {}\", r.area());\n}",
-    "expectedOutput": "area 12, perimeter 14",
+    "prompt": "main đã gọi r.perimeter(), nhưng Rectangle chưa có phương thức đó. Hãy thêm phương thức perimeter(&self) -> u32 vào Rectangle, trả về 2 * (width + height). Nó phải in ra: area 12, perimeter 14",
+    "starter": "struct Rectangle {\n    width: u32,\n    height: u32,\n}\n\nimpl Rectangle {\n    fn area(&self) -> u32 {\n        self.width * self.height\n    }\n\n    // add perimeter here\n}\n\nfn main() {\n    let r = Rectangle { width: 3, height: 4 };\n    println!(\"area {}, perimeter {}\", r.area(), r.perimeter());\n}",
+    "tests": [
+      {
+        "id": "three-by-four",
+        "label": "Hình chữ nhật 3 x 4 có chu vi 14",
+        "code": "check_eq!(Rectangle { width: 3, height: 4 }.perimeter(), 14);"
+      },
+      {
+        "id": "square",
+        "label": "Hình chữ nhật 5 x 5 có chu vi 20",
+        "code": "check_eq!(Rectangle { width: 5, height: 5 }.perimeter(), 20);"
+      },
+      {
+        "id": "main-prints-area-and-perimeter",
+        "label": "Chương trình in ra diện tích và chu vi",
+        "output": "area 12, perimeter 14"
+      },
+      {
+        "id": "zero-sides",
+        "hidden": true,
+        "label": "an empty rectangle",
+        "code": "check_eq!(Rectangle { width: 0, height: 0 }.perimeter(), 0);"
+      },
+      {
+        "id": "thin-rectangle",
+        "hidden": true,
+        "label": "not the area (which would be 10)",
+        "code": "check_eq!(Rectangle { width: 10, height: 1 }.perimeter(), 22);"
+      },
+      {
+        "id": "area-still-works",
+        "hidden": true,
+        "label": "area is left alone",
+        "code": "check_eq!(Rectangle { width: 3, height: 4 }.area(), 12);"
+      }
+    ],
     "solution": "struct Rectangle {\n    width: u32,\n    height: u32,\n}\n\nimpl Rectangle {\n    fn area(&self) -> u32 {\n        self.width * self.height\n    }\n\n    fn perimeter(&self) -> u32 {\n        2 * (self.width + self.height)\n    }\n}\n\nfn main() {\n    let r = Rectangle { width: 3, height: 4 };\n    println!(\"area {}, perimeter {}\", r.area(), r.perimeter());\n}",
     "hints": [
-      "Hãy xem area được viết thế nào bên trong impl. Phương thức mới của bạn theo cùng một mẫu, nên hãy bắt chước hình dạng của nó.",
-      "Hãy thêm fn perimeter(&self) -> u32 bên trong khối impl. Dùng self.width và self.height trong phép tính.",
-      "Phần thân là 2 * (self.width + self.height). Sau đó in bằng println!(\"area {}, perimeter {}\", r.area(), r.perimeter());"
+      "Hãy xem area được viết thế nào bên trong impl. Phương thức mới của bạn theo cùng một mẫu, nên hãy sao chép hình dạng của nó.",
+      "Hãy thêm fn perimeter(&self) -> u32 vào bên trong khối impl. Dùng self.width và self.height trong phép tính.",
+      "Phần thân là 2 * (self.width + self.height), không có dấu chấm phẩy ở cuối, để nó là giá trị mà phương thức trả về."
     ]
   },
   "quiz": [

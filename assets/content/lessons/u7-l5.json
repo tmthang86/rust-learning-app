@@ -66,14 +66,54 @@
     }
   ],
   "exercise": {
-    "prompt": "longest is already written. Add a function shorter that returns the shorter of two &str values (the first one if they are the same length). Then, at the end of main, print what shorter gives for tree and forest. It should print two lines: forest and tree. Hint: shorter needs the same lifetime annotations as longest.",
-    "starter": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\n// add shorter here\n\nfn main() {\n    println!(\"{}\", longest(\"tree\", \"forest\"));\n}",
-    "expectedOutput": "forest\ntree",
+    "prompt": "longest is already written, and main already calls shorter. Add a function shorter that returns the shorter of two &str values (the first one if they are the same length). It should print two lines: forest and tree. Hint: shorter needs the same lifetime annotations as longest.",
+    "starter": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\n// add shorter here\n\nfn main() {\n    println!(\"{}\", longest(\"tree\", \"forest\"));\n    println!(\"{}\", shorter(\"tree\", \"forest\"));\n}",
+    "tests": [
+      {
+        "id": "tree-forest",
+        "label": "shorter(\"tree\", \"forest\") is \"tree\"",
+        "code": "check_eq!(shorter(\"tree\", \"forest\"), \"tree\");"
+      },
+      {
+        "id": "forest-tree",
+        "label": "Works when the shorter word comes second",
+        "code": "check_eq!(shorter(\"forest\", \"tree\"), \"tree\");"
+      },
+      {
+        "id": "main-prints-forest-and-tree",
+        "label": "The program prints forest, then tree",
+        "output": "forest\ntree"
+      },
+      {
+        "id": "tie-gives-the-first",
+        "hidden": true,
+        "label": "on a tie the first argument comes back",
+        "code": "let a = String::from(\"ab\");\nlet b = String::from(\"cd\");\nlet r = shorter(&a, &b);\ncheck!(r.as_ptr() == a.as_ptr());\ncheck_eq!(r, \"ab\");"
+      },
+      {
+        "id": "empty-is-shortest",
+        "hidden": true,
+        "label": "an empty string",
+        "code": "check_eq!(shorter(\"\", \"a\"), \"\");\ncheck_eq!(shorter(\"a\", \"\"), \"\");"
+      },
+      {
+        "id": "other-words",
+        "hidden": true,
+        "label": "words a hard-coded tree would not match",
+        "code": "check_eq!(shorter(\"lifetime\", \"borrow\"), \"borrow\");"
+      },
+      {
+        "id": "longest-unchanged",
+        "hidden": true,
+        "label": "longest is left alone",
+        "code": "check_eq!(longest(\"tree\", \"forest\"), \"forest\");"
+      }
+    ],
     "solution": "fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() >= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\nfn shorter<'a>(x: &'a str, y: &'a str) -> &'a str {\n    if x.len() <= y.len() {\n        x\n    } else {\n        y\n    }\n}\n\nfn main() {\n    println!(\"{}\", longest(\"tree\", \"forest\"));\n    println!(\"{}\", shorter(\"tree\", \"forest\"));\n}",
     "hints": [
       "shorter has the same problem as longest: the result borrows from x or y, and Rust needs to be told how long it stays valid. Copy the shape of longest.",
       "Give shorter the same lifetime annotations as longest: fn shorter<'a>(x: &'a str, y: &'a str) -> &'a str. In the body, change >= to <=, so a tie still gives x.",
-      "Return x when x.len() <= y.len(), otherwise y. The <= makes a tie give the first one. Then print shorter(\"tree\", \"forest\") at the end of main."
+      "Return x when x.len() <= y.len(), otherwise y. The <= makes a tie give the first one. main already prints shorter(\"tree\", \"forest\")."
     ]
   },
   "quiz": [

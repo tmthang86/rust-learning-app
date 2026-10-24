@@ -62,10 +62,39 @@
     }
   ],
   "exercise": {
-    "prompt": "Mỗi thread trong 4 thread cộng 1 vào bộ đếm. Hãy sửa lại để mỗi thread cộng 10. Chương trình phải in ra: total: 40",
-    "starter": "use std::sync::{Arc, Mutex};\nuse std::thread;\n\nfn main() {\n    let counter = Arc::new(Mutex::new(0));\n    let mut handles = Vec::new();\n    for _ in 0..4 {\n        let counter = Arc::clone(&counter);\n        handles.push(thread::spawn(move || {\n            *counter.lock().unwrap() += 1;\n        }));\n    }\n    for handle in handles {\n        handle.join().unwrap();\n    }\n    println!(\"total: {}\", *counter.lock().unwrap());\n}",
-    "expectedOutput": "total: 40",
-    "solution": "use std::sync::{Arc, Mutex};\nuse std::thread;\n\nfn main() {\n    let counter = Arc::new(Mutex::new(0));\n    let mut handles = Vec::new();\n    for _ in 0..4 {\n        let counter = Arc::clone(&counter);\n        handles.push(thread::spawn(move || {\n            *counter.lock().unwrap() += 10;\n        }));\n    }\n    for handle in handles {\n        handle.join().unwrap();\n    }\n    println!(\"total: {}\", *counter.lock().unwrap());\n}",
+    "prompt": "Mỗi thread cộng 1 vào bộ đếm. Hãy sửa để mỗi thread cộng 10. Với 4 thread, main phải in ra: total: 40",
+    "starter": "use std::sync::{Arc, Mutex};\nuse std::thread;\n\nfn total_after(threads: u32) -> i32 {\n    let counter = Arc::new(Mutex::new(0));\n    let mut handles = Vec::new();\n    for _ in 0..threads {\n        let counter = Arc::clone(&counter);\n        handles.push(thread::spawn(move || {\n            *counter.lock().unwrap() += 1;\n        }));\n    }\n    for handle in handles {\n        handle.join().unwrap();\n    }\n    let total = *counter.lock().unwrap();\n    total\n}\n\nfn main() {\n    println!(\"total: {}\", total_after(4));\n}",
+    "tests": [
+      {
+        "id": "four-threads",
+        "label": "Bốn thread, mỗi thread cộng 10, cho 40",
+        "code": "check_eq!(total_after(4), 40);"
+      },
+      {
+        "id": "main-prints-total-40",
+        "label": "Chương trình in ra total: 40",
+        "output": "total: 40"
+      },
+      {
+        "id": "one-thread",
+        "hidden": true,
+        "label": "one thread",
+        "code": "check_eq!(total_after(1), 10);"
+      },
+      {
+        "id": "no-threads",
+        "hidden": true,
+        "label": "no threads",
+        "code": "check_eq!(total_after(0), 0);"
+      },
+      {
+        "id": "eight-threads",
+        "hidden": true,
+        "label": "a count a hard-coded 40 would not match",
+        "code": "check_eq!(total_after(8), 80);"
+      }
+    ],
+    "solution": "use std::sync::{Arc, Mutex};\nuse std::thread;\n\nfn total_after(threads: u32) -> i32 {\n    let counter = Arc::new(Mutex::new(0));\n    let mut handles = Vec::new();\n    for _ in 0..threads {\n        let counter = Arc::clone(&counter);\n        handles.push(thread::spawn(move || {\n            *counter.lock().unwrap() += 10;\n        }));\n    }\n    for handle in handles {\n        handle.join().unwrap();\n    }\n    let total = *counter.lock().unwrap();\n    total\n}\n\nfn main() {\n    println!(\"total: {}\", total_after(4));\n}",
     "hints": [
       "Mỗi thread cộng vào bộ đếm thông qua khóa. Hãy tìm dòng có += trong closure.",
       "Hãy đổi 1 thành 10 trong dòng đó. lock().unwrap() trả về một guard hoạt động giống một tham chiếu, nên dấu * phía trước chạm tới con số và += 10 thay đổi nó. Bốn thread, mỗi thread cộng 10, cho ra 40."

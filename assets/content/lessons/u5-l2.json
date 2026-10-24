@@ -55,14 +55,43 @@
     }
   ],
   "exercise": {
-    "prompt": "Build the sentence with format! using name and lang. It should print: Thang is learning Rust",
-    "starter": "fn main() {\n    let name = \"Thang\";\n    let lang = \"Rust\";\n    let sentence = String::new();\n    println!(\"{sentence}\");\n}",
-    "expectedOutput": "Thang is learning Rust",
-    "solution": "fn main() {\n    let name = \"Thang\";\n    let lang = \"Rust\";\n    let sentence = format!(\"{name} is learning {lang}\");\n    println!(\"{sentence}\");\n}",
+    "prompt": "Finish sentence so it builds the text \"<name> is learning <lang>\" with format!, using name and lang. For \"Thang\" and \"Rust\", main should print: Thang is learning Rust",
+    "starter": "fn sentence(name: &str, lang: &str) -> String {\n    let _ = (name, lang); // delete this line when you use them for real\n    String::new()\n}\n\nfn main() {\n    println!(\"{}\", sentence(\"Thang\", \"Rust\"));\n}",
+    "tests": [
+      {
+        "id": "thang-rust",
+        "label": "sentence(\"Thang\", \"Rust\") is \"Thang is learning Rust\"",
+        "code": "check_eq!(sentence(\"Thang\", \"Rust\"), \"Thang is learning Rust\");"
+      },
+      {
+        "id": "main-prints-sentence",
+        "label": "The program prints Thang is learning Rust",
+        "output": "Thang is learning Rust"
+      },
+      {
+        "id": "other-words",
+        "hidden": true,
+        "label": "words a hard-coded sentence would not match",
+        "code": "check_eq!(sentence(\"Ferris\", \"Cargo\"), \"Ferris is learning Cargo\");"
+      },
+      {
+        "id": "empty-parts",
+        "hidden": true,
+        "label": "empty name and language",
+        "code": "check_eq!(sentence(\"\", \"\"), \" is learning \");"
+      },
+      {
+        "id": "words-with-spaces",
+        "hidden": true,
+        "label": "spaces inside the arguments",
+        "code": "check_eq!(sentence(\"Mai Anh\", \"Rust 2024\"), \"Mai Anh is learning Rust 2024\");"
+      }
+    ],
+    "solution": "fn sentence(name: &str, lang: &str) -> String {\n    format!(\"{name} is learning {lang}\")\n}\n\nfn main() {\n    println!(\"{}\", sentence(\"Thang\", \"Rust\"));\n}",
     "hints": [
-      "Right now sentence is an empty String, so an empty line prints. Build it from name and lang instead.",
+      "Right now sentence gives back an empty String. Build it from name and lang instead.",
       "format! works like println! but gives back a String. Put the variable names inside {} in the text.",
-      "Write let sentence = format!(\"{name} is learning {lang}\");"
+      "Replace the last two lines of the function with format!(\"{name} is learning {lang}\") and no semicolon, so it is the value the function returns."
     ]
   },
   "quiz": [

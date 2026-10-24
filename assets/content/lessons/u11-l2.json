@@ -54,10 +54,39 @@
     }
   ],
   "exercise": {
-    "prompt": "Each thread sends i. Change it so each thread sends i * 10 instead. The program should print: total: 60",
-    "starter": "use std::sync::mpsc;\nuse std::thread;\n\nfn main() {\n    let (tx, rx) = mpsc::channel();\n    for i in 1..=3 {\n        let tx = tx.clone();\n        thread::spawn(move || {\n            tx.send(i).unwrap();\n        });\n    }\n    drop(tx);\n    let mut total = 0;\n    for value in rx {\n        total += value;\n    }\n    println!(\"total: {total}\");\n}",
-    "expectedOutput": "total: 60",
-    "solution": "use std::sync::mpsc;\nuse std::thread;\n\nfn main() {\n    let (tx, rx) = mpsc::channel();\n    for i in 1..=3 {\n        let tx = tx.clone();\n        thread::spawn(move || {\n            tx.send(i * 10).unwrap();\n        });\n    }\n    drop(tx);\n    let mut total = 0;\n    for value in rx {\n        total += value;\n    }\n    println!(\"total: {total}\");\n}",
+    "prompt": "Each thread sends i. Change it so each thread sends i * 10 instead. For 3 threads, main should print: total: 60",
+    "starter": "use std::sync::mpsc;\nuse std::thread;\n\nfn total_sent(threads: i32) -> i32 {\n    let (tx, rx) = mpsc::channel();\n    for i in 1..=threads {\n        let tx = tx.clone();\n        thread::spawn(move || {\n            tx.send(i).unwrap();\n        });\n    }\n    drop(tx);\n    let mut total = 0;\n    for value in rx {\n        total += value;\n    }\n    total\n}\n\nfn main() {\n    println!(\"total: {}\", total_sent(3));\n}",
+    "tests": [
+      {
+        "id": "three-threads",
+        "label": "Three threads send 10, 20 and 30: the total is 60",
+        "code": "check_eq!(total_sent(3), 60);"
+      },
+      {
+        "id": "main-prints-total-60",
+        "label": "The program prints total: 60",
+        "output": "total: 60"
+      },
+      {
+        "id": "one-thread",
+        "hidden": true,
+        "label": "one thread",
+        "code": "check_eq!(total_sent(1), 10);"
+      },
+      {
+        "id": "no-threads",
+        "hidden": true,
+        "label": "no threads: the channel closes at once",
+        "code": "check_eq!(total_sent(0), 0);"
+      },
+      {
+        "id": "four-threads",
+        "hidden": true,
+        "label": "a count a hard-coded 60 would not match",
+        "code": "check_eq!(total_sent(4), 100);"
+      }
+    ],
+    "solution": "use std::sync::mpsc;\nuse std::thread;\n\nfn total_sent(threads: i32) -> i32 {\n    let (tx, rx) = mpsc::channel();\n    for i in 1..=threads {\n        let tx = tx.clone();\n        thread::spawn(move || {\n            tx.send(i * 10).unwrap();\n        });\n    }\n    drop(tx);\n    let mut total = 0;\n    for value in rx {\n        total += value;\n    }\n    total\n}\n\nfn main() {\n    println!(\"total: {}\", total_sent(3));\n}",
     "hints": [
       "Each thread sends the value inside send(...). Find that call: it sends i right now.",
       "Change what is sent to i * 10. The three threads then send 10, 20 and 30, and the loop adds them up to 60. Keep move: each thread needs its own sender."

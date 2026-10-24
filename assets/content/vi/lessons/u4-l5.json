@@ -52,7 +52,41 @@
   "exercise": {
     "prompt": "Hãy thay nhánh _ bằng một nhánh cho Weather::Rain trả về \"Take an umbrella\" và một nhánh cho Weather::Snow trả về \"Wear a warm coat\". Chương trình phải in ra: Wear sunscreen\nTake an umbrella\nWear a warm coat",
     "starter": "enum Weather {\n    Sun,\n    Rain,\n    Snow,\n}\n\nfn advice(w: Weather) -> &'static str {\n    match w {\n        Weather::Sun => \"Wear sunscreen\",\n        _ => \"Stay inside\",\n    }\n}\n\nfn main() {\n    for w in [Weather::Sun, Weather::Rain, Weather::Snow] {\n        println!(\"{}\", advice(w));\n    }\n}",
-    "expectedOutput": "Wear sunscreen\nTake an umbrella\nWear a warm coat",
+    "tests": [
+      {
+        "id": "rain",
+        "label": "Rain cho Take an umbrella",
+        "code": "check_eq!(advice(Weather::Rain), \"Take an umbrella\");"
+      },
+      {
+        "id": "snow",
+        "label": "Snow cho Wear a warm coat",
+        "code": "check_eq!(advice(Weather::Snow), \"Wear a warm coat\");"
+      },
+      {
+        "id": "main-prints-three-lines",
+        "label": "Chương trình in ra lời khuyên cho cả ba",
+        "output": "Wear sunscreen\nTake an umbrella\nWear a warm coat"
+      },
+      {
+        "id": "sun",
+        "hidden": true,
+        "label": "Sun keeps its arm",
+        "code": "check_eq!(advice(Weather::Sun), \"Wear sunscreen\");"
+      },
+      {
+        "id": "rain-and-snow-differ",
+        "hidden": true,
+        "label": "each variant has its own advice",
+        "code": "check!(advice(Weather::Rain) != advice(Weather::Snow));"
+      },
+      {
+        "id": "not-the-fallback",
+        "hidden": true,
+        "label": "the _ fallback is no longer used",
+        "code": "check!(advice(Weather::Rain) != \"Stay inside\" && advice(Weather::Snow) != \"Stay inside\");"
+      }
+    ],
     "solution": "enum Weather {\n    Sun,\n    Rain,\n    Snow,\n}\n\nfn advice(w: Weather) -> &'static str {\n    match w {\n        Weather::Sun => \"Wear sunscreen\",\n        Weather::Rain => \"Take an umbrella\",\n        Weather::Snow => \"Wear a warm coat\",\n    }\n}\n\nfn main() {\n    for w in [Weather::Sun, Weather::Rain, Weather::Snow] {\n        println!(\"{}\", advice(w));\n    }\n}",
     "hints": [
       "Nhánh _ bắt mọi trường hợp khác. Hãy thay nó bằng một nhánh cho mỗi trường hợp bạn muốn xử lý.",

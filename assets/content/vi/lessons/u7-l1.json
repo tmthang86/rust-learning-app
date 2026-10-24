@@ -50,14 +50,60 @@
     }
   ],
   "exercise": {
-    "prompt": "last_item chỉ hoạt động với slice của i32. Hãy làm cho nó hoạt động với slice của bất kỳ kiểu nào, để nó cũng hoạt động với một danh sách các từ. Sau đó, ở cuối main, tạo một mảng gồm ba từ (red, green và blue) và in phần tử cuối của nó. Chương trình phải in ra hai dòng: 15 và blue. Gợi ý: fn last_item<T>(items: &[T]) -> &T, và let words = [\"red\", \"green\", \"blue\"];",
-    "starter": "fn last_item(items: &[i32]) -> &i32 {\n    &items[items.len() - 1]\n}\n\nfn main() {\n    let numbers = [4, 8, 15];\n    println!(\"{}\", last_item(&numbers));\n}",
-    "expectedOutput": "15\nblue",
+    "prompt": "last_item chỉ hoạt động với slice của i32, nên lời gọi với danh sách các từ trong main không biên dịch được. Hãy làm cho nó hoạt động với slice của bất kỳ kiểu nào. Nó phải in ra hai dòng: 15 và blue. Gợi ý: fn last_item<T>(items: &[T]) -> &T",
+    "starter": "fn last_item(items: &[i32]) -> &i32 {\n    &items[items.len() - 1]\n}\n\nfn main() {\n    let numbers = [4, 8, 15];\n    println!(\"{}\", last_item(&numbers));\n    let words = [\"red\", \"green\", \"blue\"];\n    println!(\"{}\", last_item(&words));\n}",
+    "tests": [
+      {
+        "id": "numbers",
+        "label": "Phần tử cuối của [4, 8, 15] là 15",
+        "code": "check_eq!(last_item(&[4, 8, 15]), &15);"
+      },
+      {
+        "id": "words",
+        "label": "Phần tử cuối của red, green, blue là blue",
+        "code": "check_eq!(last_item(&[\"red\", \"green\", \"blue\"]), &\"blue\");"
+      },
+      {
+        "id": "main-prints-15-and-blue",
+        "label": "Chương trình in ra 15, rồi blue",
+        "output": "15\nblue"
+      },
+      {
+        "id": "one-item",
+        "hidden": true,
+        "label": "a slice with one item",
+        "code": "check_eq!(last_item(&[7]), &7);"
+      },
+      {
+        "id": "chars",
+        "hidden": true,
+        "label": "chars",
+        "code": "check_eq!(last_item(&['x', 'y', 'z']), &'z');"
+      },
+      {
+        "id": "floats",
+        "hidden": true,
+        "label": "floats",
+        "code": "check_eq!(last_item(&[1.5, 2.5]), &2.5);"
+      },
+      {
+        "id": "strings",
+        "hidden": true,
+        "label": "a Vec of String, as a slice",
+        "code": "let v = vec![String::from(\"a\"), String::from(\"b\")];\ncheck_eq!(last_item(&v), &String::from(\"b\"));"
+      },
+      {
+        "id": "no-traits-needed",
+        "hidden": true,
+        "label": "T has no bounds: any type works",
+        "code": "struct Marker(u8);\nlet items = [Marker(1), Marker(2)];\ncheck_eq!(last_item(&items).0, 2);"
+      }
+    ],
     "solution": "fn last_item<T>(items: &[T]) -> &T {\n    &items[items.len() - 1]\n}\n\nfn main() {\n    let numbers = [4, 8, 15];\n    println!(\"{}\", last_item(&numbers));\n    let words = [\"red\", \"green\", \"blue\"];\n    println!(\"{}\", last_item(&words));\n}",
     "hints": [
-      "Hàm chỉ nhận i32 vì tham số và kiểu trả về của nó. Những kiểu nào ở đó có thể trở thành một ô giữ chỗ, giống T trong swap_pair?",
-      "Hãy đặt một tham số kiểu trong dấu ngoặc góc sau tên hàm, rồi dùng T thay cho i32 trong tham số và trong kiểu trả về.",
-      "Hãy viết fn last_item<T>(items: &[T]) -> &T. Sau đó, ở cuối main, hãy tạo một mảng gồm ba từ và in last_item(&words), giống như lệnh gọi cho numbers."
+      "Hàm chỉ nhận i32 vì kiểu tham số và kiểu trả về của nó. Những kiểu nào ở đó có thể trở thành một chỗ giữ chỗ, giống T trong swap_pair?",
+      "Hãy đặt một tham số kiểu trong cặp dấu ngoặc nhọn sau tên hàm, rồi dùng T thay cho i32 trong tham số và trong kiểu trả về.",
+      "Hãy viết fn last_item<T>(items: &[T]) -> &T. Khi đó cả hai lời gọi trong main đều hoạt động: lời gọi với numbers và lời gọi với words."
     ]
   },
   "quiz": [
