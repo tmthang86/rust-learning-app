@@ -36,9 +36,89 @@
     }
   ],
   "exercise": {
-    "prompt": "Replace each todo!() with working code. Do not change main.\n\nfn double_up(word: String) -> String\nGives back the word twice with a space between: \"ha\" becomes \"ha ha\".\n\nfn apply_bonus(score: &mut u32)\nAdds 10 to the number that score points to. The result must never be more than 100. The number starts at 100 or less.\n\nfn first_half(s: &str) -> &str\nGives back a slice with the first s.len() / 2 bytes of s. The text s holds only plain English letters, so each letter is one byte. For 9 letters that is the first 4. For one letter or for an empty text it is the empty text.\n\nThe program should print:\nha -> ha ha\n40 -> 50\n90 -> 100\n100 -> 100\n[Owne]\n[h]\n[]\n[]",
+    "prompt": "Replace each todo!() with working code. Do not change main.\n\nfn double_up(word: String) -> String\nGives back the word twice with a space between: \"ha\" becomes \"ha ha\".\n\nfn apply_bonus(score: &mut u32)\nAdds 10 to the number that score points to. The result must never be more than 100. The number starts at 100 or less.\n\nfn first_half(s: &str) -> &str\nGives back a slice with the first s.len() / 2 bytes of s. The text s holds only plain English letters, so each letter is one byte. For 9 letters that is the first 4. For one letter or for an empty text it is the empty text.\n\nWhen the functions work, main prints:\nha -> ha ha\n40 -> 50\n90 -> 100\n100 -> 100\n[Owne]\n[h]\n[]\n[]",
     "starter": "fn double_up(word: String) -> String {\n    todo!()\n}\n\nfn apply_bonus(score: &mut u32) {\n    todo!()\n}\n\nfn first_half(s: &str) -> &str {\n    todo!()\n}\n\nfn main() {\n    let word = String::from(\"ha\");\n    let laugh = double_up(word.clone());\n    println!(\"{word} -> {laugh}\");\n\n    for start in [40, 90, 100] {\n        let mut score = start;\n        apply_bonus(&mut score);\n        println!(\"{start} -> {score}\");\n    }\n\n    let title = String::from(\"Ownership\");\n    println!(\"[{}]\", first_half(&title));\n    println!(\"[{}]\", first_half(\"hi\"));\n    println!(\"[{}]\", first_half(\"a\"));\n    println!(\"[{}]\", first_half(\"\"));\n}",
-    "expectedOutput": "ha -> ha ha\n40 -> 50\n90 -> 100\n100 -> 100\n[Owne]\n[h]\n[]\n[]",
+    "tests": [
+      {
+        "id": "double-up-word",
+        "label": "double_up turns \"ha\" into \"ha ha\"",
+        "code": "check_eq!(double_up(String::from(\"ha\")), String::from(\"ha ha\"));"
+      },
+      {
+        "id": "bonus-adds-ten",
+        "label": "apply_bonus turns 40 into 50",
+        "code": "let mut score = 40;\napply_bonus(&mut score);\ncheck_eq!(score, 50);"
+      },
+      {
+        "id": "bonus-capped",
+        "label": "apply_bonus turns 90 into 100",
+        "code": "let mut score = 90;\napply_bonus(&mut score);\ncheck_eq!(score, 100);"
+      },
+      {
+        "id": "half-of-nine",
+        "label": "first_half of \"Ownership\" is \"Owne\"",
+        "code": "check_eq!(first_half(\"Ownership\"), \"Owne\");"
+      },
+      {
+        "id": "half-of-two",
+        "label": "first_half of \"hi\" is \"h\"",
+        "code": "check_eq!(first_half(\"hi\"), \"h\");"
+      },
+      {
+        "id": "double-other-words",
+        "hidden": true,
+        "label": "Other words are doubled with one space",
+        "code": "check_eq!(double_up(String::from(\"rust\")), String::from(\"rust rust\"));\ncheck_eq!(double_up(String::from(\"a\")), String::from(\"a a\"));\ncheck_eq!(double_up(String::from(\"go go\")), String::from(\"go go go go\"));"
+      },
+      {
+        "id": "double-empty-word",
+        "hidden": true,
+        "label": "An empty word gives just the space",
+        "code": "check_eq!(double_up(String::new()), String::from(\" \"));"
+      },
+      {
+        "id": "bonus-from-zero",
+        "hidden": true,
+        "label": "apply_bonus on small numbers",
+        "code": "let mut score = 0;\napply_bonus(&mut score);\ncheck_eq!(score, 10);\nlet mut score = 55;\napply_bonus(&mut score);\ncheck_eq!(score, 65);"
+      },
+      {
+        "id": "bonus-reaches-hundred",
+        "hidden": true,
+        "label": "90 reaches exactly 100, 89 stays below",
+        "code": "let mut score = 89;\napply_bonus(&mut score);\ncheck_eq!(score, 99);\nlet mut score = 90;\napply_bonus(&mut score);\ncheck_eq!(score, 100);"
+      },
+      {
+        "id": "bonus-near-cap",
+        "hidden": true,
+        "label": "Numbers just over the cap are capped",
+        "code": "let mut score = 91;\napply_bonus(&mut score);\ncheck_eq!(score, 100);\nlet mut score = 99;\napply_bonus(&mut score);\ncheck_eq!(score, 100);"
+      },
+      {
+        "id": "bonus-already-full",
+        "hidden": true,
+        "label": "100 stays 100",
+        "code": "let mut score = 100;\napply_bonus(&mut score);\ncheck_eq!(score, 100);"
+      },
+      {
+        "id": "half-even-length",
+        "hidden": true,
+        "label": "An even length is split exactly",
+        "code": "check_eq!(first_half(\"abcdefgh\"), \"abcd\");\ncheck_eq!(first_half(\"rust\"), \"ru\");"
+      },
+      {
+        "id": "half-odd-length",
+        "hidden": true,
+        "label": "An odd length rounds down",
+        "code": "check_eq!(first_half(\"abc\"), \"a\");\ncheck_eq!(first_half(\"hello\"), \"he\");\ncheck_eq!(first_half(\"abcdefghi\"), \"abcd\");"
+      },
+      {
+        "id": "half-short-texts",
+        "hidden": true,
+        "label": "One letter and empty text give empty text",
+        "code": "check_eq!(first_half(\"a\"), \"\");\ncheck_eq!(first_half(\"\"), \"\");"
+      }
+    ],
     "solution": "fn double_up(word: String) -> String {\n    let mut result = word.clone();\n    result.push_str(\" \");\n    result.push_str(&word);\n    result\n}\n\nfn apply_bonus(score: &mut u32) {\n    *score += 10;\n    if *score > 100 {\n        *score = 100;\n    }\n}\n\nfn first_half(s: &str) -> &str {\n    &s[..s.len() / 2]\n}\n\nfn main() {\n    let word = String::from(\"ha\");\n    let laugh = double_up(word.clone());\n    println!(\"{word} -> {laugh}\");\n\n    for start in [40, 90, 100] {\n        let mut score = start;\n        apply_bonus(&mut score);\n        println!(\"{start} -> {score}\");\n    }\n\n    let title = String::from(\"Ownership\");\n    println!(\"[{}]\", first_half(&title));\n    println!(\"[{}]\", first_half(\"hi\"));\n    println!(\"[{}]\", first_half(\"a\"));\n    println!(\"[{}]\", first_half(\"\"));\n}",
     "hints": [
       "double_up owns word, so you need a copy to build the result and still use word. apply_bonus changes a number through a &mut reference. first_half gives back a slice of s, not a new String.",

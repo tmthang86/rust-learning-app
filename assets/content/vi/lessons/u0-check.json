@@ -28,9 +28,88 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy thay mỗi todo!() bằng code chạy được. Đừng thay đổi main.\n\nfn total_saved(days: i32) -> i32\nTrả về 1 + 2 + ... + days. Với 0 ngày, nó trả về 0.\n\nfn stars(total: i32) -> i32\nTrả về 3 nếu total từ 50 trở lên. Nếu không, trả về 2 nếu total từ 10 trở lên. Nếu không, trả về 1.\n\nfn days_to_reach(goal: i32) -> i32\nBạn tiết kiệm 1 đồng xu vào ngày 1, 2 đồng xu vào ngày 2, và cứ thế. Hàm này trả về ngày đầu tiên mà tổng số đồng xu đã tiết kiệm ít nhất bằng goal. Nếu goal là 0, không cần ngày nào, nên nó trả về 0.\n\nCác số được đưa cho những hàm này không bao giờ âm, và days cùng goal tối đa là 1000.\n\nChương trình phải in ra:\nAfter 0 days: 0 coins, stars: 1\nAfter 4 days: 10 coins, stars: 2\nAfter 10 days: 55 coins, stars: 3\nGoal 0 takes 0 days\nGoal 15 takes 5 days\nGoal 20 takes 6 days",
+    "prompt": "Hãy thay mỗi todo!() bằng code chạy được. Đừng thay đổi main.\n\nfn total_saved(days: i32) -> i32\nTrả về 1 + 2 + ... + days. Với 0 ngày, nó trả về 0.\n\nfn stars(total: i32) -> i32\nTrả về 3 nếu total từ 50 trở lên. Nếu không, trả về 2 nếu total từ 10 trở lên. Nếu không, trả về 1.\n\nfn days_to_reach(goal: i32) -> i32\nBạn tiết kiệm 1 đồng xu vào ngày 1, 2 đồng xu vào ngày 2, và cứ thế. Hàm này trả về ngày đầu tiên mà tổng số đồng xu đã tiết kiệm ít nhất bằng goal. Nếu goal là 0, không cần ngày nào, nên nó trả về 0.\n\nCác số được đưa cho những hàm này không bao giờ âm, và days cùng goal tối đa là 1000.\n\nKhi các hàm chạy đúng, main in ra:\nAfter 0 days: 0 coins, stars: 1\nAfter 4 days: 10 coins, stars: 2\nAfter 10 days: 55 coins, stars: 3\nGoal 0 takes 0 days\nGoal 15 takes 5 days\nGoal 20 takes 6 days",
     "starter": "// Day 1 you save 1 coin, day 2 you save 2 coins, and so on.\nfn total_saved(days: i32) -> i32 {\n    todo!()\n}\n\nfn stars(total: i32) -> i32 {\n    todo!()\n}\n\nfn days_to_reach(goal: i32) -> i32 {\n    todo!()\n}\n\nfn main() {\n    let mut coins = total_saved(0);\n    println!(\"After 0 days: {coins} coins, stars: {}\", stars(coins));\n    coins = total_saved(4);\n    println!(\"After 4 days: {coins} coins, stars: {}\", stars(coins));\n    coins = total_saved(10);\n    println!(\"After 10 days: {coins} coins, stars: {}\", stars(coins));\n\n    println!(\"Goal 0 takes {} days\", days_to_reach(0));\n    println!(\"Goal 15 takes {} days\", days_to_reach(15));\n    println!(\"Goal 20 takes {} days\", days_to_reach(20));\n}",
-    "expectedOutput": "After 0 days: 0 coins, stars: 1\nAfter 4 days: 10 coins, stars: 2\nAfter 10 days: 55 coins, stars: 3\nGoal 0 takes 0 days\nGoal 15 takes 5 days\nGoal 20 takes 6 days",
+    "tests": [
+      {
+        "id": "total-zero-days",
+        "label": "Tiết kiệm 0 ngày được 0 đồng xu",
+        "code": "check_eq!(total_saved(0), 0);"
+      },
+      {
+        "id": "total-four-days",
+        "label": "Tiết kiệm 4 ngày được 10 đồng xu",
+        "code": "check_eq!(total_saved(4), 10);"
+      },
+      {
+        "id": "stars-ten-coins",
+        "label": "10 đồng xu được 2 sao",
+        "code": "check_eq!(stars(10), 2);"
+      },
+      {
+        "id": "stars-many-coins",
+        "label": "55 đồng xu được 3 sao",
+        "code": "check_eq!(stars(55), 3);"
+      },
+      {
+        "id": "days-goal-fifteen",
+        "label": "Mục tiêu 15 cần 5 ngày",
+        "code": "check_eq!(days_to_reach(15), 5);"
+      },
+      {
+        "id": "days-goal-zero",
+        "label": "Mục tiêu 0 cần 0 ngày",
+        "code": "check_eq!(days_to_reach(0), 0);"
+      },
+      {
+        "id": "total-one-and-ten-days",
+        "hidden": true,
+        "label": "Other day counts add up correctly",
+        "code": "check_eq!(total_saved(1), 1);\ncheck_eq!(total_saved(10), 55);\ncheck_eq!(total_saved(7), 28);"
+      },
+      {
+        "id": "total-max-days",
+        "hidden": true,
+        "label": "The largest allowed days value",
+        "code": "check_eq!(total_saved(1000), 500500);"
+      },
+      {
+        "id": "stars-few-coins",
+        "hidden": true,
+        "label": "Fewer than 10 coins earn 1 star",
+        "code": "check_eq!(stars(0), 1);\ncheck_eq!(stars(1), 1);\ncheck_eq!(stars(9), 1);"
+      },
+      {
+        "id": "stars-two-range",
+        "hidden": true,
+        "label": "From 10 to 49 coins earn 2 stars",
+        "code": "check_eq!(stars(10), 2);\ncheck_eq!(stars(11), 2);\ncheck_eq!(stars(49), 2);"
+      },
+      {
+        "id": "stars-three-range",
+        "hidden": true,
+        "label": "50 or more coins earn 3 stars",
+        "code": "check_eq!(stars(50), 3);\ncheck_eq!(stars(51), 3);\ncheck_eq!(stars(500500), 3);"
+      },
+      {
+        "id": "days-exact-totals",
+        "hidden": true,
+        "label": "A goal equal to a running total stops on that day",
+        "code": "check_eq!(days_to_reach(1), 1);\ncheck_eq!(days_to_reach(10), 4);\ncheck_eq!(days_to_reach(55), 10);"
+      },
+      {
+        "id": "days-just-over",
+        "hidden": true,
+        "label": "A goal one above a running total needs one more day",
+        "code": "check_eq!(days_to_reach(2), 2);\ncheck_eq!(days_to_reach(11), 5);\ncheck_eq!(days_to_reach(16), 6);"
+      },
+      {
+        "id": "days-max-goal",
+        "hidden": true,
+        "label": "The largest allowed goal",
+        "code": "check_eq!(days_to_reach(990), 44);\ncheck_eq!(days_to_reach(991), 45);\ncheck_eq!(days_to_reach(1000), 45);"
+      }
+    ],
     "solution": "fn total_saved(days: i32) -> i32 {\n    let mut total = 0;\n    for day in 1..=days {\n        total = total + day;\n    }\n    total\n}\n\nfn stars(total: i32) -> i32 {\n    let mut result = 1;\n    if total >= 50 {\n        result = 3;\n    } else if total >= 10 {\n        result = 2;\n    }\n    result\n}\n\nfn days_to_reach(goal: i32) -> i32 {\n    let mut days = 0;\n    let mut total = 0;\n    while total < goal {\n        days = days + 1;\n        total = total + days;\n    }\n    days\n}\n\nfn main() {\n    let mut coins = total_saved(0);\n    println!(\"After 0 days: {coins} coins, stars: {}\", stars(coins));\n    coins = total_saved(4);\n    println!(\"After 4 days: {coins} coins, stars: {}\", stars(coins));\n    coins = total_saved(10);\n    println!(\"After 10 days: {coins} coins, stars: {}\", stars(coins));\n\n    println!(\"Goal 0 takes {} days\", days_to_reach(0));\n    println!(\"Goal 15 takes {} days\", days_to_reach(15));\n    println!(\"Goal 20 takes {} days\", days_to_reach(20));\n}",
     "hints": [
       "Mỗi hàm cần những biến thay đổi được, nên hãy làm cho chúng có thể thay đổi. total_saved cộng dồn các số bằng một vòng lặp for. stars thay đổi một giá trị bằng if và else if. days_to_reach là hàm khó nhất, và nó cần một vòng lặp while.",
