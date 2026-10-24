@@ -32,9 +32,118 @@
     }
   ],
   "exercise": {
-    "prompt": "Hãy thay mỗi todo!() bằng code chạy được. Đừng thay đổi main.\n\nfn split_words(text: &str) -> Vec<String>\nTrả về các từ của text, theo thứ tự, mỗi từ viết thường. Các từ được ngăn cách bởi khoảng trắng (dấu cách, tab hoặc dòng mới), và khoảng trắng thừa bị bỏ qua. Dấu câu vẫn là một phần của từ. Một văn bản không có từ nào cho ra một Vec rỗng.\n\nfn word_counts(words: &[String]) -> HashMap<String, u32>\nTrả về một map từ mỗi từ khác nhau đến số lần nó xuất hiện. Nó dùng các từ đúng như được cho và không thay đổi chữ hoa chữ thường của chúng.\n\nfn count_of(counts: &HashMap<String, u32>, word: &str) -> u32\nTrả về số lần word xuất hiện trong counts, hoặc 0 nếu nó không có ở đó. Nó tra cứu word đúng như được cho.\n\nChương trình phải in ra:\n8 words\nand: 2\ncat: 1\nend: 1\nhat: 1\nthe: 3\nthe appears 3 times\ndog appears 0 times\n[spaced]\n[out]\n0 words, 0 different",
+    "prompt": "Hãy thay mỗi todo!() bằng code chạy được. Đừng thay đổi main.\n\nfn split_words(text: &str) -> Vec<String>\nTrả về các từ của text, theo thứ tự, mỗi từ viết thường. Các từ được ngăn cách bởi khoảng trắng (dấu cách, tab hoặc dòng mới), và khoảng trắng thừa bị bỏ qua. Dấu câu vẫn là một phần của từ. Một văn bản không có từ nào cho ra một Vec rỗng.\n\nfn word_counts(words: &[String]) -> HashMap<String, u32>\nTrả về một map từ mỗi từ khác nhau đến số lần nó xuất hiện. Nó dùng các từ đúng như được cho và không thay đổi chữ hoa chữ thường của chúng.\n\nfn count_of(counts: &HashMap<String, u32>, word: &str) -> u32\nTrả về số lần word xuất hiện trong counts, hoặc 0 nếu nó không có ở đó. Nó tra cứu word đúng như được cho.\n\nKhi các hàm chạy đúng, main in ra:\n8 words\nand: 2\ncat: 1\nend: 1\nhat: 1\nthe: 3\nthe appears 3 times\ndog appears 0 times\n[spaced]\n[out]\n0 words, 0 different",
     "starter": "use std::collections::HashMap;\n\nfn split_words(text: &str) -> Vec<String> {\n    todo!()\n}\n\nfn word_counts(words: &[String]) -> HashMap<String, u32> {\n    todo!()\n}\n\nfn count_of(counts: &HashMap<String, u32>, word: &str) -> u32 {\n    todo!()\n}\n\nfn main() {\n    let words = split_words(\"The cat and the hat and THE end\");\n    println!(\"{} words\", words.len());\n\n    let counts = word_counts(&words);\n    let mut keys: Vec<_> = counts.keys().collect();\n    keys.sort();\n    for key in keys {\n        println!(\"{key}: {}\", counts[key]);\n    }\n    println!(\"the appears {} times\", count_of(&counts, \"the\"));\n    println!(\"dog appears {} times\", count_of(&counts, \"dog\"));\n\n    let spaced = split_words(\"  spaced   out \");\n    for word in &spaced {\n        println!(\"[{word}]\");\n    }\n    let empty = split_words(\"\");\n    println!(\"{} words, {} different\", empty.len(), word_counts(&empty).len());\n}",
-    "expectedOutput": "8 words\nand: 2\ncat: 1\nend: 1\nhat: 1\nthe: 3\nthe appears 3 times\ndog appears 0 times\n[spaced]\n[out]\n0 words, 0 different",
+    "tests": [
+      {
+        "id": "split-lowercases",
+        "label": "split_words viết thường mọi từ",
+        "code": "check_eq!(split_words(\"The cat and THE end\"), vec![\"the\", \"cat\", \"and\", \"the\", \"end\"]);"
+      },
+      {
+        "id": "split-extra-spaces",
+        "label": "split_words bỏ qua các khoảng trắng thừa",
+        "code": "check_eq!(split_words(\"  spaced   out \"), vec![\"spaced\", \"out\"]);"
+      },
+      {
+        "id": "split-empty-text",
+        "label": "split_words trả về Vec rỗng khi văn bản rỗng",
+        "code": "check_eq!(split_words(\"\"), Vec::<String>::new());"
+      },
+      {
+        "id": "counts-repeated-words",
+        "label": "word_counts đếm số lần xuất hiện của mỗi từ",
+        "code": "let words = vec![String::from(\"the\"), String::from(\"cat\"), String::from(\"the\")];\nlet counts = word_counts(&words);\ncheck_eq!(counts.len(), 2);\ncheck_eq!(counts[\"the\"], 2);\ncheck_eq!(counts[\"cat\"], 1);"
+      },
+      {
+        "id": "count-of-present",
+        "label": "count_of trả về số lần của một từ có trong map",
+        "code": "let mut counts = ::std::collections::HashMap::new();\ncounts.insert(String::from(\"the\"), 3);\ncheck_eq!(count_of(&counts, \"the\"), 3);"
+      },
+      {
+        "id": "count-of-missing",
+        "label": "count_of trả về 0 khi từ không có trong map",
+        "code": "let mut counts = ::std::collections::HashMap::new();\ncounts.insert(String::from(\"the\"), 3);\ncheck_eq!(count_of(&counts, \"dog\"), 0);"
+      },
+      {
+        "id": "split-tabs-newlines",
+        "hidden": true,
+        "label": "Tabs and new lines separate words too",
+        "code": "check_eq!(split_words(\"a\\tb\\nc  d\\ne\"), vec![\"a\", \"b\", \"c\", \"d\", \"e\"]);"
+      },
+      {
+        "id": "split-only-whitespace",
+        "hidden": true,
+        "label": "Text with only whitespace has no words",
+        "code": "check_eq!(split_words(\"   \"), Vec::<String>::new());\ncheck_eq!(split_words(\" \\t\\n \"), Vec::<String>::new());"
+      },
+      {
+        "id": "split-punctuation-stays",
+        "hidden": true,
+        "label": "Punctuation stays part of the word",
+        "code": "check_eq!(split_words(\"Hello, World!\"), vec![\"hello,\", \"world!\"]);\ncheck_eq!(split_words(\"it's a-b\"), vec![\"it's\", \"a-b\"]);"
+      },
+      {
+        "id": "split-keeps-order",
+        "hidden": true,
+        "label": "Words stay in order and repeats are kept",
+        "code": "check_eq!(split_words(\"b a b A\"), vec![\"b\", \"a\", \"b\", \"a\"]);\ncheck_eq!(split_words(\"go go stop\"), vec![\"go\", \"go\", \"stop\"]);"
+      },
+      {
+        "id": "split-single-word",
+        "hidden": true,
+        "label": "A single word",
+        "code": "check_eq!(split_words(\"RUST\"), vec![\"rust\"]);\ncheck_eq!(split_words(\" Go \"), vec![\"go\"]);"
+      },
+      {
+        "id": "counts-empty",
+        "hidden": true,
+        "label": "No words gives an empty map",
+        "code": "let words: Vec<String> = Vec::new();\ncheck_eq!(word_counts(&words).len(), 0);"
+      },
+      {
+        "id": "counts-all-same",
+        "hidden": true,
+        "label": "One word repeated many times",
+        "code": "let words = vec![String::from(\"go\"), String::from(\"go\"), String::from(\"go\"), String::from(\"go\"), String::from(\"go\")];\nlet counts = word_counts(&words);\ncheck_eq!(counts.len(), 1);\ncheck_eq!(counts[\"go\"], 5);"
+      },
+      {
+        "id": "counts-case-exact",
+        "hidden": true,
+        "label": "word_counts does not change case",
+        "code": "let words = vec![String::from(\"Cat\"), String::from(\"cat\"), String::from(\"Cat\")];\nlet counts = word_counts(&words);\ncheck_eq!(counts.len(), 2);\ncheck_eq!(counts[\"Cat\"], 2);\ncheck_eq!(counts[\"cat\"], 1);"
+      },
+      {
+        "id": "counts-all-different",
+        "hidden": true,
+        "label": "Each different word gets 1",
+        "code": "let words = vec![String::from(\"a\"), String::from(\"b\"), String::from(\"c\")];\nlet counts = word_counts(&words);\ncheck_eq!(counts.len(), 3);\ncheck_eq!(counts[\"a\"], 1);\ncheck_eq!(counts[\"b\"], 1);\ncheck_eq!(counts[\"c\"], 1);"
+      },
+      {
+        "id": "count-of-empty-map",
+        "hidden": true,
+        "label": "count_of on an empty map gives 0",
+        "code": "let counts: ::std::collections::HashMap<String, u32> = ::std::collections::HashMap::new();\ncheck_eq!(count_of(&counts, \"the\"), 0);\ncheck_eq!(count_of(&counts, \"\"), 0);"
+      },
+      {
+        "id": "count-of-exact-case",
+        "hidden": true,
+        "label": "count_of looks up the word exactly as given",
+        "code": "let mut counts = ::std::collections::HashMap::new();\ncounts.insert(String::from(\"the\"), 3);\ncheck_eq!(count_of(&counts, \"The\"), 0);\ncheck_eq!(count_of(&counts, \"the \"), 0);"
+      },
+      {
+        "id": "count-of-several",
+        "hidden": true,
+        "label": "count_of with several words in the map",
+        "code": "let mut counts = ::std::collections::HashMap::new();\ncounts.insert(String::from(\"a\"), 1);\ncounts.insert(String::from(\"b\"), 7);\ncheck_eq!(count_of(&counts, \"a\"), 1);\ncheck_eq!(count_of(&counts, \"b\"), 7);"
+      },
+      {
+        "id": "split-then-count",
+        "hidden": true,
+        "label": "The two functions work together",
+        "code": "let counts = word_counts(&split_words(\"The cat and the hat and THE end\"));\ncheck_eq!(counts.len(), 5);\ncheck_eq!(count_of(&counts, \"the\"), 3);\ncheck_eq!(count_of(&counts, \"and\"), 2);\ncheck_eq!(count_of(&counts, \"dog\"), 0);"
+      }
+    ],
     "solution": "use std::collections::HashMap;\n\nfn split_words(text: &str) -> Vec<String> {\n    let mut words = Vec::new();\n    for word in text.split_whitespace() {\n        words.push(word.to_lowercase());\n    }\n    words\n}\n\nfn word_counts(words: &[String]) -> HashMap<String, u32> {\n    let mut counts = HashMap::new();\n    for word in words {\n        *counts.entry(word.clone()).or_insert(0) += 1;\n    }\n    counts\n}\n\nfn count_of(counts: &HashMap<String, u32>, word: &str) -> u32 {\n    *counts.get(word).unwrap_or(&0)\n}\n\nfn main() {\n    let words = split_words(\"The cat and the hat and THE end\");\n    println!(\"{} words\", words.len());\n\n    let counts = word_counts(&words);\n    let mut keys: Vec<_> = counts.keys().collect();\n    keys.sort();\n    for key in keys {\n        println!(\"{key}: {}\", counts[key]);\n    }\n    println!(\"the appears {} times\", count_of(&counts, \"the\"));\n    println!(\"dog appears {} times\", count_of(&counts, \"dog\"));\n\n    let spaced = split_words(\"  spaced   out \");\n    for word in &spaced {\n        println!(\"[{word}]\");\n    }\n    let empty = split_words(\"\");\n    println!(\"{} words, {} different\", empty.len(), word_counts(&empty).len());\n}",
     "hints": [
       "split_words xây một Vec trong một vòng lặp qua split_whitespace(), và to_lowercase() tạo từng String mới. word_counts điền một HashMap bằng entry và or_insert. count_of dùng get, trả về một Option vì từ đó có thể không có.",

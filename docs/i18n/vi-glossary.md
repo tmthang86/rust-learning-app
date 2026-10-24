@@ -188,6 +188,7 @@ reference)" (not the bare English word in one lesson and a gloss in another).
 | starter code | code khởi đầu | |
 | "Coming from another language:" | Nếu bạn đến từ một ngôn ngữ khác: | |
 | "It should print:" | Chương trình phải in ra: | |
+| "When the functions work, main prints:" | Khi các hàm chạy đúng, main in ra: | Standard in every checkpoint prompt that ends with example output |
 
 `let` is also an everyday English word. In prose, translate it when it is a plain
 word ("won't let you" -> "không cho phép bạn"); keep it when it names the code

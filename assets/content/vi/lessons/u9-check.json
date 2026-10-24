@@ -26,10 +26,152 @@
     }
   ],
   "exercise": {
-    "prompt": "Hoàn thành bảng điểm.\n\n(1) Làm cho chương trình biên dịch được. Thêm các từ pub và các dòng use cần thiết, và chỉ làm công khai những gì main cần. Trường points phải giữ riêng tư.\n\n(2) Player::add_points(&mut self, amount: u32) cộng amount vào số điểm. Số điểm không bao giờ vượt quá MAX_POINTS (100), với mọi giá trị amount, kể cả u32::MAX.\n\n(3) Player::spend(&mut self, cost: u32) -> Result<(), String> trừ cost khỏi số điểm và trả về Ok(()). Nếu cost lớn hơn số điểm, nó không thay đổi gì và trả về Err với văn bản NAME needs N more points, trong đó NAME là tên của người chơi và N là số điểm còn thiếu (ví dụ Ada needs 20 more points).\n\n(4) rank::title(player: &Player) -> &'static str trả về rookie cho 0 đến 9 điểm, regular cho 10 đến 49, expert cho 50 đến 99 và legend cho 100.\n\n(5) Trong main, hãy thay chú thích TODO bằng một assert_eq! kiểm tra rằng ada có 25 điểm. Đừng thay đổi các dòng khác của main. Chương trình phải in ra:\n\nAda: 0 points, rookie\nAda: 40 points, regular\nerror: Ada needs 20 more points\nspent 15\nAda: 100 points, legend\nAda: 49 points, regular\nall checks passed",
-    "starter": "// TODO: main does not compile yet. Make public what main needs (and nothing more),\n// and add the use lines that are missing.\nmod scoreboard {\n    const MAX_POINTS: u32 = 100;\n\n    struct Player {\n        name: String,\n        points: u32,\n    }\n\n    impl Player {\n        fn new(name: &str) -> Player {\n            Player { name: String::from(name), points: 0 }\n        }\n\n        fn points(&self) -> u32 {\n            self.points\n        }\n\n        // Adds points, but the total never goes above MAX_POINTS.\n        fn add_points(&mut self, amount: u32) {\n            todo!()\n        }\n\n        // Takes points away. Fails, and changes nothing, if there are too few.\n        fn spend(&mut self, cost: u32) -> Result<(), String> {\n            todo!()\n        }\n    }\n\n    mod rank {\n        fn title(player: &Player) -> &'static str {\n            todo!()\n        }\n    }\n}\n\nfn main() {\n    let mut ada = Player::new(\"Ada\");\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n\n    ada.add_points(40);\n    assert_eq!(ada.points(), 40);\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n\n    for cost in [60, 15] {\n        match ada.spend(cost) {\n            Ok(()) => println!(\"spent {cost}\"),\n            Err(e) => println!(\"error: {e}\"),\n        }\n    }\n    // TODO: add an assert_eq! here that checks ada has 25 points\n\n    ada.add_points(500);\n    assert_eq!(ada.points(), 100);\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n\n    ada.spend(51).unwrap();\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n    println!(\"all checks passed\");\n}\n\n#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n    fn points_are_capped() {\n        let mut p = Player::new(\"Bo\");\n        p.add_points(90);\n        p.add_points(90);\n        assert_eq!(p.points(), 100);\n        p.add_points(u32::MAX);\n        assert_eq!(p.points(), 100);\n    }\n\n    #[test]\n    fn spend_fails_when_too_poor() {\n        let mut p = Player::new(\"Bo\");\n        p.add_points(5);\n        assert!(p.spend(6).is_err());\n        assert_eq!(p.points(), 5);\n    }\n}",
-    "expectedOutput": "Ada: 0 points, rookie\nAda: 40 points, regular\nerror: Ada needs 20 more points\nspent 15\nAda: 100 points, legend\nAda: 49 points, regular\nall checks passed",
-    "solution": "mod scoreboard {\n    const MAX_POINTS: u32 = 100;\n\n    pub struct Player {\n        pub name: String,\n        points: u32,\n    }\n\n    impl Player {\n        pub fn new(name: &str) -> Player {\n            Player { name: String::from(name), points: 0 }\n        }\n\n        pub fn points(&self) -> u32 {\n            self.points\n        }\n\n        // Adds points, but the total never goes above MAX_POINTS.\n        pub fn add_points(&mut self, amount: u32) {\n            if amount >= MAX_POINTS - self.points {\n                self.points = MAX_POINTS;\n            } else {\n                self.points += amount;\n            }\n        }\n\n        // Takes points away. Fails, and changes nothing, if there are too few.\n        pub fn spend(&mut self, cost: u32) -> Result<(), String> {\n            if cost > self.points {\n                return Err(format!(\"{} needs {} more points\", self.name, cost - self.points));\n            }\n            self.points -= cost;\n            Ok(())\n        }\n    }\n\n    pub mod rank {\n        use super::Player;\n\n        // A child module may read the private field of its parent's struct.\n        pub fn title(player: &Player) -> &'static str {\n            match player.points {\n                0..=9 => \"rookie\",\n                10..=49 => \"regular\",\n                50..=99 => \"expert\",\n                _ => \"legend\",\n            }\n        }\n    }\n}\n\nuse scoreboard::{Player, rank};\n\nfn main() {\n    let mut ada = Player::new(\"Ada\");\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n\n    ada.add_points(40);\n    assert_eq!(ada.points(), 40);\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n\n    for cost in [60, 15] {\n        match ada.spend(cost) {\n            Ok(()) => println!(\"spent {cost}\"),\n            Err(e) => println!(\"error: {e}\"),\n        }\n    }\n    assert_eq!(ada.points(), 25);\n\n    ada.add_points(500);\n    assert_eq!(ada.points(), 100);\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n\n    ada.spend(51).unwrap();\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n    println!(\"all checks passed\");\n}\n\n#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n    fn points_are_capped() {\n        let mut p = Player::new(\"Bo\");\n        p.add_points(90);\n        p.add_points(90);\n        assert_eq!(p.points(), 100);\n        p.add_points(u32::MAX);\n        assert_eq!(p.points(), 100);\n    }\n\n    #[test]\n    fn spend_fails_when_too_poor() {\n        let mut p = Player::new(\"Bo\");\n        p.add_points(5);\n        assert!(p.spend(6).is_err());\n        assert_eq!(p.points(), 5);\n    }\n}",
+    "prompt": "Hoàn thành bảng điểm.\n\n(1) Làm cho chương trình biên dịch được. Thêm các từ pub và các dòng use cần thiết, và chỉ làm công khai những gì main cần. Trường points phải giữ riêng tư.\n\n(2) Player::add_points(&mut self, amount: u32) cộng amount vào số điểm. Số điểm không bao giờ vượt quá MAX_POINTS (100), với mọi giá trị amount, kể cả u32::MAX.\n\n(3) Player::spend(&mut self, cost: u32) -> Result<(), String> trừ cost khỏi số điểm và trả về Ok(()). Nếu cost lớn hơn số điểm, nó không thay đổi gì và trả về Err với văn bản NAME needs N more points, trong đó NAME là tên của người chơi và N là số điểm còn thiếu (ví dụ Ada needs 20 more points).\n\n(4) rank::title(player: &Player) -> &'static str trả về rookie cho 0 đến 9 điểm, regular cho 10 đến 49, expert cho 50 đến 99 và legend cho 100.\n\n(5) Trong main, hãy thay chú thích TODO bằng một assert_eq! kiểm tra rằng ada có 25 điểm. Đừng thay đổi các dòng khác của main. Khi các hàm chạy đúng, main in ra:\n\nAda: 0 points, rookie\nAda: 40 points, regular\nerror: Ada needs 20 more points\nspent 15\nAda: 100 points, legend\nAda: 49 points, regular\nall checks passed",
+    "starter": "// TODO: main does not compile yet. Make public what main needs (and nothing more),\n// and add the use lines that are missing.\nmod scoreboard {\n    const MAX_POINTS: u32 = 100;\n\n    struct Player {\n        name: String,\n        points: u32,\n    }\n\n    impl Player {\n        fn new(name: &str) -> Player {\n            Player { name: String::from(name), points: 0 }\n        }\n\n        fn points(&self) -> u32 {\n            self.points\n        }\n\n        // Adds points, but the total never goes above MAX_POINTS.\n        fn add_points(&mut self, amount: u32) {\n            todo!()\n        }\n\n        // Takes points away. Fails, and changes nothing, if there are too few.\n        fn spend(&mut self, cost: u32) -> Result<(), String> {\n            todo!()\n        }\n    }\n\n    mod rank {\n        fn title(player: &Player) -> &'static str {\n            todo!()\n        }\n    }\n}\n\nfn main() {\n    let mut ada = Player::new(\"Ada\");\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n\n    ada.add_points(40);\n    assert_eq!(ada.points(), 40);\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n\n    for cost in [60, 15] {\n        match ada.spend(cost) {\n            Ok(()) => println!(\"spent {cost}\"),\n            Err(e) => println!(\"error: {e}\"),\n        }\n    }\n    // TODO: add an assert_eq! here that checks ada has 25 points\n\n    ada.add_points(500);\n    assert_eq!(ada.points(), 100);\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n\n    ada.spend(51).unwrap();\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n    println!(\"all checks passed\");\n}\n\n#[cfg(test)]\nmod tests {\n    use super::scoreboard::Player;\n\n    #[test]\n    fn points_are_capped() {\n        let mut p = Player::new(\"Bo\");\n        p.add_points(90);\n        p.add_points(90);\n        assert_eq!(p.points(), 100);\n        p.add_points(u32::MAX);\n        assert_eq!(p.points(), 100);\n    }\n\n    #[test]\n    fn spend_fails_when_too_poor() {\n        let mut p = Player::new(\"Bo\");\n        p.add_points(5);\n        assert!(p.spend(6).is_err());\n        assert_eq!(p.points(), 5);\n    }\n}",
+    "tests": [
+      {
+        "id": "new-player",
+        "label": "Người chơi mới có tên và 0 điểm",
+        "code": "let p = scoreboard::Player::new(\"Ada\");\ncheck_eq!(p.points(), 0);\ncheck_eq!(p.name, \"Ada\");"
+      },
+      {
+        "id": "add-points",
+        "label": "add_points cộng thêm vào điểm",
+        "code": "let mut p = scoreboard::Player::new(\"Ada\");\np.add_points(40);\ncheck_eq!(p.points(), 40);"
+      },
+      {
+        "id": "points-capped",
+        "label": "Điểm không bao giờ vượt quá 100",
+        "code": "let mut p = scoreboard::Player::new(\"Ada\");\np.add_points(40);\np.add_points(500);\ncheck_eq!(p.points(), 100);"
+      },
+      {
+        "id": "spend-ok",
+        "label": "spend trừ điểm và trả về Ok",
+        "code": "let mut p = scoreboard::Player::new(\"Ada\");\np.add_points(40);\ncheck_eq!(p.spend(15), Ok(()));\ncheck_eq!(p.points(), 25);"
+      },
+      {
+        "id": "spend-too-poor",
+        "label": "spend báo lỗi kèm thông báo khi không đủ điểm",
+        "code": "let mut p = scoreboard::Player::new(\"Ada\");\np.add_points(40);\ncheck_eq!(p.spend(60), Err(String::from(\"Ada needs 20 more points\")));\ncheck_eq!(p.points(), 40);"
+      },
+      {
+        "id": "rank-rookie",
+        "label": "Người chơi có 0 điểm là rookie",
+        "code": "let p = scoreboard::Player::new(\"Ada\");\ncheck_eq!(scoreboard::rank::title(&p), \"rookie\");"
+      },
+      {
+        "id": "rank-regular",
+        "label": "Người chơi có 40 điểm là regular",
+        "code": "let mut p = scoreboard::Player::new(\"Ada\");\np.add_points(40);\ncheck_eq!(scoreboard::rank::title(&p), \"regular\");"
+      },
+      {
+        "id": "rank-legend",
+        "label": "Người chơi có 100 điểm là legend",
+        "code": "let mut p = scoreboard::Player::new(\"Ada\");\np.add_points(100);\ncheck_eq!(scoreboard::rank::title(&p), \"legend\");"
+      },
+      {
+        "id": "main-output",
+        "label": "main in ra các dòng mong đợi",
+        "output": "Ada: 0 points, rookie\nAda: 40 points, regular\nerror: Ada needs 20 more points\nspent 15\nAda: 100 points, legend\nAda: 49 points, regular\nall checks passed"
+      },
+      {
+        "id": "add-points-zero",
+        "hidden": true,
+        "label": "Adding 0 changes nothing",
+        "code": "let mut p = scoreboard::Player::new(\"Bo\");\np.add_points(0);\ncheck_eq!(p.points(), 0);\np.add_points(7);\np.add_points(0);\ncheck_eq!(p.points(), 7);"
+      },
+      {
+        "id": "cap-reached-exactly",
+        "hidden": true,
+        "label": "Reaching exactly 100 is allowed",
+        "code": "let mut p = scoreboard::Player::new(\"Bo\");\np.add_points(60);\np.add_points(40);\ncheck_eq!(p.points(), 100);\nlet mut q = scoreboard::Player::new(\"Cy\");\nq.add_points(100);\ncheck_eq!(q.points(), 100);"
+      },
+      {
+        "id": "cap-by-one",
+        "hidden": true,
+        "label": "One point over the cap is cut",
+        "code": "let mut p = scoreboard::Player::new(\"Bo\");\np.add_points(99);\ncheck_eq!(p.points(), 99);\np.add_points(2);\ncheck_eq!(p.points(), 100);\np.add_points(1);\ncheck_eq!(p.points(), 100);"
+      },
+      {
+        "id": "cap-two-steps",
+        "hidden": true,
+        "label": "Two additions that pass the cap",
+        "code": "let mut p = scoreboard::Player::new(\"Bo\");\np.add_points(90);\np.add_points(90);\ncheck_eq!(p.points(), 100);"
+      },
+      {
+        "id": "cap-u32-max",
+        "hidden": true,
+        "label": "u32::MAX does not overflow",
+        "code": "let mut p = scoreboard::Player::new(\"Bo\");\np.add_points(u32::MAX);\ncheck_eq!(p.points(), 100);\nlet mut q = scoreboard::Player::new(\"Cy\");\nq.add_points(30);\nq.add_points(u32::MAX);\ncheck_eq!(q.points(), 100);\nq.add_points(u32::MAX);\ncheck_eq!(q.points(), 100);"
+      },
+      {
+        "id": "spend-exact",
+        "hidden": true,
+        "label": "Spending everything leaves 0",
+        "code": "let mut p = scoreboard::Player::new(\"Bo\");\np.add_points(30);\ncheck_eq!(p.spend(30), Ok(()));\ncheck_eq!(p.points(), 0);"
+      },
+      {
+        "id": "spend-zero",
+        "hidden": true,
+        "label": "Spending 0 always works",
+        "code": "let mut p = scoreboard::Player::new(\"Bo\");\ncheck_eq!(p.spend(0), Ok(()));\ncheck_eq!(p.points(), 0);"
+      },
+      {
+        "id": "spend-one-short",
+        "hidden": true,
+        "label": "One point short, other name",
+        "code": "let mut p = scoreboard::Player::new(\"Bo\");\np.add_points(5);\ncheck_eq!(p.spend(6), Err(String::from(\"Bo needs 1 more points\")));\ncheck_eq!(p.points(), 5);"
+      },
+      {
+        "id": "spend-broke",
+        "hidden": true,
+        "label": "A player with no points",
+        "code": "let mut p = scoreboard::Player::new(\"Cy\");\ncheck_eq!(p.spend(100), Err(String::from(\"Cy needs 100 more points\")));\ncheck_eq!(p.points(), 0);"
+      },
+      {
+        "id": "spend-then-spend",
+        "hidden": true,
+        "label": "A failed spend changes nothing",
+        "code": "let mut p = scoreboard::Player::new(\"Ada\");\np.add_points(40);\ncheck!(p.spend(60).is_err());\ncheck_eq!(p.spend(40), Ok(()));\ncheck_eq!(p.points(), 0);"
+      },
+      {
+        "id": "rank-rookie-9",
+        "hidden": true,
+        "label": "9 points is still a rookie",
+        "code": "let mut p = scoreboard::Player::new(\"Bo\");\np.add_points(9);\ncheck_eq!(scoreboard::rank::title(&p), \"rookie\");"
+      },
+      {
+        "id": "rank-regular-10",
+        "hidden": true,
+        "label": "10 points is the first regular",
+        "code": "let mut p = scoreboard::Player::new(\"Bo\");\np.add_points(10);\ncheck_eq!(scoreboard::rank::title(&p), \"regular\");"
+      },
+      {
+        "id": "rank-regular-49",
+        "hidden": true,
+        "label": "49 points is still regular",
+        "code": "let mut p = scoreboard::Player::new(\"Bo\");\np.add_points(49);\ncheck_eq!(scoreboard::rank::title(&p), \"regular\");"
+      },
+      {
+        "id": "rank-expert-50",
+        "hidden": true,
+        "label": "50 points is the first expert",
+        "code": "let mut p = scoreboard::Player::new(\"Bo\");\np.add_points(50);\ncheck_eq!(scoreboard::rank::title(&p), \"expert\");"
+      },
+      {
+        "id": "rank-expert-99",
+        "hidden": true,
+        "label": "99 points is still expert",
+        "code": "let mut p = scoreboard::Player::new(\"Bo\");\np.add_points(99);\ncheck_eq!(scoreboard::rank::title(&p), \"expert\");"
+      },
+      {
+        "id": "rank-follows-spend",
+        "hidden": true,
+        "label": "The title follows the points after spending",
+        "code": "let mut p = scoreboard::Player::new(\"Bo\");\np.add_points(500);\ncheck_eq!(scoreboard::rank::title(&p), \"legend\");\ncheck_eq!(p.spend(51), Ok(()));\ncheck_eq!(scoreboard::rank::title(&p), \"regular\");"
+      }
+    ],
+    "solution": "mod scoreboard {\n    const MAX_POINTS: u32 = 100;\n\n    pub struct Player {\n        pub name: String,\n        points: u32,\n    }\n\n    impl Player {\n        pub fn new(name: &str) -> Player {\n            Player { name: String::from(name), points: 0 }\n        }\n\n        pub fn points(&self) -> u32 {\n            self.points\n        }\n\n        // Adds points, but the total never goes above MAX_POINTS.\n        pub fn add_points(&mut self, amount: u32) {\n            if amount >= MAX_POINTS - self.points {\n                self.points = MAX_POINTS;\n            } else {\n                self.points += amount;\n            }\n        }\n\n        // Takes points away. Fails, and changes nothing, if there are too few.\n        pub fn spend(&mut self, cost: u32) -> Result<(), String> {\n            if cost > self.points {\n                return Err(format!(\"{} needs {} more points\", self.name, cost - self.points));\n            }\n            self.points -= cost;\n            Ok(())\n        }\n    }\n\n    pub mod rank {\n        use super::Player;\n\n        // A child module may read the private field of its parent's struct.\n        pub fn title(player: &Player) -> &'static str {\n            match player.points {\n                0..=9 => \"rookie\",\n                10..=49 => \"regular\",\n                50..=99 => \"expert\",\n                _ => \"legend\",\n            }\n        }\n    }\n}\n\nuse scoreboard::{Player, rank};\n\nfn main() {\n    let mut ada = Player::new(\"Ada\");\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n\n    ada.add_points(40);\n    assert_eq!(ada.points(), 40);\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n\n    for cost in [60, 15] {\n        match ada.spend(cost) {\n            Ok(()) => println!(\"spent {cost}\"),\n            Err(e) => println!(\"error: {e}\"),\n        }\n    }\n    assert_eq!(ada.points(), 25);\n\n    ada.add_points(500);\n    assert_eq!(ada.points(), 100);\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n\n    ada.spend(51).unwrap();\n    println!(\"{}: {} points, {}\", ada.name, ada.points(), rank::title(&ada));\n    println!(\"all checks passed\");\n}\n\n#[cfg(test)]\nmod tests {\n    use super::scoreboard::Player;\n\n    #[test]\n    fn points_are_capped() {\n        let mut p = Player::new(\"Bo\");\n        p.add_points(90);\n        p.add_points(90);\n        assert_eq!(p.points(), 100);\n        p.add_points(u32::MAX);\n        assert_eq!(p.points(), 100);\n    }\n\n    #[test]\n    fn spend_fails_when_too_poor() {\n        let mut p = Player::new(\"Bo\");\n        p.add_points(5);\n        assert!(p.spend(6).is_err());\n        assert_eq!(p.points(), 5);\n    }\n}",
     "hints": [
       "Hãy đọc các lỗi biên dịch từ trên xuống và sửa từng lỗi một. Mỗi lỗi nêu tên một mục là riêng tư hoặc không nằm trong phạm vi. main đọc số điểm qua một phương thức, nên trường points vẫn riêng tư.",
       "Hãy thêm một dòng use phía trên main cho Player và rank. Bên trong mod rank, hãy thêm use super::Player; vì use chỉ hoạt động trong module nơi nó được viết. Sau đó thêm pub vào mỗi mục mà một lỗi nêu tên.",

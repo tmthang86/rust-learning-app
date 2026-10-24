@@ -32,9 +32,139 @@
     }
   ],
   "exercise": {
-    "prompt": "The constants, the enum and the From impl are written for you. Replace each todo!() with working code. Do not change main.\n\nfn fmt in impl fmt::Display for OrderError\nThe messages are the exact text between the double quotes:\nBadNumber(e) shows \"not a number (e)\", where e is the ParseIntError, for example \"not a number (invalid digit found in string)\".\nZero shows \"quantity must be at least 1\".\nTooMany(n) shows \"n is more than the limit of 10\", for example \"11 is more than the limit of 10\". Use MAX_QUANTITY for the 10.\n\nfn parse_quantity(text: &str) -> Result<u32, OrderError>\nTurns text into a u32. If parse fails, it gives Err(OrderError::BadNumber(..)). A quantity of 0 gives Err(OrderError::Zero). A quantity above MAX_QUANTITY gives Err(OrderError::TooMany(quantity)). Anything else gives Ok(quantity). Parse the text exactly as given and do not trim it. As with parse, \"+5\" counts as 5, and a space anywhere in the text gives BadNumber.\n\nfn total_price(first: &str, second: &str) -> Result<u32, OrderError>\nChecks both quantities with parse_quantity. If both are fine, it gives Ok((first + second) * UNIT_PRICE). If one is not fine, it gives that error. The first text is checked first.\n\nThe program should print:\n[3] quantity 3\n[10] quantity 10\n[11] error: 11 is more than the limit of 10\n[0] error: quantity must be at least 1\n[-1] error: not a number (invalid digit found in string)\n[abc] error: not a number (invalid digit found in string)\n[] error: not a number (cannot parse integer from empty string)\n2 and 3: total 20\n9 and 9: total 72\n2 and many: error: not a number (invalid digit found in string)\n0 and 3: error: quantity must be at least 1\nexpect gave 5",
+    "prompt": "The constants, the enum and the From impl are written for you. Replace each todo!() with working code. Do not change main.\n\nfn fmt in impl fmt::Display for OrderError\nThe messages are the exact text between the double quotes:\nBadNumber(e) shows \"not a number (e)\", where e is the ParseIntError, for example \"not a number (invalid digit found in string)\".\nZero shows \"quantity must be at least 1\".\nTooMany(n) shows \"n is more than the limit of 10\", for example \"11 is more than the limit of 10\". Use MAX_QUANTITY for the 10.\n\nfn parse_quantity(text: &str) -> Result<u32, OrderError>\nTurns text into a u32. If parse fails, it gives Err(OrderError::BadNumber(..)). A quantity of 0 gives Err(OrderError::Zero). A quantity above MAX_QUANTITY gives Err(OrderError::TooMany(quantity)). Anything else gives Ok(quantity). Parse the text exactly as given and do not trim it. As with parse, \"+5\" counts as 5, and a space anywhere in the text gives BadNumber.\n\nfn total_price(first: &str, second: &str) -> Result<u32, OrderError>\nChecks both quantities with parse_quantity. If both are fine, it gives Ok((first + second) * UNIT_PRICE). If one is not fine, it gives that error. The first text is checked first.\n\nWhen the functions work, main prints:\n[3] quantity 3\n[10] quantity 10\n[11] error: 11 is more than the limit of 10\n[0] error: quantity must be at least 1\n[-1] error: not a number (invalid digit found in string)\n[abc] error: not a number (invalid digit found in string)\n[] error: not a number (cannot parse integer from empty string)\n2 and 3: total 20\n9 and 9: total 72\n2 and many: error: not a number (invalid digit found in string)\n0 and 3: error: quantity must be at least 1\nexpect gave 5",
     "starter": "use std::fmt;\nuse std::num::ParseIntError;\n\nconst MAX_QUANTITY: u32 = 10;\nconst UNIT_PRICE: u32 = 4;\n\n#[derive(Debug, PartialEq)]\nenum OrderError {\n    BadNumber(ParseIntError),\n    Zero,\n    TooMany(u32),\n}\n\n// Already written: this lets ? turn a ParseIntError into an OrderError.\nimpl From<ParseIntError> for OrderError {\n    fn from(e: ParseIntError) -> OrderError {\n        OrderError::BadNumber(e)\n    }\n}\n\nimpl fmt::Display for OrderError {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        todo!()\n    }\n}\n\nfn parse_quantity(text: &str) -> Result<u32, OrderError> {\n    todo!()\n}\n\nfn total_price(first: &str, second: &str) -> Result<u32, OrderError> {\n    todo!()\n}\n\nfn main() {\n    for text in [\"3\", \"10\", \"11\", \"0\", \"-1\", \"abc\", \"\"] {\n        match parse_quantity(text) {\n            Ok(q) => println!(\"[{text}] quantity {q}\"),\n            Err(e) => println!(\"[{text}] error: {e}\"),\n        }\n    }\n\n    for (a, b) in [(\"2\", \"3\"), (\"9\", \"9\"), (\"2\", \"many\"), (\"0\", \"3\")] {\n        match total_price(a, b) {\n            Ok(total) => println!(\"{a} and {b}: total {total}\"),\n            Err(e) => println!(\"{a} and {b}: error: {e}\"),\n        }\n    }\n\n    let five = parse_quantity(\"5\").expect(\"5 is a valid quantity\");\n    println!(\"expect gave {five}\");\n}",
-    "expectedOutput": "[3] quantity 3\n[10] quantity 10\n[11] error: 11 is more than the limit of 10\n[0] error: quantity must be at least 1\n[-1] error: not a number (invalid digit found in string)\n[abc] error: not a number (invalid digit found in string)\n[] error: not a number (cannot parse integer from empty string)\n2 and 3: total 20\n9 and 9: total 72\n2 and many: error: not a number (invalid digit found in string)\n0 and 3: error: quantity must be at least 1\nexpect gave 5",
+    "tests": [
+      {
+        "id": "message-zero",
+        "label": "Zero shows \"quantity must be at least 1\"",
+        "code": "check_eq!(OrderError::Zero.to_string(), \"quantity must be at least 1\");"
+      },
+      {
+        "id": "message-too-many",
+        "label": "TooMany(11) shows \"11 is more than the limit of 10\"",
+        "code": "check_eq!(OrderError::TooMany(11).to_string(), \"11 is more than the limit of 10\");"
+      },
+      {
+        "id": "message-bad-number",
+        "label": "BadNumber shows \"not a number\" with the parse error",
+        "code": "check_eq!(OrderError::BadNumber(\"x\".parse::<u32>().unwrap_err()).to_string(), \"not a number (invalid digit found in string)\");"
+      },
+      {
+        "id": "parse-valid",
+        "label": "parse_quantity accepts 3",
+        "code": "check_eq!(parse_quantity(\"3\"), Ok(3));"
+      },
+      {
+        "id": "parse-too-many",
+        "label": "parse_quantity rejects 11 as too many",
+        "code": "check_eq!(parse_quantity(\"11\"), Err(OrderError::TooMany(11)));"
+      },
+      {
+        "id": "parse-zero",
+        "label": "parse_quantity rejects 0",
+        "code": "check_eq!(parse_quantity(\"0\"), Err(OrderError::Zero));"
+      },
+      {
+        "id": "parse-not-a-number",
+        "label": "parse_quantity rejects \"abc\" as a bad number",
+        "code": "check_eq!(parse_quantity(\"abc\"), Err(OrderError::BadNumber(\"abc\".parse::<u32>().unwrap_err())));"
+      },
+      {
+        "id": "total-valid",
+        "label": "total_price of \"2\" and \"3\" is 20",
+        "code": "check_eq!(total_price(\"2\", \"3\"), Ok(20));"
+      },
+      {
+        "id": "total-error",
+        "label": "total_price gives the error of a bad quantity",
+        "code": "check_eq!(total_price(\"0\", \"3\"), Err(OrderError::Zero));"
+      },
+      {
+        "id": "message-from-parse",
+        "hidden": true,
+        "label": "Messages of errors made by parse_quantity",
+        "code": "check_eq!(parse_quantity(\"0\").unwrap_err().to_string(), \"quantity must be at least 1\");\ncheck_eq!(parse_quantity(\"11\").unwrap_err().to_string(), \"11 is more than the limit of 10\");\ncheck_eq!(parse_quantity(\"abc\").unwrap_err().to_string(), \"not a number (invalid digit found in string)\");"
+      },
+      {
+        "id": "message-too-many-other",
+        "hidden": true,
+        "label": "Another TooMany message",
+        "code": "check_eq!(OrderError::TooMany(25).to_string(), \"25 is more than the limit of 10\");\ncheck_eq!(OrderError::TooMany(4294967295).to_string(), \"4294967295 is more than the limit of 10\");"
+      },
+      {
+        "id": "message-bad-number-empty",
+        "hidden": true,
+        "label": "BadNumber message for empty text",
+        "code": "check_eq!(OrderError::BadNumber(\"\".parse::<u32>().unwrap_err()).to_string(), \"not a number (cannot parse integer from empty string)\");"
+      },
+      {
+        "id": "parse-limits-ok",
+        "hidden": true,
+        "label": "1 and 10 are the allowed edges",
+        "code": "check_eq!(parse_quantity(\"1\"), Ok(1));\ncheck_eq!(parse_quantity(\"10\"), Ok(10));\ncheck_eq!(parse_quantity(\"7\"), Ok(7));"
+      },
+      {
+        "id": "parse-above-limit",
+        "hidden": true,
+        "label": "Anything above 10 is too many",
+        "code": "check_eq!(parse_quantity(\"12\"), Err(OrderError::TooMany(12)));\ncheck_eq!(parse_quantity(\"1000\"), Err(OrderError::TooMany(1000)));\ncheck_eq!(parse_quantity(\"4294967295\"), Err(OrderError::TooMany(4294967295)));"
+      },
+      {
+        "id": "parse-negative",
+        "hidden": true,
+        "label": "A negative number is a bad number",
+        "code": "check_eq!(parse_quantity(\"-1\"), Err(OrderError::BadNumber(\"-1\".parse::<u32>().unwrap_err())));\ncheck_eq!(parse_quantity(\"-5\"), Err(OrderError::BadNumber(\"-5\".parse::<u32>().unwrap_err())));"
+      },
+      {
+        "id": "parse-empty",
+        "hidden": true,
+        "label": "Empty text is a bad number",
+        "code": "check_eq!(parse_quantity(\"\"), Err(OrderError::BadNumber(\"\".parse::<u32>().unwrap_err())));"
+      },
+      {
+        "id": "parse-no-trim",
+        "hidden": true,
+        "label": "Spaces are not trimmed",
+        "code": "check_eq!(parse_quantity(\" 5\"), Err(OrderError::BadNumber(\" 5\".parse::<u32>().unwrap_err())));\ncheck_eq!(parse_quantity(\"5 \"), Err(OrderError::BadNumber(\"5 \".parse::<u32>().unwrap_err())));\ncheck_eq!(parse_quantity(\"1 0\"), Err(OrderError::BadNumber(\"1 0\".parse::<u32>().unwrap_err())));"
+      },
+      {
+        "id": "parse-plus-sign",
+        "hidden": true,
+        "label": "\"+5\" counts as 5",
+        "code": "check_eq!(parse_quantity(\"+5\"), Ok(5));\ncheck_eq!(parse_quantity(\"007\"), Ok(7));"
+      },
+      {
+        "id": "parse-too-big-number",
+        "hidden": true,
+        "label": "A number too big for u32 is a bad number",
+        "code": "check_eq!(parse_quantity(\"4294967296\"), Err(OrderError::BadNumber(\"4294967296\".parse::<u32>().unwrap_err())));"
+      },
+      {
+        "id": "total-other-values",
+        "hidden": true,
+        "label": "Other quantities use the unit price",
+        "code": "check_eq!(total_price(\"4\", \"7\"), Ok(44));\ncheck_eq!(total_price(\"1\", \"1\"), Ok(8));\ncheck_eq!(total_price(\"9\", \"9\"), Ok(72));"
+      },
+      {
+        "id": "total-max-quantities",
+        "hidden": true,
+        "label": "Both quantities at the limit",
+        "code": "check_eq!(total_price(\"10\", \"10\"), Ok(80));"
+      },
+      {
+        "id": "total-second-bad",
+        "hidden": true,
+        "label": "A bad second quantity gives its error",
+        "code": "check_eq!(total_price(\"2\", \"many\"), Err(OrderError::BadNumber(\"many\".parse::<u32>().unwrap_err())));\ncheck_eq!(total_price(\"2\", \"0\"), Err(OrderError::Zero));\ncheck_eq!(total_price(\"3\", \"11\"), Err(OrderError::TooMany(11)));"
+      },
+      {
+        "id": "total-first-checked-first",
+        "hidden": true,
+        "label": "The first text is checked first",
+        "code": "check_eq!(total_price(\"0\", \"x\"), Err(OrderError::Zero));\ncheck_eq!(total_price(\"x\", \"0\"), Err(OrderError::BadNumber(\"x\".parse::<u32>().unwrap_err())));\ncheck_eq!(total_price(\"11\", \"0\"), Err(OrderError::TooMany(11)));"
+      }
+    ],
     "solution": "use std::fmt;\nuse std::num::ParseIntError;\n\nconst MAX_QUANTITY: u32 = 10;\nconst UNIT_PRICE: u32 = 4;\n\n#[derive(Debug, PartialEq)]\nenum OrderError {\n    BadNumber(ParseIntError),\n    Zero,\n    TooMany(u32),\n}\n\nimpl From<ParseIntError> for OrderError {\n    fn from(e: ParseIntError) -> OrderError {\n        OrderError::BadNumber(e)\n    }\n}\n\nimpl fmt::Display for OrderError {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        match self {\n            OrderError::BadNumber(e) => write!(f, \"not a number ({e})\"),\n            OrderError::Zero => write!(f, \"quantity must be at least 1\"),\n            OrderError::TooMany(n) => write!(f, \"{n} is more than the limit of {MAX_QUANTITY}\"),\n        }\n    }\n}\n\nfn parse_quantity(text: &str) -> Result<u32, OrderError> {\n    let quantity: u32 = text.parse()?;\n    if quantity == 0 {\n        return Err(OrderError::Zero);\n    }\n    if quantity > MAX_QUANTITY {\n        return Err(OrderError::TooMany(quantity));\n    }\n    Ok(quantity)\n}\n\nfn total_price(first: &str, second: &str) -> Result<u32, OrderError> {\n    let a = parse_quantity(first)?;\n    let b = parse_quantity(second)?;\n    Ok((a + b) * UNIT_PRICE)\n}\n\nfn main() {\n    for text in [\"3\", \"10\", \"11\", \"0\", \"-1\", \"abc\", \"\"] {\n        match parse_quantity(text) {\n            Ok(q) => println!(\"[{text}] quantity {q}\"),\n            Err(e) => println!(\"[{text}] error: {e}\"),\n        }\n    }\n\n    for (a, b) in [(\"2\", \"3\"), (\"9\", \"9\"), (\"2\", \"many\"), (\"0\", \"3\")] {\n        match total_price(a, b) {\n            Ok(total) => println!(\"{a} and {b}: total {total}\"),\n            Err(e) => println!(\"{a} and {b}: error: {e}\"),\n        }\n    }\n\n    let five = parse_quantity(\"5\").expect(\"5 is a valid quantity\");\n    println!(\"expect gave {five}\");\n}",
     "hints": [
       "fmt is a match on self with a write! in each arm. parse_quantity checks the parsed number with if. total_price calls parse_quantity twice. The From impl lets ? change the error type.",
