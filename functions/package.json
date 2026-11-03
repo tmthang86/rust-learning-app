@@ -13,6 +13,6 @@
     "firebase-functions": "7.4.0"
   },
   "devDependencies": {
-    "firebase-tools": "15.34.0"
+    "firebase-tools": "15.34.2"
   }
 }
