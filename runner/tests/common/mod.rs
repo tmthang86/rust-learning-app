@@ -61,6 +61,16 @@ pub fn grade_request_with(code: &str, tests: Value, headers: &[(&str, &str)]) ->
     .unwrap()
 }
 
+/// A `POST /grade` request that names a harness version.
+pub fn grade_request_harness(code: &str, tests: Value, harness: Value) -> Request<Body> {
+    Request::post("/grade")
+        .header("content-type", "application/json")
+        .body(Body::from(
+            json!({ "code": code, "tests": tests, "harness": harness }).to_string(),
+        ))
+        .unwrap()
+}
+
 pub async fn send(app: Router, req: Request<Body>) -> (StatusCode, HeaderMap, Value) {
     let res = app.oneshot(req).await.unwrap();
     let status = res.status();

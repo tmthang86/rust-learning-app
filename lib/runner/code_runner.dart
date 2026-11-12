@@ -51,6 +51,15 @@ enum RunIssueKind {
 
   /// `/grade` refused the tests (`tests_invalid`).
   testsInvalid,
+
+  /// `/grade` doesn't speak this app's harness version
+  /// (`harness_unsupported`): the app is too old (or too new) for the runner.
+  appNeedsUpdate,
+
+  /// The runner already has a run from this client in progress
+  /// (`client_busy`, HTTP 429). Not [rateLimited]: waiting for the first run
+  /// to finish is enough.
+  runInProgress,
 }
 
 class RunIssue {
@@ -91,6 +100,8 @@ class RunIssue {
     RunIssueKind.unverifiedOther => l10n.runIssueUnverifiedOther,
     RunIssueKind.runnerNeedsUpdate => l10n.runIssueRunnerNeedsUpdate,
     RunIssueKind.testsInvalid => l10n.runIssueTestsInvalid,
+    RunIssueKind.appNeedsUpdate => l10n.runIssueAppNeedsUpdate,
+    RunIssueKind.runInProgress => l10n.runIssueRunInProgress,
   };
 }
 
@@ -417,11 +428,17 @@ class HttpCodeRunner implements CodeRunner {
     unavailable: RunResult.unavailableFor,
   );
 
+  /// The `/grade` contract version this app's tests are written for, sent
+  /// as `harness`. Bump it only together with the runner's
+  /// `SUPPORTED_HARNESS` (see `runner/docs/production-design.md`).
+  static const harnessVersion = 1;
+
   @override
   Future<GradeResult> grade(String source, List<ExerciseTest> tests) =>
       _request(
         'grade',
         {
+          'harness': harnessVersion,
           'code': source,
           'tests': [for (final t in tests) t.toRequestJson()],
         },
@@ -535,6 +552,9 @@ class HttpCodeRunner implements CodeRunner {
         _errorCode(response.body) == 'tests_invalid') {
       return const RunIssue(RunIssueKind.testsInvalid);
     }
+    if (status == 400 && _errorCode(response.body) == 'harness_unsupported') {
+      return const RunIssue(RunIssueKind.appNeedsUpdate);
+    }
     switch (status) {
       case 401:
         return _unverifiedIssue(
@@ -547,8 +567,12 @@ class HttpCodeRunner implements CodeRunner {
       case 413:
         return const RunIssue(RunIssueKind.tooLong);
       case 429:
-        if (_errorCode(response.body) == 'rate_limited') {
+        final code = _errorCode(response.body);
+        if (code == 'rate_limited') {
           return RunIssue(RunIssueKind.rateLimited, seconds: wait);
+        }
+        if (code == 'client_busy') {
+          return RunIssue(RunIssueKind.runInProgress, seconds: wait);
         }
         return RunIssue(RunIssueKind.busy, seconds: wait);
       case 503:

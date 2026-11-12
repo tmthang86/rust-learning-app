@@ -21,6 +21,7 @@ use crate::AppState;
 use crate::app_check::AuthError;
 use crate::client_ip::{IpSource, client_ip};
 use crate::errors::ApiError;
+use crate::inflight;
 use crate::telemetry::{Outcome, RunInfo};
 
 /// The request header carrying the App Check token.
@@ -90,10 +91,13 @@ pub async fn gate(
         .get(APP_CHECK_HEADER)
         .map(|v| v.to_str().map(str::to_string).ok());
     let (response, platform) = match admit(&state, token, ip).await {
-        Ok(caller) => {
+        Ok((caller, place)) => {
             let platform = caller.platform;
             req.extensions_mut().insert(caller);
-            (next.run(req).await, platform)
+            let response = next.run(req).await;
+            // The place is held until the answer exists, then given back.
+            drop(place);
+            (response, platform)
         }
         Err(e) => (e.into_response(), "none"),
     };
@@ -106,7 +110,8 @@ fn first_ipv6(logged: &AtomicBool, ip: IpAddr) -> bool {
     ip.is_ipv6() && !logged.swap(true, Ordering::Relaxed)
 }
 
-/// Steps 1-3: IP buckets, App Check, token buckets.
+/// Steps 1-4: IP buckets, App Check, token buckets, per-client in-flight
+/// cap. The returned guard holds the client's place until it is dropped.
 ///
 /// `token` is the App Check header: absent, present but not text (`None`
 /// inside), or the token.
@@ -114,18 +119,25 @@ async fn admit(
     state: &AppState,
     token: Option<Option<String>>,
     ip: IpAddr,
-) -> Result<Caller, ApiError> {
+) -> Result<(Caller, inflight::Guard), ApiError> {
     state
         .rate
         .check_ip(ip)
         .map_err(|r| ApiError::rate_limited(r.retry_after, r.limiter))?;
 
     let Some(app_check) = &state.app_check else {
-        return Ok(Caller {
-            app_id: None,
-            platform: "none",
-            token_key: None,
-        });
+        let place = state
+            .inflight
+            .try_acquire(ip, None)
+            .map_err(ApiError::client_busy)?;
+        return Ok((
+            Caller {
+                app_id: None,
+                platform: "none",
+                token_key: None,
+            },
+            place,
+        ));
     };
     let token = token
         .ok_or_else(|| ApiError::app_check_missing().with_info(|i| i.auth_error = Some("missing")))?
@@ -147,11 +159,18 @@ async fn admit(
         .rate
         .check_token(&key)
         .map_err(|r| ApiError::rate_limited(r.retry_after, r.limiter))?;
-    Ok(Caller {
-        app_id: Some(verified.app_id),
-        platform: verified.platform,
-        token_key: Some(key),
-    })
+    let place = state
+        .inflight
+        .try_acquire(ip, Some(key))
+        .map_err(ApiError::client_busy)?;
+    Ok((
+        Caller {
+            app_id: Some(verified.app_id),
+            platform: verified.platform,
+            token_key: Some(key),
+        },
+        place,
+    ))
 }
 
 /// Counts the outcome and writes the `run_finished` line.

@@ -94,6 +94,12 @@ pub struct Config {
     pub limits: Limits,
     pub max_jobs: usize,
     pub max_queued: usize,
+    /// Most requests one client IP or one App Check token may have running
+    /// or queued at once (`RUNNER_MAX_INFLIGHT_PER_CLIENT`).
+    pub max_inflight_per_client: usize,
+    /// Per-IP cap for requests with a verified App Check token
+    /// (`RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP`).
+    pub max_inflight_per_verified_ip: usize,
     pub queue_timeout: Duration,
     pub sandbox: SandboxChoice,
     /// `Some` when App Check is required.
@@ -183,6 +189,19 @@ impl<'a> Parser<'a> {
         if max_queued > 1000 {
             self.err("RUNNER_MAX_QUEUED must be at most 1000");
         }
+        let max_inflight_per_client: usize = self.num("RUNNER_MAX_INFLIGHT_PER_CLIENT", 1);
+        if !(1..=100).contains(&max_inflight_per_client) {
+            self.err("RUNNER_MAX_INFLIGHT_PER_CLIENT must be between 1 and 100");
+        }
+        let max_inflight_per_verified_ip: usize =
+            self.num("RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP", 4);
+        if !(1..=1000).contains(&max_inflight_per_verified_ip)
+            || max_inflight_per_verified_ip < max_inflight_per_client
+        {
+            self.err(
+                "RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP must be between 1 and 1000 and at least RUNNER_MAX_INFLIGHT_PER_CLIENT",
+            );
+        }
         let queue_secs: u64 = self.num("RUNNER_QUEUE_TIMEOUT_SECS", 10);
         if queue_secs > 600 {
             self.err("RUNNER_QUEUE_TIMEOUT_SECS must be at most 600");
@@ -223,6 +242,8 @@ impl<'a> Parser<'a> {
             limits,
             max_jobs,
             max_queued,
+            max_inflight_per_client,
+            max_inflight_per_verified_ip,
             queue_timeout: Duration::from_secs(queue_secs),
             sandbox,
             app_check,
@@ -619,6 +640,37 @@ mod tests {
     }
 
     #[test]
+    fn inflight_caps_are_validated() {
+        let base = production();
+        for (k, v) in [
+            ("RUNNER_MAX_INFLIGHT_PER_CLIENT", "0"),
+            ("RUNNER_MAX_INFLIGHT_PER_CLIENT", "101"),
+            ("RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP", "0"),
+            ("RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP", "1001"),
+        ] {
+            assert!(
+                errors_of(&with(&base, &[(k, v)])).contains("RUNNER_MAX_INFLIGHT"),
+                "{k}={v}"
+            );
+        }
+        // The IP cap may not be lower than the per-client cap.
+        let e = errors_of(&with(&base, &[("RUNNER_MAX_INFLIGHT_PER_CLIENT", "5")]));
+        assert!(e.contains("RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP"), "{e}");
+        let ok = Config::from_env_map(&with(
+            &base,
+            &[
+                ("RUNNER_MAX_INFLIGHT_PER_CLIENT", "2"),
+                ("RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP", "6"),
+            ],
+        ))
+        .unwrap();
+        assert_eq!(
+            (ok.max_inflight_per_client, ok.max_inflight_per_verified_ip),
+            (2, 6)
+        );
+    }
+
+    #[test]
     fn valid_production_config_is_accepted() {
         let cfg = Config::from_env_map(&map(&production())).unwrap();
         assert!(cfg.is_production());
@@ -630,6 +682,8 @@ mod tests {
         assert_eq!(cfg.rate.token.per_min, 20);
         assert_eq!(cfg.rate.ip.per_hour, 3000);
         assert_eq!(cfg.max_queued, 16);
+        assert_eq!(cfg.max_inflight_per_client, 1);
+        assert_eq!(cfg.max_inflight_per_verified_ip, 4);
     }
 
     #[test]

@@ -826,3 +826,139 @@ async fn an_ipv6_client_is_noted_once_and_still_served() {
     assert_eq!(status, StatusCode::BAD_REQUEST);
     assert!(st.ipv6_logged.load(Ordering::Relaxed));
 }
+
+// --- One running-or-queued request per client ---
+
+/// Waits until `n` requests are queued for a slot.
+async fn wait_for_waiting(st: &AppState, n: usize) {
+    for _ in 0..200 {
+        if st.waiting.load(Ordering::SeqCst) == n {
+            return;
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    panic!("expected {n} waiting requests");
+}
+
+/// A state whose job slots are taken, so an admitted request queues.
+fn full_state(mut st: AppState, cap: usize) -> Arc<AppState> {
+    st.slots = Semaphore::new(0);
+    st.queue_timeout = Duration::from_secs(10);
+    st.inflight = rust_runner::inflight::InFlight::new(cap);
+    Arc::new(st)
+}
+
+#[tokio::test]
+async fn a_second_request_from_one_token_gets_429_while_the_first_waits() {
+    let st = full_state(secured_state().await, 1);
+    let token = valid_token();
+    let first = tokio::spawn({
+        let (st, token) = (st.clone(), token.clone());
+        async move { send(router(st, "198.51.100.1"), with_token(HELLO, &token)).await }
+    });
+    wait_for_waiting(&st, 1).await;
+
+    // Same token from another IP: the token cap says no, at once.
+    let started = Instant::now();
+    let (status, headers, body) = send(
+        router(st.clone(), "198.51.100.2"),
+        with_token(HELLO, &token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::TOO_MANY_REQUESTS, "{body}");
+    assert_eq!(body["code"], "client_busy");
+    assert_eq!(headers["retry-after"], "2");
+    assert!(started.elapsed() < Duration::from_secs(2), "must not queue");
+    assert_eq!(st.waiting.load(Ordering::SeqCst), 1, "only the first waits");
+
+    // The same IP is refused too, whatever the token.
+    let (status, _, body) = send(
+        router(st.clone(), "198.51.100.1"),
+        with_token(HELLO, &token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::TOO_MANY_REQUESTS, "{body}");
+
+    // A slot frees up: the first request finishes and gives its place back.
+    st.slots.add_permits(1);
+    let (status, _, body) = first.await.unwrap();
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let (status, _, body) = send(router(st, "198.51.100.2"), with_token(HELLO, &token)).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+}
+
+#[tokio::test]
+async fn learners_with_different_tokens_can_share_one_ip() {
+    // Two verified tokens behind one address (a carrier NAT): both queue.
+    let mut st = secured_state().await;
+    st.slots = Semaphore::new(0);
+    st.queue_timeout = Duration::from_secs(10);
+    st.inflight = rust_runner::inflight::InFlight::with_verified_ip_cap(1, 2);
+    let st = Arc::new(st);
+    let (t1, t2) = (token_for(APP_ID), token_for(WEB_APP_ID));
+    let spawn_run = |token: String| {
+        let st = st.clone();
+        tokio::spawn(
+            async move { send(router(st, "198.51.100.1"), with_token(HELLO, &token)).await },
+        )
+    };
+    let first = spawn_run(t1.clone());
+    wait_for_waiting(&st, 1).await;
+    let second = spawn_run(t2.clone());
+    wait_for_waiting(&st, 2).await;
+    // Each token holds one place, even from another address...
+    let (status, _, body) = send(router(st.clone(), "198.51.100.2"), with_token(HELLO, &t1)).await;
+    assert_eq!(status, StatusCode::TOO_MANY_REQUESTS, "{body}");
+    assert_eq!(body["code"], "client_busy");
+    // ...and the address is full for verified requests (checked by the IP
+    // cap before the token, so a repeated token shows the IP limit).
+    let (status, _, body) = send(router(st.clone(), "198.51.100.1"), with_token(HELLO, &t1)).await;
+    assert_eq!(status, StatusCode::TOO_MANY_REQUESTS, "{body}");
+    assert_eq!(body["code"], "client_busy");
+    st.slots.add_permits(2);
+    assert_eq!(first.await.unwrap().0, StatusCode::OK);
+    assert_eq!(second.await.unwrap().0, StatusCode::OK);
+}
+
+#[tokio::test]
+async fn the_ip_cap_works_without_app_check_and_lets_other_ips_through() {
+    let st = full_state(AppState::for_tests(Sandbox::Local, limits()), 1);
+    let first = tokio::spawn({
+        let st = st.clone();
+        async move { send(router(st, "198.51.100.1"), run_request(HELLO)).await }
+    });
+    wait_for_waiting(&st, 1).await;
+    let (status, _, body) = send(router(st.clone(), "198.51.100.1"), run_request(HELLO)).await;
+    assert_eq!(status, StatusCode::TOO_MANY_REQUESTS, "{body}");
+    assert_eq!(body["code"], "client_busy");
+    // Another client is not affected: it queues behind the first.
+    let second = tokio::spawn({
+        let st = st.clone();
+        async move { send(router(st, "198.51.100.9"), run_request(HELLO)).await }
+    });
+    wait_for_waiting(&st, 2).await;
+    st.slots.add_permits(2);
+    assert_eq!(first.await.unwrap().0, StatusCode::OK);
+    assert_eq!(second.await.unwrap().0, StatusCode::OK);
+}
+
+#[tokio::test]
+async fn a_client_that_gives_up_while_queued_gives_its_place_back() {
+    let st = full_state(AppState::for_tests(Sandbox::Local, limits()), 1);
+    let first = tokio::spawn({
+        let st = st.clone();
+        async move { send(router(st, "198.51.100.1"), run_request(HELLO)).await }
+    });
+    wait_for_waiting(&st, 1).await;
+    first.abort();
+    let _ = first.await;
+    wait_for_waiting(&st, 0).await;
+    assert_eq!(
+        st.inflight.active_ips(),
+        0,
+        "the dropped request left a place held"
+    );
+    st.slots.add_permits(1);
+    let (status, _, _) = send(router(st, "198.51.100.1"), run_request(HELLO)).await;
+    assert_eq!(status, StatusCode::OK);
+}

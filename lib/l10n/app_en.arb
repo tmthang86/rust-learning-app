@@ -468,5 +468,7 @@
   "testReasonHarness": "The tests could not be built with your code. Please try again, or start from the starter.",
   "testReasonUnknown": "The program stopped unexpectedly.",
   "runIssueRunnerNeedsUpdate": "The code runner needs an update. Try again later.",
-  "runIssueTestsInvalid": "This exercise couldn't be checked. Please update the app."
+  "runIssueTestsInvalid": "This exercise couldn't be checked. Please update the app.",
+  "runIssueAppNeedsUpdate": "The code runner can't check this exercise with this version of the app. Please update the app.",
+  "runIssueRunInProgress": "A run is already in progress. Wait for it to finish, then try again."
 }

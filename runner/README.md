@@ -123,7 +123,7 @@ The code goes in over stdin, so nothing is mounted from the host.
 | Output | 64 KB per stream, enforced by the server; the job is killed past it |
 | Leftovers | containers are removed on timeout, overflow or client disconnect; a watchdog and a startup sweep remove any missed ones |
 | Code size | 64 KB |
-| Concurrency | `RUNNER_MAX_JOBS` jobs at once (4 by default); up to `RUNNER_MAX_QUEUED` (16) wait up to 10 s, the rest get 503 at once |
+| Concurrency | `RUNNER_MAX_JOBS` jobs at once (4 by default); up to `RUNNER_MAX_QUEUED` (16) wait up to 10 s, the rest get 503 at once; one token (or one IP without a verified token) has at most `RUNNER_MAX_INFLIGHT_PER_CLIENT` (1) running or queued, and one IP with verified tokens at most `RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP` (4), the next gets 429 `client_busy` |
 
 **Why the program has its own memory cap.** Under gVisor, Docker's `--memory`
 kill is nondeterministic: sometimes only the program dies, sometimes the whole
@@ -193,6 +193,8 @@ once (exit code 2).
 | `RUNNER_LIMIT_MAX_KEYS` | 50000 | Keys each limiter keeps (1000 to 1000000). When full, new keys get 429 and existing ones keep working. |
 | `RUNNER_MAX_JOBS` | 4 | Jobs running at once. |
 | `RUNNER_MAX_QUEUED` | 16 | Requests allowed to wait for a slot (0 to 1000); more get 503 at once. |
+| `RUNNER_MAX_INFLIGHT_PER_CLIENT` | 1 | Requests one App Check token, or one IP without a verified token, may have running or queued at once (1 to 100). More get `429 client_busy` with `Retry-After: 2`. |
+| `RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP` | 4 | The same cap per IP for requests with a verified App Check token (at least the value above), so learners behind one carrier-grade NAT or a school network can run side by side. Each token still holds one place. **Residual risk:** with the defaults, one address with two valid tokens can hold every worker (`RUNNER_MAX_JOBS` is 2), and other learners then get 503 `busy` after the queue timeout; only the per-IP rate buckets limit rotating tokens. The runner warns at startup when this value is at least `RUNNER_MAX_JOBS`. Watch the `inflight_ip` limiter and 503 counts in the logs. |
 | `RUNNER_QUEUE_TIMEOUT_SECS` | 10 | How long a queued request waits (at most 600). |
 | `RUNNER_COMPILE_TIMEOUT_SECS` / `RUNNER_RUN_TIMEOUT_SECS` / `RUNNER_JOB_TIMEOUT_SECS` | 10 / 5 / 20 | |
 | `RUNNER_MEMORY_MB` | 512 | At least tmpfs + 192 MB. |
@@ -236,7 +238,13 @@ compiler output from failed starts.
   of memory). Settings: `RUNNER_DOCKER_RUNTIME` (e.g. `runsc`), `RUNNER_IMAGE`
   (default `rust-runner-sandbox`) and `RUNNER_TEST_CONTAINER_PREFIX` (name
   prefix of every container the tests start, default `rr-test-<random>-`, so a
-  script can check for leftovers of its own run).
+  script can check for leftovers of its own run). Two of these tests read the
+  lesson files (`docker_grade_output_of_lessons` grades the real u3-l1, u7-l4
+  and u10-l2 solutions, `cost_grade_against_run_on_lesson_solutions` is a
+  benchmark): they find them through `RUNNER_LESSONS_DIR`, else
+  `../assets/content/lessons`, and fail if neither exists. A prebuilt test
+  binary on a host without the repo (the VM) must skip them: `deploy/smoke.sh`
+  does.
 
 ## Building the image
 
