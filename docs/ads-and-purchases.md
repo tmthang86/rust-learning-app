@@ -161,10 +161,16 @@ UMP flow stay as they are; this only adds a flag.
   open (Decree 356/2025/NĐ-CP, the implementing decree, was not read).
 - Google's consent tool (UMP) offers messages for the EEA, UK, Switzerland
   and US states, not Vietnam
-  ([AdMob help](https://support.google.com/admob/answer/10107561)), so
+  ([AdMob help](https://support.google.com/admob/answer/10114020)), so
   Vietnamese adults would otherwise get personalised ads without any
-  consent. Not asking, and sending non-personalised requests, avoids the
-  consent requirement for behavioural ads.
+  consent. (Google's European regulations message can be targeted
+  "Everywhere"; a GDPR-style form for Vietnam is an option for the legal
+  review.) Non-personalised requests remove the behavioural or targeted
+  processing (Art. 28 on tracking and targeted ads). They do **not** by
+  themselves meet the general consent rule or the right to stop ads:
+  Google says non-personalised ads still use cookies or mobile ad
+  identifiers for frequency capping and aggregated reporting
+  ([AdMob help](https://support.google.com/admob/answer/7676680)).
 
 **How.** `AdAudience.forAge(group, vietnam: true)` sets `nonPersonalized`;
 `adRequestFor` (lib/monetization/google_ads.dart) turns it into
@@ -175,7 +181,10 @@ UMP flow stay as they are; this only adds a flag.
 (lib/monetization/ad_region.dart): any preferred device locale with country
 `VN`, or Vietnamese as the first language.
 
-**Known gaps.** There is no server-side IP lookup, and Dart has no portable
+**Known gaps.** The only in-app way to stop ads is to buy "Remove ads"
+(no other opt-out of ads); and it is open whether the app or Google is the
+"advertising service business" Art. 28 regulates. Both go to the legal
+review, which stays a launch blocker. There is no server-side IP lookup, and Dart has no portable
 SIM or Play Store country API, so a person from Vietnam with a non-Vietnamese
 device locale (a traveller, or an English-language phone) still gets normal
 requests. The flag is a request hint; Google may still use contextual data.

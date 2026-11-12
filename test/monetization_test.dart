@@ -234,10 +234,16 @@ void main() {
     test('device locales that count as Vietnam', () {
       expect(looksLikeVietnam(const [Locale('vi', 'VN')]), isTrue);
       expect(looksLikeVietnam(const [Locale('en', 'VN')]), isTrue);
-      expect(looksLikeVietnam(const [Locale('en', 'US'), Locale('vi', 'VN')]), isTrue);
+      expect(
+        looksLikeVietnam(const [Locale('en', 'US'), Locale('vi', 'VN')]),
+        isTrue,
+      );
       expect(looksLikeVietnam(const [Locale('vi')]), isTrue);
       expect(looksLikeVietnam(const [Locale('en', 'US')]), isFalse);
-      expect(looksLikeVietnam(const [Locale('en', 'US'), Locale('vi')]), isFalse);
+      expect(
+        looksLikeVietnam(const [Locale('en', 'US'), Locale('vi')]),
+        isFalse,
+      );
       expect(looksLikeVietnam(const []), isFalse);
     });
 

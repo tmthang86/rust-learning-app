@@ -7,7 +7,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-import '../data/age.dart';
 import 'ad_banner.dart';
 import 'ad_config.dart';
 import 'ads_service.dart';
@@ -38,7 +37,13 @@ class GoogleAdsService implements AdsService {
     : ids = ids ?? (Platform.isIOS ? AdUnitIds.ios : AdUnitIds.android);
 
   final AdUnitIds ids;
-  AdAudience _audience = AdAudience.forAge(AgeGroup.under13);
+  // Safe fallback until initialize(): child settings, non-personalised.
+  AdAudience _audience = const AdAudience(
+    treatment: AdAgeTreatment.child,
+    maxAdContentRating: 'G',
+    underAgeOfConsent: true,
+    nonPersonalized: true,
+  );
   InterstitialAd? _interstitial;
   bool _loadingInterstitial = false;
 

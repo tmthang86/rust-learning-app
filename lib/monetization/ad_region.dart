@@ -8,7 +8,7 @@ import 'dart:ui' show Locale, PlatformDispatcher;
 /// personal data is processed for advertising, with a way to refuse
 /// (Art. 28); it also covers foreign organisations that process the data of
 /// Vietnamese citizens (Art. 1(2)). Google's consent tool (UMP) has no
-/// consent message for Vietnam, so no consent is ever collected there. The
+/// message type for Vietnam's law, so no such consent is collected there. The
 /// app therefore never asks for personalised ads in Vietnam.
 ///
 /// How: the app has no server-side IP lookup, and Dart has no portable API

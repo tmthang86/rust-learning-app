@@ -37,10 +37,12 @@ Google account and an Apple developer account.
    the app's learners and the runner host are. **The location cannot be
    changed after the database is created**
    ([Firestore locations](https://firebase.google.com/docs/firestore/locations):
-   "you cannot change the location after you set it"), and the default
-   project location is shared with Cloud Storage and other services. The
-   Cloud Function in step 7 must be deployed to the same region. The rules and the cleanup function are deployed
-   together in step 7.
+   "once you provision a database instance, you cannot change its location
+   setting"), so choose before pressing Create. The cleanup function in
+   step 7 deploys to us-central1 by default (functions/index.js), which
+   works with any Firestore location; to keep it near the data, add
+   `.region('asia-southeast1')` before `.auth` there. The rules and the
+   cleanup function are deployed together in step 7.
 5. **Add your web domain** to Authentication → Settings → Authorized domains
    once the web app has a real address.
 6. **Google Play account deletion URL.** Play Console → App content → Data
