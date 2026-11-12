@@ -134,7 +134,8 @@
         "Truyền word sẽ move nó, nên main không thể in nó sau đó",
         "Một hàm không bao giờ có thể nhận một String"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Truyền word theo giá trị sẽ di chuyển (move) nó vào hàm, và String đã bị move thì không dùng lại được, nên main không in nó sau đó được. clone truyền một bản sao và main giữ bản gốc. Clone làm chậm đi chứ không nhanh hơn, và hàm hoàn toàn nhận được String."
     },
     {
       "question": "Sau let mut score = start; trong đó start là một u32, bạn có còn dùng được start không?",
@@ -143,7 +144,8 @@
         "Không, nó đã bị move",
         "Chỉ khi bạn thêm .clone()"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Số nguyên như u32 là Copy: gán nó sẽ tạo một bản sao và giá trị gốc vẫn dùng được. Kiểu không phải Copy, như String, sẽ bị move, và ở đây không cần clone."
     },
     {
       "question": "&s[..3] có kiểu gì khi s là một String?",
@@ -152,7 +154,8 @@
         "&String",
         "&str"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Cắt một String bằng &s[..3] cho ra một chuỗi slice, tức là &str. Nó mượn ba byte đầu của s thay vì sao chép, nên nó không phải String, cũng không phải &String."
     }
   ]
 }

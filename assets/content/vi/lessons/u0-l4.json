@@ -29,17 +29,20 @@
     {
       "question": "1..=3 bao gồm những số nào?",
       "options": ["1 và 3", "1, 2 và 3", "0, 1, 2 và 3"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Trong 1..=3, dấu = nghĩa là số cuối được tính, nên dãy gồm 1, 2 và 3. Nếu không có dấu =, như 1..3, dãy dừng trước số 3."
     },
     {
       "question": "Vòng lặp while dừng khi nào?",
       "options": ["Sau 10 vòng", "Khi điều kiện của nó trở thành sai", "Không bao giờ"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Vòng lặp while kiểm tra điều kiện trước mỗi vòng và dừng ngay khi điều kiện sai. Nó không tự đếm số vòng, và chỉ chạy mãi nếu điều kiện không bao giờ sai."
     },
     {
       "question": "Vì sao total cần mut trong ví dụ cộng dồn?",
       "options": ["Vì giá trị của nó thay đổi sau mỗi vòng", "Vì nó là một con số", "Vì nó nằm bên trong main"],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Biến trong Rust không thể thay đổi nếu bạn không viết mut. total nhận giá trị mới ở mỗi vòng, nên cần mut. Việc nó là số hay nằm trong main không liên quan."
     }
   ]
 }

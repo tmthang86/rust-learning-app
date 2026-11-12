@@ -86,7 +86,8 @@
         "Dùng 0 như một số cổng thật mà các client phải kết nối tới",
         "Chỉ lắng nghe trên máy tính này, trên một cổng rảnh do hệ điều hành chọn"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "127.0.0.1 là địa chỉ loopback, nên chỉ máy tính này kết nối được, và cổng 0 yêu cầu hệ điều hành chọn một cổng đang trống. Nó không lắng nghe từ internet, và 0 không phải cổng thật mà client dùng."
     },
     {
       "question": "Tại sao read_to_string của client chúng ta kết thúc?",
@@ -95,7 +96,8 @@
         "Nó bỏ cuộc sau khi chờ một giây mà không có thêm dữ liệu đến",
         "Nó dừng ngay khi nhận được dòng đầu tiên của câu trả lời"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "read_to_string đọc đến hết luồng dữ liệu, và điểm kết thúc đến khi server đóng kết nối bằng cách drop TcpStream của nó. Không có timeout, và nó không dừng ở dòng đầu tiên."
     },
     {
       "question": "Tại sao máy chủ xử lý mỗi kết nối trong một thread riêng?",
@@ -104,7 +106,8 @@
         "Khi đó một client chậm không thể chặn việc phục vụ các client khác",
         "Thread làm mỗi phản hồi ngắn hơn, nên nó truyền nhanh hơn qua kết nối"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Mỗi kết nối một thread thì client chậm chỉ làm chậm thread của riêng nó, nên các client khác vẫn được phục vụ. Rust không yêu cầu mỗi TcpStream một thread, và thread không làm phản hồi ngắn đi."
     }
   ]
 }

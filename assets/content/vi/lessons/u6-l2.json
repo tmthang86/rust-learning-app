@@ -82,7 +82,8 @@
         "Ok và Err",
         "Pass và Fail"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Result có hai variant là Ok (thành công, chứa một giá trị) và Err (thất bại, chứa một lỗi). Some và None thuộc về Option, còn Pass và Fail không tồn tại."
     },
     {
       "question": "Khi nào một hàm nên trả về một Result?",
@@ -91,7 +92,8 @@
         "Không bao giờ",
         "Chỉ trong main"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Hãy trả về Result khi việc thất bại là kết quả bình thường, có thể đoán trước, như đầu vào sai hay thiếu tệp, để bên gọi quyết định cách xử lý. Nó không giới hạn ở main và được dùng rất thường xuyên."
     },
     {
       "question": "\"x\".parse::<i32>().unwrap_or(0) cho ra giá trị gì?",
@@ -100,7 +102,8 @@
         "Một panic",
         "\"x\""
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "\"x\" không phải số, nên parse cho Err, và unwrap_or(0) thay nó bằng giá trị dự phòng 0. Khác với unwrap, unwrap_or không bao giờ panic, và kết quả là i32 chứ không phải văn bản."
     }
   ]
 }

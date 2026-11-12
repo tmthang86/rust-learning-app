@@ -63,7 +63,8 @@
         "Marks where a value is inserted",
         "Prints curly braces"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "{} is a placeholder: println! puts the matching value there. To print literal curly braces you have to write them doubled, as {{ and }}."
     },
     {
       "question": "What does println!(\"{:?}\", [1, 2]) print?",
@@ -72,7 +73,8 @@
         "1 2",
         "{:?}"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "{:?} uses the Debug format, which prints the array as [1, 2], brackets and commas included. The plain {} would not compile for an array because it has no ordinary display format."
     },
     {
       "question": "How is print! different from println!?",
@@ -81,7 +83,8 @@
         "It doesn't add a new line",
         "It only prints numbers"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "print! writes its text without a new line at the end, so the next output continues on the same line. println! adds the new line. They print the same kinds of values."
     }
   ]
 }

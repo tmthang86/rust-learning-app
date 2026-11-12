@@ -83,7 +83,8 @@
         "All of them",
         "Any number"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "An enum value is exactly one of its variants at any moment. It is never several at once, which is what makes matching on it simple and safe."
     },
     {
       "question": "How do you write the East variant of Direction?",
@@ -92,7 +93,8 @@
         "Direction::East",
         "East(Direction)"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Variants are reached through the enum's name with ::, so Direction::East. A dot is not used, and East(Direction) would be a different shape with data."
     },
     {
       "question": "Can different variants of the same enum carry different data?",
@@ -101,7 +103,8 @@
         "No",
         "Only numbers"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Yes. Each variant can carry its own data, with its own types and number of values, such as Circle(f64) next to Rectangle(f64, f64). It is not limited to numbers."
     }
   ]
 }

@@ -84,7 +84,8 @@
         "The program crashes when it runs",
         "The code doesn't compile"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "A variable made with plain let can't be assigned a new value, and the compiler refuses the program with an error. It isn't a crash at run time, because the program never gets built. Add mut to allow changes."
     },
     {
       "question": "Which line declares a variable you can change?",
@@ -93,7 +94,8 @@
         "let mut x = 1;",
         "const x = 1;"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "let mut x = 1; declares a variable whose value can change. let x = 1; is fixed after it is set, and const x = 1; is not allowed to be mut and also needs a written type."
     },
     {
       "question": "What must a const always have?",
@@ -102,7 +104,8 @@
         "The mut keyword",
         "A lowercase name"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "A const always needs its type written out, as in const MAX: u32 = 10;. It can't use mut, and the all-capitals name is only a convention, not a rule."
     }
   ]
 }

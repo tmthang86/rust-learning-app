@@ -96,7 +96,8 @@
         "Thử lại dòng đó",
         "Trả về None"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Panic dừng chương trình và in thông báo cho biết điều gì sai và ở đâu. Nó không thử lại dòng đó hay trả về None."
     },
     {
       "question": "Khi nào bạn nên dùng panic!?",
@@ -105,7 +106,8 @@
         "Cho mọi lỗi của người dùng",
         "Thay cho println!"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "panic! dành cho lỗi lập trình và những trạng thái không bao giờ được xảy ra, khi tiếp tục là không an toàn. Những sai sót có thể xảy ra từ người dùng nên được xử lý bằng Result hoặc Option. Nó cũng không thay thế println!."
     },
     {
       "question": "expect khác unwrap ở điểm nào?",
@@ -114,7 +116,8 @@
         "Nó không bao giờ gây ra panic",
         "Nó trả về một String"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "expect làm giống unwrap và panic khi gặp None hoặc Err, nhưng bạn tự chọn thông báo hiển thị, giúp tìm nguyên nhân dễ hơn. Nó vẫn gây panic, và nó trả về giá trị bên trong chứ không phải String."
     }
   ]
 }

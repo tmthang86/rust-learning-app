@@ -108,7 +108,8 @@
         "Chỉ khi bạn tự gọi phương thức unlock() trên Mutex",
         "Khi MutexGuard bị drop, ví dụ ở cuối khối của nó"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Khóa Mutex cho bạn một MutexGuard, và Mutex được mở khóa khi guard bị drop, ví dụ ở cuối khối của nó. Trên Rust stable bạn không gọi phương thức unlock: bạn drop guard hoặc để nó ra khỏi phạm vi. Cũng không có timeout."
     },
     {
       "question": "Tại sao chúng ta dùng Arc chứ không dùng Rc để chia sẻ dữ liệu giữa các thread?",
@@ -117,7 +118,8 @@
         "Arc là kiểu nhỏ hơn Rc, điều này tốt hơn khi có nhiều thread",
         "Rc chỉ chứa được các số thông thường, còn Arc chứa được giá trị của bất kỳ kiểu nào"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Bộ đếm tham chiếu của Rc không atomic, nên hai thread cùng sửa nó có thể làm hỏng nó. Trình biên dịch từ chối Rc trong thread::spawn. Arc dùng bộ đếm atomic, vì vậy chia sẻ giữa các thread an toàn. Lý do không nằm ở kích thước hay loại dữ liệu chứa được."
     },
     {
       "question": "Deadlock là gì?",
@@ -126,7 +128,8 @@
         "Các thread chờ nhau, hoặc chờ chính mình, nên không thread nào có thể tiếp tục",
         "Một thread kết thúc trước main và vì thế mất kết quả của nó"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Deadlock là khi các thread chờ nhau, hoặc chờ chính mình (ví dụ khóa cùng một Mutex hai lần), nên không thread nào chạy tiếp được. Panic trong một thread và thread kết thúc sớm là những chuyện khác."
     }
   ]
 }

@@ -94,7 +94,8 @@
         "Some and None",
         "True and False"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Option has the variants Some (a value is there) and None (no value). Ok and Err belong to Result, and Rust has no True and False variants, because bool is its own type."
     },
     {
       "question": "What does Rust use instead of null?",
@@ -103,7 +104,8 @@
         "Option",
         "An empty string"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Rust has no null. When a value might be missing, you use Option, and the compiler makes you handle the None case before you can use the value inside. A 0 or an empty string could be mistaken for a real value."
     },
     {
       "question": "What does None.unwrap_or(5) give?",
@@ -112,7 +114,8 @@
         "5",
         "A crash"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "unwrap_or(5) gives the value inside Some, or 5 when there is nothing. Since this is None, you get 5. It doesn't crash, which is what unwrap would do."
     }
   ]
 }

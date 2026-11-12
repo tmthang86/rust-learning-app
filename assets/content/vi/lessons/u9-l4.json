@@ -108,7 +108,8 @@
         "Hàm gây ra panic khi chạy",
         "Hàm không in gì ra màn hình"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Một test thất bại khi nó panic, đúng như một assert_eq! không thỏa mãn (test trả về Result cũng thất bại khi trả Err). Test không thể trả về bool, và không in gì cũng không sao."
     },
     {
       "question": "Tại sao module tests được đánh dấu #[cfg(test)]?",
@@ -117,7 +118,8 @@
         "Để cargo build chạy các test cũng như biên dịch code",
         "Để các test có thể gọi các hàm riêng tư nằm trong các crate khác"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "#[cfg(test)] giữ module tests ra khỏi các build thông thường, nên nó chỉ được biên dịch khi chạy cargo test. cargo build không chạy test. Code trong module tests của một crate vốn đã gọi được hàm private của crate đó qua use super::*, còn hàm private của crate khác thì vẫn private."
     },
     {
       "question": "Attribute nào đánh dấu một hàm là một test?",
@@ -126,7 +128,8 @@
         "#[derive(Debug)], đặt phía trên hàm",
         "#[test], đặt phía trên hàm"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "#[test] đặt trên hàm đánh dấu nó là test để cargo test chạy. #[cfg(test)] chỉ biên dịch một mục (thường là module tests) khi test, không biến hàm thành test, còn #[derive(Debug)] không liên quan đến test."
     }
   ]
 }

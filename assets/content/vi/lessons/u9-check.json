@@ -186,7 +186,8 @@
         "Code bên trong scoreboard và bên trong các module lồng bên trong nó, chẳng hạn rank",
         "Bất kỳ code nào trong cùng file"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Mục private nhìn thấy được trong module định nghĩa nó và trong mọi module lồng bên trong, nên rank dùng được MAX_POINTS. Module cha và các module khác không nhìn thấy, và việc cùng một tệp không có tác dụng gì."
     },
     {
       "question": "use scoreboard::{Player, rank}; ở đầu file của main làm gì?",
@@ -195,7 +196,8 @@
         "Nó làm cho Player và rank công khai",
         "Nó sao chép code của module scoreboard vào main"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "use đưa tên vào phạm vi, nên main viết được Player và rank::title thay vì đường dẫn đầy đủ. Nó không thay đổi mức hiển thị và không sao chép code."
     },
     {
       "question": "#[cfg(test)] phía trên mod tests làm gì?",
@@ -204,7 +206,8 @@
         "Nó làm cho main chạy các test mỗi lần",
         "Module chỉ được biên dịch khi các test được build, không phải trong một bản build thông thường"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "#[cfg(test)] khiến module chỉ được biên dịch khi chạy cargo test. Build thông thường bỏ code test ra ngoài, nên nó không làm chương trình cuối nặng thêm. Nó không làm gì thành private và không chạy test từ main."
     }
   ]
 }

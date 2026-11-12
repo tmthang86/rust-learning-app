@@ -159,7 +159,8 @@
         "Map sở hữu các khóa của nó, nhưng word chỉ là một tham chiếu được mượn",
         "Các khóa phải là số"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "HashMap sở hữu các khóa của nó, nên entry cần một String sở hữu. Ở đây word chỉ là tham chiếu đến một String trong slice, và word.clone() tạo bản sao sở hữu để map giữ lại. Không phải lời gọi HashMap nào cũng cần clone, và khóa có thể là bất kỳ kiểu nào băm được."
     },
     {
       "question": "len() đếm gì đối với một String?",
@@ -168,7 +169,8 @@
         "Ký tự",
         "Byte"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "len() trên String đếm byte, không đếm ký tự hay từ. Với chữ cái tiếng Anh thông thường, một byte là một ký tự, nhưng các ký tự như é chiếm nhiều hơn một byte. Hãy dùng chars().count() để đếm ký tự."
     },
     {
       "question": "counts.get(\"dog\") trả về gì khi \"dog\" không có trong map?",
@@ -177,7 +179,8 @@
         "0",
         "Nó gây ra panic"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "get không bao giờ panic: nó trả về Option, và khóa không có thì cho None. Nó không cho 0, vì 0 cũng có thể là một số đếm thật. Cách lập chỉ số counts[\"dog\"] mới là dạng gây panic khi thiếu khóa."
     }
   ]
 }

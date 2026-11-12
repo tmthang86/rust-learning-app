@@ -124,7 +124,8 @@
         "The result stays valid only as long as both x and y do",
         "x and y must have exactly the same length, so the result can be either one"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "The annotation 'a links the lifetimes: the returned reference is valid only while both x and y are valid, so the result can't outlive either. It doesn't make anything live forever, and x and y can have different lengths."
     },
     {
       "question": "Why does fn first_word(s: &str) -> &str need no lifetime annotations?",
@@ -133,7 +134,8 @@
         "Because &str values are copied, so nothing can ever dangle",
         "Elision rules: with exactly one input reference, the output gets its lifetime"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Rust fills in lifetimes by itself with the elision rules. With exactly one input reference, the output reference gets that same lifetime, so you don't have to write it. Functions returning &str are not exempt: copying a &str copies only the reference, not the text, so it could still dangle."
     },
     {
       "question": "What is the type of a string literal like \"hello\"?",
@@ -142,7 +144,8 @@
         "String, an owned value that is dropped at the end of its block",
         "&'a str, valid only until the end of the nearest block"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "A string literal is stored inside the program itself, so it is valid for the whole run, which is the 'static lifetime. That makes its type &'static str. String is the owned type you create at run time with String::from."
     }
   ]
 }

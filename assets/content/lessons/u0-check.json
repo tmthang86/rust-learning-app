@@ -125,7 +125,8 @@
         "6",
         "9"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "The loop adds 1, then 2, then 3 to total, so 0 + 1 + 2 + 3 = 6. The range 1..=3 includes its last number, and total starts at 0, not 1."
     },
     {
       "question": "A function ends with the line total (no semicolon). What does that line do?",
@@ -134,7 +135,8 @@
         "It stops the program",
         "It gives total back as the result"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "A final line without a semicolon is an expression, and its value becomes the function's result. Printing needs println!, and nothing here stops the program. Adding a semicolon would turn the line into a statement that gives back nothing."
     },
     {
       "question": "In stars, why is the check for 50 written before the check for 10?",
@@ -143,7 +145,8 @@
         "The order of the checks makes no difference",
         "Rust checks conditions from the bottom up"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Checks run from top to bottom and the first true one wins. A total of 55 is also >= 10, so if the check for 10 came first, 55 would get 2 stars and the check for 50 would never run. Rust reads conditions from the top down, so the order matters."
     }
   ]
 }

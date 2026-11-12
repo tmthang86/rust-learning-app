@@ -125,7 +125,8 @@
         "6",
         "9"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Vòng lặp cộng lần lượt 1, 2 rồi 3 vào total, nên 0 + 1 + 2 + 3 = 6. Dãy 1..=3 bao gồm cả số cuối, và total bắt đầu từ 0 chứ không phải 1."
     },
     {
       "question": "Một hàm kết thúc bằng dòng total (không có dấu chấm phẩy). Dòng đó làm gì?",
@@ -134,7 +135,8 @@
         "Nó dừng chương trình",
         "Nó trả total về làm kết quả"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Dòng cuối không có dấu chấm phẩy là một biểu thức, và giá trị của nó trở thành kết quả hàm trả về. In ra màn hình cần println!, và dòng này không hề dừng chương trình. Nếu thêm dấu chấm phẩy, dòng đó trở thành câu lệnh không trả về gì."
     },
     {
       "question": "Trong stars, tại sao phép kiểm tra 50 được viết trước phép kiểm tra 10?",
@@ -143,7 +145,8 @@
         "Thứ tự của các phép kiểm tra không có gì khác biệt",
         "Rust kiểm tra các điều kiện từ dưới lên"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Các điều kiện được kiểm tra từ trên xuống dưới và điều kiện đúng đầu tiên sẽ được chọn. Tổng 55 cũng thỏa >= 10, nên nếu kiểm tra 10 đứng trước thì 55 chỉ được 2 sao và kiểm tra 50 không bao giờ chạy. Rust đọc các điều kiện từ trên xuống, nên thứ tự rất quan trọng."
     }
   ]
 }

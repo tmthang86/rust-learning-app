@@ -65,7 +65,8 @@
         "5",
         "Nó không biên dịch được"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Dòng let thứ hai tạo một biến a mới, đọc giá trị a cũ (2) rồi cộng 3, nên println! in ra 5. Đây là shadowing, và nó biên dịch được mà không cần mut."
     },
     {
       "question": "Shadowing làm được gì mà mut không làm được?",
@@ -74,7 +75,8 @@
         "Thay đổi giá trị",
         "Làm cho biến trở thành biến toàn cục"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Shadowing tạo một biến mới, nên nó có thể có kiểu khác, ví dụ biến văn bản thành số. Biến mut có thể đổi giá trị nhưng kiểu của nó giữ nguyên."
     },
     {
       "question": "Sau khi một khối kết thúc, một cái tên đã bị shadow bên trong khối đó chỉ đến...",
@@ -83,7 +85,8 @@
         "Giá trị từ trước khối",
         "Không gì cả; đó là một lỗi"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Một shadow tạo bên trong khối chỉ tồn tại đến khi khối kết thúc. Sau đó tên biến quay về giá trị trước khối, giá trị này chưa bao giờ bị thay đổi."
     }
   ]
 }

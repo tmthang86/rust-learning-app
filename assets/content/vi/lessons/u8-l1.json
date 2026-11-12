@@ -112,7 +112,8 @@
         "(x) => x + 1",
         "fn |x| x + 1"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Tham số của closure đặt giữa hai dấu |, rồi đến thân: |x| x + 1. (x) => x + 1 là cú pháp JavaScript, còn fn |x| không hợp lệ trong Rust."
     },
     {
       "question": "Một closure lần đầu được gọi với một String, rồi sau đó với một i32. Điều gì xảy ra?",
@@ -121,7 +122,8 @@
         "Nó biên dịch được, nhưng lần gọi thứ hai gây ra panic lúc chạy",
         "Lỗi biên dịch, vì lần gọi đầu tiên đã cố định kiểu tham số của closure"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Rust suy ra kiểu tham số từ lần gọi đầu tiên và cố định nó cho closure đó, nên lần gọi với kiểu khác là lỗi biên dịch. Closure không chọn kiểu mới mỗi lần gọi, và lỗi xảy ra lúc biên dịch chứ không phải lúc chạy."
     },
     {
       "question": "Kiểu tham số impl Fn(i32) -> i32 chấp nhận những gì?",
@@ -130,7 +132,8 @@
         "Bất kỳ closure hoặc hàm nào nhận một i32 và trả về một i32",
         "Bất kỳ closure nào nhận một i32, bất kể nó trả về kiểu gì"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "impl Fn(i32) -> i32 chấp nhận mọi closure hoặc hàm nhận một i32 và trả về một i32, miễn là nó chỉ đọc những gì nó capture (closure thay đổi biến capture là FnMut và bị từ chối). Kiểu trả về là một phần của ràng buộc, nên closure trả về kiểu khác sẽ bị từ chối."
     }
   ]
 }

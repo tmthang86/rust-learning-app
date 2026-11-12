@@ -100,7 +100,8 @@
         "An empty line: the last header's \\r\\n plus one more \\r\\n",
         "The word BODY followed by a colon at the start of a line"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "In HTTP, headers and body are separated by an empty line, which is the last header's \\r\\n plus one more \\r\\n. There is no semicolon marker or BODY keyword."
     },
     {
       "question": "What does the server answer when no route matches?",
@@ -109,7 +110,8 @@
         "A 200 OK response that has an empty body",
         "A panic, because a match must name every possible path"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "The last match arm covers every path no route matched and gives a 404 Not Found response. It isn't a 200, and a match with a catch-all arm doesn't panic."
     },
     {
       "question": "Why are parse_request, route and handle easy to test?",
@@ -118,7 +120,8 @@
         "They need a running network connection before they can be called even once",
         "They are pure functions: text in, text out, with no network involved"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "They are pure functions: text goes in and text comes out, with no sockets involved, so a test can call them with plain strings. They don't need unsafe code or a network connection."
     }
   ]
 }

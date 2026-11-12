@@ -30,17 +30,20 @@
     {
       "question": "What does let score = 10; do?",
       "options": ["Checks if score equals 10", "Stores 10 under the name score", "Prints 10"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "let creates a variable: it stores the value 10 under the name score. A single = means \"store this\", not \"compare\". Nothing is printed, because printing needs println!."
     },
     {
       "question": "Which of these is text, not a number?",
       "options": ["7", "\"7\"", "7.0"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Quotes make text: \"7\" is text that happens to contain the character 7. A plain 7 is a whole number and 7.0 is a number with a decimal part. Both are numbers, so you can do maths with them."
     },
     {
       "question": "What does * do between two numbers?",
       "options": ["Adds them", "Multiplies them", "Compares them"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "* is the multiplication operator, so 3 * 4 is 12. Adding uses +, and comparing uses ==."
     }
   ]
 }

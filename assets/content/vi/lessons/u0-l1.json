@@ -26,12 +26,14 @@
     {
       "question": "Khi không có gì bảo máy tính nhảy sang chỗ khác, nó chạy các dòng bên trong main theo thứ tự nào?",
       "options": ["Thứ tự ngẫu nhiên", "Từ trên xuống dưới", "Từ dưới lên trên"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Nếu không có lệnh nào bảo nhảy sang chỗ khác, máy tính chạy các dòng lần lượt từ trên xuống dưới. Nó không chọn thứ tự ngẫu nhiên và cũng không bắt đầu từ dưới lên."
     },
     {
       "question": "Trình biên dịch làm gì?",
       "options": ["Biến code của bạn thành một chương trình chạy được, sau khi kiểm tra lỗi trong code của bạn", "Lưu code của bạn vào một tệp và giữ một bản sao dự phòng của nó", "Tự viết chương trình cho bạn từ một mô tả bằng ngôn ngữ đời thường"],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Trình biên dịch chuyển code của bạn thành chương trình mà máy tính chạy được, và báo lỗi trước khi chương trình bắt đầu chạy. Nó không sao lưu tệp và cũng không tự viết chương trình thay bạn."
     }
   ]
 }

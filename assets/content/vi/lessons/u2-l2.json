@@ -61,7 +61,8 @@
         "Các phần tử của tuple có thể có kiểu khác nhau",
         "Tuple không thể được in ra"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Tuple có thể trộn nhiều kiểu, như (1, \"a\", 2.5), còn mọi phần tử của mảng cùng một kiểu. Cả hai đều không thể dài thêm, và cả hai đều in được bằng {:?}."
     },
     {
       "question": "Chỉ số của phần tử đầu tiên trong một mảng là gì?",
@@ -70,7 +71,8 @@
         "1",
         "-1"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Mảng đếm từ 0, nên phần tử đầu tiên có chỉ số 0. Chỉ số 1 là phần tử thứ hai, và -1 không được phép vì chỉ số không thể âm."
     },
     {
       "question": "Làm thế nào để lấy giá trị thứ hai của tuple t?",
@@ -79,7 +81,8 @@
         "t.1",
         "t.2"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Các trường của tuple được đọc bằng dấu chấm và một số bắt đầu từ 0, nên giá trị thứ hai là t.1. t[1] là cú pháp của mảng, còn t.2 sẽ là giá trị thứ ba."
     }
   ]
 }

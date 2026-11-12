@@ -86,7 +86,8 @@
         "Hai",
         "Không giới hạn"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Tại một thời điểm chỉ được dùng một tham chiếu có thể thay đổi (&mut) tới một giá trị. Quy tắc này ngăn hai phần của chương trình cùng thay đổi một dữ liệu một lúc."
     },
     {
       "question": "Bạn có thể có một &mut và một & tới cùng một giá trị được dùng cùng một lúc không?",
@@ -95,7 +96,8 @@
         "Không",
         "Chỉ với số"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Khi một &mut đang được dùng, không được dùng đồng thời & nào tới cùng giá trị, vì bên đọc có thể thấy dữ liệu thay đổi ngay dưới chân mình. Điều này đúng với mọi kiểu, kể cả số."
     },
     {
       "question": "Toán tử giải tham chiếu (dereference) * làm gì trong *r += 1?",
@@ -104,7 +106,8 @@
         "Đi theo tham chiếu để thay đổi giá trị mà nó trỏ tới",
         "Làm cho r có thể thay đổi"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "* là giải tham chiếu: nó đi theo tham chiếu đến giá trị mà nó trỏ tới, nên *r += 1 thay đổi giá trị đó. Ở đây nó không phải phép nhân, và nó không làm thay đổi việc r có thể đổi hay không."
     }
   ]
 }

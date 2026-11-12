@@ -469,6 +469,7 @@ CourseRepository fakeCourse({Map<String, String> extraFiles = const {}}) {
               'question': 'Pick B',
               'options': ['A', 'B'],
               'answer': 1,
+              'explanation': 'B comes after A in the alphabet.',
             },
           ],
       });

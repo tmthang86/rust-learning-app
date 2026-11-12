@@ -68,7 +68,8 @@
         "2",
         "true"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "if là một biểu thức nên nó cho ra giá trị. Điều kiện đúng, nên khối đầu tiên chạy và x thành 1. Khối else bị bỏ qua, và x là số chứ không phải bool true."
     },
     {
       "question": "Điều gì phải đúng với cả hai nhánh của một if được dùng làm giá trị?",
@@ -77,7 +78,8 @@
         "Chúng phải cho ra cùng một kiểu",
         "Cả hai đều phải in ra"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Cả hai nhánh phải cho cùng một kiểu, vì if cho ra một giá trị và kiểu của nó phải được biết lúc biên dịch. Độ dài của chúng không quan trọng, và chúng cũng không cần in gì."
     },
     {
       "question": "Bạn có thể viết if 5 { ... } trong Rust không?",
@@ -86,7 +88,8 @@
         "Không, điều kiện phải là một bool",
         "Chỉ bên trong main"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Rust không có khái niệm giá trị \"được coi là đúng\": điều kiện của if phải là bool, nên if 5 { ... } là lỗi biên dịch. Bạn hãy viết một phép so sánh, ví dụ if x != 0."
     }
   ]
 }

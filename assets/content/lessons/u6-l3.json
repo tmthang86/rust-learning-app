@@ -94,7 +94,8 @@
         "Panics",
         "Turns it into 0"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "On an Err, ? returns that error from the current function straight away, so the caller can handle it. On an Ok, it gives you the value inside. It doesn't panic or turn the error into 0."
     },
     {
       "question": "Where can you use ? on a Result?",
@@ -103,7 +104,8 @@
         "Anywhere",
         "Only in loops"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "? can return an error, so the function it sits in must return a Result (or an Option, for Option values). Using it in main with no return type fails to compile. It isn't limited to loops."
     },
     {
       "question": "What does Ok(()) mean?",
@@ -112,7 +114,8 @@
         "An empty error",
         "A failed result"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Ok(()) is a success that carries the empty unit value (), because there is nothing to hand back. It is how a function says \"it worked\" without a result, and it is not an error."
     }
   ]
 }

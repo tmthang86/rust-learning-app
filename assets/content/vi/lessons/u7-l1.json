@@ -114,7 +114,8 @@
         "Khai báo T là một hằng số có giá trị cố định khi chương trình khởi động",
         "Khai báo T là một ô giữ chỗ đại diện cho một kiểu thật, được chọn ở mỗi lệnh gọi"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "<T> khai báo một tham số kiểu generic: một ô giữ chỗ (placeholder) cho kiểu thật được chọn ở mỗi lần gọi. Nó không phải struct hay hằng, và một thân hàm duy nhất dùng được cho nhiều kiểu."
     },
     {
       "question": "Vì sao largest cần T: PartialOrd?",
@@ -123,7 +124,8 @@
         "Vì slice phải được sắp xếp trước khi bạn có thể tìm phần tử lớn nhất trong đó",
         "Vì hàm trả về một tham chiếu, và tham chiếu cần PartialOrd"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Toán tử > chỉ được định nghĩa cho các kiểu có thể sắp thứ tự, và một T trần có thể là bất kỳ kiểu nào, kể cả kiểu không so sánh được. Ràng buộc T: PartialOrd đảm bảo phép so sánh tồn tại. Slice không cần được sắp xếp, và tham chiếu cũng không cần PartialOrd."
     },
     {
       "question": "Khi bạn gọi swap_pair((\"a\", \"b\")), Rust xác định T là kiểu gì bằng cách nào?",
@@ -132,7 +134,8 @@
         "Nó suy ra T từ kiểu của các đối số bạn truyền vào",
         "Nó quyết định lúc chạy, sau khi xem các giá trị"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Rust suy ra T từ kiểu của các đối số tại lời gọi, nên swap_pair((\"a\", \"b\")) làm T thành &str. Bạn có thể tự chỉ định bằng swap_pair::<&str>, nhưng không bắt buộc. Generic được xác định lúc biên dịch chứ không phải lúc chạy."
     }
   ]
 }

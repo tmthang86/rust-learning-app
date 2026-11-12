@@ -121,7 +121,8 @@
         "src/lib.rs, file chứa code của library",
         "src/main.rs, file chứa main"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "cargo new đặt src/main.rs làm crate root của binary crate, tệp chứa main. src/lib.rs sẽ là crate root của library crate, còn Cargo.toml chỉ mô tả package."
     },
     {
       "question": "Phần [dependencies] của Cargo.toml làm gì?",
@@ -130,7 +131,8 @@
         "Nó liệt kê các hàm mà package công khai cho các crate khác",
         "Nó liệt kê các file nguồn mà trình biên dịch nên đưa vào bản build"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "[dependencies] liệt kê các crate mà package cần, và Cargo tải về rồi build chúng. Những gì crate công khai ra ngoài được quyết định bằng pub trong code, còn các tệp nguồn được tìm theo cây module chứ không theo Cargo.toml."
     },
     {
       "question": "Trong src/main.rs bạn viết mod garden; với dấu chấm phẩy. Rust tìm phần thân của module đó ở đâu?",
@@ -139,7 +141,8 @@
         "Trong một file tên garden.rs bên trong thư mục src",
         "Trong Cargo.toml, dưới mục [package]"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "mod garden; có dấu chấm phẩy bảo Rust nạp thân module từ một tệp khác, garden.rs nằm cạnh main.rs trong src. (garden/mod.rs cũng được.) Thân viết trong cặp ngoặc nhọn thì nằm cùng tệp, còn Cargo.toml không liên quan đến module."
     }
   ]
 }

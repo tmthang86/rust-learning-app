@@ -530,6 +530,36 @@ class CodeInProse(unittest.TestCase):
             self.assertIn(token, found)
 
 
+class QuizExplanations(unittest.TestCase):
+    def test_every_question_needs_an_explanation(self):
+        self.assertEqual(c.check_quiz("x-l1", LESSON["quiz"]), [])
+        for bad in ({}, {"explanation": ""}, {"explanation": "  "}, {"explanation": 3}):
+            q = {"question": "Q?", "options": ["a", "b"], "answer": 1, **bad}
+            problems = c.check_quiz("x-l1", [q])
+            self.assertTrue(any("needs an explanation" in p for p in problems), bad)
+
+    def test_answer_out_of_range_is_still_found(self):
+        q = {"question": "Q?", "options": ["a"], "answer": 1, "explanation": "E"}
+        self.assertTrue(any("out of range" in p for p in c.check_quiz("x-l1", [q])))
+
+    def test_translation_needs_the_explanation_too(self):
+        missing = translated()
+        missing["quiz"][0].pop("explanation")
+        self.assertTrue(c.compare_translation(LESSON, missing, "t"))
+        empty = translated()
+        empty["quiz"][0]["explanation"] = " "
+        self.assertTrue(
+            any("explanation is empty" in p for p in c.compare_translation(LESSON, empty, "t"))
+        )
+
+    def test_real_lessons_have_explanations(self):
+        for lang_dir in (c.LESSONS, os.path.join(c.CONTENT, "vi", "lessons")):
+            for name in sorted(os.listdir(lang_dir)):
+                lesson = c.read_json(os.path.join(lang_dir, name))
+                for q in lesson.get("quiz", []):
+                    self.assertTrue(q.get("explanation", "").strip(), (name, q["question"]))
+
+
 class StrictMode(unittest.TestCase):
     def test_only_unconverted_checkpoints_are_exempt(self):
         old = {"expectedOutput": "x"}

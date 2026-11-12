@@ -154,7 +154,8 @@
         "It counts the trucks",
         "The arm matches only if the extra condition is true as well"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "A match guard is an extra if condition after the pattern. The arm matches only when the pattern fits and the guard is also true, so only trucks with 4 or more axles take this arm."
     },
     {
       "question": "A function may find no answer, like the highest cost of zero tickets. Which return type fits?",
@@ -163,7 +164,8 @@
         "u32, with 0 as a secret code for no answer",
         "bool"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Option<u32> says in the type that there may be no answer: None means nothing was found, Some(n) holds the number. Using 0 as a secret code is risky because 0 can also be a real cost, and bool can't hold a number."
     },
     {
       "question": "What does &self mean in fn cost(&self) -> u32?",
@@ -172,7 +174,8 @@
         "The method borrows the ticket to read it",
         "The method changes the ticket"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "&self borrows the value the method is called on, so the method can read the ticket and the caller keeps it. Taking ownership would be self, and changing it would need &mut self."
     }
   ]
 }

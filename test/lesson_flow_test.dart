@@ -5,11 +5,13 @@ import 'package:rust_learn/app/router.dart';
 import 'package:rust_learn/data/app_state.dart';
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:rust_learn/data/course_repository.dart';
 import 'package:rust_learn/data/models.dart';
 import 'package:rust_learn/features/editor/code_editor.dart';
 import 'package:rust_learn/l10n/app_localizations_en.dart';
+import 'package:rust_learn/l10n/app_localizations_vi.dart';
 import 'package:rust_learn/main.dart';
 import 'package:rust_learn/runner/code_runner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -50,9 +52,11 @@ void main() {
   test('LessonRef parses the optional checkpoint flag', () {
     final plain = LessonRef.fromJson({'id': 'u1-l1', 'title': 'A'});
     expect(plain.checkpoint, isFalse);
-    final check = LessonRef.fromJson(
-      {'id': 'u1-check', 'title': 'C', 'checkpoint': true},
-    );
+    final check = LessonRef.fromJson({
+      'id': 'u1-check',
+      'title': 'C',
+      'checkpoint': true,
+    });
     expect(check.checkpoint, isTrue);
     expect(check.id, 'u1-check');
   });
@@ -308,6 +312,107 @@ void main() {
       handle.dispose();
     },
   );
+
+  test('QuizQuestion reads an optional explanation', () {
+    final q = QuizQuestion.fromJson({
+      'question': 'Q?',
+      'options': ['a', 'b'],
+      'answer': 0,
+      'explanation': '  Because.  ',
+    });
+    expect(q.explanation, 'Because.');
+    final old = QuizQuestion.fromJson({
+      'question': 'Q?',
+      'options': ['a', 'b'],
+      'answer': 0,
+    });
+    expect(old.explanation, isEmpty);
+  });
+
+  group('quiz explanation', () {
+    const why = 'B comes after A in the alphabet.';
+
+    testWidgets('is hidden until Check, then shown for a wrong answer', (
+      tester,
+    ) async {
+      await open(tester, '/lesson/quiz/quiz');
+      expect(find.text(why), findsNothing);
+      expect(find.text('Explanation'), findsNothing);
+
+      await tester.tap(find.text('A'));
+      await tester.pump();
+      expect(find.text(why), findsNothing);
+
+      await tester.tap(find.text('Check'));
+      await tester.pump();
+      expect(find.text('Explanation'), findsOneWidget);
+      expect(find.text(why), findsOneWidget);
+
+      // Gone again on the summary.
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      expect(find.text(why), findsNothing);
+    });
+
+    testWidgets('is shown for a right answer too', (tester) async {
+      await open(tester, '/lesson/quiz/quiz');
+      await tester.tap(find.text('B'));
+      await tester.pump();
+      await tester.tap(find.text('Check'));
+      await tester.pump();
+      expect(find.text('Correct!'), findsOneWidget);
+      expect(find.text(why), findsOneWidget);
+    });
+
+    testWidgets('is read as one labelled node', (tester) async {
+      await open(tester, '/lesson/quiz/quiz');
+      final handle = tester.ensureSemantics();
+      await tester.tap(find.text('B'));
+      await tester.pump();
+      await tester.tap(find.text('Check'));
+      await tester.pump();
+      final node = tester.getSemantics(
+        find.descendant(
+          of: find.byKey(const Key('quiz-explanation')),
+          matching: find.byType(MergeSemantics),
+        ),
+      );
+      expect(node.label, 'Explanation\n$why');
+      handle.dispose();
+    });
+
+    testWidgets('a question without one shows no card', (tester) async {
+      final repo = fakeCourse(
+        extraFiles: {
+          'assets/content/lessons/quiz.json': jsonEncode({
+            'id': 'quiz',
+            'title': 'Lesson quiz',
+            'sections': [
+              {'type': 'text', 'text': 'Body'},
+            ],
+            'quiz': [
+              {
+                'question': 'Pick B',
+                'options': ['A', 'B'],
+                'answer': 1,
+              },
+            ],
+          }),
+        },
+      );
+      await open(tester, '/lesson/quiz/quiz', repository: repo);
+      await tester.tap(find.text('B'));
+      await tester.pump();
+      await tester.tap(find.text('Check'));
+      await tester.pump();
+      expect(find.text('Correct!'), findsOneWidget);
+      expect(find.byKey(const Key('quiz-explanation')), findsNothing);
+    });
+
+    test('has a Vietnamese heading', () {
+      expect(AppLocalizationsVi().quizExplanationTitle, 'Giải thích');
+    });
+  });
 
   TextEditingValue v(String text, int start, [int? end]) => TextEditingValue(
     text: text,

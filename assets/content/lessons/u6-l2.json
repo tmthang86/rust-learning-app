@@ -82,7 +82,8 @@
         "Ok and Err",
         "Pass and Fail"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Result has the variants Ok (success, holding a value) and Err (failure, holding an error). Some and None belong to Option, and Pass and Fail don't exist."
     },
     {
       "question": "When should a function return a Result?",
@@ -91,7 +92,8 @@
         "Never",
         "Only in main"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Return a Result when failing is a normal, expected outcome, such as bad input or a missing file, so the caller can decide what to do. It is not limited to main, and it is used often."
     },
     {
       "question": "What does \"x\".parse::<i32>().unwrap_or(0) give?",
@@ -100,7 +102,8 @@
         "A panic",
         "\"x\""
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "\"x\" is not a number, so parse gives an Err, and unwrap_or(0) replaces it with the fallback 0. unwrap_or never panics, unlike unwrap, and the result is an i32, not text."
     }
   ]
 }

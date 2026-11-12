@@ -86,7 +86,8 @@
         "Uses 0 as a real port number that clients must connect to",
         "Listens only on this computer, on a free port the operating system picks"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "127.0.0.1 is the loopback address, so only this computer can connect, and port 0 asks the operating system to pick a free port. It doesn't listen to the internet, and 0 isn't a real port clients would use."
     },
     {
       "question": "Why does our client's read_to_string finish?",
@@ -95,7 +96,8 @@
         "It gives up after waiting one second for more data to arrive",
         "It stops as soon as the first line of the reply has been received"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "read_to_string reads until the end of the stream, and the end comes when the server closes the connection by dropping its TcpStream. There is no timeout, and it doesn't stop at the first line."
     },
     {
       "question": "Why does the server handle each connection in its own thread?",
@@ -104,7 +106,8 @@
         "A slow client then can't block the other clients from being served",
         "Threads make each response shorter, so it travels faster over the connection"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "With a thread per connection, a slow client only holds up its own thread, so the others are still served. Rust doesn't require a thread per TcpStream, and threads don't shorten responses."
     }
   ]
 }

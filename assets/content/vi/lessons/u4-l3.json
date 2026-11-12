@@ -83,7 +83,8 @@
         "Tất cả",
         "Bao nhiêu cũng được"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Một giá trị enum luôn là đúng một trong các variant của nó tại bất kỳ thời điểm nào. Nó không bao giờ là nhiều variant cùng lúc, nhờ vậy việc so khớp trên nó đơn giản và an toàn."
     },
     {
       "question": "Bạn viết variant East của Direction như thế nào?",
@@ -92,7 +93,8 @@
         "Direction::East",
         "East(Direction)"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Variant được truy cập qua tên enum với ::, nên viết Direction::East. Không dùng dấu chấm, còn East(Direction) sẽ là một dạng khác có chứa dữ liệu."
     },
     {
       "question": "Các variant khác nhau của cùng một enum có thể mang dữ liệu khác nhau không?",
@@ -101,7 +103,8 @@
         "Không",
         "Chỉ với số"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Có. Mỗi variant có thể mang dữ liệu riêng, với kiểu và số lượng giá trị riêng, như Circle(f64) bên cạnh Rectangle(f64, f64). Dữ liệu không bị giới hạn ở số."
     }
   ]
 }

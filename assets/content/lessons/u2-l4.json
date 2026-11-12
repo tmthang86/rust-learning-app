@@ -57,7 +57,8 @@
         "0, 1, 2, 3",
         "1, 2, 3"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "In 0..3 the end is left out, so the range gives 0, 1 and 2. To include the 3 you would write 0..=3."
     },
     {
       "question": "Inside a loop block (the loop keyword), how do you stop and give back the value 5?",
@@ -66,7 +67,8 @@
         "break 5;",
         "stop(5)"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "break with a value, as in break 5;, leaves a loop and makes the loop expression equal to 5. return 5 would leave the whole function, and stop(5) doesn't exist in Rust."
     },
     {
       "question": "What does continue do?",
@@ -75,7 +77,8 @@
         "Skips to the next round of the loop",
         "Exits the loop"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "continue skips the rest of the current round and goes straight to the next one. break is the one that exits the loop, and the program carries on."
     }
   ]
 }

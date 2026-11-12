@@ -83,7 +83,8 @@
         "Không gì cả: kiểu unit ()",
         "Một lỗi lúc chạy"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Dấu chấm phẩy biến dòng đó thành câu lệnh, vốn không có giá trị, nên khối trả về kiểu unit (). Vì thế hàm khai báo kiểu trả về, như -> i32, sẽ không biên dịch được nếu dòng cuối có dấu chấm phẩy. Rust báo lỗi lúc biên dịch chứ không phải lúc chạy."
     },
     {
       "question": "Kiểu trả về được đặt ở đâu?",
@@ -92,7 +93,8 @@
         "Sau ->, phía sau danh sách tham số",
         "Bên trong cặp dấu ngoặc nhọn"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Kiểu trả về được viết sau -> và đứng sau danh sách tham số, như fn add(a: i32, b: i32) -> i32. Nó không nằm trước fn hay bên trong cặp ngoặc nhọn."
     },
     {
       "question": "Làm thế nào để một hàm trả về hai giá trị?",
@@ -101,7 +103,8 @@
         "Dùng hai câu lệnh return",
         "Không thể"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Một hàm trả về một giá trị, nhưng giá trị đó có thể là tuple chứa nhiều giá trị, như (i32, i32). Bên gọi sau đó có thể tách tuple ra. Hai câu lệnh return chỉ khiến hàm thoát ở câu đầu tiên được chạy."
     }
   ]
 }

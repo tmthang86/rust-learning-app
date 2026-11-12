@@ -124,7 +124,8 @@
         "Kết quả chỉ còn hợp lệ chừng nào cả x và y còn hợp lệ",
         "x và y phải có độ dài chính xác bằng nhau, để kết quả có thể là một trong hai"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Chú thích 'a liên kết các lifetime: tham chiếu trả về chỉ hợp lệ khi cả x và y còn hợp lệ, nên kết quả không thể sống lâu hơn cái nào trong hai. Nó không làm gì sống mãi, và x với y có thể dài khác nhau."
     },
     {
       "question": "Vì sao fn first_word(s: &str) -> &str không cần lifetime annotation nào?",
@@ -133,7 +134,8 @@
         "Vì các giá trị &str được sao chép, nên không bao giờ có tham chiếu treo (dangling reference)",
         "Quy tắc elision: với đúng một tham chiếu đầu vào, đầu ra nhận lifetime của nó"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Rust tự điền lifetime bằng các quy tắc elision. Khi chỉ có đúng một tham chiếu đầu vào, tham chiếu đầu ra nhận cùng lifetime đó, nên bạn không cần viết. Hàm trả về &str không được miễn kiểm tra: sao chép một &str chỉ sao chép tham chiếu chứ không sao chép văn bản, nên nó vẫn có thể treo."
     },
     {
       "question": "Kiểu của một chuỗi literal như \"hello\" là gì?",
@@ -142,7 +144,8 @@
         "String, một giá trị sở hữu bị drop ở cuối khối của nó",
         "&'a str, chỉ hợp lệ cho đến cuối khối gần nhất"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Chuỗi literal được lưu ngay trong chương trình, nên nó hợp lệ suốt thời gian chạy, tức lifetime 'static. Vì vậy kiểu của nó là &'static str. String là kiểu sở hữu bạn tạo lúc chạy bằng String::from."
     }
   ]
 }

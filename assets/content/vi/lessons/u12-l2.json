@@ -92,7 +92,8 @@
         "Có thể tra một phòng nhanh chóng theo tên của nó, chẳng hạn \"hall\" hoặc \"vault\"",
         "Một Vec không thể chứa struct, nên các phòng cần một collection khác"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "HashMap tìm một phòng theo tên rất nhanh, như \"hall\" hay \"vault\". Nó không giữ các phòng theo thứ tự sắp xếp, và Vec vẫn chứa struct bình thường."
     },
     {
       "question": "Trong parse, nhánh cuối _ => Command::Unknown(...) làm gì?",
@@ -101,7 +102,8 @@
         "Chỉ khớp với chuỗi rỗng và kết thúc trò chơi bằng một lỗi",
         "Dừng cả chương trình bằng một panic khi người chơi gõ một từ nó không biết"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Nhánh _ bắt mọi đầu vào mà các nhánh trước chưa khớp, và văn bản được giữ trong Command::Unknown để trò chơi phản hồi. Nó không chỉ khớp chuỗi rỗng, và không panic hay kết thúc trò chơi."
     },
     {
       "question": "Kiểu enum State mô hình hóa điều gì?",
@@ -110,7 +112,8 @@
         "Văn bản người chơi đã gõ ở dấu nhắc lệnh gần nhất, được giữ cho lượt kế tiếp",
         "Giai đoạn mà trò chơi đang ở: đúng một trong Playing hoặc Won tại mỗi thời điểm"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Giá trị enum luôn là đúng một variant tại một thời điểm, nên State mô hình hóa giai đoạn của trò chơi: Playing hoặc Won, không bao giờ cả hai. Nó không lưu các phòng đã đi qua hay văn bản đã gõ."
     }
   ]
 }

@@ -96,7 +96,8 @@
         "i32",
         "usize"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "When nothing says otherwise, Rust picks i32 for an integer. It is a good default size, and you can write i64 or usize explicitly when you need them."
     },
     {
       "question": "What does 7 / 2 give with integers?",
@@ -105,7 +106,8 @@
         "3.5",
         "4"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Dividing two integers gives an integer: the decimal part is cut off, so 7 / 2 is 3. To get 3.5 you need floats, as in 7.0 / 2.0. Nothing is rounded up to 4."
     },
     {
       "question": "Which is a valid char?",
@@ -114,7 +116,8 @@
         "'a'",
         "'ab'"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "A char is one character in single quotes, like 'a'. Double quotes make a string, and 'ab' is an error because a char holds exactly one character."
     }
   ]
 }

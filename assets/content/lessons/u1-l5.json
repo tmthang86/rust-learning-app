@@ -65,7 +65,8 @@
         "5",
         "It doesn't compile"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "The second let makes a new variable a that reads the old a (2) and adds 3, so println! prints 5. This is shadowing, and it compiles without any mut."
     },
     {
       "question": "What can shadowing do that mut can't?",
@@ -74,7 +75,8 @@
         "Change the value",
         "Make the variable global"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Shadowing creates a new variable, so it can have a different type, for example turning text into a number. A mut variable can change its value, but its type stays the same."
     },
     {
       "question": "After a block ends, a name shadowed inside it refers to...",
@@ -83,7 +85,8 @@
         "The value from before the block",
         "Nothing; it's an error"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "A shadow made inside a block lasts only until the block ends. After that the name refers to the value it had before the block, which was never changed."
     }
   ]
 }

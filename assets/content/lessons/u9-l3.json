@@ -121,7 +121,8 @@
         "src/lib.rs, the file that holds the library code",
         "src/main.rs, the file that holds main"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "cargo new makes src/main.rs the root of the binary crate, the file that holds main. src/lib.rs would be the root of a library crate, and Cargo.toml only describes the package."
     },
     {
       "question": "What does the [dependencies] section of Cargo.toml do?",
@@ -130,7 +131,8 @@
         "It lists the functions the package makes public to other crates",
         "It lists the source files that the compiler should include in the build"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "[dependencies] lists the crates the package needs, and Cargo downloads and builds them. What a crate makes public is decided with pub in the code, and the source files are found from the module tree, not from Cargo.toml."
     },
     {
       "question": "In src/main.rs you write mod garden; with a semicolon. Where does Rust look for the body of that module?",
@@ -139,7 +141,8 @@
         "In a file named garden.rs inside the src folder",
         "In Cargo.toml, under the [package] heading"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "mod garden; with a semicolon tells Rust to load the module's body from another file, garden.rs next to main.rs in src. (garden/mod.rs also works.) A body written in braces would be in the same file, and Cargo.toml has nothing to do with modules."
     }
   ]
 }

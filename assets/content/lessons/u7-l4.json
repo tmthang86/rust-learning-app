@@ -122,7 +122,8 @@
         "T must implement Display, while Clone is only a suggestion",
         "T must implement both Display and Clone"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "The + joins bounds: T must implement all of them, so both Display and Clone are required. It is never \"or\", and neither is optional."
     },
     {
       "question": "What does #[derive(Debug)] do?",
@@ -131,7 +132,8 @@
         "It asks the compiler to write the Debug impl, so {:?} works on the type",
         "It prints the struct to the screen every time a value is created"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "#[derive(Debug)] asks the compiler to write the Debug impl for you, so you can print the type with {:?}. It doesn't enable debug mode or print anything by itself."
     },
     {
       "question": "Can fn make() -> impl Speak return a Dog in one branch and a Robot in another?",
@@ -140,7 +142,8 @@
         "Yes, any type that implements Speak may be returned from different branches",
         "Yes, as long as both types have the same number of fields"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "impl Speak as a return type stands for one hidden concrete type, so every branch must return the same type, either Dog or Robot. Returning both fails to compile. Use a Box<dyn Speak> if you need different types, and the number of fields doesn't matter."
     }
   ]
 }

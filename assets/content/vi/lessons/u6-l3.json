@@ -94,7 +94,8 @@
         "Gây ra panic",
         "Biến nó thành 0"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Khi gặp Err, ? trả lỗi đó từ hàm hiện tại ngay lập tức, để bên gọi xử lý. Khi gặp Ok, nó đưa cho bạn giá trị bên trong. Nó không panic và không biến lỗi thành 0."
     },
     {
       "question": "Bạn có thể dùng ? trên một Result ở đâu?",
@@ -103,7 +104,8 @@
         "Ở bất cứ đâu",
         "Chỉ trong vòng lặp"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "? có thể trả về lỗi, nên hàm chứa nó phải trả về Result (hoặc Option, với giá trị Option). Dùng nó trong main không có kiểu trả về sẽ không biên dịch được. Nó không giới hạn trong vòng lặp."
     },
     {
       "question": "Ok(()) có nghĩa là gì?",
@@ -112,7 +114,8 @@
         "Một lỗi rỗng",
         "Một kết quả thất bại"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Ok(()) là thành công mang giá trị unit rỗng (), vì không có gì để trả lại. Đó là cách hàm nói \"thành công\" mà không có kết quả, và nó không phải lỗi."
     }
   ]
 }

@@ -102,7 +102,8 @@
         "Adds another owner and increases the count, without copying the data",
         "Moves the value out of a, so a can no longer be used"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Rc::clone adds another owner by increasing the reference count. The data is not copied, and a is still usable. It is cheap, unlike cloning the data."
     },
     {
       "question": "When is the value inside an Rc dropped?",
@@ -111,7 +112,8 @@
         "When the program ends, whichever owners remain",
         "When the last owner is gone and the count reaches 0"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "An Rc keeps a count of its owners, and the value is dropped only when the last owner is gone and the count reaches 0. The first owner leaving just lowers the count."
     },
     {
       "question": "Can you change the data inside an Rc<i32> using only the Rc?",
@@ -120,7 +122,8 @@
         "Yes, by writing *a += 1 on the Rc directly",
         "Yes, but only when the Rc is declared inside main"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "An Rc gives only shared, read-only access, since several owners may read at once. To change the data you need interior mutability, such as Rc<RefCell<T>>. Writing *a += 1 does not compile, wherever the Rc is declared."
     }
   ]
 }

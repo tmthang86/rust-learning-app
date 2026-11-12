@@ -104,7 +104,8 @@
         "Một Option chứa tham chiếu tới giá trị",
         "Một bool"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "get trả về Option<&V>: Some chứa tham chiếu đến giá trị nếu khóa tồn tại, và None nếu không. Nó không crash và không trả về bool."
     },
     {
       "question": "Điều gì xảy ra khi bạn chèn một khóa đã tồn tại?",
@@ -113,7 +114,8 @@
         "Nó bị bỏ qua",
         "Chương trình dừng lại"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Chèn một khóa đã tồn tại sẽ thay giá trị của nó, và insert trả giá trị cũ về dưới dạng Some(old). Nó không bị bỏ qua và không dừng chương trình. Muốn giữ giá trị cũ, hãy dùng entry(key).or_insert(value)."
     },
     {
       "question": "Thứ tự các phần tử của một HashMap có được đảm bảo không?",
@@ -122,7 +124,8 @@
         "Có, theo thứ tự đã sắp xếp",
         "Không"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "HashMap không đảm bảo thứ tự nào cho các phần tử, cả thứ tự chèn lẫn thứ tự sắp xếp, và thứ tự có thể khác nhau giữa các lần chạy. Nếu cần thứ tự cố định, hãy lấy các khóa ra rồi sắp xếp, hoặc dùng BTreeMap."
     }
   ]
 }

@@ -114,7 +114,8 @@
         "The closure may change captured variables without them being declared mut",
         "The closure takes ownership of the variables it uses, instead of borrowing them"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "move makes the closure take ownership of the variables it uses, instead of borrowing them. That is what lets it outlive the place it was made, for example when it is returned or sent to a thread. It doesn't start a thread by itself."
     },
     {
       "question": "After let greet = move || println!(\"hi {name}\"); where name is a String, can you use name again in main?",
@@ -123,7 +124,8 @@
         "Yes, move copies every captured value, so name is still valid",
         "Yes, but only if you borrow it with & before the closure runs"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "move transfers ownership into the closure, and a String is not Copy, so name has been moved and main can't use it again. move copies only values of Copy types, such as integers. Borrowing with & before wouldn't help either."
     },
     {
       "question": "Which trait does a closure have if it changes a captured variable but can be called many times?",
@@ -132,7 +134,8 @@
         "FnMut: it may change captured values and can be called many times",
         "FnOnce: it changes captured values, so it can be called only once"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "FnMut fits a closure that changes what it captured but can be called many times. Fn only reads its captures. FnOnce is for a closure that gives away something it captured, so it can be called once; changing a variable doesn't make a closure FnOnce."
     }
   ]
 }

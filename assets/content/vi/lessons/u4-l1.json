@@ -85,7 +85,8 @@
         "p.level",
         "p->level"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Các trường của struct được đọc bằng dấu chấm: p.level. p[level] là cú pháp chỉ số, còn p->level là cú pháp kiểu C mà Rust không có."
     },
     {
       "question": "Bạn cần gì để thay đổi một trường?",
@@ -94,7 +95,8 @@
         "Không cần gì cả",
         "Một setter đặc biệt"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Bạn thay đổi một trường thông qua biến được khai báo với mut. Rust làm cho cả giá trị struct có thể đổi hoặc không, không làm riêng từng trường, và cũng không có hàm setter tự động."
     },
     {
       "question": "#[derive(Debug)] cho phép bạn làm gì?",
@@ -103,7 +105,8 @@
         "Chạy trình gỡ lỗi (debugger)",
         "Sao chép struct"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "#[derive(Debug)] khiến Rust viết sẵn code cho định dạng Debug, nên bạn in struct bằng {:?} được. Nó không mở trình gỡ lỗi hay làm struct sao chép được. Copy cần derive riêng."
     }
   ]
 }

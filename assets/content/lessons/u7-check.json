@@ -135,7 +135,8 @@
         "It limits T to types that implement Describe, so the body can call methods such as item.size()",
         "It lets the body compare two items with > and <"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "A trait bound limits T to types that implement Describe, so the body can safely call Describe's methods such as item.size(). It doesn't create a struct, and comparing with > and < would need a different bound, PartialOrd."
     },
     {
       "question": "The trait Describe has a method summary with a body. What happens in an impl that does not write summary?",
@@ -144,7 +145,8 @@
         "The method returns the default value of its return type",
         "The type uses the default body from the trait"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "A default method has a body in the trait, and a type that doesn't write its own version uses that default. Only methods without a body must be written in every impl, and nothing is made up from the return type."
     },
     {
       "question": "Why does bigger need the lifetime 'a?",
@@ -153,7 +155,8 @@
         "It makes the two inputs live longer than the function call",
         "It lets bigger return a new value instead of a reference"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "bigger can return either input, so the result can only be trusted as long as both are valid. The lifetime 'a states exactly that relation. It doesn't make anything live longer, it only describes how long references are valid, and the function still returns a reference."
     }
   ]
 }

@@ -103,7 +103,8 @@
         "Hai",
         "Bao nhiêu cũng được"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Mỗi giá trị chỉ có đúng một chủ sở hữu tại một thời điểm. Quy tắc này giúp Rust biết khi nào giải phóng bộ nhớ: khi chủ sở hữu duy nhất biến mất, giá trị bị drop."
     },
     {
       "question": "Điều gì xảy ra với một giá trị khi chủ sở hữu của nó ra khỏi phạm vi?",
@@ -112,7 +113,8 @@
         "Nó tồn tại cho đến khi chương trình kết thúc",
         "Nó di chuyển sang main"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Khi chủ sở hữu ra khỏi phạm vi, Rust drop giá trị và giải phóng bộ nhớ ngay tại đó, không cần bộ thu gom rác (garbage collector). Giá trị không tồn tại đến hết chương trình và cũng không chuyển sang main."
     },
     {
       "question": "Sau let b = a; với a là một String, bạn còn dùng được a không?",
@@ -121,7 +123,8 @@
         "Không, nó đã bị di chuyển",
         "Chỉ để in ra"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "let b = a; di chuyển String từ a sang b. Giờ b là chủ sở hữu, và dùng a sẽ không biên dịch được, kể cả chỉ để in. Chỉ số nguyên và các kiểu Copy khác mới dùng lại được sau khi gán."
     }
   ]
 }

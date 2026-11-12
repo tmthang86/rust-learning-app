@@ -139,7 +139,8 @@
         "Vòng lặp trên rx không bao giờ kết thúc, vì sender gốc vẫn còn sống",
         "Các cặp đến theo thứ tự ngẫu nhiên và không thể sắp xếp"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Vòng lặp trên rx chỉ kết thúc khi mọi Sender đều bị drop. tx gốc vẫn còn sống trong thread chính, nên vòng lặp chờ mãi. drop(tx) sẽ kết thúc nó. Code vẫn biên dịch bình thường, và thứ tự thông điệp không phải nguyên nhân."
     },
     {
       "question": "Tại sao Mutex được chia sẻ bằng Arc mà không phải Rc?",
@@ -148,7 +149,8 @@
         "Arc khóa dữ liệu bên trong, còn Rc thì không",
         "Rc không thể chứa một Mutex"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Arc đếm chủ sở hữu bằng phép toán atomic, an toàn giữa các thread, còn bộ đếm thường của Rc thì không, nên Rc không gửi sang thread khác được. Không kiểu nào khóa dữ liệu (Mutex mới làm việc đó), và Rc vẫn chứa được Mutex."
     },
     {
       "question": "Bạn gọi một async fn nhưng không bao giờ dùng .await trên future mà nó trả về và không bao giờ đưa nó cho một bộ chạy. Cái gì chạy?",
@@ -157,7 +159,8 @@
         "Chỉ code trước .await đầu tiên chạy",
         "Không gì chạy cả: một future là lazy cho đến khi có thứ gì đó poll nó"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Future là lazy. Gọi async fn chỉ tạo ra future, và không có gì chạy cho đến khi có thứ poll nó, như .await hoặc một runtime. Thân hàm chưa bắt đầu, kể cả phần trước .await đầu tiên."
     }
   ]
 }

@@ -159,7 +159,8 @@
         "The map owns its keys, but word is only a borrowed reference",
         "Keys must be numbers"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "The HashMap owns its keys, so entry needs an owned String. Here word is only a reference to a String inside the slice, and word.clone() makes the owned copy the map can keep. Not every HashMap call needs a clone, and keys can be any type that can be hashed."
     },
     {
       "question": "What does len() count for a String?",
@@ -168,7 +169,8 @@
         "Characters",
         "Bytes"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "len() on a String counts bytes, not characters or words. For plain English letters one byte is one character, but characters such as é take more than one byte. Use chars().count() to count characters."
     },
     {
       "question": "What does counts.get(\"dog\") return when \"dog\" is not in the map?",
@@ -177,7 +179,8 @@
         "0",
         "It panics"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "get never panics: it returns an Option, and a missing key gives None. It doesn't give 0, because 0 could be a real count. Indexing with counts[\"dog\"] is the form that panics for a missing key."
     }
   ]
 }

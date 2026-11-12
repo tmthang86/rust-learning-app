@@ -122,7 +122,8 @@
         "T phải implement Display, còn Clone chỉ là một gợi ý",
         "T phải implement cả Display lẫn Clone"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Dấu + nối các ràng buộc: T phải implement tất cả, nên cần cả Display lẫn Clone. Nó không bao giờ là \"hoặc\", và không ràng buộc nào là tùy chọn."
     },
     {
       "question": "#[derive(Debug)] làm gì?",
@@ -131,7 +132,8 @@
         "Nó yêu cầu trình biên dịch viết impl Debug, để {:?} hoạt động trên kiểu đó",
         "Nó in struct ra màn hình mỗi khi một giá trị được tạo"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "#[derive(Debug)] yêu cầu trình biên dịch viết sẵn impl Debug cho bạn, nên bạn in kiểu đó bằng {:?} được. Nó không bật chế độ debug và tự nó không in gì."
     },
     {
       "question": "fn make() -> impl Speak có thể trả về Dog ở một nhánh và Robot ở nhánh khác không?",
@@ -140,7 +142,8 @@
         "Có, bất kỳ kiểu nào implement Speak đều có thể được trả về từ các nhánh khác nhau",
         "Có, miễn là cả hai kiểu có cùng số trường"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "impl Speak ở vị trí kiểu trả về đại diện cho một kiểu cụ thể được ẩn đi, nên mọi nhánh phải trả về cùng một kiểu, hoặc Dog hoặc Robot. Trả về cả hai sẽ không biên dịch được. Hãy dùng Box<dyn Speak> nếu cần nhiều kiểu khác nhau, và số trường không quan trọng."
     }
   ]
 }

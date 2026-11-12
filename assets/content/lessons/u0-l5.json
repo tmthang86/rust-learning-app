@@ -51,17 +51,20 @@
     {
       "question": "How do you run (call) a function named greet?",
       "options": ["fn greet", "greet();", "call greet"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "You call a function by writing its name followed by parentheses, so greet(); runs it. fn greet is how you define the function, and call greet is not Rust."
     },
     {
       "question": "In fn square(n: i32) -> i32, what does -> i32 mean?",
       "options": ["The function gives back a whole number", "n must be 32", "The function runs 32 times"],
-      "answer": 0
+      "answer": 0,
+      "explanation": "The type after -> is the type of the value the function gives back, so -> i32 means a whole number comes back. It says nothing about n being 32 or the function running 32 times."
     },
     {
       "question": "What is the value given back by a function?",
       "options": ["Its first line", "Its last line without a semicolon", "Whatever println! shows"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "The last expression of the function, written without a semicolon, is the value it gives back. What println! shows goes to the screen and is not a returned value."
     }
   ]
 }

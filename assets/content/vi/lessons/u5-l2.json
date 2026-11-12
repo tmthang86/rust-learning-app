@@ -102,7 +102,8 @@
         "String",
         "char"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "String sở hữu văn bản trên heap và có thể mở rộng. &str là cái nhìn mượn vào văn bản đã nằm ở nơi khác, còn char là một ký tự đơn."
     },
     {
       "question": "\"  hi \".trim() trả về gì?",
@@ -111,7 +112,8 @@
         "\"  hi\"",
         "\"hi \""
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "trim bỏ khoảng trắng ở cả hai đầu chuỗi, còn phần giữa giữ nguyên. Vì vậy \"  hi \".trim() là \"hi\". Chỉ trim_start hoặc trim_end mới bỏ một phía."
     },
     {
       "question": "Vì sao bạn không thể viết s[0] để lấy ký tự đầu tiên?",
@@ -120,7 +122,8 @@
         "Theo mặc định, chuỗi là rỗng",
         "Bạn cần viết s(0)"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "String là UTF-8, nên một ký tự có thể chiếm từ 1 đến 4 byte, và một số không cho biết ký tự thứ n bắt đầu ở đâu. Rust từ chối s[0] để tránh kết quả sai hoặc hỏng. Hãy dùng s.chars().next() hoặc slice &s[0..1] (slice phải kết thúc đúng ranh giới ký tự)."
     }
   ]
 }

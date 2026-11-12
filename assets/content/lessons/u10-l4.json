@@ -114,7 +114,8 @@
         "While the code compiles, before the program starts",
         "Never, because RefCell turns the borrowing rules off"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "RefCell moves the borrowing check from compile time to run time: each borrow or borrow_mut call checks the rules while the program runs. The rules still apply and a breach panics."
     },
     {
       "question": "What happens if you call borrow_mut() twice and keep both guards alive?",
@@ -123,7 +124,8 @@
         "It compiles with a warning and both guards work",
         "The program panics with a message that it is already borrowed"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Two live mutable borrows break the rules, so the second borrow_mut() panics with a message that it is already borrowed. It doesn't wait, and it isn't a compile warning, because RefCell can only check this while the program runs."
     },
     {
       "question": "What does Rc<RefCell<T>> give you?",
@@ -132,7 +134,8 @@
         "Several owners that can each change the shared value",
         "A value that can be safely sent to other threads"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Rc gives several owners and RefCell lets the shared value be changed, so Rc<RefCell<T>> is shared and mutable. The value is still on the heap. Rc can't be sent to another thread and RefCell can't be shared between threads, so Rc<RefCell<T>> stays on one thread; Arc<Mutex<T>> is the thread-safe version."
     }
   ]
 }

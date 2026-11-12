@@ -230,7 +230,8 @@
         "Một lệnh gõ sai là đầu vào bình thường, không phải một lỗi (bug), nên bên gọi nhận một giá trị lỗi mà nó có thể xử lý",
         "Vì Result luôn nhanh hơn panic!"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Lệnh gõ sai là đầu vào bình thường chứ không phải lỗi của chương trình, nên parse trả về Result và để bên gọi quyết định xử lý. panic! dùng được trong hàm có giá trị trả về, và Result không liên quan đến tốc độ."
     },
     {
       "question": "amount.parse()? làm gì bên trong parse khi amount là văn bản lots?",
@@ -239,7 +240,8 @@
         "Nó cho ra con số 0",
         "Nó trả về Err(StockError::BadNumber) từ parse, vì impl From chuyển đổi ParseIntError"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Toán tử ? trả về Err từ parse, và impl From chuyển ParseIntError thành StockError::BadNumber trên đường đi. \"lots\" không phải số, nên không có panic và cũng không có 0."
     },
     {
       "question": "Tại sao report sắp xếp các tên trước khi in chúng?",
@@ -248,7 +250,8 @@
         "sort loại bỏ các tên xuất hiện hai lần",
         "Một HashMap không thể được in theo cách nào khác"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "HashMap không đảm bảo thứ tự nào, nên in trực tiếp có thể khác nhau giữa các lần chạy. Sắp xếp tên trước giúp kết quả giống nhau mỗi lần. sort không loại bỏ phần tử trùng, và HashMap vẫn in được theo cách khác."
     }
   ]
 }

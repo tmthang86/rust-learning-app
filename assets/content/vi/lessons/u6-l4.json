@@ -107,7 +107,8 @@
         "Enum gõ ngắn hơn",
         "String không thể là lỗi"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Một enum liệt kê các loại lỗi có thể có thành các variant, nên bên gọi có thể match và phản ứng khác nhau với từng loại. String chỉ là văn bản, và kiểm tra nó nghĩa là so sánh từ ngữ. Cả hai đều dùng làm kiểu lỗi được."
     },
     {
       "question": "Trait nào cho phép một lỗi được in bằng {}?",
@@ -116,7 +117,8 @@
         "Display",
         "Clone"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Ô giữ chỗ {} dùng trait Display, dành cho thông báo dễ đọc cho người dùng. Debug dành cho {:?}, còn Clone không liên quan đến việc in."
     },
     {
       "question": "Bên trong phương thức fmt của Display, write!(f, \"no such user\") làm gì?",
@@ -125,7 +127,8 @@
         "In văn bản thẳng ra màn hình",
         "Lưu văn bản vào một tệp"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "write! gửi văn bản vào formatter f mà fmt nhận được, và Rust quyết định sau đó nó đi đâu, ví dụ ra màn hình qua println!. Nó không in trực tiếp hay lưu vào tệp."
     },
     {
       "question": "Việc implement From<ParseIntError> cho kiểu lỗi của bạn cho phép bạn làm gì?",
@@ -134,7 +137,8 @@
         "Parse nhanh hơn",
         "Bỏ qua việc xử lý lỗi"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Toán tử ? chuyển đổi lỗi bằng From, nên impl này giúp ? tự động biến ParseIntError thành kiểu lỗi của bạn. Nó không làm parse nhanh hơn và không bỏ qua việc xử lý lỗi."
     }
   ]
 }

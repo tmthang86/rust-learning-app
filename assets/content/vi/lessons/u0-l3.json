@@ -26,17 +26,20 @@
     {
       "question": "Khi nào đoạn code bên trong if chạy?",
       "options": ["Luôn luôn", "Khi điều kiện đúng", "Khi điều kiện sai"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Khối code sau if chỉ chạy khi điều kiện đúng. Khi điều kiện sai, Rust bỏ qua khối đó, hoặc chạy khối else nếu có."
     },
     {
       "question": "Cái nào so sánh hai giá trị?",
       "options": ["=", "==", "=>"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "== hỏi xem hai giá trị có bằng nhau không. Dấu = đơn dùng để lưu giá trị, còn => hoàn toàn không phải phép so sánh."
     },
     {
       "question": "Với score = 95, ví dụ chấm điểm in ra gì?",
       "options": ["Grade A", "Grade B", "Grade A and Grade B"],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Các điều kiện được kiểm tra từ trên xuống và điều kiện đúng đầu tiên thắng. Với score = 95, điều kiện đầu tiên (từ 90 trở lên) đúng, nên chương trình in Grade A và bỏ qua phần còn lại. Trong chuỗi if / else if, chỉ có một nhánh được chạy."
     }
   ]
 }

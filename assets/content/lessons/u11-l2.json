@@ -100,7 +100,8 @@
         "After one second passes without any new message arriving at the receiver end",
         "When every Sender has been dropped, so no more messages can come"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "The loop over a Receiver ends when every Sender has been dropped, because no more messages can ever come. It doesn't stop after the first message, and there's no timeout."
     },
     {
       "question": "How do you let several threads send into the same channel?",
@@ -109,7 +110,8 @@
         "Clone the receiver with rx.clone() and give each thread one copy",
         "Move the same tx into every thread's closure, without cloning it first"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "mpsc stands for multiple producer, single consumer: you can clone the Sender, one copy per thread, but there is only one Receiver. Moving the same tx into more than one closure doesn't compile, because tx is moved the first time."
     },
     {
       "question": "What happens to a String after you send it with tx.send(text)?",
@@ -118,7 +120,8 @@
         "It is moved into the channel, so the sending thread can't use it",
         "It is copied automatically, so each thread keeps its own independent version"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "send moves the String into the channel, so the sending thread no longer owns it and can't use it. Nothing is shared or copied. To keep a copy, you clone it before sending."
     }
   ]
 }

@@ -126,7 +126,8 @@
         "map, vì nó áp dụng closure cho mọi phần tử trong pipeline",
         "filter, vì nó quyết định những phần tử nào ở lại trong pipeline"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "sum là phương thức tiêu thụ: nó chạy toàn bộ iterator và trả về một giá trị. map và filter là adapter, chỉ tạo ra một iterator lazy khác và tự chúng không cho ra kết quả."
     },
     {
       "question": "Tại sao max() trả về một Option?",
@@ -135,7 +136,8 @@
         "max cần một closure, và closure có thể không cho ra kết quả",
         "Một iterator rỗng không có phần tử lớn nhất, nên có thể không có gì để trả về"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Iterator rỗng không có phần tử lớn nhất, nên max trả về Option: Some(largest) chứa phần tử lớn nhất, hoặc None khi không có gì. So sánh số không thể thất bại, âm hay không, và max không cần closure."
     },
     {
       "question": "collect() biết bằng cách nào nên xây dựng Vec, String hay HashMap?",
@@ -144,7 +146,8 @@
         "Từ kiểu mà nó được yêu cầu trả về: một khai báo kiểu, turbofish, hoặc code xung quanh",
         "Từ kiểu của phần tử đầu tiên mà iterator tạo ra khi chạy"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "collect là generic theo kiểu nó tạo ra, và nó lấy đích từ kiểu bạn yêu cầu: khai báo như Vec<i32>, turbofish collect::<Vec<_>>(), hoặc cách dùng kết quả về sau. Nếu không có cái nào, trình biên dịch sẽ yêu cầu bạn thêm. Nó không tạo Vec trước hay nhìn vào các phần tử."
     }
   ]
 }

@@ -61,7 +61,8 @@
         "Cargo.toml",
         "Cargo.lock.rs"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Các dependency được liệt kê trong Cargo.toml, tệp mô tả dự án của bạn. src/main.rs chứa code của bạn, còn Cargo.lock (không có đuôi .rs) do Cargo tự tạo để ghi lại phiên bản chính xác."
     },
     {
       "question": "Lệnh nào tìm lỗi nhanh nhất, mà không tạo ra chương trình?",
@@ -70,7 +71,8 @@
         "cargo run",
         "cargo new"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "cargo check tìm lỗi mà không tạo ra tệp chạy được, nên nhanh hơn một lần build đầy đủ. cargo run build rồi khởi động chương trình, còn cargo new chỉ tạo dự án mới."
     }
   ]
 }

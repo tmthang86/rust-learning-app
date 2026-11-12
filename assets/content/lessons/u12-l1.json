@@ -100,7 +100,8 @@
         "Normally the program's own name, so real arguments start at index 1",
         "An empty string that marks where the real arguments begin"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "env::args() normally starts with the program's own name, so the real arguments the user typed start at index 1. The first flag is the second item, and there is no empty marker."
     },
     {
       "question": "Why does parse_args return a Result instead of panicking on a bad flag?",
@@ -109,7 +110,8 @@
         "Result is always faster to run than a panic would be, even when nothing fails",
         "A mistyped flag is expected, so the caller can report it politely"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "A mistyped flag is something that will happen, so parse_args returns an Err that the caller can report politely. Panics are allowed there, but they are for bugs. Result isn't faster."
     },
     {
       "question": "What does the ? in run do when parse_args returns an Err?",
@@ -118,7 +120,8 @@
         "Ignores the error and carries on with the default Mode::All",
         "Prints the error message and then continues with the next line of code"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "? on an Err returns that Err from run straight away, so the rest of run is skipped and the caller handles it. It doesn't ignore the error or print it and continue."
     }
   ]
 }

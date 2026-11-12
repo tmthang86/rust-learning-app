@@ -180,7 +180,8 @@
         "Returns the error from the function, after From turns it into an OrderError",
         "Replaces the error with 0"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "On an Err, ? returns early from the function with that error, and From converts it into the function's own error type (OrderError). It doesn't panic or replace the error with 0."
     },
     {
       "question": "In total_price, what happens if the first text is bad and the second one is fine?",
@@ -189,7 +190,8 @@
         "Both errors are returned together",
         "The program panics"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "With ?, the function returns at the first Err. If the first text is bad, the error comes back right away and the second text is never looked at. Only one error is returned, and nothing panics."
     },
     {
       "question": "What does expect do when it gets an Err?",
@@ -198,7 +200,8 @@
         "Returns the error as a String",
         "Stops the program and shows your message"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "expect works like unwrap: on an Err (or None) it panics and shows your message, which stops the program. It never turns the error into None or a String."
     }
   ]
 }

@@ -97,7 +97,8 @@
         "A reference to the first 3 bytes",
         "The 3rd character"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "A string slice is a reference, not a copy. The range 0..3 counts bytes, not characters, so it covers the first 3 bytes. For plain English text that is the same as 3 characters, but the slice must also end on a character boundary."
     },
     {
       "question": "What's the type of the literal \"hi\"?",
@@ -106,7 +107,8 @@
         "&str",
         "char"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "A string literal like \"hi\" is a &str: a reference to text stored inside the program. String is the owned, growable type you make with String::from, and char is a single character."
     },
     {
       "question": "Why prefer &str over &String for parameters?",
@@ -115,7 +117,8 @@
         "It's faster to type",
         "&String doesn't work"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "A function that takes &str accepts both string literals and &String values, since a &String is converted to &str automatically. A &String parameter would refuse literals. It does work, and typing speed is not the reason."
     }
   ]
 }

@@ -101,7 +101,8 @@
         "In reverse order of creation, last created dropped first",
         "In alphabetical order of the variable names"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Local variables are dropped in reverse order of creation: the last one created is dropped first. This lets a later variable safely use an earlier one while it is being cleaned up."
     },
     {
       "question": "What does implementing the Deref trait customize?",
@@ -110,7 +111,8 @@
         "How a value is copied when you assign it",
         "What the * operator gives back for the value"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Deref decides what * gives back for your type, and it is what lets a smart pointer like Box behave like a reference. {} printing uses Display and copying uses Copy, so neither is Deref's job."
     },
     {
       "question": "How do you clean up a value before the end of its scope?",
@@ -119,7 +121,8 @@
         "Call value.drop(), the method on the value",
         "Set the variable to None so it is released"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "The standard function drop(value) takes ownership and drops the value right away. Rust doesn't let you call value.drop() yourself, because it would still run again at the end of the scope. Setting a variable to None doesn't work for every type."
     }
   ]
 }

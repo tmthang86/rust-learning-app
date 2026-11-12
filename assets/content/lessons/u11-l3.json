@@ -108,7 +108,8 @@
         "Only when you call an unlock() method on the Mutex yourself",
         "When the MutexGuard is dropped, for example at the end of its block"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Locking a Mutex gives you a MutexGuard, and the Mutex is unlocked when the guard is dropped, for example at the end of its block. On stable Rust you don't call an unlock method: you drop the guard or let it go out of scope. There is no timeout."
     },
     {
       "question": "Why do we use Arc and not Rc to share data between threads?",
@@ -117,7 +118,8 @@
         "Arc is a smaller type than Rc, which is better when threads are involved",
         "Rc can only hold plain numbers, but Arc can hold values of any type at all"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Rc's reference counter is not atomic, so two threads changing it at once could corrupt it. The compiler rejects Rc in thread::spawn. Arc uses an atomic counter, which is why it is safe to share across threads. It is not about size or about what type of data can be held."
     },
     {
       "question": "What is a deadlock?",
@@ -126,7 +128,8 @@
         "Threads waiting for each other, or for themselves, so none can ever continue",
         "A thread that finishes before main and so loses its result"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "A deadlock is when threads wait for each other, or for themselves (for example locking the same Mutex twice), so none can continue. A panic in a thread and a thread finishing early are different things."
     }
   ]
 }

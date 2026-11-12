@@ -112,7 +112,8 @@
         "None, which a for loop takes as the signal to stop",
         "An Err value that the for loop turns into a panic"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "next returns None when the iterator is out of items, and a for loop treats None as the signal to stop. It doesn't invent a default value and it doesn't panic."
     },
     {
       "question": "Which method takes ownership of a Vec and gives you its items by value?",
@@ -121,7 +122,8 @@
         "iter_mut(), which hands over the items and consumes the Vec",
         "into_iter(), which consumes the Vec and yields owned items"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "into_iter() consumes the Vec and yields each item by value, so the Vec can't be used afterwards. iter() yields references and leaves the Vec as it was, and iter_mut() yields mutable references."
     },
     {
       "question": "What must you write to implement Iterator for your own struct?",
@@ -130,7 +132,8 @@
         "Write a for loop and store the items in a Vec field",
         "Write next and also a len method that says how many items are left"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "To implement Iterator you set type Item, the kind of item produced, and write next. Everything else (map, filter, sum and so on) comes for free. You don't need a stored Vec or a len method."
     }
   ]
 }

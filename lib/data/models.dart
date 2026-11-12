@@ -304,16 +304,22 @@ class QuizQuestion {
     required this.question,
     required this.options,
     required this.answer,
+    this.explanation = '',
   });
 
   final String question;
   final List<String> options;
   final int answer;
 
+  /// Why the right answer is right (and the others are not), shown after
+  /// Check. Empty when the lesson has none (old content).
+  final String explanation;
+
   factory QuizQuestion.fromJson(Map<String, dynamic> json) => QuizQuestion(
         question: json['question'] as String,
         options: (json['options'] as List).cast<String>(),
         answer: json['answer'] as int,
+        explanation: (json['explanation'] as String?)?.trim() ?? '',
       );
 }
 

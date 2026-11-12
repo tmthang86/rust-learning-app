@@ -101,7 +101,8 @@
         "Theo thứ tự ngược với thứ tự tạo, tạo sau cùng thì bị drop trước",
         "Theo thứ tự bảng chữ cái của tên biến"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Các biến cục bộ bị drop theo thứ tự ngược với lúc tạo: biến tạo sau cùng bị drop trước. Nhờ đó biến tạo sau dùng an toàn được biến tạo trước trong lúc nó được dọn dẹp."
     },
     {
       "question": "Việc implement trait Deref tùy chỉnh điều gì?",
@@ -110,7 +111,8 @@
         "Cách một giá trị được sao chép khi bạn gán nó",
         "Thứ mà toán tử * trả về cho giá trị đó"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Deref quyết định * trả về gì cho kiểu của bạn, và nhờ nó con trỏ thông minh như Box cư xử giống tham chiếu. In bằng {} dùng Display và sao chép dùng Copy, nên cả hai không phải việc của Deref."
     },
     {
       "question": "Làm thế nào để dọn dẹp một giá trị trước khi hết phạm vi của nó?",
@@ -119,7 +121,8 @@
         "Gọi value.drop(), phương thức trên giá trị",
         "Đặt biến thành None để nó được giải phóng"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Hàm chuẩn drop(value) lấy quyền sở hữu và drop giá trị ngay lập tức. Rust không cho bạn tự gọi value.drop(), vì nó vẫn sẽ chạy lần nữa ở cuối phạm vi. Gán biến bằng None không áp dụng được cho mọi kiểu."
     }
   ]
 }

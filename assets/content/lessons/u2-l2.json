@@ -61,7 +61,8 @@
         "Tuple items can have different types",
         "Tuples can't be printed"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "A tuple can mix types, such as (1, \"a\", 2.5), while every item in an array has the same type. Neither can grow, and both can be printed with {:?}."
     },
     {
       "question": "What is the index of the first item in an array?",
@@ -70,7 +71,8 @@
         "1",
         "-1"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Arrays count from 0, so the first item is at index 0. Index 1 is the second item, and -1 isn't allowed because indexes can't be negative."
     },
     {
       "question": "How do you get the second value of the tuple t?",
@@ -79,7 +81,8 @@
         "t.1",
         "t.2"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Tuple fields are read with a dot and a number that starts at 0, so the second value is t.1. t[1] is array syntax, and t.2 would be the third value."
     }
   ]
 }

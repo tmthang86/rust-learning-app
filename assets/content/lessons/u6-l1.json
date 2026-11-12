@@ -96,7 +96,8 @@
         "Retries the line",
         "Returns None"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "A panic stops the program and prints a message saying what went wrong and where. It does not retry the line or return None."
     },
     {
       "question": "When should you use panic!?",
@@ -105,7 +106,8 @@
         "For any user mistake",
         "Instead of println!"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "panic! is for bugs and states that should never happen, where continuing would be unsafe. Mistakes you expect from users should be handled with Result or Option. It also isn't a replacement for println!."
     },
     {
       "question": "How is expect different from unwrap?",
@@ -114,7 +116,8 @@
         "It never panics",
         "It returns a String"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "expect does what unwrap does and panics on None or Err, but you choose the message that is shown. That makes the cause easier to find. It still panics, and it returns the inner value, not a String."
     }
   ]
 }

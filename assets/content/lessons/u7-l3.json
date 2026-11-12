@@ -94,7 +94,8 @@
         "A method that Rust calls automatically when a value of the type is created",
         "A method with no body, which every type must write for itself"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "A default method has a body written in the trait. Types get it for free and may override it with their own version. A method with no body must be written by every type, and Rust never calls methods automatically when a value is created."
     },
     {
       "question": "Which line gives the type Robot the trait Speak?",
@@ -103,7 +104,8 @@
         "trait Speak for Robot { ... }",
         "impl Speak for Robot { ... }"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "A trait is given to a type with impl Trait for Type { ... }. The other two forms are not Rust syntax: a struct doesn't list traits after a colon, and trait ... for is not a thing."
     },
     {
       "question": "After you implement Display for a type, what else can you do with it?",
@@ -112,7 +114,8 @@
         "Print it with {} and call to_string on it",
         "Copy it instead of moving it, and print it with {:?}"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Display makes {} work, and any type with Display also gets to_string. Debug ({:?}) and == need their own traits, and Copy is a separate trait you also have to ask for."
     }
   ]
 }

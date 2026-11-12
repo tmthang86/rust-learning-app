@@ -30,17 +30,20 @@
     {
       "question": "let score = 10; làm gì?",
       "options": ["Kiểm tra xem score có bằng 10 không", "Lưu 10 dưới cái tên score", "In ra 10"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "let tạo ra một biến: nó lưu giá trị 10 dưới tên score. Dấu = đơn có nghĩa là \"lưu giá trị này\", không phải so sánh. Không có gì được in ra, vì muốn in cần dùng println!."
     },
     {
       "question": "Cái nào trong những cái này là văn bản, không phải số?",
       "options": ["7", "\"7\"", "7.0"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Dấu nháy kép tạo ra chuỗi văn bản: \"7\" là văn bản chứa ký tự 7. Còn 7 trơn là số nguyên và 7.0 là số có phần thập phân. Hai giá trị này đều là số nên bạn tính toán được với chúng."
     },
     {
       "question": "Dấu * giữa hai số làm gì?",
       "options": ["Cộng chúng lại", "Nhân chúng với nhau", "So sánh chúng"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "* là toán tử nhân, nên 3 * 4 bằng 12. Phép cộng dùng +, còn so sánh dùng ==."
     }
   ]
 }

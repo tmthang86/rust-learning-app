@@ -85,7 +85,8 @@
         "i32",
         "Vec<i32>"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "i32 is a simple value of fixed size, so assigning it copies it and the original stays valid. String and Vec<i32> own heap data, so assigning them moves ownership."
     },
     {
       "question": "What does .clone() do to a String?",
@@ -94,7 +95,8 @@
         "Makes a full copy of its data",
         "Deletes it"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": ".clone() makes a full, independent copy of the String's data, so the original and the clone each have their own. It doesn't move or delete the original."
     },
     {
       "question": "Why doesn't Rust clone Strings automatically?",
@@ -103,7 +105,8 @@
         "Strings can't be cloned",
         "It's a bug"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Copying heap data can be expensive, so Rust makes you write .clone() and see the cost. Strings can be cloned, and this is a design choice, not a bug."
     }
   ]
 }

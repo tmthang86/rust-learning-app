@@ -121,7 +121,8 @@
         "In src/main.rs",
         "In the target folder"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "cargo new creates src/main.rs for your code. Cargo.toml only describes the project (its name and dependencies), and the target folder holds files that the build generates."
     },
     {
       "question": "Which of these can give a name a new type, for example from text to a number?",
@@ -130,7 +131,8 @@
         "const",
         "Shadowing with a new let"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Shadowing declares a brand new variable with let, so it can have a different type, such as a number made from text. A variable declared with let mut can change its value but never its type, and a const can't be redeclared with another type this way."
     },
     {
       "question": "What is true about a constant such as PRICE_PER_KILO?",
@@ -139,7 +141,8 @@
         "It must be declared inside main",
         "It can be changed with mut"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "A const must always have its type written, for example const PRICE_PER_KILO: u32 = 5;. It can be declared in any scope, not only inside main, and it can never be made mut."
     }
   ]
 }

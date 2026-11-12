@@ -26,17 +26,20 @@
     {
       "question": "When does the code inside if run?",
       "options": ["Always", "When the condition is true", "When the condition is false"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "The block after if runs only when the condition is true. When it is false, Rust skips the block, or runs the else block if there is one."
     },
     {
       "question": "Which one compares two values?",
       "options": ["=", "==", "=>"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "== asks whether two values are equal. A single = stores a value, and => is not a comparison at all."
     },
     {
       "question": "With score = 95, what does the grade example print?",
       "options": ["Grade A", "Grade B", "Grade A and Grade B"],
-      "answer": 0
+      "answer": 0,
+      "explanation": "The checks run from the top and the first true one wins. With score = 95 the first check, for 90 or more, is true, so it prints Grade A and skips the rest. Only one branch of an if / else if chain ever runs."
     }
   ]
 }

@@ -112,7 +112,8 @@
         "A Cons would contain a List that contains a Cons, so its size is infinite",
         "i32 cannot be stored inside an enum variant"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "A Cons holds a List, which can be a Cons that holds a List, and so on, so the compiler can't work out the size and rejects the type. Putting the List behind a Box fixes it. An enum variant can hold another enum, and i32 is fine in a variant."
     },
     {
       "question": "Where does a Box<T> keep the value of type T?",
@@ -121,7 +122,8 @@
         "Copied into every variable that uses the Box",
         "On the heap, with the Box holding a pointer to it"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "A Box<T> keeps the value on the heap, and the Box itself is a pointer to it on the stack. The value is not copied into each variable, and there is still only one owner."
     },
     {
       "question": "What does Vec<Box<dyn Shape>> let you do?",
@@ -130,7 +132,8 @@
         "Store values of any types, with no common trait needed",
         "Store only Circles, because the Box fixes the type"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Vec<Box<dyn Shape>> holds trait objects, so one Vec can store a Circle next to a Square, as long as each one implements Shape. A bare dyn Shape has no known size, which is why each is boxed. A common trait is required."
     }
   ]
 }

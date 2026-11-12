@@ -84,7 +84,8 @@
         "Chương trình bị sập khi chạy",
         "Code không biên dịch được"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Biến tạo bằng let trơn không thể gán giá trị mới, và trình biên dịch từ chối chương trình với một lỗi. Đây không phải sự cố khi chạy, vì chương trình không được build. Hãy thêm mut để cho phép thay đổi."
     },
     {
       "question": "Dòng nào khai báo một biến mà bạn có thể thay đổi?",
@@ -93,7 +94,8 @@
         "let mut x = 1;",
         "const x = 1;"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "let mut x = 1; khai báo biến có thể đổi giá trị. let x = 1; thì cố định sau khi gán, còn const x = 1; không thể dùng mut và còn thiếu kiểu được ghi rõ."
     },
     {
       "question": "Một const luôn phải có gì?",
@@ -102,7 +104,8 @@
         "Từ khóa mut",
         "Một cái tên viết thường"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "const luôn phải ghi rõ kiểu, như const MAX: u32 = 10;. Nó không dùng được mut, và tên viết hoa toàn bộ chỉ là quy ước chứ không phải luật bắt buộc."
     }
   ]
 }

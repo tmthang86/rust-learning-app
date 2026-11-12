@@ -134,7 +134,8 @@
         "Passing word would move it, so main could not print it afterwards",
         "A function can never take a String"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Passing word by value moves it into the function, and a moved String can't be used again, so main couldn't print it afterwards. clone passes a copy and main keeps the original. Cloning makes things slower, not faster, and a function can take a String."
     },
     {
       "question": "After let mut score = start; where start is a u32, can you still use start?",
@@ -143,7 +144,8 @@
         "No, it was moved",
         "Only if you add .clone()"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Integers like u32 are Copy: assigning one makes a copy and leaves the original usable. Types that aren't Copy, such as String, are moved, and no clone is needed here."
     },
     {
       "question": "What type does &s[..3] have when s is a String?",
@@ -152,7 +154,8 @@
         "&String",
         "&str"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Slicing a String with &s[..3] gives a string slice, which is &str. It borrows the first three bytes of s instead of copying them, so it is not a String, and it is not a &String either."
     }
   ]
 }

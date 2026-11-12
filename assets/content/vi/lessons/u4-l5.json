@@ -102,7 +102,8 @@
         "Nó trả về None",
         "Nó chọn nhánh đầu tiên"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "match phải đầy đủ: mọi giá trị có thể có đều cần một nhánh, và trình biên dịch từ chối code nếu thiếu. Nhờ vậy các trường hợp bị quên được phát hiện trước khi chạy. match không bao giờ âm thầm trả về None hay rơi vào nhánh đầu tiên."
     },
     {
       "question": "_ có nghĩa là gì trong một match?",
@@ -111,7 +112,8 @@
         "Số không",
         "Một lỗi"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "_ là mẫu bắt mọi trường hợp: nó khớp với bất kỳ giá trị nào mà các nhánh trước chưa khớp, nên đặt ở cuối. Nó không có nghĩa là số không hay lỗi."
     },
     {
       "question": "Khi nào if let là một lựa chọn tốt?",
@@ -120,7 +122,8 @@
         "Khi bạn cần mọi trường hợp",
         "Cho vòng lặp"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "if let ngắn hơn match đầy đủ khi bạn chỉ quan tâm một mẫu và bỏ qua phần còn lại. Nếu cần xử lý mọi trường hợp, hãy dùng match. Nó không liên quan đến vòng lặp."
     }
   ]
 }

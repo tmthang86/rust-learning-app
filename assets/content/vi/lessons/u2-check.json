@@ -162,7 +162,8 @@
         "59",
         "Nó không biên dịch được"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Ép kiểu số thực sang số nguyên bằng as sẽ bỏ phần thập phân, cắt về phía 0, nên 59.5 as u32 bằng 59. Nó không làm tròn lên 60."
     },
     {
       "question": "Trong average_and_best, tại sao tổng được chuyển thành f64 trước khi chia cho 4.0?",
@@ -171,7 +172,8 @@
         "f64 nhanh hơn u32",
         "Không thể chia một u32"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Rust không bao giờ tự trộn kiểu số nguyên và số thực trong phép tính, nên chia tổng kiểu u32 cho 4.0 sẽ không biên dịch được. Bạn phải đổi sang f64 bằng as trước. Lý do không phải tốc độ, và u32 vẫn chia được cho một u32 khác."
     },
     {
       "question": "break rounds; làm gì bên trong một khối loop?",
@@ -180,7 +182,8 @@
         "Kết thúc toàn bộ chương trình",
         "Dừng vòng lặp và trả về rounds làm giá trị của nó"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "break rounds; thoát khỏi vòng lặp ngay, và giá trị đứng sau break trở thành giá trị của cả biểu thức loop. continue mới là lệnh bỏ qua để sang vòng tiếp theo, và break không kết thúc cả chương trình."
     }
   ]
 }

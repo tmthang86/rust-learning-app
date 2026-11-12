@@ -86,7 +86,8 @@
         "Bên trong struct",
         "Trong main"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Phương thức được viết trong khối impl của kiểu đó. Phần định nghĩa struct chỉ liệt kê các trường, còn main chỉ là hàm dùng kiểu này."
     },
     {
       "question": "Một phương thức làm thay đổi giá trị nên nhận loại self nào?",
@@ -95,7 +96,8 @@
         "&mut self",
         "Không có self"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Phương thức thay đổi giá trị cần &mut self, tức mượn nó theo kiểu có thể thay đổi. &self chỉ cho đọc, còn hàm không có self thì không phải phương thức của giá trị."
     },
     {
       "question": "Làm thế nào để gọi hàm liên kết new trên Account?",
@@ -104,7 +106,8 @@
         "Account::new()",
         "new Account()"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Hàm liên kết được gọi trên kiểu bằng ::, nên viết Account::new(). Dấu chấm dùng cho phương thức của một giá trị, còn new Account() là cú pháp của ngôn ngữ khác. Trong Rust, new chỉ là một tên hàm bình thường."
     }
   ]
 }

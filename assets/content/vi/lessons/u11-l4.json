@@ -98,7 +98,8 @@
         "Một future: một giá trị đại diện cho công việc chưa chạy",
         "Một thread hệ điều hành mới đã bắt đầu chạy phần thân"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Gọi async fn không chạy thân hàm. Nó cho bạn một future, một giá trị đại diện cho công việc chưa chạy. Lời gọi không khởi động thread hệ điều hành nào."
     },
     {
       "question": ".await làm gì?",
@@ -107,7 +108,8 @@
         "Khởi động một thread hệ điều hành mới để chạy future song song với main",
         "Chuyển future thành kiểu đầu ra của nó mà không bao giờ phải chờ"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": ".await chờ future hoàn thành và trong lúc chờ cho phép công việc khác chạy trên cùng thread. Nó không tạo thread nào, và việc chờ là thật. Kết quả chỉ có khi future đã hoàn thành."
     },
     {
       "question": "Tại sao các chương trình async thực tế thêm một crate như tokio?",
@@ -116,7 +118,8 @@
         "Các hàm async không thể gọi println! trừ khi một crate bọc nó cho chúng",
         "Thư viện chuẩn định nghĩa future nhưng không có runtime để chạy chúng"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Rust có cú pháp async / await và thư viện chuẩn định nghĩa trait Future, nhưng không có runtime (executor) để chạy future đến khi xong, nên bạn thêm một crate như tokio. Hàm async dùng println! mà không cần crate nào."
     }
   ]
 }

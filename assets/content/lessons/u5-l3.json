@@ -104,7 +104,8 @@
         "An Option holding a reference to the value",
         "A bool"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "get returns Option<&V>: Some with a reference to the value if the key exists and None if it doesn't. It doesn't crash and it doesn't return a bool."
     },
     {
       "question": "What happens when you insert a key that already exists?",
@@ -113,7 +114,8 @@
         "It's ignored",
         "The program stops"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Inserting a key that already exists replaces its value, and insert gives the old value back as Some(old). It isn't ignored and doesn't stop the program. To keep the old value, use entry(key).or_insert(value)."
     },
     {
       "question": "Is the order of a HashMap's items guaranteed?",
@@ -122,7 +124,8 @@
         "Yes, sorted",
         "No"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "A HashMap does not keep items in any promised order, neither insertion order nor sorted, and the order can differ between runs. If you need a fixed order, collect the keys and sort them, or use a BTreeMap."
     }
   ]
 }
