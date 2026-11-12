@@ -1242,6 +1242,20 @@ async fn cost_grade_against_run_on_lesson_solutions() {
 // --- /grade harness version ---
 
 #[tokio::test]
+async fn harness_is_checked_before_the_tests_are_typed() {
+    // A future app: harness 2 and a test field of a type this runner does
+    // not know (`code` as an object). It must hear `harness_unsupported`.
+    let tests = json!([{ "id": "a", "code": { "future": true } }]);
+    let (status, _, body) = common::send(
+        common::router(state(Sandbox::Local), "127.0.0.1"),
+        common::grade_request_harness("fn main() {}", tests, json!(2)),
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
+    assert_eq!(body["code"], "harness_unsupported", "{body}");
+}
+
+#[tokio::test]
 async fn grade_accepts_harness_1_and_a_missing_harness() {
     // Missing: every other grade test in this file sends no `harness`.
     let (status, _, body) = common::send(

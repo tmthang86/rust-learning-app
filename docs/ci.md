@@ -36,6 +36,12 @@ emulators.
   (the production CPU) and amd64. It is still not the real host: no Caddy, no
   systemd, no firewall, and a newer Docker than `DOCKER_VERSION`; run
   `smoke.sh` on the VM after a deploy.
+- **The arm64 gVisor leg needs a public repo or an arm64 larger runner.**
+  `ubuntu-24.04-arm` hosted runners are free only for public repositories.
+  In a private repository the `Runner under gVisor (arm64)` leg needs an
+  arm64 larger runner, otherwise it cannot start. Until then, require only
+  the amd64 leg; keep the arm64 leg in the workflow, since production is
+  arm64.
 - **Release tags.** Tag every store release `v<version>`; the `compat` job
   only protects tagged releases.
 - **Rust version.** The `lessons` job uses exactly the Rust version of the
@@ -52,4 +58,4 @@ emulators.
   `dart format --set-exit-if-changed lib test` to the `flutter` job.
 - **Required checks.** Once the jobs are green, make them required in
   GitHub: Settings → Branches → add a rule for `main` → Require status
-  checks to pass → pick the jobs by name: Flutter analyze and test, Lessons compile, Runner fmt, clippy, test, Released lessons still gradable, Runner Docker sandbox, Runner under gVisor (arm64), Runner under gVisor (amd64), Firestore rules and Cloud Function.
+  checks to pass → pick the jobs by name (the gVisor job has two legs; require only the amd64 one, see the note on gVisor below): Flutter analyze and test, Lessons compile, Runner fmt, clippy, test, Released lessons still gradable, Runner Docker sandbox, Runner under gVisor (amd64), Firestore rules and Cloud Function.

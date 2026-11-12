@@ -282,6 +282,6 @@
   "testReasonUnknown": "Chương trình đã dừng bất ngờ.",
   "runIssueRunnerNeedsUpdate": "Máy chủ chạy code cần được cập nhật. Vui lòng thử lại sau.",
   "runIssueTestsInvalid": "Không thể kiểm tra bài tập này. Vui lòng cập nhật ứng dụng.",
-  "runIssueAppNeedsUpdate": "Máy chủ chạy code không còn hỗ trợ phiên bản ứng dụng này. Vui lòng cập nhật ứng dụng.",
+  "runIssueAppNeedsUpdate": "Phiên bản ứng dụng và máy chủ không khớp nhau. Vui lòng cập nhật ứng dụng.",
   "runIssueRunInProgress": "Một lượt chạy đang diễn ra. Hãy đợi nó hoàn tất rồi thử lại."
 }

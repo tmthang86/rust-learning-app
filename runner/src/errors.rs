@@ -125,7 +125,7 @@ impl ApiError {
         .with_info(|i| i.limiter = Some(scope.as_str()))
     }
 
-    pub fn harness_unsupported(sent: u32) -> Self {
+    pub fn harness_unsupported(sent: u64) -> Self {
         Self::new(
             StatusCode::BAD_REQUEST,
             "harness_unsupported",

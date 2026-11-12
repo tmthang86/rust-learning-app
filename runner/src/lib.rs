@@ -298,10 +298,10 @@ async fn acquire_slot(
 /// together with the tests and the answer holds one result per test.
 async fn grade(
     State(state): State<Arc<AppState>>,
-    payload: Result<Json<GradeRequest>, JsonRejection>,
+    payload: Result<Json<serde_json::Value>, JsonRejection>,
 ) -> Result<Response, ApiError> {
-    let req = match payload {
-        Ok(Json(req)) => req,
+    let body = match payload {
+        Ok(Json(body)) => body,
         Err(rejection) => {
             let status = rejection.status();
             return Err(if status == StatusCode::PAYLOAD_TOO_LARGE {
@@ -311,6 +311,25 @@ async fn grade(
             });
         }
     };
+    // The version comes first, before `tests` is typed: a newer app may send
+    // test fields this runner cannot parse, and it must hear
+    // `harness_unsupported`, not `bad_request`. A `harness` that is not a
+    // number is left to the typed parse below.
+    if let Some(sent) = body.get("harness").and_then(serde_json::Value::as_u64)
+        && !SUPPORTED_HARNESS.iter().any(|&v| u64::from(v) == sent)
+    {
+        let code_bytes = body.get("code").and_then(|c| c.as_str()).map(str::len);
+        return Err(ApiError::harness_unsupported(sent).with_info(|i| {
+            i.code_bytes = code_bytes;
+            i.endpoint = Some("grade");
+        }));
+    }
+    let req: GradeRequest = serde_json::from_value(body).map_err(|e| {
+        ApiError::bad_request(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            format!("Failed to deserialize the JSON body into the target type: {e}"),
+        )
+    })?;
     let code_bytes = req.code.len();
     let sized = |e: ApiError| {
         e.with_info(|i| {
@@ -323,9 +342,6 @@ async fn grade(
     }
     if code_bytes > MAX_CODE_BYTES {
         return Err(sized(ApiError::code_too_long()));
-    }
-    if !SUPPORTED_HARNESS.contains(&req.harness) {
-        return Err(sized(ApiError::harness_unsupported(req.harness)));
     }
     if let Err(message) = rr_grade::validate(&req.tests) {
         return Err(sized(ApiError::new(

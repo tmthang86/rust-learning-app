@@ -174,6 +174,12 @@ jobs:
   # everything `runner-sandbox` does (same Docker tests, plus gVisor), so
   # `runner-sandbox` could be dropped; it is kept as a fast runc-only
   # check until this job has proved stable.
+  #
+  # The arm64 leg runs on `ubuntu-24.04-arm`, which GitHub provides free
+  # only for public repositories. In a private repository it needs an arm64
+  # larger runner (paid); until then that leg may sit queued or fail to
+  # start, and only the amd64 leg should be a required check. Both legs are
+  # kept because production is arm64.
   runner-gvisor:
     name: Runner under gVisor (${{ matrix.arch }})
     runs-on: ${{ matrix.runs-on }}
@@ -204,8 +210,6 @@ jobs:
               -o "type=local,dest=$RUNNER_TEMP/stage" -
           test -x "$RUNNER_TEMP/stage/rust-runner"
           test -x "$RUNNER_TEMP/stage/rust-runner-tests"
-      - name: Build the sandbox image
-        run: docker build -t rust-runner-sandbox -f runner/sandbox.Dockerfile runner
       - name: Install the pinned gVisor (runsc) and switch Docker to it
         run: |
           . runner/deploy/vars.sh
@@ -225,6 +229,11 @@ jobs:
           docker info --format 'default runtime: {{.DefaultRuntime}}; runtimes: {{json .Runtimes}}'
           test "$(docker info --format '{{.DefaultRuntime}}')" = runsc
           runsc --version | head -n 1 | grep -q "release-$RUNSC_VERSION"
+      # After the switch, so the image is made on the daemon as configured
+      # for production. The file has no RUN step, and BuildKit runs build
+      # steps with its own runc, so the default runtime does not matter.
+      - name: Build the sandbox image
+        run: docker build -t rust-runner-sandbox -f runner/sandbox.Dockerfile runner
       # As smoke.sh's check 5: a container really is in gVisor.
       - name: A container runs under gVisor
         run: |
