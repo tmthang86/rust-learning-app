@@ -12,8 +12,10 @@ newer action or a newer `functions/` npm package exists.
 | --- | --- | --- |
 | `flutter` | `flutter analyze` and `flutter test` on Flutter 3.47.7 | `flutter pub get && flutter analyze && flutter test` |
 | `lessons` | Rust 1.99.1 (the sandbox's). Builds `rr-grade`, then every lesson example compiles (edition 2024) and every exercise is graded with its tests: the solution passes all of them, the starter fails one (`--self-test` checks the checker itself); every error-explanation example fails with its own error code or message, and every code is still emitted; every translated file under `assets/content/<lang>/` matches its English source; the checker's own tests | `cargo build --release --locked -p rr-grade` in `runner/`, then `python3 tool/check_lessons.py --self-test`, `python3 tool/check_lessons.py`, `python3 tool/test_check_lessons.py`, `python3 tool/check_errors.py` |
+| `compat` | For every git tag `v*` (one per store release): extracts that tag's `assets/content/lessons` and runs `check_lessons.py --strict --lessons-dir` on it with the `rr-grade` built from the current commit, so released app bundles stay gradable. No tags: passes, nothing to check. See "Grade API versions" in `runner/docs/production-design.md` | build `rr-grade` as for `lessons`, then `git archive v1.0.0 assets/content/lessons \| tar -x -C /tmp/v1.0.0` and `python3 tool/check_lessons.py --strict --lessons-dir /tmp/v1.0.0/assets/content/lessons` |
 | `runner` | `cargo fmt --all --check`, `cargo clippy -D warnings`, `cargo test`, for the server and the `rr-grade` crate | in `runner/`: `cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace` |
 | `runner-sandbox` | Builds the sandbox image and runs the Docker test (limits, no network) | in `runner/`: `docker build -t rust-runner-sandbox -f sandbox.Dockerfile . && cargo test -- --ignored` |
+| `runner-gvisor` (arm64 and amd64) | The real sandbox: builds the runner with `runner/deploy/Dockerfile.build`, installs the pinned gVisor `.deb` (version and sha256 from `runner/deploy/vars.sh`) and `runner/deploy/daemon.json`, then `rust-runner --version`, `--self-check` and the ignored Docker tests (including `/grade` and `output_of`) under `runsc`, on `ubuntu-24.04-arm` and `ubuntu-24.04`. Covers everything `runner-sandbox` does | Needs a Linux host with Docker: see the job in `ci.yml` |
 | `firebase` | Firestore rules against the emulator, and the account-deletion Cloud Function against the Auth, Firestore and Functions emulators | `sh test/firestore_rules/run.sh`, then `cd functions && npm ci && npm test` |
 
 The Firebase tests need Node 22 and Java 21. The first run downloads the
@@ -27,10 +29,15 @@ emulators.
   `flutter test` need nothing extra. If an IDE or `dart analyze` shows missing
   `AppLocalizations`, run `flutter pub get` (or `flutter gen-l10n`).
 
-- **gVisor is not on CI.** GitHub's runners have Docker with the default
-  `runc` runtime, so `runner-sandbox` leaves `RUNNER_DOCKER_RUNTIME` unset.
-  It checks the container limits and the blocked network, not gVisor. Test
-  gVisor on the real host.
+- **gVisor.** GitHub's runners have Docker with the default `runc` runtime,
+  so `runner-sandbox` leaves `RUNNER_DOCKER_RUNTIME` unset and checks the
+  container limits and the blocked network, not gVisor. The `runner-gvisor`
+  job installs the pinned `runsc` and runs the same tests under it, on arm64
+  (the production CPU) and amd64. It is still not the real host: no Caddy, no
+  systemd, no firewall, and a newer Docker than `DOCKER_VERSION`; run
+  `smoke.sh` on the VM after a deploy.
+- **Release tags.** Tag every store release `v<version>`; the `compat` job
+  only protects tagged releases.
 - **Rust version.** The `lessons` job uses exactly the Rust version of the
   sandbox image (`runner/sandbox.Dockerfile`, 1.99.1), so a lesson passes CI
   only if the runner will grade it the same way. Bump the version in both
@@ -45,4 +52,4 @@ emulators.
   `dart format --set-exit-if-changed lib test` to the `flutter` job.
 - **Required checks.** Once the jobs are green, make them required in
   GitHub: Settings → Branches → add a rule for `main` → Require status
-  checks to pass → pick the jobs by name: Flutter analyze and test, Lessons compile, Runner fmt, clippy, test, Runner Docker sandbox, Firestore rules and Cloud Function.
+  checks to pass → pick the jobs by name: Flutter analyze and test, Lessons compile, Runner fmt, clippy, test, Released lessons still gradable, Runner Docker sandbox, Runner under gVisor (arm64), Runner under gVisor (amd64), Firestore rules and Cloud Function.

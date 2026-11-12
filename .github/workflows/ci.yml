@@ -58,6 +58,66 @@ jobs:
         run: python3 tool/test_check_lessons.py
       - run: python3 tool/check_errors.py
 
+  # Released app bundles keep their lesson JSON forever, so the grader built
+  # from this commit must still pass every lesson tree that shipped. Each
+  # store release is tagged v<version> (runner/docs/production-design.md,
+  # "Grade API versions"); this job checks every such tag with today's
+  # rr-grade. With no tag yet there is nothing to check and the job passes.
+  compat:
+    name: Released lessons still gradable
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # All history and tags: the tags are the input of this job.
+          fetch-depth: 0
+      - name: List release tags
+        id: tags
+        run: |
+          tags="$(git tag --list 'v*' | sort -V)"
+          if [ -z "$tags" ]; then
+            echo "No v* tags in this repository: no released app bundle to check, nothing to do."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Release tags to check:"
+            echo "$tags"
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
+      # Same toolchain as the `lessons` job: the sandbox's Rust version.
+      - if: steps.tags.outputs.found == 'true'
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: 1.99.1
+      - if: steps.tags.outputs.found == 'true'
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: runner
+      - name: Build rr-grade (this commit)
+        if: steps.tags.outputs.found == 'true'
+        run: cargo build --release --locked -p rr-grade
+        working-directory: runner
+      - name: Check every tagged lesson tree with this commit's grader
+        if: steps.tags.outputs.found == 'true'
+        run: |
+          failed=""
+          for tag in $(git tag --list 'v*' | sort -V); do
+            dir="$RUNNER_TEMP/compat/$tag"
+            mkdir -p "$dir"
+            git archive "$tag" assets/content/lessons | tar -x -C "$dir"
+            echo "::group::$tag"
+            if ! python3 tool/check_lessons.py --strict --lessons-dir "$dir/assets/content/lessons"; then
+              failed="$failed $tag"
+              echo "::error::lessons of $tag fail with the current grader"
+            fi
+            echo "::endgroup::"
+          done
+          if [ -n "$failed" ]; then
+            echo "These releases are no longer gradable:$failed" >&2
+            exit 1
+          fi
+
   runner:
     name: Runner fmt, clippy, test
     runs-on: ubuntu-latest
@@ -106,6 +166,100 @@ jobs:
       # unset.
       - name: Run the ignored Docker test
         run: cargo test -- --ignored
+
+  # H1: the runner's real sandbox, gVisor, on both CPUs the runner is
+  # deployed on (Oracle Ampere = arm64, the GCE fallback = x86_64). It
+  # builds, installs and configures things the way runner/deploy/ does, and
+  # takes the pinned versions from runner/deploy/vars.sh. This job covers
+  # everything `runner-sandbox` does (same Docker tests, plus gVisor), so
+  # `runner-sandbox` could be dropped; it is kept as a fast runc-only
+  # check until this job has proved stable.
+  runner-gvisor:
+    name: Runner under gVisor (${{ matrix.arch }})
+    runs-on: ${{ matrix.runs-on }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runs-on: ubuntu-24.04-arm
+          - arch: amd64
+            runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Build first, with Docker still on its default runtime (runc): the
+      # build is not what is under test.
+      - name: Build rust-runner and the test binary (Dockerfile.build, as push.sh does)
+        run: |
+          . runner/deploy/vars.sh
+          use_arch "$(dpkg --print-architecture)"
+          echo "building for $RUST_TARGET"
+          mkdir -p "$RUNNER_TEMP/stage"
+          git archive --format=tar HEAD runner \
+            | docker buildx build -f runner/deploy/Dockerfile.build --target export \
+              --build-arg "RUST_TARGET=$RUST_TARGET" \
+              -o "type=local,dest=$RUNNER_TEMP/stage" -
+          test -x "$RUNNER_TEMP/stage/rust-runner"
+          test -x "$RUNNER_TEMP/stage/rust-runner-tests"
+      - name: Build the sandbox image
+        run: docker build -t rust-runner-sandbox -f runner/sandbox.Dockerfile runner
+      - name: Install the pinned gVisor (runsc) and switch Docker to it
+        run: |
+          . runner/deploy/vars.sh
+          use_arch "$(dpkg --print-architecture)"
+          echo "runsc $RUNSC_VERSION for $ARCH"
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/runsc.deb" "$RUNSC_DEB_URL"
+          echo "$RUNSC_DEB_SHA256  $RUNNER_TEMP/runsc.deb" | sha256sum -c -
+          # The same daemon.json as production (default runtime runsc).
+          # Written before the .deb so its postinst sees a daemon.json.
+          echo "--- daemon.json before:"
+          sudo cat /etc/docker/daemon.json 2> /dev/null || echo "(none)"
+          sudo install -d -m 0755 /etc/docker
+          sudo install -m 0644 runner/deploy/daemon.json /etc/docker/daemon.json
+          sudo apt-get install -y "$RUNNER_TEMP/runsc.deb"
+          sudo systemctl restart docker
+          runsc --version
+          docker info --format 'default runtime: {{.DefaultRuntime}}; runtimes: {{json .Runtimes}}'
+          test "$(docker info --format '{{.DefaultRuntime}}')" = runsc
+          runsc --version | head -n 1 | grep -q "release-$RUNSC_VERSION"
+      # As smoke.sh's check 5: a container really is in gVisor.
+      - name: A container runs under gVisor
+        run: |
+          out="$(timeout 120 docker run --rm --runtime runsc --network none rust-runner-sandbox dmesg 2>&1 || true)"
+          echo "$out" | head -n 5
+          echo "$out" | grep -q 'Starting gVisor'
+      - name: rust-runner --version and --self-check
+        working-directory: ${{ runner.temp }}/stage
+        env:
+          # production.env itself needs Firebase settings; --self-check only
+          # needs the sandbox settings, which are the production ones.
+          RUNNER_ENV: development
+          RUNNER_DOCKER_RUNTIME: runsc
+          RUNNER_IMAGE: rust-runner-sandbox
+        run: |
+          ./rust-runner --version
+          ./rust-runner --self-check
+      # What smoke.sh runs on the VM (its check 7), including the /grade
+      # and output_of tests (D1 to D3). The cost benchmark reads
+      # ../assets from the build machine's source path, which does not
+      # exist next to a cross-built binary, so it is skipped.
+      - name: Ignored Docker tests under runsc
+        working-directory: ${{ runner.temp }}/stage
+        env:
+          RUNNER_DOCKER_RUNTIME: runsc
+          RUNNER_IMAGE: rust-runner-sandbox
+          RUNNER_TEST_CONTAINER_PREFIX: rr-ci-
+        run: |
+          timeout 1500 ./rust-runner-tests --ignored --test-threads=1 \
+            --skip cost_grade_against_run_on_lesson_solutions
+          leftovers="$(docker ps -a --filter 'name=^rr-ci-' --format '{{.Names}}')"
+          if [ -n "$leftovers" ]; then
+            echo "containers left over from the test run: $leftovers" >&2
+            exit 1
+          fi
 
   firebase:
     name: Firestore rules and Cloud Function

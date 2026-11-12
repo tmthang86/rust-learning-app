@@ -926,6 +926,7 @@ Existing variables keep their meaning. New or changed:
 | `RUNNER_LIMIT_IP_PER_MIN` / `_IP_BURST` / `_IP_PER_HOUR` | 120 / 60 / 3000 | u32, burst ≤ rate | > 0 |
 | `RUNNER_LIMIT_MAX_KEYS` | 50000 | 1000–1,000,000 | |
 | `RUNNER_MAX_QUEUED` | 16 | 0–1000 | |
+| `RUNNER_MAX_INFLIGHT_PER_CLIENT` | 1 | 1–100 | |
 | `RUNNER_DOCKER_RUNTIME` | unset | | must be `runsc` |
 | `RUNNER_ALLOW_RUNC` | unset | | must be unset |
 | `RUNNER_SANDBOX` | docker | | `local` refused |
@@ -951,6 +952,7 @@ RUNNER_DOCKER_RUNTIME=runsc
 RUNNER_IMAGE=mirror.gcr.io/library/rust@sha256:a24e292b4af7bdee351a31d3a6379972a5652f0ea22a1b6d6883324ac4f5097c
 RUNNER_MAX_JOBS=2
 RUNNER_MAX_QUEUED=16
+# RUNNER_MAX_INFLIGHT_PER_CLIENT=1
 RUNNER_TRUSTED_PROXIES=127.0.0.1/32,::1/128
 RUNNER_ALLOWED_ORIGINS=https://REPLACE-web-app-domain
 RUNNER_FIREBASE_PROJECT_NUMBER=REPLACE
@@ -1004,6 +1006,7 @@ RUNNER_DOMAIN=runner.REPLACE
 | 403 | `app_not_allowed` | valid token, `sub` not allowlisted | |
 | 413 | `code_too_long` | | |
 | 429 | `rate_limited` | any bucket or key cap | `Retry-After` |
+| 429 | `client_busy` | the client IP or token already has `RUNNER_MAX_INFLIGHT_PER_CLIENT` requests running or queued | `Retry-After: 2` |
 | 500 | `internal` | sandbox failure (now rare; see §3) | |
 | 503 | `busy` | queue cap or queue timeout | `Retry-After: 5` |
 | 503 | `shutting_down` | | |
@@ -1048,6 +1051,64 @@ reason goes only to logs (`auth_error`).
   code, ids or output.
 
 **`GET /health`:** JSON (§7). No auth, no rate limit.
+
+### Grade API versions
+
+`/grade` is a contract between the runner and the app bundles in the stores,
+and old bundles stay installed for months. Two rules keep them working.
+
+**The `harness` version.** A `/grade` body may carry `"harness": <n>`, the
+version of the test-writing contract the app was built for (what
+`check_eq!`, `output_of` and the other helpers mean, and the shape of the
+answer). The app sends `1` (`HttpCodeRunner.harnessVersion`). A body without
+the field is version 1, so builds from before the field exist keep working.
+The runner lists the versions it answers in `SUPPORTED_HARNESS`
+(`runner/src/lib.rs`). A request naming any other version gets
+`400 harness_unsupported` before anything is compiled, and the app shows
+"please update the app" (`RunIssueKind.appNeedsUpdate`). The runner never
+guesses: it does not run tests of a version it does not know.
+
+**Ids in shipped bundles are immutable.** The app stores progress under the
+lesson and exercise ids, and sends test ids back to the runner. Once a bundle
+containing `u3-l1` or the test id `fifteen-too-young` is released, that id
+must keep its meaning. Do not rename or reuse an id; to change an exercise,
+add a new lesson or test id and leave the old one gradable. Lessons are
+data, so the new runner must keep grading every shipped bundle's lessons:
+the `compat` CI job enforces this (below).
+
+**Every store release is tagged `v<version>`** (for example `v1.4.0`), on the
+commit that was built, before or on the day it is submitted. The `compat` job
+in `.github/workflows/ci.yml` runs for every `v*` tag: it extracts that tag's
+`assets/content/lessons`, builds the `rr-grade` of the commit under test, and
+runs `tool/check_lessons.py --strict --lessons-dir <that tree>`. A red
+`compat` job means a change would stop some released app from grading an
+exercise. An untagged release is invisible to the job, so it is not
+protected. With no tags the job passes and says there was nothing to check.
+(`--strict` holds old trees to today's authoring minimums as well as to
+"solution passes, starter fails"; if a very old release trips only the
+minimums, that is a reason to look at the checker, not to skip the tag.)
+
+**When a harness change is needed.** If tests written for version 1 can no
+longer behave the same (a changed helper, a different answer shape):
+
+1. Add the new behaviour as harness version 2. Do not change what 1 means.
+2. Add 2 to `SUPPORTED_HARNESS` and keep 1 in it as long as any released app
+   uses it (the oldest supported store build, plus the time it takes users to
+   update). Dispatch on `req.harness` where the behaviour differs, and add
+   tests for both versions.
+3. Release the app with `HttpCodeRunner.harnessVersion = 2` and tag it.
+4. Drop version 1 from `SUPPORTED_HARNESS` only when no store build still
+   sends it. Those users then see "please update the app", which is the
+   intended failure, not a crash.
+
+Deploy the runner before the app that needs the new version, and roll the
+runner back only to a build that still lists every version in use.
+
+**Per-client cap.** A client that already has
+`RUNNER_MAX_INFLIGHT_PER_CLIENT` requests running or queued gets
+`429 client_busy` at once; the app shows "a run is already in progress"
+(`RunIssueKind.runInProgress`), distinct from `rate_limited`. See §8,
+"Environment variables".
 
 ### Module layout (`runner/src/`)
 

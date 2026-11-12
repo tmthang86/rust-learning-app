@@ -123,7 +123,7 @@ The code goes in over stdin, so nothing is mounted from the host.
 | Output | 64 KB per stream, enforced by the server; the job is killed past it |
 | Leftovers | containers are removed on timeout, overflow or client disconnect; a watchdog and a startup sweep remove any missed ones |
 | Code size | 64 KB |
-| Concurrency | `RUNNER_MAX_JOBS` jobs at once (4 by default); up to `RUNNER_MAX_QUEUED` (16) wait up to 10 s, the rest get 503 at once |
+| Concurrency | `RUNNER_MAX_JOBS` jobs at once (4 by default); up to `RUNNER_MAX_QUEUED` (16) wait up to 10 s, the rest get 503 at once; one client has at most `RUNNER_MAX_INFLIGHT_PER_CLIENT` (1) running or queued, the next gets 429 `client_busy` |
 
 **Why the program has its own memory cap.** Under gVisor, Docker's `--memory`
 kill is nondeterministic: sometimes only the program dies, sometimes the whole
@@ -193,6 +193,7 @@ once (exit code 2).
 | `RUNNER_LIMIT_MAX_KEYS` | 50000 | Keys each limiter keeps (1000 to 1000000). When full, new keys get 429 and existing ones keep working. |
 | `RUNNER_MAX_JOBS` | 4 | Jobs running at once. |
 | `RUNNER_MAX_QUEUED` | 16 | Requests allowed to wait for a slot (0 to 1000); more get 503 at once. |
+| `RUNNER_MAX_INFLIGHT_PER_CLIENT` | 1 | Requests one client may have running or queued at once (1 to 100), counted per client IP and per App Check token. More get `429 client_busy` with `Retry-After: 2`. **It is per IP**: learners behind one carrier-grade NAT or a school network share one slot and will see "a run is already in progress"; if the `inflight_ip` limiter shows up in the logs for ordinary use, raise it. The tradeoff: a higher value lets one abusive client hold more of the `RUNNER_MAX_JOBS` workers. |
 | `RUNNER_QUEUE_TIMEOUT_SECS` | 10 | How long a queued request waits (at most 600). |
 | `RUNNER_COMPILE_TIMEOUT_SECS` / `RUNNER_RUN_TIMEOUT_SECS` / `RUNNER_JOB_TIMEOUT_SECS` | 10 / 5 / 20 | |
 | `RUNNER_MEMORY_MB` | 512 | At least tmpfs + 192 MB. |

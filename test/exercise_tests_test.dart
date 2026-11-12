@@ -73,6 +73,7 @@ TestResult _fail(
 
 void main() {
   final en = AppLocalizationsEn();
+  final vi = AppLocalizationsVi();
   group('Exercise and ExerciseTest', () {
     test('a lesson with tests parses them, hidden and all', () {
       final e = Exercise.fromJson(
@@ -281,8 +282,6 @@ void main() {
   });
 
   group('Vietnamese strings', () {
-    final vi = AppLocalizationsVi();
-
     test('every reason code has its own Vietnamese sentence', () {
       final seen = <String>{};
       for (final code in [
@@ -388,6 +387,7 @@ void main() {
 
       expect(sent.url.toString(), 'https://runner.example/grade');
       expect(jsonDecode(sent.body), {
+        'harness': 1,
         'code': 'fn main() {}',
         'tests': [
           {'id': 'a', 'code': 'x'},
@@ -452,6 +452,48 @@ void main() {
       final r = await answering(http.Response(errorBody('tests_invalid'), 400));
       expect(r.stage, RunStage.unavailable);
       expect(r.stderr, en.runIssueTestsInvalid);
+    });
+
+    test('harness_unsupported asks for an app update', () async {
+      final r = await answering(
+        http.Response(errorBody('harness_unsupported'), 400),
+      );
+      expect(r.stage, RunStage.unavailable);
+      expect(r.issue!.kind, RunIssueKind.appNeedsUpdate);
+      expect(r.stderr, en.runIssueAppNeedsUpdate);
+      expect(r.errorText(vi), vi.runIssueAppNeedsUpdate);
+    });
+
+    test(
+      'client_busy (429) says a run is in progress, not rate limited',
+      () async {
+        final r = await answering(
+          http.Response(
+            errorBody('client_busy'),
+            429,
+            headers: {'retry-after': '3'},
+          ),
+        );
+        expect(r.issue!.kind, RunIssueKind.runInProgress);
+        expect(r.stderr, en.runIssueRunInProgress);
+        expect(r.errorText(vi), vi.runIssueRunInProgress);
+      },
+    );
+
+    test('existing 429 and 503 mappings are unchanged', () async {
+      final limited = await answering(
+        http.Response(
+          errorBody('rate_limited'),
+          429,
+          headers: {'retry-after': '7'},
+        ),
+      );
+      expect(limited.issue!.kind, RunIssueKind.rateLimited);
+      expect(limited.issue!.seconds, 7);
+      final busy = await answering(http.Response(errorBody('busy'), 429));
+      expect(busy.issue!.kind, RunIssueKind.busy);
+      final down = await answering(http.Response(errorBody('busy'), 503));
+      expect(down.issue!.kind, RunIssueKind.busy);
     });
 
     test('429 says the runner is busy, using Retry-After', () async {
