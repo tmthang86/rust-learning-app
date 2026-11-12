@@ -1121,6 +1121,74 @@ fn main() { println!("{}", BIG[7]); }"#;
     assert_eq!(out["success"], false, "{out}");
 }
 
+/// Where the lesson JSON files are: `RUNNER_LESSONS_DIR`, else the repo's
+/// `assets/content/lessons` next to this crate. Panics when neither exists
+/// (a cross-built test binary on a host without the repo has no lessons:
+/// set the variable, or skip the tests that read them).
+fn lessons_dir() -> std::path::PathBuf {
+    let dir = match std::env::var_os("RUNNER_LESSONS_DIR") {
+        Some(d) => std::path::PathBuf::from(d),
+        None => std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../assets/content/lessons"),
+    };
+    assert!(
+        dir.is_dir(),
+        "lessons directory {} does not exist: set RUNNER_LESSONS_DIR to assets/content/lessons",
+        dir.display()
+    );
+    dir
+}
+
+/// A shipped lesson's `exercise.solution` and its `/grade` tests: `tests`
+/// without the app-only `label`/`hidden`, or the legacy `expectedOutput` as
+/// one output test.
+fn lesson_solution_and_tests(id: &str) -> (String, Value) {
+    let path = lessons_dir().join(format!("{id}.json"));
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|e| panic!("cannot read lesson {}: {e}", path.display()));
+    let lesson: Value = serde_json::from_str(&text).unwrap();
+    let ex = &lesson["exercise"];
+    let solution = ex["solution"].as_str().unwrap().to_string();
+    let tests: Value = match ex.get("tests") {
+        Some(t) => Value::Array(
+            t.as_array()
+                .unwrap()
+                .iter()
+                .map(|t| {
+                    let mut t = t.clone();
+                    t.as_object_mut().unwrap().remove("label");
+                    t.as_object_mut().unwrap().remove("hidden");
+                    t
+                })
+                .collect(),
+        ),
+        None => json!([{ "id": "output", "output": ex["expectedOutput"] }]),
+    };
+    (solution, tests)
+}
+
+/// The lessons whose exercises can only test what a function prints, so
+/// they use `output_of`: their real solutions pass every test under the
+/// real sandbox (D3 on shipped content).
+#[tokio::test]
+#[ignore]
+async fn docker_grade_output_of_lessons() {
+    let _turn = DOCKER_SUITE.lock().await;
+    for id in ["u3-l1", "u7-l4", "u10-l2"] {
+        let (solution, tests) = lesson_solution_and_tests(id);
+        let (status, out) = post_grade(docker_state(), &solution, tests.clone()).await;
+        assert_eq!(status, StatusCode::OK, "{id}: {out}");
+        let results = out["tests"].as_array().unwrap();
+        assert_eq!(
+            results.len(),
+            tests.as_array().unwrap().len(),
+            "{id}: {out}"
+        );
+        for r in results {
+            assert_eq!(r["status"], "pass", "{id}: {out}");
+        }
+    }
+}
+
 /// Whole-job time of `/grade` against `/run` (container start included) on
 /// the lessons' own solutions: the cost the design budgets at 1.5x. Prints
 /// the medians; run with `cargo test --test api cost -- --ignored --nocapture`.
@@ -1133,32 +1201,12 @@ async fn cost_grade_against_run_on_lesson_solutions() {
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(3);
-    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../assets/content/lessons");
     let median = |mut v: Vec<f64>| {
         v.sort_by(|a, b| a.partial_cmp(b).unwrap());
         v[v.len() / 2]
     };
     for id in ["u6-l2", "u12-l2", "u0-l1"] {
-        let lesson: Value =
-            serde_json::from_str(&std::fs::read_to_string(dir.join(format!("{id}.json"))).unwrap())
-                .unwrap();
-        let ex = &lesson["exercise"];
-        let solution = ex["solution"].as_str().unwrap().to_string();
-        let tests: Value = match ex.get("tests") {
-            Some(t) => Value::Array(
-                t.as_array()
-                    .unwrap()
-                    .iter()
-                    .map(|t| {
-                        let mut t = t.clone();
-                        t.as_object_mut().unwrap().remove("label");
-                        t.as_object_mut().unwrap().remove("hidden");
-                        t
-                    })
-                    .collect(),
-            ),
-            None => json!([{ "id": "output", "output": ex["expectedOutput"] }]),
-        };
+        let (solution, tests) = lesson_solution_and_tests(id);
         let (mut runs, mut grades) = (Vec::new(), Vec::new());
         for round in 0..rounds + 1 {
             let t = std::time::Instant::now();

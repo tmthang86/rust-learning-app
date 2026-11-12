@@ -237,7 +237,13 @@ compiler output from failed starts.
   of memory). Settings: `RUNNER_DOCKER_RUNTIME` (e.g. `runsc`), `RUNNER_IMAGE`
   (default `rust-runner-sandbox`) and `RUNNER_TEST_CONTAINER_PREFIX` (name
   prefix of every container the tests start, default `rr-test-<random>-`, so a
-  script can check for leftovers of its own run).
+  script can check for leftovers of its own run). Two of these tests read the
+  lesson files (`docker_grade_output_of_lessons` grades the real u3-l1, u7-l4
+  and u10-l2 solutions, `cost_grade_against_run_on_lesson_solutions` is a
+  benchmark): they find them through `RUNNER_LESSONS_DIR`, else
+  `../assets/content/lessons`, and fail if neither exists. A prebuilt test
+  binary on a host without the repo (the VM) must skip them: `deploy/smoke.sh`
+  does.
 
 ## Building the image
 

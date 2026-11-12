@@ -242,19 +242,19 @@ jobs:
         run: |
           ./rust-runner --version
           ./rust-runner --self-check
-      # What smoke.sh runs on the VM (its check 7), including the /grade
-      # and output_of tests (D1 to D3). The cost benchmark reads
-      # ../assets from the build machine's source path, which does not
-      # exist next to a cross-built binary, so it is skipped.
+      # What smoke.sh runs on the VM (its check 7), plus the two tests that
+      # read the lessons (the VM has none): the real u3-l1, u7-l4 and
+      # u10-l2 solutions through /grade (output_of, D3) and the cost
+      # benchmark (3 lessons, a few rounds: cheap enough to run here).
       - name: Ignored Docker tests under runsc
         working-directory: ${{ runner.temp }}/stage
         env:
           RUNNER_DOCKER_RUNTIME: runsc
           RUNNER_IMAGE: rust-runner-sandbox
           RUNNER_TEST_CONTAINER_PREFIX: rr-ci-
+          RUNNER_LESSONS_DIR: ${{ github.workspace }}/assets/content/lessons
         run: |
-          timeout 1500 ./rust-runner-tests --ignored --test-threads=1 \
-            --skip cost_grade_against_run_on_lesson_solutions
+          timeout 1500 ./rust-runner-tests --ignored --test-threads=1
           leftovers="$(docker ps -a --filter 'name=^rr-ci-' --format '{{.Names}}')"
           if [ -n "$leftovers" ]; then
             echo "containers left over from the test run: $leftovers" >&2

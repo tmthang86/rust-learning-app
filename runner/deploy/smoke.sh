@@ -197,10 +197,13 @@ echo "== Runner: $(readlink -f "$RELEASE_DIR")"
 PREFIX="rr-smoke-$(date +%s)-"
 if [[ -x $RELEASE_DIR/rust-runner-tests ]]; then
   echo "     running the ignored Docker tests (this takes a few minutes)"
+  # The two tests that read the lesson files are skipped: the VM has no
+  # assets/ (CI runs them with RUNNER_LESSONS_DIR).
   if (
     cd "$RELEASE_DIR" || exit 1
     RUNNER_DOCKER_RUNTIME=runsc RUNNER_IMAGE="$IMAGE" RUNNER_TEST_CONTAINER_PREFIX="$PREFIX" \
-      timeout 1200 ./rust-runner-tests --ignored --test-threads=1 > "$TMPD"/tests.log 2>&1
+      timeout 1200 ./rust-runner-tests --ignored --test-threads=1 \
+      --skip docker_grade_output_of_lessons --skip cost_grade_against_run_on_lesson_solutions > "$TMPD"/tests.log 2>&1
   ); then
     pass "ignored Docker test suite under runsc: $(grep -E '^test result:' "$TMPD"/tests.log | tail -n 1)"
   else
