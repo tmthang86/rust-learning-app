@@ -36,12 +36,17 @@ emulators.
   (the production CPU) and amd64. It is still not the real host: no Caddy, no
   systemd, no firewall, and a newer Docker than `DOCKER_VERSION`; run
   `smoke.sh` on the VM after a deploy.
-- **The arm64 gVisor leg needs a public repo or an arm64 larger runner.**
-  `ubuntu-24.04-arm` hosted runners are free only for public repositories.
-  In a private repository the `Runner under gVisor (arm64)` leg needs an
-  arm64 larger runner, otherwise it cannot start. Until then, require only
-  the amd64 leg; keep the arm64 leg in the workflow, since production is
-  arm64.
+- **The arm64 gVisor leg uses billed minutes in a private repo.** Since
+  2026-01-29 the standard `ubuntu-24.04-arm` runners work in private
+  repositories (2 vCPU, 8 GB); they draw from the account's included
+  minutes and then bill per minute ([changelog][arm-private],
+  [runner reference][runners-ref]). Only public repositories get them
+  free. The leg therefore runs, but needs Actions billing to be in order;
+  if its cost is a problem, require only the amd64 leg and run `smoke.sh`
+  on the Oracle VM for arm64.
+
+[arm-private]: https://github.blog/changelog/2026-01-29-arm64-standard-runners-are-now-available-in-private-repositories
+[runners-ref]: https://docs.github.com/en/actions/reference/runners/github-hosted-runners
 - **Release tags.** Tag every store release `v<version>`; the `compat` job
   only protects tagged releases.
 - **Rust version.** The `lessons` job uses exactly the Rust version of the

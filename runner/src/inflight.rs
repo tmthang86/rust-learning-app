@@ -13,9 +13,15 @@
 //! guard is released on every path, including the client disconnecting
 //! (axum drops the handler's future, and with it the guard).
 //!
-//! Tradeoff: many learners behind one address (a mobile carrier's NAT, a
-//! school) share the per-IP cap. Raise `RUNNER_MAX_INFLIGHT_PER_CLIENT` if
-//! that shows up in the `limiter=inflight_ip` log counts.
+//! Many learners can sit behind one address (a mobile carrier's NAT, a
+//! school), so a request with a *verified* App Check token is counted
+//! against a higher per-IP cap (`RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP`, 4 by
+//! default) while each token still holds one place. Requests without a
+//! verified token (App Check off, development) keep the low per-IP cap.
+//! Residual risk: one address with N valid tokens can hold N of the
+//! `RUNNER_MAX_JOBS` workers; each token needs its own attestation and is
+//! rate limited, and the queue and its timeout bound the harm to slower
+//! runs for others.
 
 use std::collections::HashMap;
 use std::net::IpAddr;
@@ -47,14 +53,27 @@ struct Counts {
 }
 
 pub struct InFlight {
+    /// Per token, and per IP for requests without a verified token.
     cap: usize,
+    /// Per IP for requests that carry a verified App Check token. Higher,
+    /// because a verified request costs the attacker an attestation and
+    /// many real learners can sit behind one carrier-grade NAT address.
+    verified_ip_cap: usize,
     counts: Mutex<Counts>,
 }
 
 impl InFlight {
+    /// One cap for everything.
     pub fn new(cap: usize) -> Arc<Self> {
+        Self::with_verified_ip_cap(cap, cap)
+    }
+
+    /// `cap` per token and per unverified IP; `verified_ip_cap` per IP for
+    /// requests with a verified token (at least `cap`).
+    pub fn with_verified_ip_cap(cap: usize, verified_ip_cap: usize) -> Arc<Self> {
         Arc::new(Self {
             cap,
+            verified_ip_cap: verified_ip_cap.max(cap),
             counts: Mutex::default(),
         })
     }
@@ -73,7 +92,12 @@ impl InFlight {
         // A poisoned lock only means another request panicked; the counts
         // are plain integers and still right.
         let mut c = self.counts.lock().unwrap_or_else(|e| e.into_inner());
-        if c.ips.get(&ip).copied().unwrap_or(0) >= self.cap {
+        let ip_cap = if token.is_some() {
+            self.verified_ip_cap
+        } else {
+            self.cap
+        };
+        if c.ips.get(&ip).copied().unwrap_or(0) >= ip_cap {
             return Err(Scope::Ip);
         }
         if let Some(t) = &token
@@ -174,6 +198,32 @@ mod tests {
         assert!(f.try_acquire(ip("198.51.100.9"), None).is_ok());
         drop(a);
         assert_eq!(f.active_ips(), 0);
+    }
+
+    #[test]
+    fn verified_requests_get_a_higher_ip_cap_but_one_per_token() {
+        let f = InFlight::with_verified_ip_cap(1, 3);
+        let nat = ip("198.51.100.1");
+        let _a = f.try_acquire(nat, Some([1u8; 32])).unwrap();
+        let _b = f.try_acquire(nat, Some([2u8; 32])).unwrap();
+        let _c = f.try_acquire(nat, Some([3u8; 32])).unwrap();
+        // The IP is full for verified requests...
+        assert_eq!(f.try_acquire(nat, Some([4u8; 32])).err(), Some(Scope::Ip));
+        // ...and a token still counts once.
+        assert_eq!(
+            f.try_acquire(ip("198.51.100.2"), Some([1u8; 32])).err(),
+            Some(Scope::Token)
+        );
+    }
+
+    #[test]
+    fn requests_without_a_token_keep_the_low_ip_cap() {
+        let f = InFlight::with_verified_ip_cap(1, 4);
+        let _a = f.try_acquire(ip("198.51.100.1"), None).unwrap();
+        assert_eq!(
+            f.try_acquire(ip("198.51.100.1"), None).err(),
+            Some(Scope::Ip)
+        );
     }
 
     #[test]

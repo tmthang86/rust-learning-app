@@ -175,11 +175,10 @@ jobs:
   # `runner-sandbox` could be dropped; it is kept as a fast runc-only
   # check until this job has proved stable.
   #
-  # The arm64 leg runs on `ubuntu-24.04-arm`, which GitHub provides free
-  # only for public repositories. In a private repository it needs an arm64
-  # larger runner (paid); until then that leg may sit queued or fail to
-  # start, and only the amd64 leg should be a required check. Both legs are
-  # kept because production is arm64.
+  # The arm64 leg runs on `ubuntu-24.04-arm`. Since 2026-01-29 GitHub
+  # offers it in private repositories too (billed minutes, free only for
+  # public repos): see docs/ci.md. Both legs are kept because production is
+  # arm64.
   runner-gvisor:
     name: Runner under gVisor (${{ matrix.arch }})
     runs-on: ${{ matrix.runs-on }}

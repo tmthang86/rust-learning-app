@@ -122,7 +122,10 @@ impl AppState {
             app_check,
             proxies: cfg.trusted_proxies.clone(),
             rate: RateLimits::new(cfg.rate),
-            inflight: inflight::InFlight::new(cfg.max_inflight_per_client),
+            inflight: inflight::InFlight::with_verified_ip_cap(
+                cfg.max_inflight_per_client,
+                cfg.max_inflight_per_verified_ip,
+            ),
             telemetry: Telemetry::new(),
             health: HealthState::new(health::DEFAULT_MIN_DISK_MB),
         }

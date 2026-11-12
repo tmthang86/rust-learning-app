@@ -926,7 +926,8 @@ Existing variables keep their meaning. New or changed:
 | `RUNNER_LIMIT_IP_PER_MIN` / `_IP_BURST` / `_IP_PER_HOUR` | 120 / 60 / 3000 | u32, burst ≤ rate | > 0 |
 | `RUNNER_LIMIT_MAX_KEYS` | 50000 | 1000–1,000,000 | |
 | `RUNNER_MAX_QUEUED` | 16 | 0–1000 | |
-| `RUNNER_MAX_INFLIGHT_PER_CLIENT` | 1 | 1–100 | |
+| `RUNNER_MAX_INFLIGHT_PER_CLIENT` | 1 | 1–100 | per token, and per IP without a verified token |
+| `RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP` | 4 | 1–1000, ≥ the line above | per IP when the request has a verified App Check token |
 | `RUNNER_DOCKER_RUNTIME` | unset | | must be `runsc` |
 | `RUNNER_ALLOW_RUNC` | unset | | must be unset |
 | `RUNNER_SANDBOX` | docker | | `local` refused |
@@ -953,6 +954,7 @@ RUNNER_IMAGE=mirror.gcr.io/library/rust@sha256:a24e292b4af7bdee351a31d3a6379972a
 RUNNER_MAX_JOBS=2
 RUNNER_MAX_QUEUED=16
 # RUNNER_MAX_INFLIGHT_PER_CLIENT=1
+# RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP=4
 RUNNER_TRUSTED_PROXIES=127.0.0.1/32,::1/128
 RUNNER_ALLOWED_ORIGINS=https://REPLACE-web-app-domain
 RUNNER_FIREBASE_PROJECT_NUMBER=REPLACE
@@ -1107,7 +1109,13 @@ runner back only to a build that still lists every version in use.
 **Per-client cap.** A client that already has
 `RUNNER_MAX_INFLIGHT_PER_CLIENT` requests running or queued gets
 `429 client_busy` at once; the app shows "a run is already in progress"
-(`RunIssueKind.runInProgress`), distinct from `rate_limited`. See §8,
+(`RunIssueKind.runInProgress`), distinct from `rate_limited`. Each App
+Check token counts once; the IP counts up to
+`RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP` (4) when the request has a verified
+token, so learners behind one carrier NAT can run side by side, and
+`RUNNER_MAX_INFLIGHT_PER_CLIENT` (1) when it has none. Residual risk: one
+address holding N valid tokens can occupy N of the `RUNNER_MAX_JOBS`
+workers; every token needs its own attestation and is rate limited. See §8,
 "Environment variables".
 
 ### Module layout (`runner/src/`)

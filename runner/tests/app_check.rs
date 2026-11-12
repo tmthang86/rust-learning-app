@@ -888,6 +888,34 @@ async fn a_second_request_from_one_token_gets_429_while_the_first_waits() {
 }
 
 #[tokio::test]
+async fn learners_with_different_tokens_can_share_one_ip() {
+    // Two verified tokens behind one address (a carrier NAT): both queue.
+    let mut st = secured_state().await;
+    st.slots = Semaphore::new(0);
+    st.queue_timeout = Duration::from_secs(10);
+    st.inflight = rust_runner::inflight::InFlight::with_verified_ip_cap(1, 2);
+    let st = Arc::new(st);
+    let (t1, t2) = (token_for(APP_ID), token_for(WEB_APP_ID));
+    let spawn_run = |token: String| {
+        let st = st.clone();
+        tokio::spawn(
+            async move { send(router(st, "198.51.100.1"), with_token(HELLO, &token)).await },
+        )
+    };
+    let first = spawn_run(t1.clone());
+    wait_for_waiting(&st, 1).await;
+    let second = spawn_run(t2.clone());
+    wait_for_waiting(&st, 2).await;
+    // The address is full for verified requests and each token holds one.
+    let (status, _, body) = send(router(st.clone(), "198.51.100.1"), with_token(HELLO, &t1)).await;
+    assert_eq!(status, StatusCode::TOO_MANY_REQUESTS, "{body}");
+    assert_eq!(body["code"], "client_busy");
+    st.slots.add_permits(2);
+    assert_eq!(first.await.unwrap().0, StatusCode::OK);
+    assert_eq!(second.await.unwrap().0, StatusCode::OK);
+}
+
+#[tokio::test]
 async fn the_ip_cap_works_without_app_check_and_lets_other_ips_through() {
     let st = full_state(AppState::for_tests(Sandbox::Local, limits()), 1);
     let first = tokio::spawn({

@@ -211,6 +211,7 @@ async fn log_startup(cfg: &Config, warm_up: Duration) {
         max_jobs = cfg.max_jobs,
         max_queued = cfg.max_queued,
         max_inflight_per_client = cfg.max_inflight_per_client,
+        max_inflight_per_verified_ip = cfg.max_inflight_per_verified_ip,
         memory_mb = cfg.limits.memory_mb,
         program_vmem_kb = cfg.limits.program_vmem_kb(),
         limit_ip_per_min = cfg.rate.ip.per_min,

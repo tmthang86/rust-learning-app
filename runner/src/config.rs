@@ -97,6 +97,9 @@ pub struct Config {
     /// Most requests one client IP or one App Check token may have running
     /// or queued at once (`RUNNER_MAX_INFLIGHT_PER_CLIENT`).
     pub max_inflight_per_client: usize,
+    /// Per-IP cap for requests with a verified App Check token
+    /// (`RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP`).
+    pub max_inflight_per_verified_ip: usize,
     pub queue_timeout: Duration,
     pub sandbox: SandboxChoice,
     /// `Some` when App Check is required.
@@ -190,6 +193,15 @@ impl<'a> Parser<'a> {
         if !(1..=100).contains(&max_inflight_per_client) {
             self.err("RUNNER_MAX_INFLIGHT_PER_CLIENT must be between 1 and 100");
         }
+        let max_inflight_per_verified_ip: usize =
+            self.num("RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP", 4);
+        if !(1..=1000).contains(&max_inflight_per_verified_ip)
+            || max_inflight_per_verified_ip < max_inflight_per_client
+        {
+            self.err(
+                "RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP must be between 1 and 1000 and at least RUNNER_MAX_INFLIGHT_PER_CLIENT",
+            );
+        }
         let queue_secs: u64 = self.num("RUNNER_QUEUE_TIMEOUT_SECS", 10);
         if queue_secs > 600 {
             self.err("RUNNER_QUEUE_TIMEOUT_SECS must be at most 600");
@@ -231,6 +243,7 @@ impl<'a> Parser<'a> {
             max_jobs,
             max_queued,
             max_inflight_per_client,
+            max_inflight_per_verified_ip,
             queue_timeout: Duration::from_secs(queue_secs),
             sandbox,
             app_check,
@@ -639,6 +652,7 @@ mod tests {
         assert_eq!(cfg.rate.ip.per_hour, 3000);
         assert_eq!(cfg.max_queued, 16);
         assert_eq!(cfg.max_inflight_per_client, 1);
+        assert_eq!(cfg.max_inflight_per_verified_ip, 4);
     }
 
     #[test]
