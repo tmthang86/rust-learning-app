@@ -94,6 +94,9 @@ pub struct Config {
     pub limits: Limits,
     pub max_jobs: usize,
     pub max_queued: usize,
+    /// Most requests one client IP or one App Check token may have running
+    /// or queued at once (`RUNNER_MAX_INFLIGHT_PER_CLIENT`).
+    pub max_inflight_per_client: usize,
     pub queue_timeout: Duration,
     pub sandbox: SandboxChoice,
     /// `Some` when App Check is required.
@@ -183,6 +186,10 @@ impl<'a> Parser<'a> {
         if max_queued > 1000 {
             self.err("RUNNER_MAX_QUEUED must be at most 1000");
         }
+        let max_inflight_per_client: usize = self.num("RUNNER_MAX_INFLIGHT_PER_CLIENT", 1);
+        if !(1..=100).contains(&max_inflight_per_client) {
+            self.err("RUNNER_MAX_INFLIGHT_PER_CLIENT must be between 1 and 100");
+        }
         let queue_secs: u64 = self.num("RUNNER_QUEUE_TIMEOUT_SECS", 10);
         if queue_secs > 600 {
             self.err("RUNNER_QUEUE_TIMEOUT_SECS must be at most 600");
@@ -223,6 +230,7 @@ impl<'a> Parser<'a> {
             limits,
             max_jobs,
             max_queued,
+            max_inflight_per_client,
             queue_timeout: Duration::from_secs(queue_secs),
             sandbox,
             app_check,
@@ -630,6 +638,7 @@ mod tests {
         assert_eq!(cfg.rate.token.per_min, 20);
         assert_eq!(cfg.rate.ip.per_hour, 3000);
         assert_eq!(cfg.max_queued, 16);
+        assert_eq!(cfg.max_inflight_per_client, 1);
     }
 
     #[test]

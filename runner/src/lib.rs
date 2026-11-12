@@ -9,6 +9,7 @@ pub mod config;
 pub mod errors;
 pub mod gate;
 pub mod health;
+pub mod inflight;
 pub mod ratelimit;
 pub mod sandbox;
 pub mod telemetry;
@@ -45,6 +46,14 @@ pub const MAX_CODE_BYTES: usize = 64 * 1024;
 /// the code and of the test fields, which are capped on their decoded size.
 pub const MAX_GRADE_BODY_BYTES: usize = 2 * (MAX_CODE_BYTES + rr_grade::MAX_TESTS_BYTES) + 1024;
 
+/// The `/grade` contract versions this runner answers. A request names the
+/// version its app bundle's tests were written for in `harness`; a request
+/// without the field is version 1 (the first one). Keep an old number here
+/// as long as app bundles using it are in the stores, and change what a
+/// number means only by adding a new one. See `docs/production-design.md`
+/// ("Grade API versions").
+pub const SUPPORTED_HARNESS: &[u32] = &[1];
+
 pub struct AppState {
     pub sandbox: Sandbox,
     pub limits: Limits,
@@ -68,6 +77,8 @@ pub struct AppState {
     /// Proxies whose `X-Forwarded-For` is believed.
     pub proxies: TrustedProxies,
     pub rate: RateLimits,
+    /// Per-client cap on running-or-queued requests.
+    pub inflight: Arc<inflight::InFlight>,
     pub telemetry: Telemetry,
     pub health: HealthState,
 }
@@ -89,6 +100,8 @@ impl AppState {
             app_check: None,
             proxies: TrustedProxies::default(),
             rate: RateLimits::disabled(),
+            // Generous: tests that need the cap set it themselves.
+            inflight: inflight::InFlight::new(1000),
             telemetry: Telemetry::new(),
             health: HealthState::new(0),
         }
@@ -109,6 +122,7 @@ impl AppState {
             app_check,
             proxies: cfg.trusted_proxies.clone(),
             rate: RateLimits::new(cfg.rate),
+            inflight: inflight::InFlight::new(cfg.max_inflight_per_client),
             telemetry: Telemetry::new(),
             health: HealthState::new(health::DEFAULT_MIN_DISK_MB),
         }
@@ -139,6 +153,14 @@ pub struct RunRequest {
 pub struct GradeRequest {
     pub code: String,
     pub tests: Vec<rr_grade::TestSpec>,
+    /// The `/grade` contract version the app was built against; absent
+    /// means 1. Checked against [`SUPPORTED_HARNESS`].
+    #[serde(default = "first_harness")]
+    pub harness: u32,
+}
+
+fn first_harness() -> u32 {
+    1
 }
 
 pub fn app(state: Arc<AppState>) -> Router {
@@ -301,6 +323,9 @@ async fn grade(
     }
     if code_bytes > MAX_CODE_BYTES {
         return Err(sized(ApiError::code_too_long()));
+    }
+    if !SUPPORTED_HARNESS.contains(&req.harness) {
+        return Err(sized(ApiError::harness_unsupported(req.harness)));
     }
     if let Err(message) = rr_grade::validate(&req.tests) {
         return Err(sized(ApiError::new(

@@ -25,7 +25,7 @@ pub struct ApiError {
 impl ApiError {
     pub fn new(status: StatusCode, code: &'static str, message: impl Into<String>) -> Self {
         let outcome = match code {
-            "rate_limited" => Outcome::RateLimited,
+            "rate_limited" | "client_busy" => Outcome::RateLimited,
             "app_check_missing" | "app_check_invalid" | "app_not_allowed" | "auth_unavailable" => {
                 Outcome::AuthFailed
             }
@@ -112,6 +112,32 @@ impl ApiError {
         )
         .retry_after(retry_after.max(1))
         .with_info(|i| i.limiter = Some(limiter))
+    }
+
+    /// The client already has a job running or queued (see `inflight`).
+    pub fn client_busy(scope: crate::inflight::Scope) -> Self {
+        Self::new(
+            StatusCode::TOO_MANY_REQUESTS,
+            "client_busy",
+            "a run from this app is still in progress, wait for it to finish",
+        )
+        .retry_after(crate::inflight::RETRY_AFTER_SECS)
+        .with_info(|i| i.limiter = Some(scope.as_str()))
+    }
+
+    pub fn harness_unsupported(sent: u32) -> Self {
+        Self::new(
+            StatusCode::BAD_REQUEST,
+            "harness_unsupported",
+            format!(
+                "harness version {sent} is not supported (supported: {})",
+                crate::SUPPORTED_HARNESS
+                    .iter()
+                    .map(u32::to_string)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+        )
     }
 
     pub fn busy() -> Self {

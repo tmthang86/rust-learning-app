@@ -1190,3 +1190,39 @@ async fn cost_grade_against_run_on_lesson_solutions() {
         );
     }
 }
+
+// --- /grade harness version ---
+
+#[tokio::test]
+async fn grade_accepts_harness_1_and_a_missing_harness() {
+    // Missing: every other grade test in this file sends no `harness`.
+    let (status, _, body) = common::send(
+        common::router(state(Sandbox::Local), "127.0.0.1"),
+        common::grade_request_harness(CHECK_AGE, age_tests(), json!(1)),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(statuses(&body).len(), age_tests().as_array().unwrap().len());
+}
+
+#[tokio::test]
+async fn grade_refuses_a_harness_version_it_does_not_know() {
+    for bad in [json!(0), json!(2), json!(4_000_000_000u64)] {
+        let (status, _, body) = common::send(
+            common::router(state(Sandbox::Local), "127.0.0.1"),
+            common::grade_request_harness(CHECK_AGE, age_tests(), bad.clone()),
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{bad}: {body}");
+        assert_eq!(body["code"], "harness_unsupported", "{bad}: {body}");
+        assert!(body["error"].as_str().unwrap().contains("supported: 1"));
+    }
+    // Not a number at all: the body is malformed, not a version problem.
+    let (status, _, body) = common::send(
+        common::router(state(Sandbox::Local), "127.0.0.1"),
+        common::grade_request_harness(CHECK_AGE, age_tests(), json!("1")),
+    )
+    .await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{body}");
+    assert_eq!(body["code"], "bad_request");
+}
