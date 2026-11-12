@@ -640,6 +640,37 @@ mod tests {
     }
 
     #[test]
+    fn inflight_caps_are_validated() {
+        let base = production();
+        for (k, v) in [
+            ("RUNNER_MAX_INFLIGHT_PER_CLIENT", "0"),
+            ("RUNNER_MAX_INFLIGHT_PER_CLIENT", "101"),
+            ("RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP", "0"),
+            ("RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP", "1001"),
+        ] {
+            assert!(
+                errors_of(&with(&base, &[(k, v)])).contains("RUNNER_MAX_INFLIGHT"),
+                "{k}={v}"
+            );
+        }
+        // The IP cap may not be lower than the per-client cap.
+        let e = errors_of(&with(&base, &[("RUNNER_MAX_INFLIGHT_PER_CLIENT", "5")]));
+        assert!(e.contains("RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP"), "{e}");
+        let ok = Config::from_env_map(&map(&with(
+            &base,
+            &[
+                ("RUNNER_MAX_INFLIGHT_PER_CLIENT", "2"),
+                ("RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP", "6"),
+            ],
+        )))
+        .unwrap();
+        assert_eq!(
+            (ok.max_inflight_per_client, ok.max_inflight_per_verified_ip),
+            (2, 6)
+        );
+    }
+
+    #[test]
     fn valid_production_config_is_accepted() {
         let cfg = Config::from_env_map(&map(&production())).unwrap();
         assert!(cfg.is_production());

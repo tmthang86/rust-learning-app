@@ -18,10 +18,10 @@
 //! against a higher per-IP cap (`RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP`, 4 by
 //! default) while each token still holds one place. Requests without a
 //! verified token (App Check off, development) keep the low per-IP cap.
-//! Residual risk: one address with N valid tokens can hold N of the
-//! `RUNNER_MAX_JOBS` workers; each token needs its own attestation and is
-//! rate limited, and the queue and its timeout bound the harm to slower
-//! runs for others.
+//! Residual risk: with the defaults (4 per verified IP, 2 workers) one
+//! address with two valid tokens can hold every worker, and others then get
+//! 503 `busy` once the queue timeout passes. Only the per-IP rate buckets
+//! limit an attacker who rotates tokens. main.rs warns about this at start.
 
 use std::collections::HashMap;
 use std::net::IpAddr;

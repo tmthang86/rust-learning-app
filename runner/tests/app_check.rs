@@ -906,7 +906,12 @@ async fn learners_with_different_tokens_can_share_one_ip() {
     wait_for_waiting(&st, 1).await;
     let second = spawn_run(t2.clone());
     wait_for_waiting(&st, 2).await;
-    // The address is full for verified requests and each token holds one.
+    // Each token holds one place, even from another address...
+    let (status, _, body) = send(router(st.clone(), "198.51.100.2"), with_token(HELLO, &t1)).await;
+    assert_eq!(status, StatusCode::TOO_MANY_REQUESTS, "{body}");
+    assert_eq!(body["code"], "client_busy");
+    // ...and the address is full for verified requests (checked by the IP
+    // cap before the token, so a repeated token shows the IP limit).
     let (status, _, body) = send(router(st.clone(), "198.51.100.1"), with_token(HELLO, &t1)).await;
     assert_eq!(status, StatusCode::TOO_MANY_REQUESTS, "{body}");
     assert_eq!(body["code"], "client_busy");

@@ -220,6 +220,11 @@ async fn log_startup(cfg: &Config, warm_up: Duration) {
         self_check_ms = warm_up.as_millis() as u64,
         "starting"
     );
+    if cfg.app_check.is_some() && cfg.max_inflight_per_verified_ip >= cfg.max_jobs {
+        tracing::warn!(
+            "RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP is at least RUNNER_MAX_JOBS: one address with that many valid tokens can hold every worker"
+        );
+    }
     if cfg.allowed_origins.is_empty() {
         tracing::warn!("RUNNER_ALLOWED_ORIGINS is not set: any website may call this runner.");
     }

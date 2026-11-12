@@ -194,7 +194,7 @@ once (exit code 2).
 | `RUNNER_MAX_JOBS` | 4 | Jobs running at once. |
 | `RUNNER_MAX_QUEUED` | 16 | Requests allowed to wait for a slot (0 to 1000); more get 503 at once. |
 | `RUNNER_MAX_INFLIGHT_PER_CLIENT` | 1 | Requests one App Check token, or one IP without a verified token, may have running or queued at once (1 to 100). More get `429 client_busy` with `Retry-After: 2`. |
-| `RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP` | 4 | The same cap per IP for requests with a verified App Check token (at least the value above), so learners behind one carrier-grade NAT or a school network can run side by side. Each token still holds one place. Residual risk: one address with N valid tokens can hold N of the `RUNNER_MAX_JOBS` workers; each token needs its own attestation and is rate limited. Watch the `inflight_ip` limiter in the logs. |
+| `RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP` | 4 | The same cap per IP for requests with a verified App Check token (at least the value above), so learners behind one carrier-grade NAT or a school network can run side by side. Each token still holds one place. **Residual risk:** with the defaults, one address with two valid tokens can hold every worker (`RUNNER_MAX_JOBS` is 2), and other learners then get 503 `busy` after the queue timeout; only the per-IP rate buckets limit rotating tokens. The runner warns at startup when this value is at least `RUNNER_MAX_JOBS`. Watch the `inflight_ip` limiter and 503 counts in the logs. |
 | `RUNNER_QUEUE_TIMEOUT_SECS` | 10 | How long a queued request waits (at most 600). |
 | `RUNNER_COMPILE_TIMEOUT_SECS` / `RUNNER_RUN_TIMEOUT_SECS` / `RUNNER_JOB_TIMEOUT_SECS` | 10 / 5 / 20 | |
 | `RUNNER_MEMORY_MB` | 512 | At least tmpfs + 192 MB. |

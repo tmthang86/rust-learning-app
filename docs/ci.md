@@ -45,8 +45,6 @@ emulators.
   if its cost is a problem, require only the amd64 leg and run `smoke.sh`
   on the Oracle VM for arm64.
 
-[arm-private]: https://github.blog/changelog/2026-01-29-arm64-standard-runners-are-now-available-in-private-repositories
-[runners-ref]: https://docs.github.com/en/actions/reference/runners/github-hosted-runners
 - **Release tags.** Tag every store release `v<version>`; the `compat` job
   only protects tagged releases.
 - **Rust version.** The `lessons` job uses exactly the Rust version of the
@@ -64,3 +62,6 @@ emulators.
 - **Required checks.** Once the jobs are green, make them required in
   GitHub: Settings → Branches → add a rule for `main` → Require status
   checks to pass → pick the jobs by name (the gVisor job has two legs; require only the amd64 one, see the note on gVisor below): Flutter analyze and test, Lessons compile, Runner fmt, clippy, test, Released lessons still gradable, Runner Docker sandbox, Runner under gVisor (amd64), Firestore rules and Cloud Function.
+
+[arm-private]: https://github.blog/changelog/2026-01-29-arm64-standard-runners-are-now-available-in-private-repositories
+[runners-ref]: https://docs.github.com/en/actions/reference/runners/github-hosted-runners

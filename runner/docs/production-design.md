@@ -1008,7 +1008,7 @@ RUNNER_DOMAIN=runner.REPLACE
 | 403 | `app_not_allowed` | valid token, `sub` not allowlisted | |
 | 413 | `code_too_long` | | |
 | 429 | `rate_limited` | any bucket or key cap | `Retry-After` |
-| 429 | `client_busy` | the client IP or token already has `RUNNER_MAX_INFLIGHT_PER_CLIENT` requests running or queued | `Retry-After: 2` |
+| 429 | `client_busy` | the token already has `RUNNER_MAX_INFLIGHT_PER_CLIENT` requests running or queued, or the IP already has `RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP` (`RUNNER_MAX_INFLIGHT_PER_CLIENT` without a verified token) | `Retry-After: 2` |
 | 500 | `internal` | sandbox failure (now rare; see §3) | |
 | 503 | `busy` | queue cap or queue timeout | `Retry-After: 5` |
 | 503 | `shutting_down` | | |
@@ -1113,9 +1113,16 @@ runner back only to a build that still lists every version in use.
 Check token counts once; the IP counts up to
 `RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP` (4) when the request has a verified
 token, so learners behind one carrier NAT can run side by side, and
-`RUNNER_MAX_INFLIGHT_PER_CLIENT` (1) when it has none. Residual risk: one
-address holding N valid tokens can occupy N of the `RUNNER_MAX_JOBS`
-workers; every token needs its own attestation and is rate limited. See §8,
+`RUNNER_MAX_INFLIGHT_PER_CLIENT` (1) when it has none. **Residual risk:**
+with the defaults (4 per verified IP, `RUNNER_MAX_JOBS=2`) one address
+holding two valid tokens can occupy every worker. A job lasts up to the 20 s
+job timeout and the queue timeout is 10 s, so other learners then get
+`503 busy`, not just slower runs. Tokens are not costly for a determined
+attacker (one real device can refresh them), and only the per-IP rate
+buckets (120/min) limit rotating tokens. Accepted for launch to keep CGNAT
+learners working; the runner logs a warning at startup when the verified-IP
+cap is at least `RUNNER_MAX_JOBS`, and `inflight_ip` / `503 busy` counts in
+the logs are the signal to lower it. See §8,
 "Environment variables".
 
 ### Module layout (`runner/src/`)
