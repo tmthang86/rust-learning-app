@@ -145,7 +145,7 @@
         "Chỉ khi bạn thêm .clone()"
       ],
       "answer": 0,
-      "explanation": "Số nguyên như u32 là Copy: gán nó sẽ tạo một bản sao và giá trị gốc vẫn dùng được. Move xảy ra với kiểu sở hữu dữ liệu trên heap như String, và ở đây không cần clone."
+      "explanation": "Số nguyên như u32 là Copy: gán nó sẽ tạo một bản sao và giá trị gốc vẫn dùng được. Kiểu không phải Copy, như String, sẽ bị move, và ở đây không cần clone."
     },
     {
       "question": "&s[..3] có kiểu gì khi s là một String?",

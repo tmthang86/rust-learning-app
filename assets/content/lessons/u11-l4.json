@@ -119,7 +119,7 @@
         "The standard library defines futures but has no runtime to run them"
       ],
       "answer": 2,
-      "explanation": "The standard library defines the Future trait and the async / await syntax, but it has no runtime (executor) that runs futures to completion, so you add a crate like tokio. async functions can use println! with no crate."
+      "explanation": "Rust has the async / await syntax and the standard library defines the Future trait, but there is no runtime (executor) that runs futures to completion, so you add a crate like tokio. async functions can use println! with no crate."
     }
   ]
 }

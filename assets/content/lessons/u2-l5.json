@@ -84,7 +84,7 @@
         "An error at runtime"
       ],
       "answer": 1,
-      "explanation": "A semicolon turns the line into a statement, which gives no value, so the block gives back the unit type (). This is why a function with a stray semicolon on its last line fails to compile. Rust reports it when it compiles, not at run time."
+      "explanation": "A semicolon turns the line into a statement, which gives no value, so the block gives back the unit type (). This is why a function that declares a return type, such as -> i32, fails to compile with a semicolon on its last line. Rust reports it when it compiles, not at run time."
     },
     {
       "question": "Where does the return type go?",

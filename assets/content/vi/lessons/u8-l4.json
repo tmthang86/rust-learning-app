@@ -108,7 +108,7 @@
         "Không có gì: map là lazy, nên closure không bao giờ chạy trừ khi có thứ gì đó tiêu thụ d"
       ],
       "answer": 2,
-      "explanation": "map là lazy: nó chỉ tạo ra một iterator mới và không làm gì cho đến khi có thứ tiêu thụ, như collect, sum hay vòng lặp for. Không có gì được nhân đôi và không có panic nào. Trình biên dịch cảnh báo rằng iterator không làm gì nếu không được dùng."
+      "explanation": "map là lazy: nó chỉ tạo ra một iterator mới và không làm gì cho đến khi có thứ tiêu thụ, như collect, sum hay vòng lặp for. Không có gì được nhân đôi và không có panic nào. Trình biên dịch chỉ cảnh báo rằng d không được dùng."
     },
     {
       "question": "zip làm gì?",
@@ -118,7 +118,7 @@
         "Loại bỏ các phần tử xuất hiện ở cả hai iterator"
       ],
       "answer": 1,
-      "explanation": "zip duyệt hai iterator song song và trả về các cặp dạng tuple, như (a, b). Nó dừng khi iterator ngắn hơn hết. chain mới là hàm nối chúng nối đuôi nhau."
+      "explanation": "zip duyệt hai iterator song song và trả về các cặp dạng tuple, như (a, b). Nó dừng khi iterator ngắn hơn hết. chain mới là hàm nối đuôi hai iterator với nhau."
     },
     {
       "question": "enumerate cho ra gì với mỗi phần tử?",

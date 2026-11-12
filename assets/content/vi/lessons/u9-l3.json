@@ -122,7 +122,7 @@
         "src/main.rs, file chứa main"
       ],
       "answer": 2,
-      "explanation": "cargo new đặt src/main.rs làm gốc của binary crate, tệp chứa main. src/lib.rs sẽ là gốc của library crate, còn Cargo.toml chỉ mô tả package."
+      "explanation": "cargo new đặt src/main.rs làm crate root của binary crate, tệp chứa main. src/lib.rs sẽ là crate root của library crate, còn Cargo.toml chỉ mô tả package."
     },
     {
       "question": "Phần [dependencies] của Cargo.toml làm gì?",

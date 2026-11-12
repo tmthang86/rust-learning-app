@@ -183,7 +183,7 @@
         "Stops the loop and gives back rounds as its value"
       ],
       "answer": 2,
-      "explanation": "break rounds; leaves the loop immediately, and the value after break becomes the value of the whole loop expression. continue skips to the next round, and a loop doesn't end the whole program."
+      "explanation": "break rounds; leaves the loop immediately, and the value after break becomes the value of the whole loop expression. continue skips to the next round, and break doesn't end the whole program."
     }
   ]
 }

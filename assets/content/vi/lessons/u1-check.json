@@ -132,7 +132,7 @@
         "Shadowing với một let mới"
       ],
       "answer": 2,
-      "explanation": "Shadowing khai báo một biến hoàn toàn mới bằng let, nên nó có thể có kiểu khác, ví dụ biến số được tạo từ văn bản. Biến khai báo bằng let mut có thể đổi giá trị nhưng không bao giờ đổi được kiểu, và const cũng không đổi kiểu theo cách này."
+      "explanation": "Shadowing khai báo một biến hoàn toàn mới bằng let, nên nó có thể có kiểu khác, ví dụ một số được tạo từ văn bản. Biến khai báo bằng let mut có thể đổi giá trị nhưng không bao giờ đổi được kiểu, và const cũng không đổi kiểu theo cách này."
     },
     {
       "question": "Điều nào đúng về một hằng số như PRICE_PER_KILO?",

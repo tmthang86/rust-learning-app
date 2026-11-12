@@ -135,7 +135,7 @@
         "Quy tắc elision: với đúng một tham chiếu đầu vào, đầu ra nhận lifetime của nó"
       ],
       "answer": 2,
-      "explanation": "Rust tự điền lifetime bằng các quy tắc elision. Khi chỉ có đúng một tham chiếu đầu vào, tham chiếu đầu ra nhận cùng lifetime đó, nên bạn không cần viết. Hàm trả về &str không được miễn kiểm tra, và &str không bị sao chép."
+      "explanation": "Rust tự điền lifetime bằng các quy tắc elision. Khi chỉ có đúng một tham chiếu đầu vào, tham chiếu đầu ra nhận cùng lifetime đó, nên bạn không cần viết. Hàm trả về &str không được miễn kiểm tra: sao chép một &str chỉ sao chép tham chiếu chứ không sao chép văn bản, nên nó vẫn có thể treo."
     },
     {
       "question": "Kiểu của một chuỗi literal như \"hello\" là gì?",

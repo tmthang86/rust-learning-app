@@ -135,7 +135,7 @@
         "Một giá trị có thể được gửi sang các thread khác một cách an toàn"
       ],
       "answer": 1,
-      "explanation": "Rc cho nhiều chủ sở hữu và RefCell cho phép giá trị dùng chung bị thay đổi, nên Rc<RefCell<T>> vừa chia sẻ được vừa thay đổi được. Giá trị vẫn nằm trên heap, và cả hai kiểu đều không an toàn để gửi giữa các thread."
+      "explanation": "Rc cho nhiều chủ sở hữu và RefCell cho phép giá trị dùng chung bị thay đổi, nên Rc<RefCell<T>> vừa chia sẻ được vừa thay đổi được. Giá trị vẫn nằm trên heap. Rc không gửi sang thread khác được và RefCell không chia sẻ giữa các thread được, nên Rc<RefCell<T>> chỉ dùng trong một thread; bản an toàn cho nhiều thread là Arc<Mutex<T>>."
     }
   ]
 }

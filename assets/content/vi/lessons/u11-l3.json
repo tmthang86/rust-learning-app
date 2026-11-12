@@ -109,7 +109,7 @@
         "Khi MutexGuard bị drop, ví dụ ở cuối khối của nó"
       ],
       "answer": 2,
-      "explanation": "Khóa Mutex cho bạn một MutexGuard, và Mutex được mở khóa khi guard bị drop, ví dụ ở cuối khối của nó. Không có phương thức unlock và cũng không có timeout."
+      "explanation": "Khóa Mutex cho bạn một MutexGuard, và Mutex được mở khóa khi guard bị drop, ví dụ ở cuối khối của nó. Trên Rust stable bạn không gọi phương thức unlock: bạn drop guard hoặc để nó ra khỏi phạm vi. Cũng không có timeout."
     },
     {
       "question": "Tại sao chúng ta dùng Arc chứ không dùng Rc để chia sẻ dữ liệu giữa các thread?",

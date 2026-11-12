@@ -109,7 +109,7 @@
         "The function prints nothing to the screen"
       ],
       "answer": 1,
-      "explanation": "A test fails when it panics, which is what a failing assert_eq! does. Returning false doesn't fail a test, and printing nothing is fine."
+      "explanation": "A test fails when it panics, which is what a failing assert_eq! does (a test that returns Result also fails on Err). A test can't return a bool, and printing nothing is fine."
     },
     {
       "question": "Why is the tests module marked #[cfg(test)]?",
@@ -129,7 +129,7 @@
         "#[test], placed above the function"
       ],
       "answer": 2,
-      "explanation": "#[test] above a function marks it as a test that cargo test runs. #[cfg(test)] is for whole modules compiled only during tests, and #[derive(Debug)] has nothing to do with tests."
+      "explanation": "#[test] above a function marks it as a test that cargo test runs. #[cfg(test)] only compiles an item (usually the tests module) when testing, without making a function a test, and #[derive(Debug)] has nothing to do with tests."
     }
   ]
 }

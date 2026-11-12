@@ -109,7 +109,7 @@
         "Hàm không in gì ra màn hình"
       ],
       "answer": 1,
-      "explanation": "Một test thất bại khi nó panic, đúng như một assert_eq! không thỏa mãn. Trả về false không làm test thất bại, và không in gì cũng không sao."
+      "explanation": "Một test thất bại khi nó panic, đúng như một assert_eq! không thỏa mãn (test trả về Result cũng thất bại khi trả Err). Test không thể trả về bool, và không in gì cũng không sao."
     },
     {
       "question": "Tại sao module tests được đánh dấu #[cfg(test)]?",
@@ -129,7 +129,7 @@
         "#[test], đặt phía trên hàm"
       ],
       "answer": 2,
-      "explanation": "#[test] đặt trên hàm đánh dấu nó là test để cargo test chạy. #[cfg(test)] dành cho cả module chỉ biên dịch khi test, còn #[derive(Debug)] không liên quan đến test."
+      "explanation": "#[test] đặt trên hàm đánh dấu nó là test để cargo test chạy. #[cfg(test)] chỉ biên dịch một mục (thường là module tests) khi test, không biến hàm thành test, còn #[derive(Debug)] không liên quan đến test."
     }
   ]
 }

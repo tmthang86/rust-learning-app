@@ -115,7 +115,7 @@
         "Khai báo T là một ô giữ chỗ đại diện cho một kiểu thật, được chọn ở mỗi lệnh gọi"
       ],
       "answer": 2,
-      "explanation": "<T> khai báo một tham số kiểu generic: một chỗ giữ chỗ cho kiểu thật được chọn ở mỗi lần gọi. Nó không phải struct hay hằng, và một thân hàm duy nhất dùng được cho nhiều kiểu."
+      "explanation": "<T> khai báo một tham số kiểu generic: một ô giữ chỗ (placeholder) cho kiểu thật được chọn ở mỗi lần gọi. Nó không phải struct hay hằng, và một thân hàm duy nhất dùng được cho nhiều kiểu."
     },
     {
       "question": "Vì sao largest cần T: PartialOrd?",

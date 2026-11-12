@@ -145,7 +145,7 @@
         "Only if you add .clone()"
       ],
       "answer": 0,
-      "explanation": "Integers like u32 are Copy: assigning one makes a copy and leaves the original usable. Moves happen to types that own heap data, such as String, and no clone is needed here."
+      "explanation": "Integers like u32 are Copy: assigning one makes a copy and leaves the original usable. Types that aren't Copy, such as String, are moved, and no clone is needed here."
     },
     {
       "question": "What type does &s[..3] have when s is a String?",

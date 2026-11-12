@@ -79,7 +79,7 @@
         "They must both print"
       ],
       "answer": 1,
-      "explanation": "Both branches must give the same type, because x gets one type that has to be known when the program is compiled. Their length doesn't matter, and they don't have to print anything."
+      "explanation": "Both branches must give the same type, because the if gives one value, and its type has to be known when the program is compiled. Their length doesn't matter, and they don't have to print anything."
     },
     {
       "question": "Can you write if 5 { ... } in Rust?",

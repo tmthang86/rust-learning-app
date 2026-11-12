@@ -133,7 +133,7 @@
         "Any closure that takes an i32, whatever type it returns"
       ],
       "answer": 1,
-      "explanation": "impl Fn(i32) -> i32 accepts any closure or function that takes an i32 and returns an i32, whatever it captures. The return type is part of the bound, so a closure returning something else is rejected."
+      "explanation": "impl Fn(i32) -> i32 accepts any closure or function that takes an i32 and returns an i32, as long as it only reads what it captures (a closure that changes its captures is FnMut and is rejected). The return type is part of the bound, so a closure returning something else is rejected."
     }
   ]
 }

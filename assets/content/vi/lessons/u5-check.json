@@ -170,7 +170,7 @@
         "Byte"
       ],
       "answer": 2,
-      "explanation": "len() trên String đếm byte, không đếm ký tự hay từ. Với chữ cái tiếng Anh thông thường, một byte là một ký tự, nhưng các ký tự như é chiếm nhiều hơn một byte. Dùng chars().count() để đếm ký tự."
+      "explanation": "len() trên String đếm byte, không đếm ký tự hay từ. Với chữ cái tiếng Anh thông thường, một byte là một ký tự, nhưng các ký tự như é chiếm nhiều hơn một byte. Hãy dùng chars().count() để đếm ký tự."
     },
     {
       "question": "counts.get(\"dog\") trả về gì khi \"dog\" không có trong map?",

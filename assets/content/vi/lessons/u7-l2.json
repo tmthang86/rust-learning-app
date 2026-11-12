@@ -121,7 +121,7 @@
         "<T> đầu tiên chỉ làm cho kiểu trả về của các phương thức trở nên generic, chứ không phải tham số của chúng"
       ],
       "answer": 1,
-      "explanation": "Trong impl<T> Point<T>, <T> đầu tiên khai báo T, để Rust biết đó là chỗ giữ chỗ và không đi tìm một kiểu thật tên là T. Thiếu nó, Point<T> sẽ có nghĩa là một kiểu có tên đúng là T."
+      "explanation": "Trong impl<T> Point<T>, <T> đầu tiên khai báo T, để Rust biết đó là ô giữ chỗ và không đi tìm một kiểu thật tên là T. Thiếu nó, Point<T> sẽ có nghĩa là một kiểu có tên đúng là T."
     },
     {
       "question": "Option<T> là gì?",

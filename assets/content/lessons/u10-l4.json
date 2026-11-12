@@ -135,7 +135,7 @@
         "A value that can be safely sent to other threads"
       ],
       "answer": 1,
-      "explanation": "Rc gives several owners and RefCell lets the shared value be changed, so Rc<RefCell<T>> is shared and mutable. The value is still on the heap, and neither type is safe to send between threads."
+      "explanation": "Rc gives several owners and RefCell lets the shared value be changed, so Rc<RefCell<T>> is shared and mutable. The value is still on the heap. Rc can't be sent to another thread and RefCell can't be shared between threads, so Rc<RefCell<T>> stays on one thread; Arc<Mutex<T>> is the thread-safe version."
     }
   ]
 }

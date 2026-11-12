@@ -378,7 +378,6 @@ void main() {
         ),
       );
       expect(node.label, 'Explanation\n$why');
-      expect(node.flagsCollection.isHeader, isTrue);
       handle.dispose();
     });
 

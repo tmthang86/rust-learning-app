@@ -109,7 +109,7 @@
         "When the MutexGuard is dropped, for example at the end of its block"
       ],
       "answer": 2,
-      "explanation": "Locking a Mutex gives you a MutexGuard, and the Mutex is unlocked when the guard is dropped, for example at the end of its block. There is no unlock method and no timeout."
+      "explanation": "Locking a Mutex gives you a MutexGuard, and the Mutex is unlocked when the guard is dropped, for example at the end of its block. On stable Rust you don't call an unlock method: you drop the guard or let it go out of scope. There is no timeout."
     },
     {
       "question": "Why do we use Arc and not Rc to share data between threads?",

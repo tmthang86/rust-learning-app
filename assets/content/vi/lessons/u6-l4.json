@@ -108,7 +108,7 @@
         "String không thể là lỗi"
       ],
       "answer": 0,
-      "explanation": "Một enum liệt kê các loại lỗi có thể có thành các variant, nên bên gọi có thể match và phản ứng khác nhau với từng loại. String chỉ là văn bản, và kiểm tra nó nghĩa là so sánh từ ngữ. Cả hai đều có thể làm lỗi."
+      "explanation": "Một enum liệt kê các loại lỗi có thể có thành các variant, nên bên gọi có thể match và phản ứng khác nhau với từng loại. String chỉ là văn bản, và kiểm tra nó nghĩa là so sánh từ ngữ. Cả hai đều dùng làm kiểu lỗi được."
     },
     {
       "question": "Trait nào cho phép một lỗi được in bằng {}?",

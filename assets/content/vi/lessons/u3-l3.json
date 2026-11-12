@@ -105,7 +105,7 @@
         "Hai"
       ],
       "answer": 1,
-      "explanation": "Có thể có bao nhiêu tham chiếu chia sẻ (&) cùng lúc tùy ý, vì đọc không gây xung đột. Giới hạn chỉ xuất hiện khi có thứ muốn thay đổi giá trị."
+      "explanation": "Bạn có thể có bao nhiêu tham chiếu chia sẻ (&) cùng lúc cũng được, vì đọc không gây xung đột. Giới hạn chỉ xuất hiện khi có thứ muốn thay đổi giá trị."
     },
     {
       "question": "Vì sao một hàm không thể trả về một tham chiếu tới String cục bộ của chính nó?",

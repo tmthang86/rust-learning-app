@@ -115,7 +115,7 @@
         "Một kết quả thất bại"
       ],
       "answer": 0,
-      "explanation": "Ok(()) là thành công mang giá trị unit rỗng (), vì không có gì để trả lại. Đó là cách hàm nói \"đã chạy xong\" mà không có kết quả, và nó không phải lỗi."
+      "explanation": "Ok(()) là thành công mang giá trị unit rỗng (), vì không có gì để trả lại. Đó là cách hàm nói \"thành công\" mà không có kết quả, và nó không phải lỗi."
     }
   ]
 }

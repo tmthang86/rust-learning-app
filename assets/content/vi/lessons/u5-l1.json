@@ -111,7 +111,7 @@
         "for mut x in &v"
       ],
       "answer": 0,
-      "explanation": "for x in &mut v cho mỗi phần tử một tham chiếu có thể thay đổi, nên bạn sửa được bằng *x. v.read() không tồn tại, còn for mut x in &v chỉ làm cho x mutable, trong khi các phần tử vẫn nằm sau tham chiếu chia sẻ."
+      "explanation": "for x in &mut v cho mỗi phần tử một tham chiếu có thể thay đổi, nên bạn sửa được bằng *x. v.read() không tồn tại, còn for mut x in &v chỉ làm cho bản thân x có thể thay đổi, trong khi các phần tử vẫn nằm sau tham chiếu chia sẻ."
     }
   ]
 }

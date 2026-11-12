@@ -183,7 +183,7 @@
         "Dừng vòng lặp và trả về rounds làm giá trị của nó"
       ],
       "answer": 2,
-      "explanation": "break rounds; thoát khỏi vòng lặp ngay, và giá trị đứng sau break trở thành giá trị của cả biểu thức loop. continue mới là lệnh bỏ qua để sang vòng tiếp theo, và loop không kết thúc cả chương trình."
+      "explanation": "break rounds; thoát khỏi vòng lặp ngay, và giá trị đứng sau break trở thành giá trị của cả biểu thức loop. continue mới là lệnh bỏ qua để sang vòng tiếp theo, và break không kết thúc cả chương trình."
     }
   ]
 }

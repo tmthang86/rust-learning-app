@@ -135,7 +135,7 @@
         "Elision rules: with exactly one input reference, the output gets its lifetime"
       ],
       "answer": 2,
-      "explanation": "Rust fills in lifetimes by itself with the elision rules. With exactly one input reference, the output reference gets that same lifetime, so you don't have to write it. Functions returning &str are not exempt, and a &str is not copied."
+      "explanation": "Rust fills in lifetimes by itself with the elision rules. With exactly one input reference, the output reference gets that same lifetime, so you don't have to write it. Functions returning &str are not exempt: copying a &str copies only the reference, not the text, so it could still dangle."
     },
     {
       "question": "What is the type of a string literal like \"hello\"?",

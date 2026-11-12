@@ -108,7 +108,7 @@
         "Nothing: map is lazy, so the closure never runs unless something consumes d"
       ],
       "answer": 2,
-      "explanation": "map is lazy: it only builds a new iterator and does no work until something consumes it, such as collect, sum or a for loop. Nothing is doubled and nothing panics. The compiler warns that iterators do nothing unless used."
+      "explanation": "map is lazy: it only builds a new iterator and does no work until something consumes it, such as collect, sum or a for loop. Nothing is doubled and nothing panics. The compiler only warns that d is never used."
     },
     {
       "question": "What does zip do?",

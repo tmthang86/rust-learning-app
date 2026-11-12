@@ -101,7 +101,7 @@
         "Một chuỗi rỗng đánh dấu nơi các đối số thực sự bắt đầu"
       ],
       "answer": 1,
-      "explanation": "env::args() thường bắt đầu bằng tên chương trình, nên các đối số thật do người dùng gõ bắt đầu từ chỉ số 1. Cờ đầu tiên là phần tử thứ hai, và không có dấu hiệu rỗng nào."
+      "explanation": "env::args() thường bắt đầu bằng tên chương trình, nên các đối số thật do người dùng gõ bắt đầu từ chỉ số 1. Flag đầu tiên là phần tử thứ hai, và không có dấu hiệu rỗng nào."
     },
     {
       "question": "Tại sao parse_args trả về một Result thay vì panic khi gặp flag sai?",
@@ -111,7 +111,7 @@
         "Một flag gõ sai là điều được lường trước, nên bên gọi có thể báo lỗi một cách lịch sự"
       ],
       "answer": 2,
-      "explanation": "Cờ gõ sai là chuyện chắc chắn sẽ xảy ra, nên parse_args trả về một Err để bên gọi báo lỗi lịch sự. Panic vẫn được phép ở đó, nhưng dành cho lỗi lập trình. Result không nhanh hơn."
+      "explanation": "Flag gõ sai là chuyện được lường trước, nên parse_args trả về một Err để bên gọi báo lỗi lịch sự. Panic vẫn được phép ở đó, nhưng dành cho lỗi lập trình. Result không nhanh hơn."
     },
     {
       "question": "Dấu ? trong run làm gì khi parse_args trả về một Err?",

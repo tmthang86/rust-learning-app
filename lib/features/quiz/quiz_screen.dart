@@ -252,12 +252,9 @@ class _ExplanationCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      l10n.quizExplanationTitle,
-                      style: theme.textTheme.titleSmall,
-                    ),
+                  Text(
+                    l10n.quizExplanationTitle,
+                    style: theme.textTheme.titleSmall,
                   ),
                 ],
               ),

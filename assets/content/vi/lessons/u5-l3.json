@@ -115,7 +115,7 @@
         "Chương trình dừng lại"
       ],
       "answer": 0,
-      "explanation": "Chèn một khóa đã tồn tại sẽ thay giá trị của nó, và giá trị cũ bị bỏ đi (insert trả nó lại bên trong một Option). Nó không bị bỏ qua và không dừng chương trình. Muốn giữ giá trị cũ, hãy dùng entry(key).or_insert(value)."
+      "explanation": "Chèn một khóa đã tồn tại sẽ thay giá trị của nó, và insert trả giá trị cũ về dưới dạng Some(old). Nó không bị bỏ qua và không dừng chương trình. Muốn giữ giá trị cũ, hãy dùng entry(key).or_insert(value)."
     },
     {
       "question": "Thứ tự các phần tử của một HashMap có được đảm bảo không?",

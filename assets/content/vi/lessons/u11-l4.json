@@ -119,7 +119,7 @@
         "Thư viện chuẩn định nghĩa future nhưng không có runtime để chạy chúng"
       ],
       "answer": 2,
-      "explanation": "Thư viện chuẩn định nghĩa trait Future và cú pháp async / await, nhưng không có runtime (executor) để chạy future đến khi xong, nên bạn thêm một crate như tokio. Hàm async dùng println! mà không cần crate nào."
+      "explanation": "Rust có cú pháp async / await và thư viện chuẩn định nghĩa trait Future, nhưng không có runtime (executor) để chạy future đến khi xong, nên bạn thêm một crate như tokio. Hàm async dùng println! mà không cần crate nào."
     }
   ]
 }

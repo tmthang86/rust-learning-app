@@ -115,7 +115,7 @@
         "The program stops"
       ],
       "answer": 0,
-      "explanation": "Inserting a key that already exists replaces its value, and the old one is dropped (insert hands it back inside an Option). It isn't ignored and doesn't stop the program. To keep the old value, use entry(key).or_insert(value)."
+      "explanation": "Inserting a key that already exists replaces its value, and insert gives the old value back as Some(old). It isn't ignored and doesn't stop the program. To keep the old value, use entry(key).or_insert(value)."
     },
     {
       "question": "Is the order of a HashMap's items guaranteed?",
