@@ -1,0 +1,319 @@
+u4-l3 2
+en| Yes. Each variant can carry its own data, with its own types and number of values, such as Circle(f64) next to Rectangle(f64, f64). It is not limited to numbers.
+vi| Có. Mỗi variant có thể mang dữ liệu riêng, với kiểu và số lượng giá trị riêng, như Circle(f64) bên cạnh Rectangle(f64, f64). Dữ liệu không bị giới hạn ở số.
+
+u4-l4 0
+en| Option has the variants Some (a value is there) and None (no value). Ok and Err belong to Result, and Rust has no True and False variants, because bool is its own type.
+vi| Option có hai variant là Some (có giá trị) và None (không có giá trị). Ok và Err thuộc về Result, còn Rust không có variant True và False, vì bool là một kiểu riêng.
+
+u4-l4 1
+en| Rust has no null. When a value might be missing, you use Option, and the compiler makes you handle the None case before you can use the value inside. A 0 or an empty string could be mistaken for a real value.
+vi| Rust không có null. Khi một giá trị có thể vắng mặt, bạn dùng Option, và trình biên dịch buộc bạn xử lý trường hợp None trước khi dùng giá trị bên trong. Số 0 hay chuỗi rỗng có thể bị nhầm với giá trị thật.
+
+u4-l4 2
+en| unwrap_or(5) gives the value inside Some, or 5 when there is nothing. Since this is None, you get 5. It doesn't crash, which is what unwrap would do.
+vi| unwrap_or(5) trả về giá trị bên trong Some, hoặc 5 khi không có gì. Vì đây là None nên kết quả là 5. Nó không bị crash, khác với unwrap.
+
+u4-l5 0
+en| match must be exhaustive: every possible value needs an arm, and the compiler rejects the code if one is missing. That catches forgotten cases before the program runs. It never silently returns None or falls to the first arm.
+vi| match phải đầy đủ: mọi giá trị có thể có đều cần một nhánh, và trình biên dịch từ chối code nếu thiếu. Nhờ vậy các trường hợp bị quên được phát hiện trước khi chạy. match không bao giờ âm thầm trả về None hay rơi vào nhánh đầu tiên.
+
+u4-l5 1
+en| _ is the catch-all pattern: it matches any value that no earlier arm matched, so it goes last. It does not mean zero or an error.
+vi| _ là mẫu bắt mọi trường hợp: nó khớp với bất kỳ giá trị nào mà các nhánh trước chưa khớp, nên đặt ở cuối. Nó không có nghĩa là số không hay lỗi.
+
+u4-l5 2
+en| if let is shorter than a full match when you only care about one pattern and want to ignore the rest. If you need to handle every case, use match. It has nothing to do with loops.
+vi| if let ngắn hơn match đầy đủ khi bạn chỉ quan tâm một mẫu và bỏ qua phần còn lại. Nếu cần xử lý mọi trường hợp, hãy dùng match. Nó không liên quan đến vòng lặp.
+
+u5-check 0
+en| The HashMap owns its keys, so entry needs an owned String. Here word is only a reference to a String inside the slice, and word.clone() makes the owned copy the map can keep. Not every HashMap call needs a clone, and keys can be any type that can be hashed.
+vi| HashMap sở hữu các khóa của nó, nên entry cần một String sở hữu. Ở đây word chỉ là tham chiếu đến một String trong slice, và word.clone() tạo bản sao sở hữu để map giữ lại. Không phải lời gọi HashMap nào cũng cần clone, và khóa có thể là bất kỳ kiểu nào băm được.
+
+u5-check 1
+en| len() on a String counts bytes, not characters or words. For plain English letters one byte is one character, but characters such as é take more than one byte. Use chars().count() to count characters.
+vi| len() trên String đếm byte, không đếm ký tự hay từ. Với chữ cái tiếng Anh thông thường, một byte là một ký tự, nhưng các ký tự như é chiếm nhiều hơn một byte. Dùng chars().count() để đếm ký tự.
+
+u5-check 2
+en| get never panics: it returns an Option, and a missing key gives None. It doesn't give 0, because 0 could be a real count. Indexing with counts["dog"] is the form that panics for a missing key.
+vi| get không bao giờ panic: nó trả về Option, và khóa không có thì cho None. Nó không cho 0, vì 0 cũng có thể là một số đếm thật. Cách lập chỉ số counts["dog"] mới là dạng gây panic khi thiếu khóa.
+
+u5-l1 0
+en| Vec has push, which adds an item at the end. add and append_one don't exist (append is a real method, but it moves all items from another Vec).
+vi| Vec có push, thêm một phần tử vào cuối. add và append_one không tồn tại (append là một phương thức có thật, nhưng nó chuyển tất cả phần tử từ một Vec khác).
+
+u5-l1 1
+en| get returns an Option: Some(&item) if the index exists and None if it doesn't, so a bad index never crashes. Writing v[99] instead would panic.
+vi| get trả về Option: Some(&item) nếu chỉ số tồn tại và None nếu không, nên chỉ số sai không gây crash. Viết v[99] thì ngược lại sẽ gây panic.
+
+u5-l1 2
+en| for x in &mut v gives a mutable reference to each item, so you can change it with *x. v.read() doesn't exist, and for mut x in &v only makes x itself mutable, while the items stay behind a shared reference.
+vi| for x in &mut v cho mỗi phần tử một tham chiếu có thể thay đổi, nên bạn sửa được bằng *x. v.read() không tồn tại, còn for mut x in &v chỉ làm cho x mutable, trong khi các phần tử vẫn nằm sau tham chiếu chia sẻ.
+
+u5-l2 0
+en| String owns its text on the heap and can grow. &str is a borrowed view of text that already lives somewhere, and char is a single character.
+vi| String sở hữu văn bản trên heap và có thể mở rộng. &str là cái nhìn mượn vào văn bản đã nằm ở nơi khác, còn char là một ký tự đơn.
+
+u5-l2 1
+en| trim removes whitespace from both ends of a string, and the text in the middle stays. So "  hi ".trim() is "hi". Only trim_start or trim_end would remove one side.
+vi| trim bỏ khoảng trắng ở cả hai đầu chuỗi, còn phần giữa giữ nguyên. Vì vậy "  hi ".trim() là "hi". Chỉ trim_start hoặc trim_end mới bỏ một phía.
+
+u5-l2 2
+en| A String is UTF-8, so one character can take 1 to 4 bytes, and a number can't say where the nth character starts. Rust refuses s[0] to avoid wrong or broken results. Use s.chars().next() or a slice with &s[0..1] instead (the slice must end on a character boundary).
+vi| String là UTF-8, nên một ký tự có thể chiếm từ 1 đến 4 byte, và một số không cho biết ký tự thứ n bắt đầu ở đâu. Rust từ chối s[0] để tránh kết quả sai hoặc hỏng. Hãy dùng s.chars().next() hoặc slice &s[0..1] (slice phải kết thúc đúng ranh giới ký tự).
+
+u5-l3 0
+en| get returns Option<&V>: Some with a reference to the value if the key exists and None if it doesn't. It doesn't crash and it doesn't return a bool.
+vi| get trả về Option<&V>: Some chứa tham chiếu đến giá trị nếu khóa tồn tại, và None nếu không. Nó không crash và không trả về bool.
+
+u5-l3 1
+en| Inserting a key that already exists replaces its value, and the old one is dropped (insert hands it back inside an Option). It isn't ignored and doesn't stop the program. To keep the old value, use entry(key).or_insert(value).
+vi| Chèn một khóa đã tồn tại sẽ thay giá trị của nó, và giá trị cũ bị bỏ đi (insert trả nó lại bên trong một Option). Nó không bị bỏ qua và không dừng chương trình. Muốn giữ giá trị cũ, hãy dùng entry(key).or_insert(value).
+
+u5-l3 2
+en| A HashMap does not keep items in any promised order, neither insertion order nor sorted, and the order can differ between runs. If you need a fixed order, collect the keys and sort them, or use a BTreeMap.
+vi| HashMap không đảm bảo thứ tự nào cho các phần tử, cả thứ tự chèn lẫn thứ tự sắp xếp, và thứ tự có thể khác nhau giữa các lần chạy. Nếu cần thứ tự cố định, hãy lấy các khóa ra rồi sắp xếp, hoặc dùng BTreeMap.
+
+u6-check 0
+en| On an Err, ? returns early from the function with that error, and From converts it into the function's own error type (OrderError). It doesn't panic or replace the error with 0.
+vi| Khi gặp Err, ? thoát sớm khỏi hàm với lỗi đó, và From chuyển nó thành kiểu lỗi của chính hàm (OrderError). Nó không panic và không thay lỗi bằng 0.
+
+u6-check 1
+en| With ?, the function returns at the first Err. If the first text is bad, the error comes back right away and the second text is never looked at. Only one error is returned, and nothing panics.
+vi| Với ?, hàm trả về ngay ở Err đầu tiên. Nếu văn bản đầu tiên sai, lỗi được trả về luôn và văn bản thứ hai không bao giờ được xem tới. Chỉ một lỗi được trả về, và không có panic nào.
+
+u6-check 2
+en| expect works like unwrap: on an Err (or None) it panics and shows your message, which stops the program. It never turns the error into None or a String.
+vi| expect hoạt động như unwrap: gặp Err (hoặc None) nó gây panic và hiển thị thông báo của bạn, làm chương trình dừng. Nó không bao giờ biến lỗi thành None hay String.
+
+u6-l1 0
+en| A panic stops the program and prints a message saying what went wrong and where. It does not retry the line or return None.
+vi| Panic dừng chương trình và in thông báo cho biết điều gì sai và ở đâu. Nó không thử lại dòng đó hay trả về None.
+
+u6-l1 1
+en| panic! is for bugs and states that should never happen, where continuing would be unsafe. Mistakes you expect from users should be handled with Result or Option. It also isn't a replacement for println!.
+vi| panic! dành cho lỗi lập trình và những trạng thái không bao giờ được xảy ra, khi tiếp tục là không an toàn. Những sai sót có thể xảy ra từ người dùng nên được xử lý bằng Result hoặc Option. Nó cũng không thay thế println!.
+
+u6-l1 2
+en| expect does what unwrap does and panics on None or Err, but you choose the message that is shown. That makes the cause easier to find. It still panics, and it returns the inner value, not a String.
+vi| expect làm giống unwrap và panic khi gặp None hoặc Err, nhưng bạn tự chọn thông báo hiển thị, giúp tìm nguyên nhân dễ hơn. Nó vẫn gây panic, và nó trả về giá trị bên trong chứ không phải String.
+
+u6-l2 0
+en| Result has the variants Ok (success, holding a value) and Err (failure, holding an error). Some and None belong to Option, and Pass and Fail don't exist.
+vi| Result có hai variant là Ok (thành công, chứa một giá trị) và Err (thất bại, chứa một lỗi). Some và None thuộc về Option, còn Pass và Fail không tồn tại.
+
+u6-l2 1
+en| Return a Result when failing is a normal, expected outcome, such as bad input or a missing file, so the caller can decide what to do. It is not limited to main, and it is used often.
+vi| Hãy trả về Result khi việc thất bại là kết quả bình thường, có thể đoán trước, như đầu vào sai hay thiếu tệp, để bên gọi quyết định cách xử lý. Nó không giới hạn ở main và được dùng rất thường xuyên.
+
+u6-l2 2
+en| "x" is not a number, so parse gives an Err, and unwrap_or(0) replaces it with the fallback 0. unwrap_or never panics, unlike unwrap, and the result is an i32, not text.
+vi| "x" không phải số, nên parse cho Err, và unwrap_or(0) thay nó bằng giá trị dự phòng 0. Khác với unwrap, unwrap_or không bao giờ panic, và kết quả là i32 chứ không phải văn bản.
+
+u6-l3 0
+en| On an Err, ? returns that error from the current function straight away, so the caller can handle it. On an Ok, it gives you the value inside. It doesn't panic or turn the error into 0.
+vi| Khi gặp Err, ? trả lỗi đó từ hàm hiện tại ngay lập tức, để bên gọi xử lý. Khi gặp Ok, nó đưa cho bạn giá trị bên trong. Nó không panic và không biến lỗi thành 0.
+
+u6-l3 1
+en| ? can return an error, so the function it sits in must return a Result (or an Option, for Option values). Using it in main with no return type fails to compile. It isn't limited to loops.
+vi| ? có thể trả về lỗi, nên hàm chứa nó phải trả về Result (hoặc Option, với giá trị Option). Dùng nó trong main không có kiểu trả về sẽ không biên dịch được. Nó không giới hạn trong vòng lặp.
+
+u6-l3 2
+en| Ok(()) is a success that carries the empty unit value (), because there is nothing to hand back. It is how a function says "it worked" without a result, and it is not an error.
+vi| Ok(()) là thành công mang giá trị unit rỗng (), vì không có gì để trả lại. Đó là cách hàm nói "đã chạy xong" mà không có kết quả, và nó không phải lỗi.
+
+u6-l4 0
+en| An enum lists the possible kinds of error as variants, so the caller can match on them and react differently to each one. A String is just text, and checking it means comparing words. Both can be errors.
+vi| Enum liệt kê các loại lỗi có thể có thành các variant, nên bên gọi có thể match và phản ứng khác nhau với từng loại. String chỉ là văn bản, và kiểm tra nó nghĩa là so sánh từ ngữ. Cả hai đều có thể làm lỗi.
+
+u6-l4 1
+en| The {} placeholder uses the Display trait, which is meant for readable messages for users. Debug is for {:?}, and Clone has nothing to do with printing.
+vi| Ô giữ chỗ {} dùng trait Display, dành cho thông báo dễ đọc cho người dùng. Debug dành cho {:?}, còn Clone không liên quan đến việc in.
+
+u6-l4 2
+en| write! sends text into the formatter f that fmt receives, and Rust decides later where it ends up, such as on screen with println!. It doesn't print directly or save a file.
+vi| write! gửi văn bản vào formatter f mà fmt nhận được, và Rust quyết định sau đó nó đi đâu, ví dụ ra màn hình qua println!. Nó không in trực tiếp hay lưu vào tệp.
+
+u6-l4 3
+en| The ? operator converts errors with From, so the impl lets ? turn a ParseIntError into your error type automatically. It doesn't make parsing faster or skip error handling.
+vi| Toán tử ? chuyển đổi lỗi bằng From, nên impl này giúp ? tự động biến ParseIntError thành kiểu lỗi của bạn. Nó không làm parse nhanh hơn và không bỏ qua việc xử lý lỗi.
+
+u7-check 0
+en| A trait bound limits T to types that implement Describe, so the body can safely call Describe's methods such as item.size(). It doesn't create a struct, and comparing with > and < would need a different bound, PartialOrd.
+vi| Ràng buộc trait giới hạn T ở những kiểu đã implement Describe, nên thân hàm gọi an toàn được các phương thức của Describe như item.size(). Nó không tạo struct nào, và so sánh bằng > và < sẽ cần một ràng buộc khác là PartialOrd.
+
+u7-check 1
+en| A default method has a body in the trait, and a type that doesn't write its own version uses that default. Only methods without a body must be written in every impl, and nothing is made up from the return type.
+vi| Phương thức mặc định có thân hàm ngay trong trait, và kiểu nào không tự viết phiên bản riêng sẽ dùng bản mặc định đó. Chỉ những phương thức không có thân mới bắt buộc phải viết trong mỗi impl, và không có gì được tự tạo từ kiểu trả về.
+
+u7-check 2
+en| bigger can return either input, so the result can only be trusted as long as both are valid. The lifetime 'a states exactly that relation. It doesn't make anything live longer, it only describes how long references are valid, and the function still returns a reference.
+vi| bigger có thể trả về một trong hai đầu vào, nên kết quả chỉ đáng tin khi cả hai còn hợp lệ. Lifetime 'a mô tả đúng mối quan hệ đó. Nó không làm cho thứ gì sống lâu hơn, chỉ mô tả tham chiếu hợp lệ trong bao lâu, và hàm vẫn trả về một tham chiếu.
+
+u7-l1 0
+en| <T> declares a generic type parameter: a placeholder for a real type that is chosen for each call. It isn't a struct or a constant, and one function body then works for many types.
+vi| <T> khai báo một tham số kiểu generic: một chỗ giữ chỗ cho kiểu thật được chọn ở mỗi lần gọi. Nó không phải struct hay hằng, và một thân hàm duy nhất dùng được cho nhiều kiểu.
+
+u7-l1 1
+en| The > operator is only defined for types that can be ordered, and a bare T could be anything, including types that cannot be compared. The bound T: PartialOrd promises the comparison exists. The slice doesn't need to be sorted, and references don't need it.
+vi| Toán tử > chỉ được định nghĩa cho các kiểu có thể sắp thứ tự, và một T trần có thể là bất kỳ kiểu nào, kể cả kiểu không so sánh được. Ràng buộc T: PartialOrd đảm bảo phép so sánh tồn tại. Slice không cần được sắp xếp, và tham chiếu cũng không cần PartialOrd.
+
+u7-l1 2
+en| Rust infers T from the types of the arguments at the call, so swap_pair(("a", "b")) makes T a &str. You can name it yourself with swap_pair::<&str>, but you don't have to. Generics are resolved when compiling, not at run time.
+vi| Rust suy ra T từ kiểu của các đối số tại lời gọi, nên swap_pair(("a", "b")) làm T thành &str. Bạn có thể tự chỉ định bằng swap_pair::<&str>, nhưng không bắt buộc. Generic được xác định lúc biên dịch chứ không phải lúc chạy.
+
+u7-l2 0
+en| In impl<T> Point<T>, the first <T> declares T, so Rust knows it is a placeholder and doesn't look for a real type with that name. Without it, Point<T> would mean a type literally called T.
+vi| Trong impl<T> Point<T>, <T> đầu tiên khai báo T, để Rust biết đó là chỗ giữ chỗ và không đi tìm một kiểu thật tên là T. Thiếu nó, Point<T> sẽ có nghĩa là một kiểu có tên đúng là T.
+
+u7-l2 1
+en| Option<T> is an ordinary generic enum in the standard library, defined as enum Option<T> { None, Some(T) }. It isn't a struct with a flag, and it isn't special syntax of the compiler.
+vi| Option<T> là một enum generic bình thường trong thư viện chuẩn, được định nghĩa là enum Option<T> { None, Some(T) }. Nó không phải struct có cờ, và cũng không phải cú pháp đặc biệt của trình biên dịch.
+
+u7-l2 2
+en| Both fields use the same T, so x and y must have the same type. 5 is an integer and 4.0 is a float, so the compiler rejects it. Generic structs hold floats fine, and you can use two parameters, Point<T, U>, to allow different types.
+vi| Cả hai trường dùng chung một T, nên x và y phải cùng kiểu. 5 là số nguyên còn 4.0 là số thực, nên trình biên dịch từ chối. Struct generic chứa số thực hoàn toàn được, và bạn có thể dùng hai tham số, Point<T, U>, để cho phép hai kiểu khác nhau.
+
+u7-l3 0
+en| A default method has a body written in the trait. Types get it for free and may override it with their own version. A method with no body must be written by every type, and Rust never calls methods automatically when a value is created.
+vi| Phương thức mặc định có thân hàm viết ngay trong trait. Các kiểu nhận được nó miễn phí và có thể ghi đè (override) bằng phiên bản riêng. Phương thức không có thân thì mọi kiểu đều phải tự viết, và Rust không bao giờ tự gọi phương thức khi một giá trị được tạo.
+
+u7-l3 1
+en| A trait is given to a type with impl Trait for Type { ... }. The other two forms are not Rust syntax: a struct doesn't list traits after a colon, and trait ... for is not a thing.
+vi| Một trait được gán cho kiểu bằng impl Trait for Type { ... }. Hai dạng còn lại không phải cú pháp Rust: struct không liệt kê trait sau dấu hai chấm, và trait ... for không tồn tại.
+
+u7-l3 2
+en| Display makes {} work, and any type with Display also gets to_string. Debug ({:?}) and == need their own traits, and Copy is a separate trait you also have to ask for.
+vi| Display làm cho {} hoạt động, và mọi kiểu có Display cũng có to_string. Debug ({:?}) và == cần các trait riêng, còn Copy là một trait khác mà bạn cũng phải tự yêu cầu.
+
+u7-l4 0
+en| The + joins bounds: T must implement all of them, so both Display and Clone are required. It is never "or", and neither is optional.
+vi| Dấu + nối các ràng buộc: T phải implement tất cả, nên cần cả Display lẫn Clone. Nó không bao giờ là "hoặc", và không ràng buộc nào là tùy chọn.
+
+u7-l4 1
+en| #[derive(Debug)] asks the compiler to write the Debug impl for you, so you can print the type with {:?}. It doesn't enable debug mode or print anything by itself.
+vi| #[derive(Debug)] yêu cầu trình biên dịch viết sẵn impl Debug cho bạn, nên bạn in kiểu đó bằng {:?} được. Nó không bật chế độ debug và tự nó không in gì.
+
+u7-l4 2
+en| impl Speak as a return type stands for one hidden concrete type, so every branch must return the same type, either Dog or Robot. Returning both fails to compile. Use a Box<dyn Speak> if you need different types, and the number of fields doesn't matter.
+vi| impl Speak ở vị trí kiểu trả về đại diện cho một kiểu cụ thể được ẩn đi, nên mọi nhánh phải trả về cùng một kiểu, hoặc Dog hoặc Robot. Trả về cả hai sẽ không biên dịch được. Hãy dùng Box<dyn Speak> nếu cần nhiều kiểu khác nhau, và số trường không quan trọng.
+
+u7-l5 0
+en| The annotation 'a links the lifetimes: the returned reference is valid only while both x and y are valid, so the result can't outlive either. It doesn't make anything live forever, and x and y can have different lengths.
+vi| Chú thích 'a liên kết các lifetime: tham chiếu trả về chỉ hợp lệ khi cả x và y còn hợp lệ, nên kết quả không thể sống lâu hơn cái nào trong hai. Nó không làm gì sống mãi, và x với y có thể dài khác nhau.
+
+u7-l5 1
+en| Rust fills in lifetimes by itself with the elision rules. With exactly one input reference, the output reference gets that same lifetime, so you don't have to write it. Functions returning &str are not exempt, and a &str is not copied.
+vi| Rust tự điền lifetime bằng các quy tắc elision. Khi chỉ có đúng một tham chiếu đầu vào, tham chiếu đầu ra nhận cùng lifetime đó, nên bạn không cần viết. Hàm trả về &str không được miễn kiểm tra, và &str không bị sao chép.
+
+u7-l5 2
+en| A string literal is stored inside the program itself, so it is valid for the whole run, which is the 'static lifetime. That makes its type &'static str. String is the owned type you create at run time with String::from.
+vi| Chuỗi literal được lưu ngay trong chương trình, nên nó hợp lệ suốt thời gian chạy, tức lifetime 'static. Vì vậy kiểu của nó là &'static str. String là kiểu sở hữu bạn tạo lúc chạy bằng String::from.
+
+u8-check 0
+en| Without move, the closure only borrows step and total, which belong to make_counter and are gone when it returns, so the compiler refuses. move gives the closure its own copies, so it can outlive the function. It has nothing to do with speed.
+vi| Không có move, closure chỉ mượn step và total, vốn thuộc về make_counter và biến mất khi hàm này trả về, nên trình biên dịch từ chối. move cho closure bản riêng của chúng, nên nó sống lâu hơn hàm được. Nó không liên quan đến tốc độ.
+
+u8-check 1
+en| Iterator adapters like map are lazy: they only describe the work. With nothing consuming the iterator, no item is produced and the closure never runs. Rust only warns about it, and nothing panics.
+vi| Các adapter của iterator như map là lazy: chúng chỉ mô tả công việc. Khi không có gì tiêu thụ iterator, không phần tử nào được tạo ra và closure không bao giờ chạy. Rust chỉ đưa ra cảnh báo, và không có panic nào.
+
+u8-check 2
+en| FnMut allows a closure that changes what it captured, such as a counter, and sum_where can still call it many times. With impl Fn, a closure that mutates its captures would be rejected. A closure that returns bool can be Fn too, and FnMut isn't faster.
+vi| FnMut cho phép closure thay đổi thứ nó đã capture, như một biến đếm, và sum_where vẫn gọi nó nhiều lần được. Với impl Fn, closure có thay đổi biến capture sẽ bị từ chối. Closure trả về bool cũng có thể là Fn, và FnMut không nhanh hơn.
+
+u8-l1 0
+en| Closure parameters go between pipes, then comes the body: |x| x + 1. (x) => x + 1 is JavaScript, and fn |x| isn't valid in Rust.
+vi| Tham số của closure đặt giữa hai dấu |, rồi đến thân: |x| x + 1. (x) => x + 1 là cú pháp JavaScript, còn fn |x| không hợp lệ trong Rust.
+
+u8-l1 1
+en| Rust infers the parameter type from the first call and fixes it for that closure, so the call with the other type is a compile error. It can't pick a new type each time, and it fails when compiling, not at run time.
+vi| Rust suy ra kiểu tham số từ lần gọi đầu tiên và cố định nó cho closure đó, nên lần gọi với kiểu khác là lỗi biên dịch. Closure không chọn kiểu mới mỗi lần gọi, và lỗi xảy ra lúc biên dịch chứ không phải lúc chạy.
+
+u8-l1 2
+en| impl Fn(i32) -> i32 accepts any closure or function that takes an i32 and returns an i32, whatever it captures. The return type is part of the bound, so a closure returning something else is rejected.
+vi| impl Fn(i32) -> i32 chấp nhận mọi closure hoặc hàm nhận một i32 và trả về một i32, bất kể nó capture gì. Kiểu trả về là một phần của ràng buộc, nên closure trả về kiểu khác sẽ bị từ chối.
+
+u8-l2 0
+en| move makes the closure take ownership of the variables it uses, instead of borrowing them. That is what lets it outlive the place it was made, for example when it is returned or sent to a thread. It doesn't start a thread by itself.
+vi| move khiến closure lấy quyền sở hữu các biến nó dùng thay vì mượn. Nhờ vậy nó sống lâu hơn nơi nó được tạo, ví dụ khi được trả về hoặc gửi sang thread. Tự nó không tạo ra thread nào.
+
+u8-l2 1
+en| move transfers ownership into the closure, and a String is not Copy, so name has been moved and main can't use it again. move copies only values of Copy types, such as integers. Borrowing with & before wouldn't help either.
+vi| move chuyển quyền sở hữu vào closure, và String không phải Copy, nên name đã bị move và main không dùng lại được. move chỉ sao chép các giá trị thuộc kiểu Copy như số nguyên. Mượn bằng & trước đó cũng không giúp được.
+
+u8-l2 2
+en| FnMut fits a closure that changes what it captured but can be called many times. Fn only reads its captures. FnOnce is for a closure that gives away something it captured, so it can be called once; changing a variable doesn't make a closure FnOnce.
+vi| FnMut phù hợp với closure thay đổi thứ nó capture nhưng vẫn gọi được nhiều lần. Fn chỉ đọc những gì nó capture. FnOnce dành cho closure đưa đi thứ nó capture nên chỉ gọi được một lần; việc thay đổi một biến không biến closure thành FnOnce.
+
+u8-l3 0
+en| next returns None when the iterator is out of items, and a for loop treats None as the signal to stop. It doesn't invent a default value and it doesn't panic.
+vi| next trả về None khi iterator hết phần tử, và vòng lặp for coi None là tín hiệu dừng. Nó không tạo ra giá trị mặc định và không gây panic.
+
+u8-l3 1
+en| into_iter() consumes the Vec and yields each item by value, so the Vec can't be used afterwards. iter() yields references and leaves the Vec as it was, and iter_mut() yields mutable references.
+vi| into_iter() tiêu thụ Vec và trả về từng phần tử theo giá trị, nên sau đó không dùng lại Vec được. iter() trả về tham chiếu và giữ nguyên Vec, còn iter_mut() trả về tham chiếu có thể thay đổi.
+
+u8-l3 2
+en| To implement Iterator you set type Item, the kind of item produced, and write next. Everything else (map, filter, sum and so on) comes for free. You don't need a stored Vec or a len method.
+vi| Để implement Iterator, bạn khai báo type Item, kiểu phần tử được tạo ra, và viết next. Mọi thứ còn lại (map, filter, sum và các hàm khác) có sẵn miễn phí. Bạn không cần Vec lưu trữ hay phương thức len.
+
+u8-l4 0
+en| map is lazy: it only builds a new iterator and does no work until something consumes it, such as collect, sum or a for loop. Nothing is doubled and nothing panics. The compiler warns that iterators do nothing unless used.
+vi| map là lazy: nó chỉ tạo ra một iterator mới và không làm gì cho đến khi có thứ tiêu thụ, như collect, sum hay vòng lặp for. Không có gì được nhân đôi và không có panic nào. Trình biên dịch cảnh báo rằng iterator không làm gì nếu không được dùng.
+
+u8-l4 1
+en| zip walks two iterators in step and gives pairs as tuples, such as (a, b). It stops when the shorter one ends. chain would join them end to end.
+vi| zip duyệt hai iterator song song và trả về các cặp dạng tuple, như (a, b). Nó dừng khi iterator ngắn hơn hết. chain mới là hàm nối chúng nối đuôi nhau.
+
+u8-l4 2
+en| enumerate wraps each item in a tuple (index, item), and the index starts at 0 as a usize. The item is kept, and the pair is not made from neighbours.
+vi| enumerate bọc mỗi phần tử vào một tuple (chỉ số, phần tử), và chỉ số bắt đầu từ 0 với kiểu usize. Phần tử được giữ lại, và cặp này không tạo từ hai vị trí liền kề.
+
+u8-l5 0
+en| sum is a consuming method: it runs the whole iterator and returns one value. map and filter are adapters, which only build another lazy iterator and don't produce a result themselves.
+vi| sum là phương thức tiêu thụ: nó chạy toàn bộ iterator và trả về một giá trị. map và filter là adapter, chỉ tạo ra một iterator lazy khác và tự chúng không cho ra kết quả.
+
+u8-l5 1
+en| An empty iterator has no largest item, so max returns Option: Some(largest), or None when there was nothing. Comparing numbers can't fail, negative or not, and max doesn't need a closure.
+vi| Iterator rỗng không có phần tử lớn nhất, nên max trả về Option: Some(lớn nhất), hoặc None khi không có gì. So sánh số không thể thất bại, âm hay không, và max không cần closure.
+
+u8-l5 2
+en| collect is generic over what it builds, and it takes the target from the type you ask for: an annotation like Vec<i32>, the turbofish collect::<Vec<_>>(), or how the result is used later. If none of these says, the compiler asks you to add one. It doesn't build a Vec first or look at the items.
+vi| collect là generic theo kiểu nó tạo ra, và nó lấy đích từ kiểu bạn yêu cầu: khai báo như Vec<i32>, turbofish collect::<Vec<_>>(), hoặc cách dùng kết quả về sau. Nếu không có cái nào, trình biên dịch sẽ yêu cầu bạn thêm. Nó không tạo Vec trước hay nhìn vào các phần tử.
+
+u9-check 0
+en| Private items are visible inside the module where they are defined and in all modules nested inside it, so rank can use MAX_POINTS. They are not visible to the parent or to other modules, and sharing a file doesn't matter.
+vi| Mục private nhìn thấy được trong module định nghĩa nó và trong mọi module lồng bên trong, nên rank dùng được MAX_POINTS. Module cha và các module khác không nhìn thấy, và việc cùng một tệp không có tác dụng gì.
+
+u9-check 1
+en| use brings names into scope, so main can write Player and rank::title instead of the full paths. It doesn't change visibility, and it doesn't copy any code.
+vi| use đưa tên vào phạm vi, nên main viết được Player và rank::title thay vì đường dẫn đầy đủ. Nó không thay đổi mức hiển thị và không sao chép code.
+
+u9-check 2
+en| #[cfg(test)] makes the module compile only for cargo test. A normal build leaves the test code out, so it adds nothing to the final program. It doesn't make anything private or run the tests from main.
+vi| #[cfg(test)] khiến module chỉ được biên dịch khi chạy cargo test. Build thông thường bỏ code test ra ngoài, nên nó không làm chương trình cuối nặng thêm. Nó không làm gì thành private và không chạy test từ main.
+
+u9-l1 0
+en| super:: starts a path from the parent of the current module, like .. in a file path. The crate root is named crate::, and a path that stays in the same module needs no prefix.
+vi| super:: bắt đầu một đường dẫn từ module cha của module hiện tại, giống .. trong đường dẫn tệp. Gốc crate được gọi là crate::, và đường dẫn nằm trong cùng module thì không cần tiền tố.
+
+u9-l1 1
+en| Paths follow the nesting from the outside in: hello is inside formal, which is inside greetings, so it is crate::greetings::formal::hello. The other two put the names in the wrong order.
+vi| Đường dẫn đi theo cấu trúc lồng từ ngoài vào trong: hello nằm trong formal, formal nằm trong greetings, nên đường dẫn là crate::greetings::formal::hello. Hai đường còn lại đặt các tên sai thứ tự.
+
+u9-l1 2
+en| In a one-file program the file itself is the crate root, and main lives there. Modules are written inside it, and main is just a function in the root module.
+vi| Trong chương trình một tệp, chính tệp đó là gốc crate, và main nằm ở đó. Các module được viết bên trong nó, còn main chỉ là một hàm trong module gốc.
+
+u9-l2 0
+en| Without pub, an item is private to its module, but code in that module and in modules nested inside it can use it. Parent and sibling modules cannot. Items are not visible to the whole file by default.
+vi| Không có pub, mục đó là private với module của nó, nhưng code trong module đó và trong các module lồng bên trong dùng được. Module cha và module cùng cấp thì không. Theo mặc định, các mục không hiển thị với cả tệp.
+
+u9-l2 1
+en| pub on the struct only makes the type visible. Each field has its own privacy, so owner is readable and balance stays private, which is why modules often add methods to read or change it.
+vi| pub trên struct chỉ làm cho kiểu đó hiển thị. Mỗi trường có mức riêng tư riêng, nên owner đọc được còn balance vẫn private, vì thế module thường thêm phương thức để đọc hoặc thay đổi nó.
+
+u9-l2 2
+en| as gives an imported item a new local name, as in use std::io::Result as IoResult;, which helps when two items share a name. It doesn't change visibility or convert the type.
+vi| as đặt cho mục được import một tên cục bộ mới, như use std::io::Result as IoResult;, hữu ích khi hai mục trùng tên. Nó không đổi mức hiển thị hay chuyển đổi kiểu.
