@@ -656,13 +656,13 @@ mod tests {
         // The IP cap may not be lower than the per-client cap.
         let e = errors_of(&with(&base, &[("RUNNER_MAX_INFLIGHT_PER_CLIENT", "5")]));
         assert!(e.contains("RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP"), "{e}");
-        let ok = Config::from_env_map(&map(&with(
+        let ok = Config::from_env_map(&with(
             &base,
             &[
                 ("RUNNER_MAX_INFLIGHT_PER_CLIENT", "2"),
                 ("RUNNER_MAX_INFLIGHT_PER_VERIFIED_IP", "6"),
             ],
-        )))
+        ))
         .unwrap();
         assert_eq!(
             (ok.max_inflight_per_client, ok.max_inflight_per_verified_ip),
