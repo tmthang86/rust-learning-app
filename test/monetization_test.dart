@@ -17,6 +17,7 @@ import 'package:rust_learn/features/progress/monetization_widgets.dart';
 import 'package:rust_learn/l10n/app_localizations_en.dart';
 import 'package:rust_learn/main.dart';
 import 'package:rust_learn/monetization/ad_banner.dart';
+import 'package:rust_learn/monetization/ad_region.dart';
 import 'package:rust_learn/monetization/ad_config.dart';
 import 'package:rust_learn/monetization/ad_report.dart';
 import 'package:rust_learn/monetization/ads_service.dart';
@@ -102,6 +103,7 @@ Future<Monetization> makeMonetization({
   Duration quietRestoreWait = const Duration(milliseconds: 50),
   Duration interstitialShowTimeout = const Duration(seconds: 10),
   bool start = true,
+  bool vietnam = false,
 }) async {
   final prefs = await SharedPreferences.getInstance();
   final m = Monetization(
@@ -122,6 +124,7 @@ Future<Monetization> makeMonetization({
       return true;
     },
     interstitialShowTimeout: interstitialShowTimeout,
+    inVietnam: () => vietnam,
   );
   if (start) await m.start();
   return m;
@@ -201,6 +204,49 @@ void main() {
       expect(adult.minor, isFalse);
     });
 
+    test('Vietnam adds non-personalised and keeps the age settings', () {
+      expect(AdAudience.forAge(AgeGroup.adult).nonPersonalized, isFalse);
+      final adult = AdAudience.forAge(AgeGroup.adult, vietnam: true);
+      expect(adult.nonPersonalized, isTrue);
+      expect(adult.treatment, AdAgeTreatment.unspecified);
+      expect(adult.maxAdContentRating, 'PG');
+      final teen = AdAudience.forAge(AgeGroup.teen, vietnam: true);
+      expect(teen.nonPersonalized, isTrue);
+      expect(teen.treatment, AdAgeTreatment.child);
+      expect(teen.maxAdContentRating, 'G');
+      expect(teen.underAgeOfConsent, isTrue);
+      expect(adult, isNot(AdAudience.forAge(AgeGroup.adult)));
+    });
+
+    test('the ad request is non-personalised only for Vietnam', () {
+      expect(
+        adRequestFor(AdAudience.forAge(AgeGroup.adult)).nonPersonalizedAds,
+        isNot(true),
+      );
+      expect(
+        adRequestFor(
+          AdAudience.forAge(AgeGroup.adult, vietnam: true),
+        ).nonPersonalizedAds,
+        isTrue,
+      );
+    });
+
+    test('device locales that count as Vietnam', () {
+      expect(looksLikeVietnam(const [Locale('vi', 'VN')]), isTrue);
+      expect(looksLikeVietnam(const [Locale('en', 'VN')]), isTrue);
+      expect(
+        looksLikeVietnam(const [Locale('en', 'US'), Locale('vi', 'VN')]),
+        isTrue,
+      );
+      expect(looksLikeVietnam(const [Locale('vi')]), isTrue);
+      expect(looksLikeVietnam(const [Locale('en', 'US')]), isFalse);
+      expect(
+        looksLikeVietnam(const [Locale('en', 'US'), Locale('vi')]),
+        isFalse,
+      );
+      expect(looksLikeVietnam(const []), isFalse);
+    });
+
     test('the audience maps to the plugin request configuration', () {
       final teen = requestConfigurationFor(AdAudience.forAge(AgeGroup.teen));
       expect(teen.ageRestrictedTreatment, AgeRestrictedTreatment.child);
@@ -225,6 +271,33 @@ void main() {
       expect(consent.formsAllowed, [true]);
       expect(ads.initializedWith, [AdAudience.forAge(AgeGroup.adult)]);
       expect(ads.preloads, 1);
+    });
+
+    test('Vietnam: UMP unchanged, SDK started non-personalised', () async {
+      final ads = FakeAds();
+      final consent = FakeConsent();
+      final m = await makeMonetization(
+        ads: ads,
+        consent: consent,
+        vietnam: true,
+      );
+      expect(m.adsEnabled, isTrue);
+      expect(consent.gatheredWithUnderAge, [false]);
+      expect(consent.formsAllowed, [true]);
+      expect(ads.initializedWith, [
+        AdAudience.forAge(AgeGroup.adult, vietnam: true),
+      ]);
+      expect(ads.initializedWith.single.nonPersonalized, isTrue);
+    });
+
+    test('Vietnam teen: still child settings, no form, non-personalised', () async {
+      mockPrefs({AgeStore.birthYearKey: 2010});
+      final ads = FakeAds();
+      final consent = FakeConsent();
+      await makeMonetization(ads: ads, consent: consent, vietnam: true);
+      expect(consent.formsAllowed, [false]);
+      expect(ads.initializedWith.single.treatment, AdAgeTreatment.child);
+      expect(ads.initializedWith.single.nonPersonalized, isTrue);
     });
 
     test('no ads, and no consent form, once "Remove ads" is owned', () async {

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/age.dart';
+import 'ad_region.dart';
 import 'ad_report.dart';
 import 'ads_service.dart';
 import 'consent_service.dart';
@@ -24,6 +25,9 @@ Future<bool> _launchExternally(Uri uri) =>
 /// - the learner gave a birth year and is not possibly under 13;
 /// - UMP says ads may be requested (`canRequestAds`).
 ///
+/// Users who look like they are in Vietnam get non-personalised ads only
+/// (ad_region.dart); UMP is unchanged.
+///
 /// Lessons and code runs never depend on ads.
 class Monetization extends ChangeNotifier {
   Monetization({
@@ -34,9 +38,11 @@ class Monetization extends ChangeNotifier {
     this.consent = const NoConsentService(),
     DateTime Function()? clock,
     UriLauncher? launcher,
+    bool Function()? inVietnam,
     this.interstitialShowTimeout = const Duration(seconds: 10),
   }) : _clock = clock ?? DateTime.now,
-       _launch = launcher ?? _launchExternally {
+       _launch = launcher ?? _launchExternally,
+       _inVietnam = inVietnam ?? deviceLooksLikeVietnam {
     purchases.addListener(_onPurchasesChanged);
     age.addListener(_onAgeChanged);
   }
@@ -65,6 +71,10 @@ class Monetization extends ChangeNotifier {
 
   final DateTime Function() _clock;
   final UriLauncher _launch;
+
+  /// Whether the device looks like it is in Vietnam (ad_region.dart);
+  /// those users only get non-personalised ads.
+  final bool Function() _inVietnam;
 
   bool _started = false;
   bool _disposed = false;
@@ -136,7 +146,7 @@ class Monetization extends ChangeNotifier {
     await _purchasesStarting;
     final group = age.group;
     if (!_eligibleForAds || group == null) return;
-    final audience = AdAudience.forAge(group);
+    final audience = AdAudience.forAge(group, vietnam: _inVietnam());
     if (!_consentGathered) {
       // UMP's order: update consent info, show the form if required (not
       // for minors), then check canRequestAds before loading ads.

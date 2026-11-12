@@ -29,6 +29,7 @@ class AdAudience {
     required this.treatment,
     required this.maxAdContentRating,
     required this.underAgeOfConsent,
+    this.nonPersonalized = false,
   });
 
   final AdAgeTreatment treatment;
@@ -40,6 +41,12 @@ class AdAudience {
   /// which covers every EU digital age of consent, 13 to 16, GDPR Art. 8).
   /// UMP doesn't pass it on to ad requests; [treatment] does that.
   final bool underAgeOfConsent;
+
+  /// Request only non-personalised ads (AdRequest `nonPersonalizedAds`).
+  /// Set for users in Vietnam, where personal data may only be processed
+  /// for advertising with the user's consent (Law 91/2025/QH15, Art. 28)
+  /// and UMP has no consent form for Vietnam. See ad_region.dart.
+  final bool nonPersonalized;
 
   /// True for anyone under 18.
   bool get minor => treatment == AdAgeTreatment.child;
@@ -56,20 +63,25 @@ class AdAudience {
   ///   means under the new age setting (TFUA maps to the child treatment:
   ///   https://developers.google.com/admob/flutter/targeting).
   /// - 18+: no age treatment, PG.
-  factory AdAudience.forAge(AgeGroup group) {
+  ///
+  /// [vietnam] only adds [nonPersonalized]; it never loosens the age
+  /// settings above.
+  factory AdAudience.forAge(AgeGroup group, {bool vietnam = false}) {
     switch (group) {
       case AgeGroup.under13:
       case AgeGroup.teen:
-        return const AdAudience(
+        return AdAudience(
           treatment: AdAgeTreatment.child,
           maxAdContentRating: 'G',
           underAgeOfConsent: true,
+          nonPersonalized: vietnam,
         );
       case AgeGroup.adult:
-        return const AdAudience(
+        return AdAudience(
           treatment: AdAgeTreatment.unspecified,
           maxAdContentRating: 'PG',
           underAgeOfConsent: false,
+          nonPersonalized: vietnam,
         );
     }
   }
@@ -79,15 +91,21 @@ class AdAudience {
       other is AdAudience &&
       other.treatment == treatment &&
       other.maxAdContentRating == maxAdContentRating &&
-      other.underAgeOfConsent == underAgeOfConsent;
+      other.underAgeOfConsent == underAgeOfConsent &&
+      other.nonPersonalized == nonPersonalized;
 
   @override
   int get hashCode =>
-      Object.hash(treatment, maxAdContentRating, underAgeOfConsent);
+      Object.hash(
+        treatment,
+        maxAdContentRating,
+        underAgeOfConsent,
+        nonPersonalized,
+      );
 
   @override
   String toString() =>
-      'AdAudience($treatment, $maxAdContentRating, uac: $underAgeOfConsent)';
+      'AdAudience($treatment, $maxAdContentRating, uac: $underAgeOfConsent, npa: $nonPersonalized)';
 }
 
 /// Mirrors google_mobile_ads' AgeRestrictedTreatment without importing it,

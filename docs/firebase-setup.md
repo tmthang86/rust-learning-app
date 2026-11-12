@@ -32,8 +32,17 @@ Google account and an Apple developer account.
      needs, so someone who deletes their account on the web can remove the
      app from Settings → Apple ID → Sign in with Apple on their device.
 4. **Create the database**: Firestore Database → Create database
-   (production mode). The rules and the cleanup function are deployed
-   together in step 7.
+   (production mode). **Pick the location `asia-southeast1` (Singapore)**:
+   it is the closest region to Vietnam and the rest of Southeast Asia, where
+   the app's learners and the runner host are. **The location cannot be
+   changed after the database is created**
+   ([Firestore locations](https://firebase.google.com/docs/firestore/locations):
+   "once you provision a database instance, you cannot change its location
+   setting"), so choose before pressing Create. The cleanup function in
+   step 7 deploys to us-central1 by default (functions/index.js), which
+   works with any Firestore location; to keep it near the data, add
+   `.region('asia-southeast1')` before `.auth` there. The rules and the
+   cleanup function are deployed together in step 7.
 5. **Add your web domain** to Authentication → Settings → Authorized domains
    once the web app has a real address.
 6. **Google Play account deletion URL.** Play Console → App content → Data

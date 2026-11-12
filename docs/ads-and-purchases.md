@@ -137,6 +137,61 @@ as minors whose data needs extra care:
 - **UMP.** The under-age-of-consent tag maps to the child treatment under
   the new age setting, so this keeps the two consistent.
 
+### Users in Vietnam: non-personalised ads only
+
+Decision (project PM, 2026-11-12): if the device looks like it is in
+Vietnam, every ad request is non-personalised. The age rules above and the
+UMP flow stay as they are; this only adds a flag.
+
+**Why (checked 2026-11-12).** Vietnam's Law on Personal Data Protection
+(No. 91/2025/QH15, passed 26 Jun 2025, in force 1 Jan 2026):
+- Art. 28 (personal data in advertising services): processing customers'
+  personal data for advertising needs the customer's consent, given knowing
+  the content, methods, forms and frequency of the ads; people must be able
+  to refuse ads, and for behavioural or targeted ads there must be a way to
+  refuse data sharing and data collected by tracking apps needs consent.
+- Art. 1(2): it also covers foreign organisations that process the personal
+  data of Vietnamese citizens.
+- Sources: summaries by
+  [Allen & Gledhill](https://www.allenandgledhill.com/vn/publication/articles/31075/upcoming-changes-to-vietnam-s-personal-data-protection-regime),
+  [Luật Việt Nam](https://luatvietnam.vn/linh-vuc-khac/su-dung-du-lieu-ca-nhan-trong-kinh-doanh-dich-vu-quang-cao-883-103715-article.html)
+  and [Kế toán An Phát](https://ketoananpha.vn/luat-bao-ve-du-lieu-ca-nhan-nam-2025)
+  (the last has the article text). Article numbers and wording were not
+  checked against the official gazette; **legal review before launch** stays
+  open (Decree 356/2025/NĐ-CP, the implementing decree, was not read).
+- Google's consent tool (UMP) offers messages for the EEA, UK, Switzerland
+  and US states, not Vietnam
+  ([AdMob help](https://support.google.com/admob/answer/10114020)), so
+  Vietnamese adults would otherwise get personalised ads without any
+  consent. (Google's European regulations message can be targeted
+  "Everywhere"; a GDPR-style form for Vietnam is an option for the legal
+  review.) Non-personalised requests remove the behavioural or targeted
+  processing (Art. 28 on tracking and targeted ads). They do **not** by
+  themselves meet the general consent rule or the right to stop ads:
+  Google says non-personalised ads still use cookies or mobile ad
+  identifiers for frequency capping and aggregated reporting
+  ([AdMob help](https://support.google.com/admob/answer/7676680)).
+
+**How.** `AdAudience.forAge(group, vietnam: true)` sets `nonPersonalized`;
+`adRequestFor` (lib/monetization/google_ads.dart) turns it into
+`AdRequest(nonPersonalizedAds: true)` for banners and interstitials
+(`nonPersonalizedAds`: "ads that are not based on a user's past behavior",
+[AdRequest API](https://pub.dev/documentation/google_mobile_ads/latest/google_mobile_ads/AdRequest-class.html)).
+`Monetization` decides at ad start from `looksLikeVietnam`
+(lib/monetization/ad_region.dart): any preferred device locale with country
+`VN`, or Vietnamese as the first language.
+
+**Known gaps.** The only in-app way to stop ads is to buy "Remove ads"
+(no other opt-out of ads); and it is open whether the app or Google is the
+"advertising service business" Art. 28 regulates. Both go to the legal
+review, which stays a launch blocker. There is no server-side IP lookup, and Dart has no portable
+SIM or Play Store country API, so a person from Vietnam with a non-Vietnamese
+device locale (a traveller, or an English-language phone) still gets normal
+requests. The flag is a request hint; Google may still use contextual data.
+Vietnamese speakers abroad also get non-personalised ads (a small revenue
+cost, accepted). Revisit with an IP-based signal if the legal review asks
+for it.
+
 Two different things are both called "limited" here:
 - the **child treatment** is a per-request signal from the app
   (`RequestConfiguration`): no personalised ads, and Google's ad policies
