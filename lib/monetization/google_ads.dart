@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import '../data/age.dart';
 import 'ad_banner.dart';
 import 'ad_config.dart';
 import 'ads_service.dart';
@@ -24,6 +25,11 @@ RequestConfiguration requestConfigurationFor(AdAudience audience) =>
       },
     );
 
+/// The request sent with every ad: non-personalised when [audience] says so
+/// (`AdRequest.nonPersonalizedAds`, sent as the `npa=1` extra).
+AdRequest adRequestFor(AdAudience audience) =>
+    AdRequest(nonPersonalizedAds: audience.nonPersonalized ? true : null);
+
 /// AdMob through google_mobile_ads 9.1.0. API checked against the package
 /// source (lib/src/ad_containers.dart, request_configuration.dart) and its
 /// example app.
@@ -32,6 +38,7 @@ class GoogleAdsService implements AdsService {
     : ids = ids ?? (Platform.isIOS ? AdUnitIds.ios : AdUnitIds.android);
 
   final AdUnitIds ids;
+  AdAudience _audience = AdAudience.forAge(AgeGroup.under13);
   InterstitialAd? _interstitial;
   bool _loadingInterstitial = false;
 
@@ -47,6 +54,7 @@ class GoogleAdsService implements AdsService {
 
   @override
   Future<void> initialize(AdAudience audience) async {
+    _audience = audience;
     // Age settings first, so the very first request carries them. With
     // the DELAY_APP_MEASUREMENT_INIT / GADDelayAppMeasurementInit flags in
     // the platform files, nothing is measured before this point.
@@ -58,7 +66,11 @@ class GoogleAdsService implements AdsService {
 
   @override
   Widget banner(AdPlacement placement) =>
-      _AdaptiveBanner(adUnitId: ids.banner, key: ValueKey(placement));
+      _AdaptiveBanner(
+        adUnitId: ids.banner,
+        request: adRequestFor(_audience),
+        key: ValueKey(placement),
+      );
 
   @override
   Future<void> preloadInterstitial() async {
@@ -67,7 +79,7 @@ class GoogleAdsService implements AdsService {
     _loadingInterstitial = true;
     await InterstitialAd.load(
       adUnitId: ids.interstitial,
-      request: const AdRequest(),
+      request: adRequestFor(_audience),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
           _loadingInterstitial = false;
@@ -127,9 +139,14 @@ class GoogleAdsService implements AdsService {
 /// (not anchored) because it sits inside scrolling content, away from the
 /// navigation bar. The slot keeps it alive while scrolled away.
 class _AdaptiveBanner extends StatefulWidget {
-  const _AdaptiveBanner({super.key, required this.adUnitId});
+  const _AdaptiveBanner({
+    super.key,
+    required this.adUnitId,
+    required this.request,
+  });
 
   final String adUnitId;
+  final AdRequest request;
 
   @override
   State<_AdaptiveBanner> createState() => _AdaptiveBannerState();
@@ -151,7 +168,7 @@ class _AdaptiveBannerState extends State<_AdaptiveBanner> {
         width,
         AdBannerSlot.adHeight.toInt(),
       ),
-      request: const AdRequest(),
+      request: widget.request,
       listener: BannerAdListener(
         onAdLoaded: (ad) async {
           final banner = ad as BannerAd;

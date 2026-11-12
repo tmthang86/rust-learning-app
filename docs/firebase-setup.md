@@ -32,7 +32,14 @@ Google account and an Apple developer account.
      needs, so someone who deletes their account on the web can remove the
      app from Settings → Apple ID → Sign in with Apple on their device.
 4. **Create the database**: Firestore Database → Create database
-   (production mode). The rules and the cleanup function are deployed
+   (production mode). **Pick the location `asia-southeast1` (Singapore)**:
+   it is the closest region to Vietnam and the rest of Southeast Asia, where
+   the app's learners and the runner host are. **The location cannot be
+   changed after the database is created**
+   ([Firestore locations](https://firebase.google.com/docs/firestore/locations):
+   "you cannot change the location after you set it"), and the default
+   project location is shared with Cloud Storage and other services. The
+   Cloud Function in step 7 must be deployed to the same region. The rules and the cleanup function are deployed
    together in step 7.
 5. **Add your web domain** to Authentication → Settings → Authorized domains
    once the web app has a real address.
