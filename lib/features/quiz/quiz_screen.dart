@@ -163,6 +163,10 @@ class _QuizScreenState extends State<QuizScreen> {
               ),
             ),
           ),
+          if (q.explanation.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _ExplanationCard(text: q.explanation),
+          ],
         ],
         const SizedBox(height: 16),
         FilledButton(
@@ -217,6 +221,55 @@ class _QuizScreenState extends State<QuizScreen> {
 }
 
 enum _Verdict { correct, wrong }
+
+/// Why the right answer is right, shown after Check whether the learner got
+/// it right or not. Read as one node: "Explanation", then the text.
+class _ExplanationCard extends StatelessWidget {
+  const _ExplanationCard({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    return Card(
+      key: const Key('quiz-explanation'),
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: MergeSemantics(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  ExcludeSemantics(
+                    child: Icon(
+                      Icons.lightbulb_outline,
+                      size: 20,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      l10n.quizExplanationTitle,
+                      style: theme.textTheme.titleSmall,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(text, style: theme.textTheme.bodyMedium),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 /// One answer. Selection and right/wrong are shown with an icon and words,
 /// not only with colour, and are announced by screen readers.

@@ -139,7 +139,8 @@
         "The loop over rx never ends, because the original sender is still alive",
         "The pairs arrive in a random order and cannot be sorted"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "The loop over rx ends only when every Sender is dropped. The original tx is still alive in the main thread, so the loop waits forever. drop(tx) ends it. The code compiles fine, and the order of messages is not the cause."
     },
     {
       "question": "Why is the Mutex shared with Arc and not with Rc?",
@@ -148,7 +149,8 @@
         "Arc locks the data inside, and Rc does not",
         "Rc cannot hold a Mutex"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Arc counts its owners with atomic operations, which are safe across threads, while Rc's plain counter is not, so Rc can't be sent to another thread. Neither type locks the data (the Mutex does), and Rc can hold a Mutex."
     },
     {
       "question": "You call an async fn but never use .await on the future it returns and never pass it to a runner. What runs?",
@@ -157,7 +159,8 @@
         "Only the code before the first .await runs",
         "Nothing runs: a future is lazy until something polls it"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Futures are lazy. Calling an async fn only builds the future, and nothing runs until something polls it, such as .await or a runtime. The body doesn't start, not even up to the first .await."
     }
   ]
 }

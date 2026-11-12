@@ -100,7 +100,8 @@
         "Một dòng trống: \\r\\n của header cuối cùng cộng thêm một \\r\\n nữa",
         "Từ BODY theo sau là dấu hai chấm ở đầu một dòng"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Trong HTTP, phần header và phần body được ngăn cách bằng một dòng trống, tức là \\r\\n của header cuối cộng thêm một \\r\\n nữa. Không có dấu chấm phẩy hay từ khóa BODY nào làm dấu."
     },
     {
       "question": "Máy chủ trả lời gì khi không có route nào khớp?",
@@ -109,7 +110,8 @@
         "Một phản hồi 200 OK có body rỗng",
         "Một panic, vì một match phải nêu tên mọi đường dẫn có thể có"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Nhánh match cuối cùng bao mọi đường dẫn mà không route nào khớp và trả về phản hồi 404 Not Found. Nó không phải 200, và match có nhánh bắt mọi trường hợp thì không panic."
     },
     {
       "question": "Tại sao parse_request, route và handle dễ test?",
@@ -118,7 +120,8 @@
         "Chúng cần một kết nối mạng đang chạy trước khi có thể được gọi dù chỉ một lần",
         "Chúng là các hàm thuần túy: văn bản vào, văn bản ra, không có mạng nào liên quan"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Chúng là các hàm thuần túy: văn bản vào, văn bản ra, không dính đến socket nào, nên test gọi được chúng bằng chuỗi thông thường. Chúng không cần code unsafe hay kết nối mạng."
     }
   ]
 }

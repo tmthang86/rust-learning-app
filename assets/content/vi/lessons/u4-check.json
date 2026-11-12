@@ -154,7 +154,8 @@
         "Nó đếm số xe tải",
         "Nhánh chỉ khớp nếu điều kiện thêm đó cũng đúng"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Match guard là điều kiện if bổ sung đặt sau mẫu. Nhánh chỉ khớp khi mẫu khớp và guard cũng đúng, nên chỉ những xe tải có từ 4 trục trở lên mới vào nhánh này."
     },
     {
       "question": "Một hàm có thể không tìm được câu trả lời, chẳng hạn chi phí cao nhất khi không có ticket nào. Kiểu trả về nào phù hợp?",
@@ -163,7 +164,8 @@
         "u32, với 0 là mã bí mật cho việc không có câu trả lời",
         "bool"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Option<u32> nói ngay trong kiểu rằng có thể không có câu trả lời: None nghĩa là không tìm thấy, Some(n) chứa con số. Dùng 0 làm mã bí mật là rủi ro vì 0 cũng có thể là chi phí thật, còn bool thì không chứa được số."
     },
     {
       "question": "&self nghĩa là gì trong fn cost(&self) -> u32?",
@@ -172,7 +174,8 @@
         "Phương thức mượn ticket để đọc nó",
         "Phương thức thay đổi ticket"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "&self mượn giá trị mà phương thức được gọi trên đó, nên phương thức đọc được ticket và bên gọi vẫn giữ nó. Lấy quyền sở hữu sẽ là self, còn muốn thay đổi thì cần &mut self."
     }
   ]
 }

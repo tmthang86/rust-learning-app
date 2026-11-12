@@ -49,7 +49,8 @@
         "Hàm main",
         "Bất kỳ hàm nào tên là start"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Mọi chương trình Rust bắt đầu chạy từ hàm main, bất kể nó nằm ở đâu trong tệp. Các hàm khác chỉ chạy khi có chỗ gọi đến chúng."
     },
     {
       "question": "Vì sao println! kết thúc bằng dấu chấm than?",
@@ -58,7 +59,8 @@
         "Vì nó là một macro",
         "Vì nó trả về một lỗi"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Trong Rust, tên kết thúc bằng ! là một macro chứ không phải hàm thông thường. println! là macro kiểm tra chuỗi định dạng ngay khi chương trình được biên dịch."
     }
   ]
 }

@@ -29,17 +29,20 @@
     {
       "question": "Which numbers does 1..=3 include?",
       "options": ["1 and 3", "1, 2 and 3", "0, 1, 2 and 3"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "In 1..=3 the = means the last number is included, so it covers 1, 2 and 3. Without the =, as in 1..3, the range stops before 3."
     },
     {
       "question": "When does a while loop stop?",
       "options": ["After 10 rounds", "When its condition becomes false", "Never"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "A while loop checks its condition before every round and stops as soon as the condition is false. It does not count rounds by itself, and it only runs forever if the condition never becomes false."
     },
     {
       "question": "Why does total need mut in the adding-up example?",
       "options": ["Because its value changes each time round", "Because it's a number", "Because it's inside main"],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Rust variables can't change unless you write mut. total gets a new value in every round, so it needs mut. Being a number or living inside main has nothing to do with it."
     }
   ]
 }

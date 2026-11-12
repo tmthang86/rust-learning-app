@@ -107,7 +107,8 @@
         "Enums are shorter to type",
         "Strings can't be errors"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "An enum lists the possible kinds of error as variants, so the caller can match on them and react differently to each one. A String is just text, and checking it means comparing words. Both can be errors."
     },
     {
       "question": "Which trait lets an error be printed with {}?",
@@ -116,7 +117,8 @@
         "Display",
         "Clone"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "The {} placeholder uses the Display trait, which is meant for readable messages for users. Debug is for {:?}, and Clone has nothing to do with printing."
     },
     {
       "question": "Inside a Display fmt method, what does write!(f, \"no such user\") do?",
@@ -125,7 +127,8 @@
         "Prints the text straight to the screen",
         "Saves the text to a file"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "write! sends text into the formatter f that fmt receives, and Rust decides later where it ends up, such as on screen with println!. It doesn't print directly or save a file."
     },
     {
       "question": "What does implementing From<ParseIntError> for your error let you do?",
@@ -134,7 +137,8 @@
         "Parse faster",
         "Skip error handling"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "The ? operator converts errors with From, so the impl lets ? turn a ParseIntError into your error type automatically. It doesn't make parsing faster or skip error handling."
     }
   ]
 }

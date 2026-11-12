@@ -86,7 +86,8 @@
         "Two",
         "Unlimited"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Only one mutable reference to a value can be in use at a time. This rule stops two parts of the program from changing the same data at once."
     },
     {
       "question": "Can you have a &mut and a & to the same value in use at the same time?",
@@ -95,7 +96,8 @@
         "No",
         "Only for numbers"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "While a &mut is in use, no & to the same value can be in use, because the reader might see data change underneath it. This is true for every type, numbers included."
     },
     {
       "question": "What does the dereference operator * do in *r += 1?",
@@ -104,7 +106,8 @@
         "Follows the reference to change the value it points to",
         "Makes r mutable"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "* dereferences: it follows the reference to the value it points at, so *r += 1 changes that value. It isn't multiplication here, and it doesn't change whether r itself is mutable."
     }
   ]
 }

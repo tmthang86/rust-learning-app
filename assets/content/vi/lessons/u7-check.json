@@ -135,7 +135,8 @@
         "Nó giới hạn T vào các kiểu implement Describe, nên thân hàm có thể gọi các phương thức như item.size()",
         "Nó cho phép thân hàm so sánh hai item bằng > và <"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Ràng buộc trait giới hạn T ở những kiểu đã implement Describe, nên thân hàm gọi an toàn được các phương thức của Describe như item.size(). Nó không tạo struct nào, và so sánh bằng > và < sẽ cần một ràng buộc khác là PartialOrd."
     },
     {
       "question": "Trait Describe có một phương thức summary với phần thân. Điều gì xảy ra trong một impl không viết summary?",
@@ -144,7 +145,8 @@
         "Phương thức trả về giá trị mặc định của kiểu trả về",
         "Kiểu đó dùng phần thân mặc định từ trait"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Phương thức mặc định có thân hàm ngay trong trait, và kiểu nào không tự viết phiên bản riêng sẽ dùng bản mặc định đó. Chỉ những phương thức không có thân mới bắt buộc phải viết trong mỗi impl, và không có gì được tự tạo từ kiểu trả về."
     },
     {
       "question": "Tại sao bigger cần lifetime 'a?",
@@ -153,7 +155,8 @@
         "Nó làm cho hai đầu vào sống lâu hơn lời gọi hàm",
         "Nó cho phép bigger trả về một giá trị mới thay vì một tham chiếu"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "bigger có thể trả về một trong hai đầu vào, nên kết quả chỉ đáng tin khi cả hai còn hợp lệ. Lifetime 'a mô tả đúng mối quan hệ đó. Nó không làm cho thứ gì sống lâu hơn, chỉ mô tả tham chiếu hợp lệ trong bao lâu, và hàm vẫn trả về một tham chiếu."
     }
   ]
 }

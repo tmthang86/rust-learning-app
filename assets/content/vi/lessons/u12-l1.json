@@ -100,7 +100,8 @@
         "Thường là tên của chính chương trình, nên các đối số thực sự bắt đầu ở chỉ số 1",
         "Một chuỗi rỗng đánh dấu nơi các đối số thực sự bắt đầu"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "env::args() thường bắt đầu bằng tên chương trình, nên các đối số thật do người dùng gõ bắt đầu từ chỉ số 1. Cờ đầu tiên là phần tử thứ hai, và không có dấu hiệu rỗng nào."
     },
     {
       "question": "Tại sao parse_args trả về một Result thay vì panic khi gặp flag sai?",
@@ -109,7 +110,8 @@
         "Result luôn chạy nhanh hơn panic, ngay cả khi không có gì thất bại",
         "Một flag gõ sai là điều được lường trước, nên bên gọi có thể báo lỗi một cách lịch sự"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Cờ gõ sai là chuyện chắc chắn sẽ xảy ra, nên parse_args trả về một Err để bên gọi báo lỗi lịch sự. Panic vẫn được phép ở đó, nhưng dành cho lỗi lập trình. Result không nhanh hơn."
     },
     {
       "question": "Dấu ? trong run làm gì khi parse_args trả về một Err?",
@@ -118,7 +120,8 @@
         "Bỏ qua lỗi và tiếp tục với Mode::All mặc định",
         "In thông báo lỗi rồi tiếp tục với dòng code kế tiếp"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "? gặp Err thì trả Err đó từ run ngay lập tức, nên phần còn lại của run bị bỏ qua và bên gọi xử lý lỗi. Nó không bỏ qua lỗi và cũng không in lỗi rồi tiếp tục."
     }
   ]
 }

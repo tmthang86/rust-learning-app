@@ -114,7 +114,8 @@
         "Declares T as a constant whose value is fixed when the program starts",
         "Declares T as a placeholder that stands for a real type, chosen at each call"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "<T> declares a generic type parameter: a placeholder for a real type that is chosen for each call. It isn't a struct or a constant, and one function body then works for many types."
     },
     {
       "question": "Why does largest need T: PartialOrd?",
@@ -123,7 +124,8 @@
         "Because slices must be sorted before you can search them for the largest item",
         "Because the function returns a reference, and references need PartialOrd"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "The > operator is only defined for types that can be ordered, and a bare T could be anything, including types that cannot be compared. The bound T: PartialOrd promises the comparison exists. The slice doesn't need to be sorted, and references don't need it."
     },
     {
       "question": "How does Rust decide which type T is when you call swap_pair((\"a\", \"b\"))?",
@@ -132,7 +134,8 @@
         "It works T out from the types of the arguments you pass",
         "It decides at run time, after looking at the values"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Rust infers T from the types of the arguments at the call, so swap_pair((\"a\", \"b\")) makes T a &str. You can name it yourself with swap_pair::<&str>, but you don't have to. Generics are resolved when compiling, not at run time."
     }
   ]
 }

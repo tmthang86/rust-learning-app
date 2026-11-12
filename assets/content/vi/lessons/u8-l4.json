@@ -107,7 +107,8 @@
         "Chương trình gây ra panic, vì d không bao giờ được dùng",
         "Không có gì: map là lazy, nên closure không bao giờ chạy trừ khi có thứ gì đó tiêu thụ d"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "map là lazy: nó chỉ tạo ra một iterator mới và không làm gì cho đến khi có thứ tiêu thụ, như collect, sum hay vòng lặp for. Không có gì được nhân đôi và không có panic nào. Trình biên dịch cảnh báo rằng iterator không làm gì nếu không được dùng."
     },
     {
       "question": "zip làm gì?",
@@ -116,7 +117,8 @@
         "Ghép cặp các phần tử của hai iterator thành các tuple",
         "Loại bỏ các phần tử xuất hiện ở cả hai iterator"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "zip duyệt hai iterator song song và trả về các cặp dạng tuple, như (a, b). Nó dừng khi iterator ngắn hơn hết. chain mới là hàm nối chúng nối đuôi nhau."
     },
     {
       "question": "enumerate cho ra gì với mỗi phần tử?",
@@ -125,7 +127,8 @@
         "Chỉ có chỉ số, kiểu usize, còn phần tử bị bỏ đi",
         "Một tuple (item, item) từ hai vị trí liền kề nhau"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "enumerate bọc mỗi phần tử vào một tuple (chỉ số, phần tử), và chỉ số bắt đầu từ 0 với kiểu usize. Phần tử được giữ lại, và cặp này không tạo từ hai vị trí liền kề."
     }
   ]
 }

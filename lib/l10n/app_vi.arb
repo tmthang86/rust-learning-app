@@ -94,6 +94,7 @@
   "quizNotQuite": "Chưa đúng. Đáp án là: {answer}",
   "quizCheck": "Kiểm tra",
   "quizNext": "Tiếp theo",
+  "quizExplanationTitle": "Giải thích",
   "quizScore": "Đúng {correct} trên {total} câu",
   "quizLessonComplete": "Đã hoàn thành bài học!",
   "quizTryAgain": "Hãy xem lại bài học và thử lại.",

@@ -63,7 +63,8 @@
         "Đánh dấu chỗ một giá trị được chèn vào",
         "In ra cặp dấu ngoặc nhọn"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "{} là ô giữ chỗ (placeholder): println! đặt giá trị tương ứng vào đó. Muốn in dấu ngoặc nhọn thật, bạn phải viết gấp đôi, như {{ và }}."
     },
     {
       "question": "println!(\"{:?}\", [1, 2]) in ra gì?",
@@ -72,7 +73,8 @@
         "1 2",
         "{:?}"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "{:?} dùng định dạng Debug, in mảng ra là [1, 2], gồm cả dấu ngoặc vuông và dấu phẩy. Dùng {} trơn với mảng sẽ không biên dịch được vì mảng không có định dạng hiển thị thông thường."
     },
     {
       "question": "print! khác println! ở điểm nào?",
@@ -81,7 +83,8 @@
         "Nó không thêm dòng mới",
         "Nó chỉ in ra số"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "print! in văn bản mà không thêm xuống dòng ở cuối, nên lần in tiếp theo nằm tiếp trên cùng dòng. println! thì thêm xuống dòng. Cả hai in được cùng các loại giá trị."
     }
   ]
 }

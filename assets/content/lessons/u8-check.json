@@ -155,7 +155,8 @@
         "move lets the closure be called more than once",
         "Without move the closure only borrows step and total, which are gone when make_counter returns"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Without move, the closure only borrows step and total, which belong to make_counter and are gone when it returns, so the compiler refuses. move gives the closure its own copies, so it can outlive the function. It has nothing to do with speed."
     },
     {
       "question": "What does let it = Collatz::new(6).map(|n| n * 100); do if it is never used afterwards?",
@@ -164,7 +165,8 @@
         "Nothing: map is lazy, so no item is produced and the closure never runs",
         "It panics when the program ends"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Iterator adapters like map are lazy: they only describe the work. With nothing consuming the iterator, no item is produced and the closure never runs. Rust only warns about it, and nothing panics."
     },
     {
       "question": "Why does sum_where ask for mut keep: impl FnMut(i32) -> bool instead of impl Fn?",
@@ -173,7 +175,8 @@
         "Because an Fn closure cannot return a bool",
         "Because FnMut closures are always faster to call"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "FnMut allows a closure that changes what it captured, such as a counter, and sum_where can still call it many times. With impl Fn, a closure that mutates its captures would be rejected. A closure that returns bool can be Fn too, and FnMut isn't faster."
     }
   ]
 }

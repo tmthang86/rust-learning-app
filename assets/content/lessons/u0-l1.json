@@ -26,12 +26,14 @@
     {
       "question": "In what order does a computer run the lines inside main, when nothing tells it to jump?",
       "options": ["Random order", "Top to bottom", "Bottom to top"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Unless an instruction tells it to jump, a computer follows the lines one after another, from top to bottom. It never picks an order at random, and it doesn't start from the bottom."
     },
     {
       "question": "What does the compiler do?",
       "options": ["Turns your code into a runnable program, checking it for mistakes first", "Saves your code to a file and keeps a backup copy of it", "Writes the program for you from a plain-English description"],
-      "answer": 0
+      "answer": 0,
+      "explanation": "The compiler translates your code into a program the computer can run, and it reports mistakes before the program ever starts. It does not back up files or write the program for you."
     }
   ]
 }

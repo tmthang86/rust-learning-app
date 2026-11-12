@@ -95,7 +95,8 @@
         "Module cha của module nơi đường dẫn được viết",
         "Module nơi đường dẫn được viết, như một lối tắt"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "super:: bắt đầu một đường dẫn từ module cha của module hiện tại, giống .. trong đường dẫn tệp. Gốc crate được gọi là crate::, và đường dẫn nằm trong cùng module thì không cần tiền tố."
     },
     {
       "question": "Từ main ở crate root, đường dẫn tuyệt đối nào gọi tên hàm hello bên trong formal, nằm trong greetings?",
@@ -104,7 +105,8 @@
         "crate::greetings::hello::formal",
         "crate::greetings::formal::hello"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Đường dẫn đi theo cấu trúc lồng từ ngoài vào trong: hello nằm trong formal, formal nằm trong greetings, nên đường dẫn là crate::greetings::formal::hello. Hai đường còn lại đặt các tên sai thứ tự."
     },
     {
       "question": "crate root là gì khi toàn bộ chương trình của bạn là một file?",
@@ -113,7 +115,8 @@
         "Khối mod đầu tiên được viết trong file",
         "Hàm main và mọi thứ nó gọi"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Trong chương trình một tệp, chính tệp đó là gốc crate, và main nằm ở đó. Các module được viết bên trong nó, còn main chỉ là một hàm trong module gốc."
     }
   ]
 }

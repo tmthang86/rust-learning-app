@@ -57,7 +57,8 @@
         "0, 1, 2, 3",
         "1, 2, 3"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Trong 0..3, số cuối không được tính, nên dãy cho ra 0, 1 và 2. Muốn bao gồm cả số 3, bạn phải viết 0..=3."
     },
     {
       "question": "Bên trong một khối loop (từ khóa loop), làm thế nào để dừng và trả về giá trị 5?",
@@ -66,7 +67,8 @@
         "break 5;",
         "stop(5)"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "break kèm giá trị, như break 5;, thoát khỏi vòng lặp và làm cho biểu thức loop bằng 5. return 5 sẽ thoát cả hàm, còn stop(5) không tồn tại trong Rust."
     },
     {
       "question": "continue làm gì?",
@@ -75,7 +77,8 @@
         "Nhảy sang lượt lặp tiếp theo",
         "Thoát khỏi vòng lặp"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "continue bỏ qua phần còn lại của vòng hiện tại và chuyển thẳng sang vòng tiếp theo. break mới là lệnh thoát khỏi vòng lặp, và chương trình vẫn tiếp tục."
     }
   ]
 }

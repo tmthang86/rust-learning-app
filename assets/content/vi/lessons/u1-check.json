@@ -121,7 +121,8 @@
         "Trong src/main.rs",
         "Trong thư mục target"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "cargo new tạo tệp src/main.rs để bạn viết code. Cargo.toml chỉ mô tả dự án (tên và các dependency), còn thư mục target chứa các tệp do quá trình build tạo ra."
     },
     {
       "question": "Cách nào sau đây có thể gán một kiểu mới cho một tên, ví dụ từ văn bản thành số?",
@@ -130,7 +131,8 @@
         "const",
         "Shadowing với một let mới"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Shadowing khai báo một biến hoàn toàn mới bằng let, nên nó có thể có kiểu khác, ví dụ biến số được tạo từ văn bản. Biến khai báo bằng let mut có thể đổi giá trị nhưng không bao giờ đổi được kiểu, và const cũng không đổi kiểu theo cách này."
     },
     {
       "question": "Điều nào đúng về một hằng số như PRICE_PER_KILO?",
@@ -139,7 +141,8 @@
         "Nó phải được khai báo bên trong main",
         "Nó có thể thay đổi bằng mut"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "const luôn phải ghi rõ kiểu, ví dụ const PRICE_PER_KILO: u32 = 5;. Nó có thể khai báo ở bất kỳ phạm vi nào chứ không chỉ trong main, và không bao giờ dùng được với mut."
     }
   ]
 }

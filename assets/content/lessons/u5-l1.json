@@ -90,7 +90,8 @@
         "push",
         "append_one"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Vec has push, which adds an item at the end. add and append_one don't exist (append is a real method, but it moves all items from another Vec)."
     },
     {
       "question": "What does v.get(99) return when v has 3 items?",
@@ -99,7 +100,8 @@
         "None",
         "0"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "get returns an Option: Some(&item) if the index exists and None if it doesn't, so a bad index never crashes. Writing v[99] instead would panic."
     },
     {
       "question": "How do you change every item of v inside a for loop?",
@@ -108,7 +110,8 @@
         "for x in v.read()",
         "for mut x in &v"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "for x in &mut v gives a mutable reference to each item, so you can change it with *x. v.read() doesn't exist, and for mut x in &v only makes x itself mutable, while the items stay behind a shared reference."
     }
   ]
 }

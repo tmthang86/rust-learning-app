@@ -102,7 +102,8 @@
         "It returns None",
         "It picks the first arm"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "match must be exhaustive: every possible value needs an arm, and the compiler rejects the code if one is missing. That catches forgotten cases before the program runs. It never silently returns None or falls to the first arm."
     },
     {
       "question": "What does _ mean in a match?",
@@ -111,7 +112,8 @@
         "Zero",
         "An error"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "_ is the catch-all pattern: it matches any value that no earlier arm matched, so it goes last. It does not mean zero or an error."
     },
     {
       "question": "When is if let a good choice?",
@@ -120,7 +122,8 @@
         "When you need every case",
         "For loops"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "if let is shorter than a full match when you only care about one pattern and want to ignore the rest. If you need to handle every case, use match. It has nothing to do with loops."
     }
   ]
 }

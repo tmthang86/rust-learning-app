@@ -108,7 +108,8 @@
         "The function panics while it runs",
         "The function prints nothing to the screen"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "A test fails when it panics, which is what a failing assert_eq! does. Returning false doesn't fail a test, and printing nothing is fine."
     },
     {
       "question": "Why is the tests module marked #[cfg(test)]?",
@@ -117,7 +118,8 @@
         "So cargo build runs the tests as well as compiling the code",
         "So the tests may call private functions that live in other crates"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "#[cfg(test)] keeps the tests module out of normal builds, so it is compiled only for cargo test. cargo build doesn't run tests. Code in a tests module inside a crate can already call that crate's private functions with use super::*, and other crates' private functions stay private."
     },
     {
       "question": "Which attribute marks a function as a test?",
@@ -126,7 +128,8 @@
         "#[derive(Debug)], placed above the function",
         "#[test], placed above the function"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "#[test] above a function marks it as a test that cargo test runs. #[cfg(test)] is for whole modules compiled only during tests, and #[derive(Debug)] has nothing to do with tests."
     }
   ]
 }

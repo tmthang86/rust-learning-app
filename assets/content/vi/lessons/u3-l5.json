@@ -97,7 +97,8 @@
         "Một tham chiếu tới 3 byte đầu",
         "Ký tự thứ 3"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Chuỗi slice là một tham chiếu chứ không phải bản sao. Dãy 0..3 đếm theo byte chứ không đếm ký tự, nên nó lấy 3 byte đầu. Với văn bản tiếng Anh thông thường thì đó cũng là 3 ký tự, nhưng slice còn phải kết thúc đúng ranh giới ký tự."
     },
     {
       "question": "Kiểu của literal \"hi\" là gì?",
@@ -106,7 +107,8 @@
         "&str",
         "char"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Chuỗi literal như \"hi\" có kiểu &str: một tham chiếu đến văn bản nằm trong chương trình. String là kiểu sở hữu, có thể mở rộng, tạo bằng String::from, còn char là một ký tự đơn."
     },
     {
       "question": "Vì sao nên ưu tiên &str hơn &String cho tham số?",
@@ -115,7 +117,8 @@
         "Gõ nhanh hơn",
         "&String không hoạt động"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Hàm nhận &str chấp nhận cả chuỗi literal lẫn giá trị &String, vì &String được tự động chuyển thành &str. Tham số &String sẽ từ chối literal. &String vẫn hoạt động được, và lý do không phải gõ nhanh hơn."
     }
   ]
 }

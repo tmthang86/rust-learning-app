@@ -130,7 +130,8 @@
         "Một Box làm cho cây đọc nhanh hơn",
         "Một variant của enum không thể chứa một enum khác"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Một Tree chứa trực tiếp hai Tree sẽ có kích thước vô hạn, vì mỗi cái lại chứa thêm. Box là con trỏ kích thước cố định tới dữ liệu trên heap, nên phá được vòng lặp đó. Đây là chuyện kích thước chứ không phải tốc độ đọc, và variant của enum hoàn toàn chứa được enum khác."
     },
     {
       "question": "Rc::clone(&log) sao chép cái gì?",
@@ -139,7 +140,8 @@
         "Chỉ một con trỏ, và nó cộng 1 vào số chủ sở hữu",
         "Không gì cả, và số chủ sở hữu giữ nguyên"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Rc::clone chỉ sao chép con trỏ và cộng 1 vào số lượng chủ sở hữu. Vec chứa các thông điệp không bị sao chép, và bộ đếm có tăng lên. Vì vậy mọi bản clone nhìn thấy cùng một dữ liệu."
     },
     {
       "question": "Điều gì xảy ra nếu bạn gọi log.borrow_mut() trong khi một guard borrow_mut() khác trên cùng RefCell vẫn còn sống?",
@@ -148,7 +150,8 @@
         "Lần gọi thứ hai chờ cho đến khi guard đầu tiên bị drop",
         "Chương trình bị panic lúc chạy"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "RefCell kiểm tra các quy tắc mượn khi chương trình đang chạy. Gọi borrow_mut() lần hai khi guard đầu còn sống là vi phạm quy tắc, nên chương trình panic. Trình biên dịch không thấy được điều này, và lời gọi cũng không chờ. Chờ chỉ làm treo một thread duy nhất."
     }
   ]
 }

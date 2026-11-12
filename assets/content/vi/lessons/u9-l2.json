@@ -110,7 +110,8 @@
         "Mọi module trong chương trình, nhưng chỉ trong cùng một file",
         "Chỉ code trong module đó và trong các module lồng bên trong nó"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Không có pub, mục đó là private với module của nó, nhưng code trong module đó và trong các module lồng bên trong dùng được. Module cha và module cùng cấp thì không. Theo mặc định, các mục không hiển thị với cả tệp."
     },
     {
       "question": "Một module có pub struct Account { pub owner: String, balance: i64 }. Code bên ngoài module có thể làm gì với một giá trị Account?",
@@ -119,7 +120,8 @@
         "Nó có thể đọc và thay đổi cả hai trường, vì struct là pub",
         "Nó có thể đọc balance, nhưng không thể chạm trực tiếp vào owner"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "pub trên struct chỉ làm cho kiểu đó hiển thị. Mỗi trường có mức riêng tư riêng, nên owner đọc được còn balance vẫn private, vì thế module thường thêm phương thức để đọc hoặc thay đổi nó."
     },
     {
       "question": "as trong use std::io::Result as IoResult; làm gì?",
@@ -128,7 +130,8 @@
         "Đặt cho mục được nhập vào một tên cục bộ mới",
         "Chuyển kiểu được nhập vào thành một kiểu khác"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "as đặt cho mục được import một tên cục bộ mới, như use std::io::Result as IoResult;, hữu ích khi hai mục trùng tên. Nó không đổi mức hiển thị hay chuyển đổi kiểu."
     }
   ]
 }

@@ -83,7 +83,8 @@
         "Nothing: the unit type ()",
         "An error at runtime"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "A semicolon turns the line into a statement, which gives no value, so the block gives back the unit type (). This is why a function with a stray semicolon on its last line fails to compile. Rust reports it when it compiles, not at run time."
     },
     {
       "question": "Where does the return type go?",
@@ -92,7 +93,8 @@
         "After -> following the parameters",
         "Inside the braces"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "The return type is written after -> following the parameter list, as in fn add(a: i32, b: i32) -> i32. It does not go before fn or inside the braces."
     },
     {
       "question": "How can a function return two values?",
@@ -101,7 +103,8 @@
         "Use two return statements",
         "It can't"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "A function returns one value, but that value can be a tuple holding several, like (i32, i32). The caller can then take it apart again. Two return statements would just exit the function at the first one that runs."
     }
   ]
 }

@@ -94,7 +94,8 @@
         "A reference that borrows word",
         "A new owner of word"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "&word creates a reference: it borrows word and lets you read it without taking ownership, so word is still usable afterwards. A copy would need .clone(), and the owner stays the same."
     },
     {
       "question": "How many shared (&) references can exist at once?",
@@ -103,7 +104,8 @@
         "As many as you like",
         "Two"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Any number of shared (&) references can exist at the same time, because reading doesn't cause conflicts. The limits only start when something wants to change the value."
     },
     {
       "question": "Why can't a function return a reference to its own local String?",
@@ -112,7 +114,8 @@
         "References can't be returned",
         "Strings are too big"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "A local String is dropped when the function ends, so a reference to it would point at memory that is already freed. Rust refuses to compile this. You can return references in general, as long as the value lives long enough, and you can also return the String itself."
     }
   ]
 }

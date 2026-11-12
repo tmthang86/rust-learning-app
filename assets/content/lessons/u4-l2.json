@@ -86,7 +86,8 @@
         "Inside the struct",
         "In main"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Methods go in an impl block for the type. The struct definition lists only fields, and main is just a function that uses the type."
     },
     {
       "question": "Which self should a method that changes the value take?",
@@ -95,7 +96,8 @@
         "&mut self",
         "No self"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "A method that changes the value needs &mut self, which borrows it mutably. &self only lets you read, and a function with no self isn't a method on the value."
     },
     {
       "question": "How do you call an associated function new on Account?",
@@ -104,7 +106,8 @@
         "Account::new()",
         "new Account()"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "An associated function is called on the type with ::, so Account::new(). The dot is for methods on a value, and new Account() is a syntax from other languages. In Rust new is just a normal function name."
     }
   ]
 }

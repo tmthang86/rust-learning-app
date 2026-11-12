@@ -98,7 +98,8 @@
         "A future: a value standing for work that has not run yet",
         "A new operating-system thread that has already started the body"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Calling an async fn doesn't run the body. It gives you a future, a value standing for work that hasn't run yet. No operating-system thread is started by the call."
     },
     {
       "question": "What does .await do?",
@@ -107,7 +108,8 @@
         "Starts a new operating-system thread to run the future in parallel with main",
         "Converts the future into its output type without ever having to wait"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": ".await waits for the future to finish and, while it waits, lets other work run on the same thread. It doesn't start a thread, and the waiting is real. The output only arrives once the future has completed."
     },
     {
       "question": "Why do real async programs add a crate like tokio?",
@@ -116,7 +118,8 @@
         "async functions can't call println! unless a crate wraps it for them",
         "The standard library defines futures but has no runtime to run them"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "The standard library defines the Future trait and the async / await syntax, but it has no runtime (executor) that runs futures to completion, so you add a crate like tokio. async functions can use println! with no crate."
     }
   ]
 }

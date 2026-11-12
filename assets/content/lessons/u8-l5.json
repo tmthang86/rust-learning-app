@@ -126,7 +126,8 @@
         "map, because it applies the closure to every item in the pipeline",
         "filter, because it decides which items stay in the pipeline"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "sum is a consuming method: it runs the whole iterator and returns one value. map and filter are adapters, which only build another lazy iterator and don't produce a result themselves."
     },
     {
       "question": "Why does max() return an Option?",
@@ -135,7 +136,8 @@
         "max needs a closure, and the closure might not give a result",
         "An empty iterator has no largest item, so there may be nothing to return"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "An empty iterator has no largest item, so max returns Option: Some(largest), or None when there was nothing. Comparing numbers can't fail, negative or not, and max doesn't need a closure."
     },
     {
       "question": "How does collect() know whether to build a Vec, a String or a HashMap?",
@@ -144,7 +146,8 @@
         "From the type it is asked to return: an annotation, the turbofish, or the surrounding code",
         "From the type of the first item that the iterator produces when it runs"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "collect is generic over what it builds, and it takes the target from the type you ask for: an annotation like Vec<i32>, the turbofish collect::<Vec<_>>(), or how the result is used later. If none of these says, the compiler asks you to add one. It doesn't build a Vec first or look at the items."
     }
   ]
 }

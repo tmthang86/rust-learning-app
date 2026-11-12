@@ -104,7 +104,8 @@
         "Waits for the thread to finish and gives back its result",
         "Stops the thread immediately and discards what it computed"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "join waits for the thread to finish and gives back its result, wrapped in a Result because the thread may have panicked. The thread already started when it was spawned, and join doesn't stop it."
     },
     {
       "question": "Why does a closure passed to thread::spawn usually need move?",
@@ -113,7 +114,8 @@
         "move copies the data, so the thread runs faster than it would with a plain borrow",
         "Rust only lets threads use data that was copied to the heap first"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "The thread might still be running after the function that started it returns, so the closure must own its data instead of borrowing local variables that would be gone. Speed isn't the reason, and the heap isn't involved."
     },
     {
       "question": "What is special about thread::scope?",
@@ -122,7 +124,8 @@
         "It lets threads outlive main, because the scope keeps them alive after it",
         "Its threads can borrow local variables, because all are joined before it ends"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "thread::scope joins all its threads before it ends, so they can safely borrow local variables, with no move needed. Its threads do run at the same time, and none of them can outlive the scope."
     }
   ]
 }

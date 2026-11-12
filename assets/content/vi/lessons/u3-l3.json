@@ -94,7 +94,8 @@
         "Một tham chiếu mượn word",
         "Một chủ sở hữu mới của word"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "&word tạo một tham chiếu: nó mượn word để bạn đọc mà không lấy quyền sở hữu, nên word vẫn dùng được sau đó. Muốn có bản sao thì cần .clone(), và chủ sở hữu vẫn là biến cũ."
     },
     {
       "question": "Có thể tồn tại bao nhiêu tham chiếu chia sẻ (&) cùng một lúc?",
@@ -103,7 +104,8 @@
         "Bao nhiêu cũng được",
         "Hai"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Có thể có bao nhiêu tham chiếu chia sẻ (&) cùng lúc tùy ý, vì đọc không gây xung đột. Giới hạn chỉ xuất hiện khi có thứ muốn thay đổi giá trị."
     },
     {
       "question": "Vì sao một hàm không thể trả về một tham chiếu tới String cục bộ của chính nó?",
@@ -112,7 +114,8 @@
         "Không thể trả về tham chiếu",
         "String quá lớn"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "String cục bộ bị drop khi hàm kết thúc, nên tham chiếu đến nó sẽ trỏ vào bộ nhớ đã được giải phóng. Rust từ chối biên dịch trường hợp này. Nói chung bạn vẫn trả về được tham chiếu nếu giá trị sống đủ lâu, và bạn cũng có thể trả về chính String."
     }
   ]
 }

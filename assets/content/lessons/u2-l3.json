@@ -68,7 +68,8 @@
         "2",
         "true"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "if is an expression, so it gives a value. The condition is true, so the first block runs and x becomes 1. The else block is skipped, and x is a number, not the bool true."
     },
     {
       "question": "What must be true about both branches of an if used as a value?",
@@ -77,7 +78,8 @@
         "They must give the same type",
         "They must both print"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Both branches must give the same type, because x gets one type that has to be known when the program is compiled. Their length doesn't matter, and they don't have to print anything."
     },
     {
       "question": "Can you write if 5 { ... } in Rust?",
@@ -86,7 +88,8 @@
         "No, the condition must be a bool",
         "Only inside main"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Rust has no \"truthy\" values: an if condition must be a bool, so if 5 { ... } is a compile error. You'd write a comparison such as if x != 0 instead."
     }
   ]
 }

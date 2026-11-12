@@ -112,7 +112,8 @@
         "(x) => x + 1",
         "fn |x| x + 1"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Closure parameters go between pipes, then comes the body: |x| x + 1. (x) => x + 1 is JavaScript, and fn |x| isn't valid in Rust."
     },
     {
       "question": "A closure is first called with a String, then with an i32. What happens?",
@@ -121,7 +122,8 @@
         "It compiles, but the second call panics at run time",
         "A compile error, because the first call fixes the closure's parameter type"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Rust infers the parameter type from the first call and fixes it for that closure, so the call with the other type is a compile error. It can't pick a new type each time, and it fails when compiling, not at run time."
     },
     {
       "question": "What does the parameter type impl Fn(i32) -> i32 accept?",
@@ -130,7 +132,8 @@
         "Any closure or function that takes an i32 and returns an i32",
         "Any closure that takes an i32, whatever type it returns"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "impl Fn(i32) -> i32 accepts any closure or function that takes an i32 and returns an i32, whatever it captures. The return type is part of the bound, so a closure returning something else is rejected."
     }
   ]
 }

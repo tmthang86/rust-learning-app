@@ -95,7 +95,8 @@
         "The parent of the module where the path is written",
         "The module where the path is written, as a shortcut"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "super:: starts a path from the parent of the current module, like .. in a file path. The crate root is named crate::, and a path that stays in the same module needs no prefix."
     },
     {
       "question": "From main at the crate root, which absolute path names the hello function inside formal, inside greetings?",
@@ -104,7 +105,8 @@
         "crate::greetings::hello::formal",
         "crate::greetings::formal::hello"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Paths follow the nesting from the outside in: hello is inside formal, which is inside greetings, so it is crate::greetings::formal::hello. The other two put the names in the wrong order."
     },
     {
       "question": "What is the crate root when your whole program is one file?",
@@ -113,7 +115,8 @@
         "The first mod block written in the file",
         "The function main and everything it calls"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "In a one-file program the file itself is the crate root, and main lives there. Modules are written inside it, and main is just a function in the root module."
     }
   ]
 }

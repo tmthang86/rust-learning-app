@@ -114,7 +114,8 @@
         "Closure có thể thay đổi các biến đã capture mà không cần chúng được khai báo mut",
         "Closure lấy quyền sở hữu các biến mà nó dùng, thay vì mượn chúng"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "move khiến closure lấy quyền sở hữu các biến nó dùng thay vì mượn. Nhờ vậy nó sống lâu hơn nơi nó được tạo, ví dụ khi được trả về hoặc gửi sang thread. Tự nó không tạo ra thread nào."
     },
     {
       "question": "Sau let greet = move || println!(\"hi {name}\"); với name là một String, bạn có thể dùng lại name trong main không?",
@@ -123,7 +124,8 @@
         "Có, move sao chép mọi giá trị đã capture, nên name vẫn hợp lệ",
         "Có, nhưng chỉ khi bạn mượn nó bằng & trước khi closure chạy"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "move chuyển quyền sở hữu vào closure, và String không phải Copy, nên name đã bị move và main không dùng lại được. move chỉ sao chép các giá trị thuộc kiểu Copy như số nguyên. Mượn bằng & trước đó cũng không giúp được."
     },
     {
       "question": "Closure có trait nào nếu nó thay đổi một biến đã capture nhưng có thể được gọi nhiều lần?",
@@ -132,7 +134,8 @@
         "FnMut: nó có thể thay đổi các giá trị đã capture và có thể được gọi nhiều lần",
         "FnOnce: nó thay đổi các giá trị đã capture, nên chỉ có thể được gọi một lần"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "FnMut phù hợp với closure thay đổi thứ nó capture nhưng vẫn gọi được nhiều lần. Fn chỉ đọc những gì nó capture. FnOnce dành cho closure đưa đi thứ nó capture nên chỉ gọi được một lần; việc thay đổi một biến không biến closure thành FnOnce."
     }
   ]
 }

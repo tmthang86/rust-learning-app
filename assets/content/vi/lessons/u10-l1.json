@@ -112,7 +112,8 @@
         "Một Cons sẽ chứa một List chứa một Cons, nên kích thước của nó là vô hạn",
         "i32 không thể được lưu bên trong một variant của enum"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Một Cons chứa một List, mà List có thể là một Cons chứa List khác, và cứ thế, nên trình biên dịch không tính được kích thước và từ chối kiểu này. Đặt List sau một Box sẽ sửa được. Variant của enum chứa được enum khác, và i32 hoàn toàn ổn trong variant."
     },
     {
       "question": "Box<T> giữ giá trị kiểu T ở đâu?",
@@ -121,7 +122,8 @@
         "Được sao chép vào mọi biến dùng Box",
         "Trên heap, với Box giữ một con trỏ tới nó"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Box<T> giữ giá trị trên heap, còn bản thân Box là con trỏ tới nó nằm trên stack. Giá trị không bị sao chép vào từng biến, và vẫn chỉ có một chủ sở hữu."
     },
     {
       "question": "Vec<Box<dyn Shape>> cho phép bạn làm gì?",
@@ -130,7 +132,8 @@
         "Lưu các giá trị thuộc bất kỳ kiểu nào, không cần trait chung",
         "Chỉ lưu Circle, vì Box cố định kiểu"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Vec<Box<dyn Shape>> chứa các trait object, nên một Vec có thể chứa Circle cạnh Square, miễn là mỗi cái đều implement Shape. dyn Shape trần không có kích thước xác định, nên mỗi giá trị được đặt vào Box. Cần có một trait chung."
     }
   ]
 }

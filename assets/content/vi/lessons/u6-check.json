@@ -180,7 +180,8 @@
         "Trả về lỗi từ hàm, sau khi From biến nó thành một OrderError",
         "Thay lỗi bằng 0"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Khi gặp Err, ? thoát sớm khỏi hàm với lỗi đó, và From chuyển nó thành kiểu lỗi của chính hàm (OrderError). Nó không panic và không thay lỗi bằng 0."
     },
     {
       "question": "Trong total_price, điều gì xảy ra nếu văn bản đầu tiên sai còn văn bản thứ hai thì ổn?",
@@ -189,7 +190,8 @@
         "Cả hai lỗi được trả về cùng nhau",
         "Chương trình bị panic"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Với ?, hàm trả về ngay ở Err đầu tiên. Nếu văn bản đầu tiên sai, lỗi được trả về luôn và văn bản thứ hai không bao giờ được xem tới. Chỉ một lỗi được trả về, và không có panic nào."
     },
     {
       "question": "expect làm gì khi nó nhận một Err?",
@@ -198,7 +200,8 @@
         "Trả về lỗi dưới dạng một String",
         "Dừng chương trình và hiển thị thông báo của bạn"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "expect hoạt động như unwrap: gặp Err (hoặc None) nó gây panic và hiển thị thông báo của bạn, làm chương trình dừng. Nó không bao giờ biến lỗi thành None hay String."
     }
   ]
 }

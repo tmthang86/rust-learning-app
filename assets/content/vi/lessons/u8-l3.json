@@ -112,7 +112,8 @@
         "None, mà vòng lặp for hiểu là tín hiệu để dừng",
         "Một giá trị Err mà vòng lặp for biến thành một panic"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "next trả về None khi iterator hết phần tử, và vòng lặp for coi None là tín hiệu dừng. Nó không tạo ra giá trị mặc định và không gây panic."
     },
     {
       "question": "Phương thức nào lấy quyền sở hữu một Vec và đưa cho bạn các phần tử của nó theo giá trị?",
@@ -121,7 +122,8 @@
         "iter_mut(), trao các phần tử và tiêu thụ Vec",
         "into_iter(), tiêu thụ Vec và đưa ra các phần tử theo giá trị"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "into_iter() tiêu thụ Vec và trả về từng phần tử theo giá trị, nên sau đó không dùng lại Vec được. iter() trả về tham chiếu và giữ nguyên Vec, còn iter_mut() trả về tham chiếu có thể thay đổi."
     },
     {
       "question": "Bạn phải viết gì để implement Iterator cho struct của riêng mình?",
@@ -130,7 +132,8 @@
         "Viết một vòng lặp for và lưu các phần tử vào một trường Vec",
         "Viết next và cả một phương thức len cho biết còn lại bao nhiêu phần tử"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Để implement Iterator, bạn khai báo type Item, kiểu phần tử được tạo ra, và viết next. Mọi thứ còn lại (map, filter, sum và các hàm khác) có sẵn miễn phí. Bạn không cần Vec lưu trữ hay phương thức len."
     }
   ]
 }

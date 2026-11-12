@@ -94,7 +94,8 @@
         "Some và None",
         "True và False"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Option có hai variant là Some (có giá trị) và None (không có giá trị). Ok và Err thuộc về Result, còn Rust không có variant True và False, vì bool là một kiểu riêng."
     },
     {
       "question": "Rust dùng gì thay cho null?",
@@ -103,7 +104,8 @@
         "Option",
         "Một chuỗi rỗng"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Rust không có null. Khi một giá trị có thể vắng mặt, bạn dùng Option, và trình biên dịch buộc bạn xử lý trường hợp None trước khi dùng giá trị bên trong. Số 0 hay chuỗi rỗng có thể bị nhầm với giá trị thật."
     },
     {
       "question": "None.unwrap_or(5) cho kết quả gì?",
@@ -112,7 +114,8 @@
         "5",
         "Chương trình bị sập"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "unwrap_or(5) trả về giá trị bên trong Some, hoặc 5 khi không có gì. Vì đây là None nên kết quả là 5. Nó không bị crash, khác với unwrap."
     }
   ]
 }

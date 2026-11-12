@@ -13,7 +13,9 @@ For every lesson in assets/content/lessons/:
   use its code; hidden tests must differ from visible ones; the number of
   visible and hidden tests must meet the minimums below,
 - each exercise needs 1 to 3 non-empty hints (strings),
-- each quiz answer index must point at a real option,
+- each quiz answer index must point at a real option, and each question
+  needs a non-empty `explanation` (why the answer is right, shown after
+  Check; a translation must have it too, see below),
 - every lesson id in course.json has a file, and every file is in course.json,
 - a course.json entry with `"checkpoint": true` has an exercise with a solution.
 
@@ -453,10 +455,24 @@ def check(path):
     if exercise:
         problems += check_exercise(lid, lesson, exercise)
 
-    for q in lesson.get("quiz", []):
+    problems += check_quiz(lid, lesson.get("quiz", []))
+    return problems
+
+
+def check_quiz(lid, quiz):
+    """Each answer points at a real option and each question explains it.
+    Translations get the explanation through compare_translation (same
+    shape, non-empty where the English is)."""
+    problems = []
+    for q in quiz:
         if not 0 <= q["answer"] < len(q["options"]):
             problems.append(f"{lid}: quiz answer out of range in {q['question']!r}")
-
+        explanation = q.get("explanation")
+        if not isinstance(explanation, str) or not explanation.strip():
+            problems.append(
+                f"{lid}: quiz question {q['question']!r} needs an explanation "
+                "(a non-empty string, shown after Check)"
+            )
     return problems
 
 

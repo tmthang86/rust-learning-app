@@ -183,6 +183,10 @@
   },
   "quizCheck": "Check",
   "quizNext": "Next",
+  "quizExplanationTitle": "Explanation",
+  "@quizExplanationTitle": {
+    "description": "Heading of the card that explains the right answer, shown after the learner checks a quiz answer."
+  },
   "quizScore": "{correct} of {total} correct",
   "@quizScore": {
     "placeholders": {

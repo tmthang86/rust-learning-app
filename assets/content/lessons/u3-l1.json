@@ -103,7 +103,8 @@
         "Two",
         "Any number"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Every value has exactly one owner at a time. That rule is how Rust knows when to free the memory: when the single owner goes away, the value is dropped."
     },
     {
       "question": "What happens to a value when its owner goes out of scope?",
@@ -112,7 +113,8 @@
         "It stays until the program ends",
         "It moves to main"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "When the owner goes out of scope, Rust drops the value and frees its memory right there, with no garbage collector. The value does not live on until the program ends, and it does not move to main."
     },
     {
       "question": "After let b = a; where a is a String, can you still use a?",
@@ -121,7 +123,8 @@
         "No, it was moved",
         "Only to print it"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "let b = a; moves the String from a to b. Now b is the owner, and using a fails to compile, even just to print it. Only integers and other Copy types stay usable after being assigned."
     }
   ]
 }

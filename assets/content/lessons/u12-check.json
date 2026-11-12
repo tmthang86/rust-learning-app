@@ -230,7 +230,8 @@
         "A mistyped command is normal input, not a bug, so the caller gets an error value it can handle",
         "Because Result is always faster than panic!"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "A mistyped command is ordinary input, not a bug in the program, so parse returns a Result and lets the caller decide what to do. panic! can be used in a function that returns a value, and Result is not about speed."
     },
     {
       "question": "What does amount.parse()? do inside parse when amount is the text lots?",
@@ -239,7 +240,8 @@
         "It gives the number 0",
         "It returns Err(StockError::BadNumber) from parse, because the From impl converts the ParseIntError"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "The ? returns the Err from parse, and the From impl converts the ParseIntError into StockError::BadNumber on the way. \"lots\" isn't a number, so there's no panic and no 0."
     },
     {
       "question": "Why does report sort the names before it prints them?",
@@ -248,7 +250,8 @@
         "sort removes the names that appear twice",
         "A HashMap cannot be printed in any other way"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "A HashMap doesn't promise any order, so printing it directly could differ from run to run. Sorting the names first makes the output the same every time. sort doesn't remove duplicates, and a HashMap can be printed."
     }
   ]
 }

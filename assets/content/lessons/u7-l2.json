@@ -120,7 +120,8 @@
         "The first <T> declares T as a placeholder, so Rust does not look for a real type named T",
         "The first <T> makes only the return types of the methods generic, not their parameters"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "In impl<T> Point<T>, the first <T> declares T, so Rust knows it is a placeholder and doesn't look for a real type with that name. Without it, Point<T> would mean a type literally called T."
     },
     {
       "question": "What is Option<T>?",
@@ -129,7 +130,8 @@
         "A keyword the compiler handles specially, with no definition in the library",
         "A generic enum with two variants, Some(T) and None"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Option<T> is an ordinary generic enum in the standard library, defined as enum Option<T> { None, Some(T) }. It isn't a struct with a flag, and it isn't special syntax of the compiler."
     },
     {
       "question": "Why does Point { x: 5, y: 4.0 } fail when both fields of Point<T> have type T?",
@@ -138,7 +140,8 @@
         "Point can only be created with integer values in its fields",
         "Floats cannot be stored in generic structs, only in ordinary ones"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Both fields use the same T, so x and y must have the same type. 5 is an integer and 4.0 is a float, so the compiler rejects it. Generic structs hold floats fine, and you can use two parameters, Point<T, U>, to allow different types."
     }
   ]
 }

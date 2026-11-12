@@ -92,7 +92,8 @@
         "A room can be looked up quickly by its name, such as \"hall\" or \"vault\"",
         "A Vec cannot hold structs, so rooms need a different collection"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "A HashMap finds a room by its name quickly, such as \"hall\" or \"vault\". It doesn't keep rooms sorted, and a Vec can hold structs just fine."
     },
     {
       "question": "In parse, what does the last arm _ => Command::Unknown(...) do?",
@@ -101,7 +102,8 @@
         "Matches only the empty string and ends the game with an error",
         "Stops the whole program with a panic when the player types a word it does not know"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "The _ arm catches every input that no earlier arm matched, and the text is kept inside Command::Unknown so the game can answer. It doesn't match only empty text, and it doesn't panic or end the game."
     },
     {
       "question": "What does the State enum model?",
@@ -110,7 +112,8 @@
         "The text that the player typed at the most recent prompt, kept for the next turn",
         "The phase the game is in: exactly one of Playing or Won at a time"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "An enum value is exactly one variant at a time, so State models the phase of the game: Playing or Won, never both. It doesn't store visited rooms or typed text."
     }
   ]
 }

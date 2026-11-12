@@ -94,7 +94,8 @@
         "Một phương thức mà Rust tự động gọi khi một giá trị của kiểu được tạo ra",
         "Một phương thức không có phần thân, mà mọi kiểu phải tự viết"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Phương thức mặc định có thân hàm viết ngay trong trait. Các kiểu nhận được nó miễn phí và có thể ghi đè (override) bằng phiên bản riêng. Phương thức không có thân thì mọi kiểu đều phải tự viết, và Rust không bao giờ tự gọi phương thức khi một giá trị được tạo."
     },
     {
       "question": "Dòng nào cấp trait Speak cho kiểu Robot?",
@@ -103,7 +104,8 @@
         "trait Speak for Robot { ... }",
         "impl Speak for Robot { ... }"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Một trait được gán cho kiểu bằng impl Trait for Type { ... }. Hai dạng còn lại không phải cú pháp Rust: struct không liệt kê trait sau dấu hai chấm, và trait ... for không tồn tại."
     },
     {
       "question": "Sau khi bạn implement Display cho một kiểu, bạn còn có thể làm gì khác với nó?",
@@ -112,7 +114,8 @@
         "In nó bằng {} và gọi to_string trên nó",
         "Sao chép nó thay vì di chuyển, và in nó bằng {:?}"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Display làm cho {} hoạt động, và mọi kiểu có Display cũng có to_string. Debug ({:?}) và == cần các trait riêng, còn Copy là một trait khác mà bạn cũng phải tự yêu cầu."
     }
   ]
 }

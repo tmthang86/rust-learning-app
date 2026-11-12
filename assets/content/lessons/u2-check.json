@@ -162,7 +162,8 @@
         "59",
         "It does not compile"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Casting a float to an integer with as drops the decimal part, truncating toward zero, so 59.5 as u32 is 59. It doesn't round to 60."
     },
     {
       "question": "In average_and_best, why is the sum turned into an f64 before it is divided by 4.0?",
@@ -171,7 +172,8 @@
         "f64 is faster than u32",
         "A u32 cannot be divided"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Rust never mixes integer and float types in arithmetic automatically, so a u32 sum divided by 4.0 would not compile. You convert it with as f64 first. Speed isn't the reason, and a u32 can be divided by another u32."
     },
     {
       "question": "What does break rounds; do inside a loop block?",
@@ -180,7 +182,8 @@
         "Ends the whole program",
         "Stops the loop and gives back rounds as its value"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "break rounds; leaves the loop immediately, and the value after break becomes the value of the whole loop expression. continue skips to the next round, and a loop doesn't end the whole program."
     }
   ]
 }

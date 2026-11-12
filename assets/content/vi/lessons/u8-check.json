@@ -155,7 +155,8 @@
         "move cho phép closure được gọi nhiều hơn một lần",
         "Nếu không có move, closure chỉ mượn step và total, vốn sẽ biến mất khi make_counter trả về"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Không có move, closure chỉ mượn step và total, vốn thuộc về make_counter và biến mất khi hàm này trả về, nên trình biên dịch từ chối. move cho closure bản riêng của chúng, nên nó sống lâu hơn hàm được. Nó không liên quan đến tốc độ."
     },
     {
       "question": "let it = Collatz::new(6).map(|n| n * 100); làm gì nếu sau đó nó không bao giờ được dùng?",
@@ -164,7 +165,8 @@
         "Không gì cả: map là lazy, nên không có phần tử nào được tạo ra và closure không bao giờ chạy",
         "Nó gây ra panic khi chương trình kết thúc"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Các adapter của iterator như map là lazy: chúng chỉ mô tả công việc. Khi không có gì tiêu thụ iterator, không phần tử nào được tạo ra và closure không bao giờ chạy. Rust chỉ đưa ra cảnh báo, và không có panic nào."
     },
     {
       "question": "Tại sao sum_where yêu cầu mut keep: impl FnMut(i32) -> bool thay vì impl Fn?",
@@ -173,7 +175,8 @@
         "Vì một closure Fn không thể trả về bool",
         "Vì các closure FnMut luôn gọi nhanh hơn"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "FnMut cho phép closure thay đổi thứ nó đã capture, như một biến đếm, và sum_where vẫn gọi nó nhiều lần được. Với impl Fn, closure có thay đổi biến capture sẽ bị từ chối. Closure trả về bool cũng có thể là Fn, và FnMut không nhanh hơn."
     }
   ]
 }

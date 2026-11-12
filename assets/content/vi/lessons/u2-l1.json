@@ -96,7 +96,8 @@
         "i32",
         "usize"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Khi không có chỉ định nào khác, Rust chọn i32 cho số nguyên. Đây là kích thước mặc định hợp lý, và bạn có thể ghi rõ i64 hoặc usize khi cần."
     },
     {
       "question": "7 / 2 cho kết quả gì với số nguyên?",
@@ -105,7 +106,8 @@
         "3.5",
         "4"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Chia hai số nguyên cho kết quả là số nguyên: phần thập phân bị cắt bỏ, nên 7 / 2 bằng 3. Muốn có 3.5, bạn cần dùng số thực như 7.0 / 2.0. Kết quả không được làm tròn lên 4."
     },
     {
       "question": "Cái nào là một char hợp lệ?",
@@ -114,7 +116,8 @@
         "'a'",
         "'ab'"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Kiểu char là một ký tự đặt trong dấu nháy đơn, như 'a'. Dấu nháy kép tạo ra chuỗi, còn 'ab' là lỗi vì char chỉ chứa đúng một ký tự."
     }
   ]
 }

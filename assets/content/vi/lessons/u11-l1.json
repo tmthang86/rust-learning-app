@@ -104,7 +104,8 @@
         "Chờ thread chạy xong và trả về kết quả của nó",
         "Dừng thread ngay lập tức và bỏ đi những gì nó đã tính"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "join chờ thread kết thúc và trả về kết quả của nó, được bọc trong Result vì thread có thể đã panic. Thread đã chạy từ lúc spawn, và join không dừng nó."
     },
     {
       "question": "Tại sao closure được truyền cho thread::spawn thường cần move?",
@@ -113,7 +114,8 @@
         "move sao chép dữ liệu, nên thread chạy nhanh hơn so với khi chỉ mượn thông thường",
         "Rust chỉ cho phép thread dùng dữ liệu đã được sao chép lên heap trước"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Thread có thể vẫn chạy sau khi hàm tạo ra nó đã trả về, nên closure phải sở hữu dữ liệu thay vì mượn các biến cục bộ sẽ biến mất. Lý do không phải tốc độ, và heap không liên quan."
     },
     {
       "question": "Điều gì đặc biệt ở thread::scope?",
@@ -122,7 +124,8 @@
         "Nó cho phép các thread sống lâu hơn main, vì scope giữ chúng sống sau đó",
         "Các thread của nó có thể mượn biến cục bộ, vì tất cả đều được join trước khi nó kết thúc"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "thread::scope đợi (join) mọi thread của nó trước khi kết thúc, nên các thread đó mượn biến cục bộ một cách an toàn, không cần move. Các thread vẫn chạy cùng lúc, và không thread nào sống lâu hơn scope."
     }
   ]
 }

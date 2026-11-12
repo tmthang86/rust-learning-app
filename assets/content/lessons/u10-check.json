@@ -130,7 +130,8 @@
         "A Box makes the tree faster to read",
         "An enum variant cannot hold another enum"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "A Tree that held two Trees directly would have an infinite size, because each one holds more of them. A Box is a pointer of fixed size to data on the heap, which breaks the cycle. It is about size, not reading speed, and an enum variant can hold another enum."
     },
     {
       "question": "What does Rc::clone(&log) copy?",
@@ -139,7 +140,8 @@
         "Only a pointer, and it adds 1 to the owner count",
         "Nothing, and the owner count stays the same"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Rc::clone copies only the pointer and adds 1 to the owner count. The Vec of messages is not copied, and the count does go up. That is why all the clones see the same data."
     },
     {
       "question": "What happens if you call log.borrow_mut() while another borrow_mut() guard on the same RefCell is still alive?",
@@ -148,7 +150,8 @@
         "The second call waits until the first guard is dropped",
         "The program panics at run time"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "RefCell checks the borrowing rules while the program runs. A second borrow_mut() while the first guard is alive breaks the rule, so it panics. The compiler can't see this, and the call doesn't wait. That would just freeze a single thread."
     }
   ]
 }

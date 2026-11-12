@@ -114,7 +114,8 @@
         "Trong khi code được biên dịch, trước khi chương trình bắt đầu",
         "Không bao giờ, vì RefCell tắt các quy tắc mượn"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "RefCell dời việc kiểm tra quy tắc mượn từ lúc biên dịch sang lúc chạy: mỗi lời gọi borrow hay borrow_mut kiểm tra quy tắc khi chương trình đang chạy. Quy tắc vẫn áp dụng và vi phạm sẽ gây panic."
     },
     {
       "question": "Điều gì xảy ra nếu bạn gọi borrow_mut() hai lần và giữ cả hai guard còn sống?",
@@ -123,7 +124,8 @@
         "Nó biên dịch với một cảnh báo và cả hai guard đều hoạt động",
         "Chương trình gây ra panic với thông báo rằng nó đã được mượn rồi"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Hai mượn có thể thay đổi cùng sống là vi phạm quy tắc, nên borrow_mut() lần hai gây panic với thông báo đã bị mượn. Nó không chờ, cũng không phải cảnh báo biên dịch, vì RefCell chỉ kiểm tra được điều này khi chương trình chạy."
     },
     {
       "question": "Rc<RefCell<T>> cho bạn cái gì?",
@@ -132,7 +134,8 @@
         "Nhiều chủ sở hữu, mỗi người đều có thể thay đổi giá trị được chia sẻ",
         "Một giá trị có thể được gửi sang các thread khác một cách an toàn"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Rc cho nhiều chủ sở hữu và RefCell cho phép giá trị dùng chung bị thay đổi, nên Rc<RefCell<T>> vừa chia sẻ được vừa thay đổi được. Giá trị vẫn nằm trên heap, và cả hai kiểu đều không an toàn để gửi giữa các thread."
     }
   ]
 }

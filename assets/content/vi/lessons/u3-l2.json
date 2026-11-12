@@ -85,7 +85,8 @@
         "i32",
         "Vec<i32>"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "i32 là giá trị đơn giản có kích thước cố định, nên khi gán nó được sao chép và giá trị gốc vẫn hợp lệ. String và Vec<i32> sở hữu dữ liệu trên heap, nên khi gán thì quyền sở hữu được di chuyển."
     },
     {
       "question": ".clone() làm gì với một String?",
@@ -94,7 +95,8 @@
         "Tạo một bản sao đầy đủ dữ liệu của nó",
         "Xóa nó"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": ".clone() tạo một bản sao đầy đủ và độc lập của dữ liệu trong String, nên bản gốc và bản clone mỗi bên có dữ liệu riêng. Nó không di chuyển hay xóa bản gốc."
     },
     {
       "question": "Vì sao Rust không tự động clone String?",
@@ -103,7 +105,8 @@
         "String không thể được clone",
         "Đó là một lỗi"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Sao chép dữ liệu trên heap có thể tốn kém, nên Rust bắt bạn viết .clone() để thấy được chi phí đó. String hoàn toàn clone được, và đây là lựa chọn thiết kế chứ không phải lỗi."
     }
   ]
 }

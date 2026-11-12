@@ -186,7 +186,8 @@
         "The code inside scoreboard and inside the modules nested in it, such as rank",
         "Any code in the same file"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Private items are visible inside the module where they are defined and in all modules nested inside it, so rank can use MAX_POINTS. They are not visible to the parent or to other modules, and sharing a file doesn't matter."
     },
     {
       "question": "What does use scoreboard::{Player, rank}; at the top of main's file do?",
@@ -195,7 +196,8 @@
         "It makes Player and rank public",
         "It copies the code of the scoreboard module into main"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "use brings names into scope, so main can write Player and rank::title instead of the full paths. It doesn't change visibility, and it doesn't copy any code."
     },
     {
       "question": "What does #[cfg(test)] above mod tests do?",
@@ -204,7 +206,8 @@
         "It makes main run the tests every time",
         "The module is compiled only when the tests are built, not in a normal build"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "#[cfg(test)] makes the module compile only for cargo test. A normal build leaves the test code out, so it adds nothing to the final program. It doesn't make anything private or run the tests from main."
     }
   ]
 }

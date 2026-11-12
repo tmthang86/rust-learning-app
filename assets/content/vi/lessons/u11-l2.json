@@ -100,7 +100,8 @@
         "Sau một giây trôi qua mà không có thông điệp mới nào đến đầu nhận",
         "Khi mọi Sender đã bị drop, nên không còn thông điệp nào có thể đến nữa"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Vòng lặp trên Receiver kết thúc khi mọi Sender đã bị drop, vì sẽ không còn thông điệp nào đến nữa. Nó không dừng sau thông điệp đầu tiên, và cũng không có timeout."
     },
     {
       "question": "Làm thế nào để bạn cho phép nhiều thread gửi vào cùng một channel?",
@@ -109,7 +110,8 @@
         "Clone receiver bằng rx.clone() và đưa cho mỗi thread một bản",
         "Move cùng một tx vào closure của mọi thread, mà không clone nó trước"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "mpsc là viết tắt của multiple producer, single consumer (nhiều bên gửi, một bên nhận): bạn clone được Sender, mỗi thread một bản, nhưng chỉ có một Receiver. Move cùng một tx vào nhiều closure sẽ không biên dịch được, vì tx đã bị move từ lần đầu."
     },
     {
       "question": "Điều gì xảy ra với một String sau khi bạn gửi nó bằng tx.send(text)?",
@@ -118,7 +120,8 @@
         "Nó được move vào channel, nên thread gửi không thể dùng nó",
         "Nó được sao chép tự động, nên mỗi thread giữ phiên bản độc lập của riêng mình"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "send di chuyển String vào channel, nên thread gửi không còn sở hữu nó và không dùng được nữa. Không có gì được chia sẻ hay sao chép. Muốn giữ bản sao, bạn clone nó trước khi gửi."
     }
   ]
 }

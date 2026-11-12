@@ -120,7 +120,8 @@
         "<T> đầu tiên khai báo T là một ô giữ chỗ, để Rust không đi tìm một kiểu thật tên là T",
         "<T> đầu tiên chỉ làm cho kiểu trả về của các phương thức trở nên generic, chứ không phải tham số của chúng"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Trong impl<T> Point<T>, <T> đầu tiên khai báo T, để Rust biết đó là chỗ giữ chỗ và không đi tìm một kiểu thật tên là T. Thiếu nó, Point<T> sẽ có nghĩa là một kiểu có tên đúng là T."
     },
     {
       "question": "Option<T> là gì?",
@@ -129,7 +130,8 @@
         "Một từ khóa mà trình biên dịch xử lý đặc biệt, không có định nghĩa trong thư viện",
         "Một enum generic có hai variant, Some(T) và None"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Option<T> là một enum generic bình thường trong thư viện chuẩn, được định nghĩa là enum Option<T> { None, Some(T) }. Nó không phải struct có cờ, và cũng không phải cú pháp đặc biệt của trình biên dịch."
     },
     {
       "question": "Vì sao Point { x: 5, y: 4.0 } thất bại khi cả hai trường của Point<T> có kiểu T?",
@@ -138,7 +140,8 @@
         "Point chỉ có thể được tạo với các giá trị số nguyên trong các trường của nó",
         "Số thực không thể được lưu trong struct generic, chỉ trong struct thông thường"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Cả hai trường dùng chung một T, nên x và y phải cùng kiểu. 5 là số nguyên còn 4.0 là số thực, nên trình biên dịch từ chối. Struct generic chứa số thực hoàn toàn được, và bạn có thể dùng hai tham số, Point<T, U>, để cho phép hai kiểu khác nhau."
     }
   ]
 }

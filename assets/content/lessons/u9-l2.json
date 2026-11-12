@@ -110,7 +110,8 @@
         "Every module in the program, but only inside the same file",
         "Only code in that module and in the modules nested inside it"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Without pub, an item is private to its module, but code in that module and in modules nested inside it can use it. Parent and sibling modules cannot. Items are not visible to the whole file by default."
     },
     {
       "question": "A module has pub struct Account { pub owner: String, balance: i64 }. What can code outside the module do with an Account value?",
@@ -119,7 +120,8 @@
         "It can read and change both fields, since the struct is pub",
         "It can read balance, but cannot touch owner directly"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "pub on the struct only makes the type visible. Each field has its own privacy, so owner is readable and balance stays private, which is why modules often add methods to read or change it."
     },
     {
       "question": "What does the as in use std::io::Result as IoResult; do?",
@@ -128,7 +130,8 @@
         "Gives the imported item a new local name",
         "Converts the imported type into a different type"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "as gives an imported item a new local name, as in use std::io::Result as IoResult;, which helps when two items share a name. It doesn't change visibility or convert the type."
     }
   ]
 }

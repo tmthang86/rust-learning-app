@@ -51,17 +51,20 @@
     {
       "question": "Làm thế nào để chạy (gọi) một hàm tên là greet?",
       "options": ["fn greet", "greet();", "call greet"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Bạn gọi một hàm bằng cách viết tên hàm kèm cặp ngoặc tròn, nên greet(); sẽ chạy hàm đó. fn greet là cách định nghĩa hàm, còn call greet không phải là cú pháp Rust."
     },
     {
       "question": "Trong fn square(n: i32) -> i32, -> i32 có nghĩa là gì?",
       "options": ["Hàm trả về một số nguyên", "n phải bằng 32", "Hàm chạy 32 lần"],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Kiểu đứng sau -> là kiểu của giá trị mà hàm trả về, nên -> i32 nghĩa là hàm trả về một số nguyên. Nó không nói n phải bằng 32 hay hàm chạy 32 lần."
     },
     {
       "question": "Giá trị mà một hàm trả về là gì?",
       "options": ["Dòng đầu tiên của nó", "Dòng cuối cùng của nó, không có dấu chấm phẩy", "Bất cứ thứ gì println! hiển thị"],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Biểu thức cuối cùng của hàm, viết không có dấu chấm phẩy, là giá trị hàm trả về. Những gì println! hiển thị chỉ đi ra màn hình chứ không phải giá trị trả về."
     }
   ]
 }

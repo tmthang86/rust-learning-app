@@ -85,7 +85,8 @@
         "p.level",
         "p->level"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Struct fields are read with a dot: p.level. p[level] is index syntax, and p->level is C-style syntax that Rust doesn't have."
     },
     {
       "question": "What do you need to change a field?",
@@ -94,7 +95,8 @@
         "Nothing",
         "A special setter"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "You change a field through a variable declared with mut. Rust makes the whole struct value mutable or not, never single fields, and there are no automatic setters."
     },
     {
       "question": "What does #[derive(Debug)] let you do?",
@@ -103,7 +105,8 @@
         "Run the debugger",
         "Copy the struct"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "#[derive(Debug)] makes Rust write the code for the Debug format, so you can print the struct with {:?}. It doesn't start a debugger or make the struct copyable. Copy needs its own derive."
     }
   ]
 }

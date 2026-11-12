@@ -102,7 +102,8 @@
         "Thêm một chủ sở hữu nữa và tăng bộ đếm, mà không sao chép dữ liệu",
         "Di chuyển giá trị ra khỏi a, nên a không thể dùng được nữa"
       ],
-      "answer": 1
+      "answer": 1,
+      "explanation": "Rc::clone thêm một chủ sở hữu bằng cách tăng bộ đếm tham chiếu. Dữ liệu không bị sao chép, và a vẫn dùng được. Nó rẻ, khác với việc clone dữ liệu."
     },
     {
       "question": "Khi nào giá trị bên trong một Rc bị drop?",
@@ -111,7 +112,8 @@
         "Khi chương trình kết thúc, bất kể còn những chủ sở hữu nào",
         "Khi chủ sở hữu cuối cùng không còn và bộ đếm về 0"
       ],
-      "answer": 2
+      "answer": 2,
+      "explanation": "Rc đếm số chủ sở hữu, và giá trị chỉ bị drop khi chủ sở hữu cuối cùng biến mất và bộ đếm về 0. Chủ sở hữu đầu tiên rời đi chỉ làm giảm bộ đếm."
     },
     {
       "question": "Bạn có thể thay đổi dữ liệu bên trong một Rc<i32> chỉ bằng Rc không?",
@@ -120,7 +122,8 @@
         "Có, bằng cách viết *a += 1 trực tiếp trên Rc",
         "Có, nhưng chỉ khi Rc được khai báo bên trong main"
       ],
-      "answer": 0
+      "answer": 0,
+      "explanation": "Rc chỉ cho truy cập chia sẻ và chỉ đọc, vì nhiều chủ sở hữu có thể đọc cùng lúc. Muốn thay đổi dữ liệu, bạn cần interior mutability, như Rc<RefCell<T>>. Viết *a += 1 không biên dịch được, dù Rc khai báo ở đâu."
     }
   ]
 }
